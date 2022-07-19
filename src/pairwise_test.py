@@ -44,7 +44,14 @@ if FLAGS.jax_enable_x64:
 def rand_quat(key, dtype):
   return rigid_body.random_quaternion(key, dtype)
 
+
 if __name__ == "__main__":
+
+    shape = rigid_body.point_union_shape(
+      onp.array([[0.0, 0.0, 0.0]], f32),
+      f32(1.0)
+    ) # just to get the mass from
+
     box_size = 20.0
     displacement, shift = space.periodic(box_size)
     key = random.PRNGKey(0)
@@ -59,24 +66,22 @@ if __name__ == "__main__":
 
     body = rigid_body.RigidBody(R, quaternion)
 
-    # Use a shape of one particle to create an energy function
-    # Below, we will try to reproduce this energy function without using `rigid_body.point_energy`
+    # FIXME: what should our metric return?
+    def rb_metric(rb1, rb2):
+        return rb1.center[0] - rb2.center[0]
 
-    shape = rigid_body.point_union_shape(
-      onp.array([[0.0, 0.0, 0.0]], f32),
-      f32(1.0)
-    )
+    def soft_func(metr_val):
+        pdb.set_trace()
+        return metr_val / 2.0 + 3.0
 
-    energy_fn = rigid_body.point_energy(energy.soft_sphere_pair(displacement),
-                                        shape)
-
+    energy_fn = smap.pair(soft_func, rb_metric)
 
     kT = 1e-3
     dt = 5e-4
 
     init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift, dt, kT)
 
-    step_fn = jit(step_fn)
+    # step_fn = jit(step_fn)
 
     state = init_fn(key, body, mass=shape.mass())
     E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
@@ -90,6 +95,8 @@ if __name__ == "__main__":
 
     E_final = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
 
+    pdb.set_trace()
+
     remapped = list()
     for pt in trajectory:
       remapped.append(vmap(rigid_body.transform, (0, None))(pt, shape))
@@ -99,4 +106,5 @@ if __name__ == "__main__":
     remapped = remapped.reshape(remapped.shape[0], -1, 3) # squash the particles in on each other
 
     pdb.set_trace()
+
     print("done")
