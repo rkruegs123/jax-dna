@@ -67,14 +67,21 @@ if __name__ == "__main__":
     body = rigid_body.RigidBody(R, quaternion)
 
     # FIXME: what should our metric return?
-    def rb_metric(rb1, rb2):
+    # Maybe should just do all things here. Could be very inefficient, e.g .if vectorizing f(displacmenet_or_metric) is more efficient than vectorizing the actual function.
+    # However, maybe best to just get it right first with appropriating masking and neighboring
+    # Also, would be great if we could just return an ARRAY of metrics. Then we could do all 8 variables at once!
+    def rb_metric(rb1, rb2): # analogous to displacement
         return rb1.center[0] - rb2.center[0]
+        # other_val = 2.0
+        # return jnp.array([other_val, rb1.center[0] - rb2.center[0]])
 
-    def soft_func(metr_val):
+    def soft_func(metr_val): # analogous to soft_sphere
         pdb.set_trace()
-        return metr_val / 2.0 + 3.0
+        return metr_val[0] / 2.0 + 3.0
 
-    energy_fn = smap.pair(soft_func, rb_metric)
+    energy_fn = smap.pair(soft_func, rb_metric) # analogous to soft_sphere_pair
+
+    # energy_fn : RigidBody (actually a system of many RigidBody's) -> energy
 
     kT = 1e-3
     dt = 5e-4
