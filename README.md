@@ -27,3 +27,9 @@ July 19, 2022
   - `multiplicative_isotropic_cutoff`
   - even if you do it with `jnp.where`, it will be discontinuous. Not ethat LAMMPS does this with `lj.cut`, but this can make simulations less stable
   - you can use `jnp.where`, but it will just have a cutoff with a discontinuity
+
+July 22, 2022
+- Need initial configuration so that losses don't go to `nan`
+- Need to solve for those additional parameters that aren't given but are determined
+  - Can eventually throw them out with Carl's trick
+- Then, can proceed implementing. Will have to be careful when to vmap vs. just go element-wise. Will have to fiddle with flattening or not based on how neighbors are handled

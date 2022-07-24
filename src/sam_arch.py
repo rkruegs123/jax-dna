@@ -47,29 +47,160 @@ def rand_quat(key, dtype):
   return rigid_body.random_quaternion(key, dtype)
 
 
+# Define individual potentials
+# FIXME: Could use ones from JAX-MD when appropriate (e.g. morse, harmonic). Could just add ones to JAX-MD that are missing (e.g. FENE)
+
 # FIXME: need some initial positions from Megan
-def fene_potential(dr_bb, eps=2.0, r0=0.7525, delt=0.25):
-    pdb.set_trace()
+# FIXME: naming a bit off here, because we made all the others take in r instead of dr
+def v_fene(dr_bb, eps=2.0, r0=0.7525, delt=0.25):
     r = jnp.linalg.norm(dr_bb, axis=2)
     x = (r - r0)**2 / delt**2
     # Note: if `x` is too big, we will easily try to take the log of negatives, wihch will yield `nan`
     return -eps / 2.0 * jnp.log(1 - x)
 
-def static_energy_fn_factory(displacement_fn, bb_site, stack_site, neighbors=None):
+def v_morse(r, eps, r0, a):
+    x = -(r - r0) * a
+    return eps * (1 - jnp.exp(x))**2
+
+def v_harmonic(r, k, r0):
+    return k / 2 * (r - r0)**2
+
+def v_lj(r, eps, sigma):
+    x = (sigma / r)**12 - (sigma / r)**6
+    return 4 * eps * x
+
+def v_mod(theta, a, theta0):
+    return 1 - a*(theta - theta0)**2
+
+def v_smooth(x, b, x_c):
+    return b*(x_c - x)**2
+
+
+# Define functional forms
+# FIXME: Do cutoff with Carl's method. Likely don't need r_c_low and r_c_high
+def f1(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
+       eps, a, r0, r_c, # morse parameters
+       b_low, b_high, # smoothing parameters
+):
+    if r_low < r and r < r_high:
+        return v_morse(r, eps, r0, a) - v_morse(r_c, eps, r0, a)
+    elif r_c_low < r and r < r_low:
+        return eps * v_smooth(r, b_low, r_c_low)
+    elif r_high < r and r < r_c_high:
+        return eps * v_smooth(r, b_high, r_c_high)
+    else:
+        return 0.0
+
+
+def f2(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
+       k, r0, r_c, # harmonic parameters
+       b_low, b_high # smoothing parameters
+):
+    if r_low < r and r < r_high:
+        return v_harm(r, k, r0) - v_harm(r_c, k, r0)
+    elif r_c_low < r and r < r_low:
+        return k * v_smooth(r, b_low, r_c_low)
+    elif r_high < r and r < r_c_high:
+        return k * v_smooth(r, b_high, r_c_high)
+    else:
+        return 0.0
+
+def f3(r, r_star, r_c, # thresholding/smoothing parameters
+       eps, sigma, # lj parameters
+       b # smoothing parameters
+):
+    if r < r_star:
+        return v_lj(r, eps, sigma)
+    elif r_star < r and r < r_c:
+        return eps * v_smooth(r, b, r_c)
+    else:
+        return 0.0
+
+def f4(theta, theta0, delta_theta_star, delta_theta_c, # thresholding/smoothing parameters
+       a, # mod parameters
+       b # smoothing parameters
+):
+    if theta0 - delta_theta_star < theta and theta < theta0 + delta_theta_star:
+        return v_mod(theta, a, theta0)
+    elif theta0 - delta_theta_c < theta and theta < theta0 - delta_theta_star:
+        return v_smooth(theta, b, theta0 - delta_theta_c)
+    elif theta0 + delta_theta_star < theta and theta < theta0 + delta_theta_c:
+        return v_smooth(theta, b, theta0 + delta_theta_c)
+    else:
+        return 0.0
+
+# FIXME: Confirm with megan that phi should be x in def of f5.
+# Note: for stacking, e.g. x = cos(phi)
+def f5(x, x_star, x_c, # thresholding/smoothing parameters
+       a, # mod parameters
+       b # smoothing parameters
+):
+    if x > 0:
+        return 1.0
+    elif x_star < x and x < 0:
+        return v_mod(x, a, 0)
+    elif x_c < x and x < x_star:
+        return v_smooth(x, b, x_c)
+    else:
+        return 0.0
+
+# f3_bb = partial(displacement_fn, **kwargs)
+def exc_vol_bonded(dr1, dr2, dr3):
+
+    # FIXME: real values of parameters
+    eps_exc = 1.0
+    sigma_base = 1.0
+    r_base_star = 1.0
+    sigma_bb_base = 1.0 # FIXME: maybe bb -> back
+    r_bb_base_star = 1.0
+    sigma_
+
+    if dr1.shape != (3,):
+        pdb.set_trace()
+        return 1.0
+    if dr2.shape != (3,):
+        pdb.set_trace()
+        return 2.0
+    if dr3.shape != (3,):
+        pdb.set_trace()
+        return 3.0
+
+
+    return jnp.linalg.norm(dr1) + jnp.linalg.norm(dr2) + jnp.linalg.norm(dr3)
+
+
+
+mapped_exc_vol_bonded = vmap(vmap(exc_vol_bonded, (0, 0, None)), (0, None, 0))
+
+
+def static_energy_fn_factory(displacement_fn, bb_site, stack_site, base_site,
+                             neighbors=None):
+
+    d = space.map_bond(partial(displacement_fn))
 
     def energy_fn(body: RigidBody, **kwargs) -> float:
         Q = body.orientation
-        bb_sites = body.center + rigid_body.quaternion_rotate(Q, bb_site)
+        bb_sites = body.center + rigid_body.quaternion_rotate(Q, bb_site) # (N, 3)
         stack_sites = body.center + rigid_body.quaternion_rotate(Q, stack_site)
+        base_sites = body.center + rigid_body.quaternion_rotate(Q, base_site)
 
         # FIXME: flatten, make
         # Note: I believe we don't have to flatten. In Sam's original code, R_sites contained *all* N*3 interaction sites
 
         # FIXME: for neighbors, this will change
-        d = space.map_product(partial(displacement_fn, **kwargs))
+        pdb.set_trace()
+        # d = space.map_product(partial(displacement_fn, **kwargs))
 
-        dr_bb = d(bb_sites, bb_sites) # N x N x 3
-        fene = fene_potential(dr_bb)
+        dr_bb_bb = d(bb_sites, bb_sites) # N x N x 3
+        fene = v_fene(dr_bb_bb)
+        pdb.set_trace()
+
+        dr_base_base = d(base_sites, base_sites)
+        dr_bb_base = d(bb_sites, base_sites)
+        dr_base_bb = d(base_sites, bb_sites)
+
+        pdb.set_trace()
+
         return jnp.sum(fene) / 2.0 # FIXME: placeholder
 
     return energy_fn
@@ -78,7 +209,7 @@ def static_energy_fn_factory(displacement_fn, bb_site, stack_site, neighbors=Non
 if __name__ == "__main__":
 
 
-    # Next: commit, push, smooth versions for each f_i, then simple...
+    # Next: Read original carl notebook, then look at my oxDNA notebook and corroborate with data, smooth versions for each f_i, then simple...
 
 
     # Bug in rigid body -- Nose-Hoover defaults to f32(1.0) rather than a RigidBody with this value
@@ -88,8 +219,6 @@ if __name__ == "__main__":
     ) # just to get the mass from
 
     mass = shape.mass()
-
-
 
     box_size = 20.0
     displacement, shift = space.periodic(box_size)
@@ -122,16 +251,28 @@ if __name__ == "__main__":
 
     body = rigid_body.RigidBody(R, quaternion)
 
+    base_site = jnp.array(
+        [1.0, 0.0, 0.0]
+    )
     stack_site = jnp.array(
         [0.5, 0.0, 0.0]
     )
     bb_site = jnp.array(
         [-1.0, 0.0, 0.0]
     )
+    bonded_neighbors = [
+        [0, 1],
+        [1, 2],
+        [2, 3],
+        [3, 4],
+        [4, 5]
+    ]
+
     energy_fn = static_energy_fn_factory(displacement,
                                          bb_site=bb_site,
                                          stack_site=stack_site,
-                                         neighbors=None)
+                                         base_site=base_site,
+                                         neighbors=bonded_neighbors)
 
 
     # Simulate with the energy function via Nose-Hoover
@@ -154,3 +295,6 @@ if __name__ == "__main__":
       trajectory.append(state.position)
 
     E_final = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
+
+
+    # Add excluded volume and stacking
