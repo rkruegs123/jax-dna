@@ -1,16 +1,12 @@
-import functools
-
-from absl.testing import absltest
-from absl.testing import parameterized
-
 import numpy as onp
 import pdb
+import toml
+from functools import partial
 
 from jax import jit
 from jax import vmap
 from jax import random
 from jax import lax
-from jax import test_util as jtu
 
 from jax.config import config as jax_config
 import jax.numpy as jnp
@@ -25,11 +21,12 @@ from jax_md import partition
 from jax_md import util
 from jax_md import rigid_body
 from jax_md.rigid_body import RigidBody, Quaternion
+
 # from jax_md.colab_tools import renderer
 
-from functools import partial
 
-
+PARAMS = toml.load("config.toml")
+PARAMS = PARAMS['default'] # FIXME: Simple for now, but eventually want to override with other namespaces and handle default correctly
 
 FLAGS = jax_config.FLAGS
 DYNAMICS_STEPS = 100
@@ -40,20 +37,18 @@ f64 = util.f64
 
 DTYPE = [f32]
 if FLAGS.jax_enable_x64:
-  DTYPE += [f64]
+    DTYPE += [f64]
 
 @partial(vmap, in_axes=(0, None))
 def rand_quat(key, dtype):
-  return rigid_body.random_quaternion(key, dtype)
+    return rigid_body.random_quaternion(key, dtype)
 
 
 # Define individual potentials
 # FIXME: Could use ones from JAX-MD when appropriate (e.g. morse, harmonic). Could just add ones to JAX-MD that are missing (e.g. FENE)
 
 # FIXME: need some initial positions from Megan
-# FIXME: naming a bit off here, because we made all the others take in r instead of dr
-def v_fene(dr_bb, eps=2.0, r0=0.7525, delt=0.25):
-    r = jnp.linalg.norm(dr_bb, axis=2)
+def v_fene(r, eps=PARAMS["eps_backbone"], r0=PARAMS["r0_backbone"], delt=PARAMS["delta_backbone"]):
     x = (r - r0)**2 / delt**2
     # Note: if `x` is too big, we will easily try to take the log of negatives, wihch will yield `nan`
     return -eps / 2.0 * jnp.log(1 - x)
@@ -109,12 +104,21 @@ def f3(r, r_star, r_c, # thresholding/smoothing parameters
        eps, sigma, # lj parameters
        b # smoothing parameters
 ):
+    return jnp.where(jnp.less(r, r_star),
+                     v_lj(r, eps, sigma),
+                     jnp.where(jnp.logical_and(jnp.less(r_star, r), jnp.less(r, r_c)),
+                     # jnp.where(jnp.less(r_star, r) and jnp.less(r, r_c), # throws an error
+                               eps * v_smooth(r, b, r_c),
+                               jnp.zeros(r.shape[0])))
+
+    """
     if r < r_star:
         return v_lj(r, eps, sigma)
     elif r_star < r and r < r_c:
         return eps * v_smooth(r, b, r_c)
     else:
         return 0.0
+    """
 
 def f4(theta, theta0, delta_theta_star, delta_theta_c, # thresholding/smoothing parameters
        a, # mod parameters
@@ -144,43 +148,88 @@ def f5(x, x_star, x_c, # thresholding/smoothing parameters
     else:
         return 0.0
 
-# f3_bb = partial(displacement_fn, **kwargs)
-def exc_vol_bonded(dr1, dr2, dr3):
+# FIXME: placeholders
+tmp_b = 1.0
+tmp_r_c_diff = 1.0
+f3_base = partial(f3, r_star=PARAMS["dr_star_base"], r_c=PARAMS["dr_star_base"] + tmp_r_c_diff,
+                  eps=PARAMS["eps_exc"], sigma=PARAMS["sigma_base"],
+                  b=tmp_b)
+f3_back_base = partial(f3, r_star=PARAMS["dr_star_back_base"], r_c=PARAMS["dr_star_back_base"] + tmp_r_c_diff,
+                       eps=PARAMS["eps_exc"], sigma=PARAMS["sigma_back_base"],
+                       b=tmp_b)
+f3_base_back = partial(f3, r_star=PARAMS["dr_star_base_back"], r_c=PARAMS["dr_star_base_back"] + tmp_r_c_diff,
+                       eps=PARAMS["eps_exc"], sigma=PARAMS["sigma_base_back"],
+                       b=tmp_b)
+def exc_vol_bonded(dr_base, dr_back_base, dr_base_back):
 
-    # FIXME: real values of parameters
-    eps_exc = 1.0
-    sigma_base = 1.0
-    r_base_star = 1.0
-    sigma_bb_base = 1.0 # FIXME: maybe bb -> back
-    r_bb_base_star = 1.0
-    sigma_
+    r_base = jnp.linalg.norm(dr_base, axis=1)
+    r_back_base = jnp.linalg.norm(dr_back_base, axis=1)
+    r_base_back = jnp.linalg.norm(dr_base_back, axis=1)
 
-    if dr1.shape != (3,):
-        pdb.set_trace()
-        return 1.0
-    if dr2.shape != (3,):
-        pdb.set_trace()
-        return 2.0
-    if dr3.shape != (3,):
-        pdb.set_trace()
-        return 3.0
+    # FIXME: need to add rc's and b's
+    # Note: r_c must be greater than r*
+
+    t1 = f3_base(r_base)
+    t2 = f3_back_base(r_back_base)
+    t3 = f3_base_back(r_base_back)
+    """
+    t1 = f3(r_base, PARAMS["dr_star_base"], PARAMS["dr_star_base"] + tmp_r_c_diff,
+            PARAMS["eps_exc"], PARAMS["sigma_base"],
+            tmp_b
+    )
+    t2 = f3(r_back_base, PARAMS["dr_star_back_base"], PARAMS["dr_star_back_base"] + tmp_r_c_diff,
+            PARAMS["eps_exc"], PARAMS["sigma_back_base"],
+            tmp_b
+    )
+    t3 = f3(r_base_back, PARAMS["dr_star_base_back"], PARAMS["dr_star_base_back"] + tmp_r_c_diff,
+            PARAMS["eps_exc"], PARAMS["sigma_base_back"],
+            tmp_b
+    )
+    return t1 + t2 + t3
+    """
+    return t1 + t2 + t3
 
 
-    return jnp.linalg.norm(dr1) + jnp.linalg.norm(dr2) + jnp.linalg.norm(dr3)
+
+normal = jnp.array(
+  [0.0, 1.0, 0.0]
+) # body frame
+def stacking(dr_stack, orientations):
+  # need dr_stack, theta_4, theta_5, theta_6, phi1, and phi2
+  # theta_4: angle between base normal vectors
+  # theta_5: angle between base normal and line passing throug stacking
+  # theta_6: theta_5 but with the other base normal
+  # note: for above, really just need dr_stack and base normals
+
+  r_stack = jnp.linalg.norm(dr_stack, axis=1)
+
+  # note: don't add body.center (and don't pass it) because we don't need it. angle can still be computed
+  normals_sf = rigid_body.quaternion_rotate(orientations, normal) # space frame
+  # TODO: check that normals_sf are still normalized
+
+  # t4 = jnp.arccos(jnp.einsum('ij, ij->i', normals_sf, normals_sf)) # FIXME: should probably be (N, N) rather than (N,)
+  t4 = normals_sf @ normals_sf.T # TODO: check that transposing keeps the appropriate ordering of the indices
+
+  pdb.set_trace()
 
 
+  # FIXME: FORGOT that we had already selected the neighbors by this point. Don't really want to have access to them here -- e.g., just compute t4 outside and pass in. Should check that we similarly abide by this logic in exc_volume_bonded
 
-mapped_exc_vol_bonded = vmap(vmap(exc_vol_bonded, (0, 0, None)), (0, None, 0))
 
+  # for the phi's, we also need dr_backbone and the cross product of the normal and backbone-base vectors
+  # phi1:
+  pass
 
-def static_energy_fn_factory(displacement_fn, bb_site, stack_site, base_site,
-                             neighbors=None):
+def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site,
+                             neighbors):
 
     d = space.map_bond(partial(displacement_fn))
+    nbs_i = neighbors[:, 0]
+    nbs_j = neighbors[:, 1]
 
     def energy_fn(body: RigidBody, **kwargs) -> float:
         Q = body.orientation
-        bb_sites = body.center + rigid_body.quaternion_rotate(Q, bb_site) # (N, 3)
+        back_sites = body.center + rigid_body.quaternion_rotate(Q, back_site) # (N, 3)
         stack_sites = body.center + rigid_body.quaternion_rotate(Q, stack_site)
         base_sites = body.center + rigid_body.quaternion_rotate(Q, base_site)
 
@@ -188,18 +237,21 @@ def static_energy_fn_factory(displacement_fn, bb_site, stack_site, base_site,
         # Note: I believe we don't have to flatten. In Sam's original code, R_sites contained *all* N*3 interaction sites
 
         # FIXME: for neighbors, this will change
-        pdb.set_trace()
         # d = space.map_product(partial(displacement_fn, **kwargs))
 
-        dr_bb_bb = d(bb_sites, bb_sites) # N x N x 3
-        fene = v_fene(dr_bb_bb)
-        pdb.set_trace()
+        # FENE
+        dr_back = d(back_sites[nbs_i], back_sites[nbs_j]) # N x N x 3
+        r_back = jnp.linalg.norm(dr_back, axis=1)
+        fene = v_fene(r_back)
 
-        dr_base_base = d(base_sites, base_sites)
-        dr_bb_base = d(bb_sites, base_sites)
-        dr_base_bb = d(base_sites, bb_sites)
+        # Excluded volume (bonded)
+        dr_base = d(base_sites[nbs_i], base_sites[nbs_j])
+        dr_back_base = d(back_sites[nbs_i], base_sites[nbs_j])
+        dr_base_back = d(base_sites[nbs_i], back_sites[nbs_j])
+        exc_vol = exc_vol_bonded(dr_base, dr_back_base, dr_base_back)
 
-        pdb.set_trace()
+        # dr_stack = d(stack_sites[nbs_i], stack_sites[nbs_j])
+        # stacking(dr_stack, Q)
 
         return jnp.sum(fene) / 2.0 # FIXME: placeholder
 
@@ -257,19 +309,18 @@ if __name__ == "__main__":
     stack_site = jnp.array(
         [0.5, 0.0, 0.0]
     )
-    bb_site = jnp.array(
+    back_site = jnp.array(
         [-1.0, 0.0, 0.0]
     )
-    bonded_neighbors = [
+    bonded_neighbors = onp.array([
         [0, 1],
         [1, 2],
         [2, 3],
-        [3, 4],
-        [4, 5]
-    ]
+        [3, 4]
+    ])
 
     energy_fn = static_energy_fn_factory(displacement,
-                                         bb_site=bb_site,
+                                         back_site=back_site,
                                          stack_site=stack_site,
                                          base_site=base_site,
                                          neighbors=bonded_neighbors)

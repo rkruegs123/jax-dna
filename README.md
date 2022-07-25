@@ -33,3 +33,14 @@ July 22, 2022
 - Need to solve for those additional parameters that aren't given but are determined
   - Can eventually throw them out with Carl's trick
 - Then, can proceed implementing. Will have to be careful when to vmap vs. just go element-wise. Will have to fiddle with flattening or not based on how neighbors are handled
+
+July 24, 2022
+- One game of Catan
+- re-read JAX sharp edges
+- make note of outstanding questions for Sam. E.g. why that if statement breaks thingsn
+- move things to `potential.py`
+- reimplement some potentials using Carl's trick
+- Joel Polos
+
+Next Questions for Sam
+- Why is if-statement throwing error when not even jit-ing it?

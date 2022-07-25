@@ -1,0 +1,20 @@
+[default] # Tom's thesis, oxDNA 1.0
+# FENE
+eps_backbone = 2.0
+delta_backbone = 0.25
+r0_backbone = 0.7525
+
+# Excluded volume
+eps_exc = 2.0
+## f3(dr_backbone)
+sigma_backbone = 0.70
+dr_star_backbone = 0.675
+## f3(dr_base)
+sigma_base = 0.33
+dr_star_base = 0.32
+## f3(dr_back_base)
+sigma_back_base = 0.515
+dr_star_back_base = 0.50
+## f3(dr_base_back)
+sigma_base_back = 0.515
+dr_star_base_back = 0.50
