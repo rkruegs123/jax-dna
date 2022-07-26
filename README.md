@@ -36,11 +36,9 @@ July 22, 2022
 
 July 24, 2022
 - One game of Catan
-- re-read JAX sharp edges
-- make note of outstanding questions for Sam. E.g. why that if statement breaks thingsn
-- move things to `potential.py`
 - reimplement some potentials using Carl's trick
 - Joel Polos
 
 Next Questions for Sam
 - Why is if-statement throwing error when not even jit-ing it?
+  - e.g. for f3
