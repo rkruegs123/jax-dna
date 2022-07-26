@@ -25,13 +25,13 @@ f1_solved_b = f1_solved[0][b]
 f1_solved_xc_star = f1_solved[0][xc_star]
 def get_f1_smoothing_params(eps, x0, a, xc, x_low, x_high):
     # Should be continuous at x_low and x_high
-    solved_b_low = f1_solved_b.subs({'x': x_low, 'eps': eps, 'x0': x0, 'a': a})
-    solved_xc_star_low = f1_solved_xc_star.subs({'x': x_low, 'eps': eps, 'x0': x0, 'a': a})
+    solved_b_low = f1_solved_b.subs({'x': x_low, 'eps': eps, 'x0': x0, 'a': a, 'xc': xc})
+    solved_xc_low = f1_solved_xc_star.subs({'x': x_low, 'eps': eps, 'x0': x0, 'a': a, 'xc': xc})
 
-    solved_b_high = f1_solved_b.subs({'x': x_high, 'eps': eps, 'x0': x0, 'a': a})
-    solved_xc_star_high = f1_solved_xc_star.subs({'x': x_high, 'eps': eps, 'x0': x0, 'a': a})
+    solved_b_high = f1_solved_b.subs({'x': x_high, 'eps': eps, 'x0': x0, 'a': a, 'xc': xc})
+    solved_xc_high = f1_solved_xc_star.subs({'x': x_high, 'eps': eps, 'x0': x0, 'a': a, 'xc': xc})
 
-    return float(solved_b_low.evalf()), float(solved_xc_star_low.evalf()), float(solved_b_high.evalf()), float(solved_xc_star_high.evalf())
+    return float(solved_b_low.evalf()), float(solved_xc_low.evalf()), float(solved_b_high.evalf()), float(solved_xc_high.evalf())
 
 
 # f2
@@ -103,7 +103,7 @@ f5_solved_b = f5_solved[0][b]
 f5_solved_xc = f5_solved[0][xc]
 def get_f5_smoothing_params(a, x_star):
     solved_b = f5_solved_b.subs({'x': x_star, 'a': a, 'x0': 0.0})
-    solved_xc = f5_solved_b.subs({'x': x_star, 'a': a, 'x0': 0.0})
+    solved_xc = f5_solved_xc.subs({'x': x_star, 'a': a, 'x0': 0.0})
     return float(solved_b.evalf()), float(solved_xc.evalf())
 
 
@@ -124,8 +124,25 @@ if __name__ == "__main__":
     import numpy as np
 
 
+    # Test stacking f1 dr_stack
+    """
+    eps = 1.3448 # FIXME: + 2.6568 kT
+    a = 6
+    x0 = 0.4
+    xc = 0.9
+    x_low = 0.32
+    x_high = 0.75
+    b_low, xc_low, b_high, xc_high = get_f1_smoothing_params(eps, x0, a, xc, x_low, x_high)
+    xs = np.linspace(0.25, 0.85, 30)
+    vs = [f1(x, x_low, x_high, xc_low, xc_high, eps, a, x0, xc, b_low, b_high) for x in xs]
+    plt.plot(xs, vs)
+    plt.axvline(x=x_low, linestyle='--')
+    plt.axvline(x=x_high, linestyle='--')
+    plt.show()
+    """
 
     # Test cross-stacking f2
+    """
     k = 47.5
     x0 = 0.575
     xc = 0.675
@@ -139,6 +156,7 @@ if __name__ == "__main__":
     plt.axvline(x=x_low, linestyle='--')
     plt.axvline(x=x_high, linestyle='--')
     plt.show()
+    """
 
 
     # Test excluded volume f3
@@ -187,3 +205,15 @@ if __name__ == "__main__":
     plt.axvline(x0 + delta_xc, linestyle='--')
     plt.show()
     """
+
+    # Test stack f5 -cos(phi1)
+    a = 2.0
+    x_star = -0.65
+    xs = np.linspace(-1, 1, 50)
+    b, xc = get_f5_smoothing_params(a, x_star)
+    vs = [f5(x, x_star, xc, a, b) for x in xs]
+    plt.plot(xs, vs)
+    plt.axvline(0, linestyle='--')
+    plt.axvline(xc, linestyle='--')
+    plt.axvline(x_star, linestyle='--')
+    plt.show()
