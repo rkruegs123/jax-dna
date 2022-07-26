@@ -56,7 +56,7 @@ def f2(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
        b_low, b_high # smoothing parameters
 ):
     if r_low < r and r < r_high:
-        return v_harm(r, k, r0) - v_harm(r_c, k, r0)
+        return v_harmonic(r, k, r0) - v_harmonic(r_c, k, r0)
     elif r_c_low < r and r < r_low:
         return k * v_smooth(r, b_low, r_c_low)
     elif r_high < r and r < r_c_high:
@@ -75,6 +75,7 @@ def f3(r, r_star, r_c, # thresholding/smoothing parameters
        b # smoothing parameters
 ):
 
+    """
     return jnp.where(jnp.less(r, r_star),
                      v_lj(r, eps, sigma),
                      jnp.where(jnp.logical_and(jnp.less(r_star, r), jnp.less(r, r_c)),
@@ -82,15 +83,15 @@ def f3(r, r_star, r_c, # thresholding/smoothing parameters
                                eps * v_smooth(r, b, r_c),
                                jnp.zeros(r.shape[0])))
 
-
     """
+
     if r < r_star:
         return v_lj(r, eps, sigma)
     elif r_star < r and r < r_c:
         return eps * v_smooth(r, b, r_c)
     else:
         return 0.0
-    """
+
 
 
 def f4(theta, theta0, delta_theta_star, delta_theta_c, # thresholding/smoothing parameters
