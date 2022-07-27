@@ -110,10 +110,11 @@ def get_f5_smoothing_params(a, x_star):
 """
 TODO:
 - load toml in such a way that we can override existing values
-- check smoothing parameters via plotting
+- check smoothing parameters via plotting -- DONE
 - make a "get_params" in a `utils.py` that takes in a .toml, calls these, subs with existing, and upates the dictionary
 - then, using this, can compare the if statements with jnp.where. Also, with the multiplicative isotropic cutoff
 - Note: tomorrow HAS to be Liu stuff AND Max stuff!
+- Finish stacking, put in real numbers, etc
 """
 
 
