@@ -73,6 +73,8 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
         # dr_stack = d(stack_sites[nbs_i], stack_sites[nbs_j])
         # stacking(dr_stack, Q)
 
+        pdb.set_trace()
+
         return jnp.sum(fene) / 2.0 # FIXME: placeholder
 
     return energy_fn

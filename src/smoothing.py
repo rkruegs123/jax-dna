@@ -162,7 +162,6 @@ if __name__ == "__main__":
 
 
     # Test excluded volume f3
-    """
     r_star = 0.675
     eps = 2.0
     sigma = 0.70
@@ -175,7 +174,6 @@ if __name__ == "__main__":
     plt.axvline(x=r_star, linestyle='--')
     plt.axvline(x=rc, linestyle='--')
     plt.show()
-    """
 
 
     # Test stacking f4_theta4
@@ -209,6 +207,7 @@ if __name__ == "__main__":
     """
 
     # Test stack f5 -cos(phi1)
+    """
     a = 2.0
     x_star = -0.65
     xs = np.linspace(-1, 1, 50)
@@ -219,3 +218,4 @@ if __name__ == "__main__":
     plt.axvline(xc, linestyle='--')
     plt.axvline(x_star, linestyle='--')
     plt.show()
+    """

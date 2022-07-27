@@ -2,11 +2,48 @@ import toml
 from pathlib import Path
 import pdb
 
+from jax import vmap
+from jax_md.rigid_body import Quaternion
+
 from smoothing import get_f1_smoothing_params, get_f2_smoothing_params, get_f3_smoothing_params, \
     get_f4_smoothing_params, get_f5_smoothing_params
 
 
+# Transform quaternions to nucleotide orientations
+
+## backbone-bsae orientation
+def q_to_v1(q):
+    q0, q1, q2, q3 = q.vec
+    return jnp.array([
+        q0**2 + q1**2 - q2**2 - q3**2,
+        2*(q1*q2 + q0*q3),
+        2*(q1*q3 - q0*q2)
+    ])
+Q_to_v1 = vmap(q_to_v1) # Q is system of quaternions, q is an individual quaternion
+
+## normal orientation
+def q_to_v2(q):
+    q0, q1, q2, q3 = q.vec
+    return jnp.array([
+        2*(q1*q3 + q0*q2),
+        2*(q2*q3 - q0*q1),
+        q0**2 - q1**2 - q2**2 + q3**2
+    ])
+Q_to_v2 = vmap(q_to_v2)
+
+## third axis (n x b)
+def q_to_v3(q):
+    q0, q1, q2, q3 = q.vec
+    return jnp.array([
+        2*(q1*q2 - q0*q3),
+        q0**2 - q1**2 + q2**2 - q3**2,
+        2*(q2*q3 + q0*q1)
+    ])
+Q_to_v3 = vmap(q_to_v3)
+
+
 # FIXME: should really take temperature as input (or kT)
+# FIXME: so, this means that thing rely on kT should really only be intermediate values in the *.toml file and they should be updaed to the full (whose name currently exists in the toml file) herex
 def get_params(config_path="tom.toml"):
     if not Path(config_path).exists():
         raise RuntimeError(f"No file at location: {config_path}")
@@ -261,9 +298,12 @@ def get_params(config_path="tom.toml"):
     params['coaxial_stacking']['b_cos_phi4'] = b_cos_phi4
     params['coaxial_stacking']['cos_phi4_c'] = cos_phi4_c
 
-
     return params
 
 
 if __name__ == "__main__":
-    get_params()
+    final_params = get_params()
+
+    pdb.set_trace()
+
+    print("done")
