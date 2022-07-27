@@ -3,6 +3,7 @@ from sympy.solvers import solve
 
 import pdb
 from copy import deepcopy
+import numpy as np
 
 # setup
 x, a, x0, b, xc, eps, sigma, k = symbols('x, a, x0, b, xc, eps, sigma, k')
@@ -79,20 +80,21 @@ f4_solved = solve([vmod_val - vsmooth_val, vmod_dx - vsmooth_dx], (b, xc), dict=
 # FIXME: check that values are in it
 f4_solved_b = f4_solved[0][b]
 f4_solved_xc = f4_solved[0][xc]
+tol = 1e-10
 def get_f4_smoothing_params(a, x0, delta_x_star):
     # Must be continuous at x_0 +- delta_x_star
-    solved_b_plus = f4_solved_b.subs({'x': x0 + delta_x_star, 'a': a, 'x0': x0, 'x0': x0})
-    solved_b_minus = f4_solved_b.subs({'x': x0 - delta_x_star, 'a': a, 'x0': x0, 'x0': x0})
+    solved_b_plus = f4_solved_b.subs({'x': x0 + delta_x_star, 'a': a, 'x0': x0})
+    solved_b_minus = f4_solved_b.subs({'x': x0 - delta_x_star, 'a': a, 'x0': x0})
 
-    assert(solved_b_plus == solved_b_minus) # FIXME: don't understand why this is true
+    assert(np.abs(solved_b_plus - solved_b_minus) < tol) # FIXME: don't understand why this is true
 
     # Solve total xc's, then adjust
-    solved_xc_plus = f4_solved_xc.subs({'x': x0 + delta_x_star, 'a': a, 'x0': x0, 'x0': x0})
+    solved_xc_plus = f4_solved_xc.subs({'x': x0 + delta_x_star, 'a': a, 'x0': x0})
     solved_delta_xc_plus = solved_xc_plus - x0
-    solved_xc_minus = f4_solved_xc.subs({'x': x0 - delta_x_star, 'a': a, 'x0': x0, 'x0': x0})
+    solved_xc_minus = f4_solved_xc.subs({'x': x0 - delta_x_star, 'a': a, 'x0': x0})
     solved_delta_xc_minus = x0 - solved_xc_minus
 
-    assert(solved_delta_xc_plus == solved_delta_xc_minus) # FIXME: don't understand why this is true
+    assert(np.abs(solved_delta_xc_plus - solved_delta_xc_minus) < tol) # FIXME: don't understand why this is true
 
     return float(solved_b_plus.evalf()), float(solved_delta_xc_plus.evalf())
 
@@ -110,6 +112,7 @@ def get_f5_smoothing_params(a, x_star):
 """
 TODO:
 - make a "get_params" in a `utils.py` that takes in a .toml, calls these, subs with existing, and upates the dictionary
+- fix potential.py based on new parameter TOML structure
 - then, using this, can compare the if statements with jnp.where. Also, with the multiplicative isotropic cutoff
 - Note: tomorrow HAS to be Liu stuff AND Max stuff!
 - Finish stacking, put in real numbers, etc
