@@ -96,19 +96,19 @@ delta_theta_star_hb_4 = 0.70
 
 ## f4(theta_7)
 a_hb_7 = 4.0
-theta0_hb_7 = 3.14159 / 2 # FIXME: pi / 2
+theta0_hb_7 = 1.575795 # FIXME: pi / 2
 delta_theta_star_hb_7 = 0.45
 
 ## f4(theta_8)
 a_hb_8 = 4.0
-theta0_hb_8 = 3.14159 / 2 # FIXME: pi / 2
+theta0_hb_8 = 1.575795 # FIXME: pi / 2
 delta_theta_star_hb_8 = 0.45
 
 
 # Cross Stacking
 [cross_stacking]
 
-## f2(dr_hb)
+## f2(dr_hb) # FIXME: is the _hb a typo?
 k = 47.5
 r0_cross = 0.575
 dr_c_cross = 0.675
@@ -117,7 +117,7 @@ dr_high_cross = 0.655
 
 ## f4(theta_1)
 a_cross_1 = 2.25
-theta0_cross_1 = 3.14159 - 2.35 # FIXME: pi - 2.35
+theta0_cross_1 = 0.79159 # FIXME: pi - 2.35
 delta_theta_star_cross_1 = 0.58
 
 ## f4(theta_2)
@@ -158,7 +158,7 @@ dr_high_coax = 0.58
 
 ## f4(theta_1) + f4(2*pi - theta_1)
 a_coax_1 = 2.00
-theta0_coax_1 = 3.14159 - 0.60 # FIXME: pi - 0.60
+theta0_coax_1 = 2.54159 # FIXME: pi - 0.60
 delta_theta_star_coax_1 = 0.65
 
 ## f4(theta_4)
