@@ -12,12 +12,29 @@ from smoothing import get_f1_smoothing_params, get_f2_smoothing_params, get_f3_s
 
 
 
-# FIXME: wrong?
 def principal_axes_to_euler_angles(x, y, z):
-    alpha = np.arccos(-z[1] / (np.sqrt(1 - z[2]**2)))
-    beta = np.arccos(z[2])
-    gamma = np.arccos(y[2] / np.sqrt(1 - z[2]**2))
-    return alpha, beta, gamma
+    """
+    There are two options to compute the Tait-Bryan angles. Each can be seen at the respective links:
+    (1) From wikipedia (under Tait-Bryan angles): https://en.wikipedia.org/wiki/Euler_angles
+    (2) Equation 10A-C: https://danceswithcode.net/engineeringnotes/rotations_in_3d/rotations_in_3d_part1.html
+
+    However, note that the definition from Wikipedia (i.e. the one using arcsin) has numerical stability issues,
+    so we use the definition from (2) (i.e. the one using arctan2)
+
+    Note that if we were following (1), we would do:
+    psi = np.arcsin(x[1] / np.sqrt(1 - x[2]**2))
+    theta = np.arcsin(-x[2])
+    phi = np.arcsin(y[2] / np.sqrt(1 - x[2]**2))
+
+    Note that Tait-Bryan (i.e. Cardan) angles are *not* proper euler angles
+    """
+
+    psi = np.arctan2(x[1], x[0])
+    theta = np.arcsin(-x[2])
+    phi = np.arctan2(y[2], z[2])
+
+    return psi, theta, phi
+
 
 
 # Read in oxDNA file
@@ -40,41 +57,49 @@ def read_config(fpath):
         assert(nuc_info.shape[0] == 15)
 
         com = nuc_info[:3]
-        base_vector = nuc_info[3:6]
-        base_normal = nuc_info[6:9]
+        back_base_vector = nuc_info[3:6] # back_base
+        base_normal = nuc_info[6:9] # base_norm
         velocity = nuc_info[9:12]
         angular_velocity = nuc_info[12:15]
 
         # Method 1
         """
-        alpha, beta, gamma = principal_axes_to_euler_angles(base_vector,
-                                                            base_normal,
-                                                            np.cross(base_normal, base_vector))
+        alpha, beta, gamma = principal_axes_to_euler_angles(back_base_vector,
+                                                            np.cross(base_normal, back_base_vector),
+                                                            base_normal)
 
-        def get_q(eenie, meenie, miney):
-            q0 = np.cos(meenie / 2) * np.cos(0.5*(eenie + miney))
-            q1 = np.sin(meenie / 2) * np.cos(0.5*(eenie - miney))
-            q2 = np.sin(meenie / 2) * np.sin(0.5*(eenie - miney))
-            q3 = np.cos(meenie / 2) * np.sin(0.5*(eenie + miney))
+        # https://ntrs.nasa.gov/citations/19770024290
+        # https://ntrs.nasa.gov/api/citations/19770024290/downloads/19770024290.pdf
+        # Page A-11 (ZYX)
+        def get_q(t1, t2, t3):
+            q0 = np.sin(0.5*t1)*np.sin(0.5*t2)*np.sin(0.5*t3) + np.cos(0.5*t1)*np.cos(0.5*t2)*np.cos(0.5*t3)
+            q1 = -np.sin(0.5*t1)*np.sin(0.5*t2)*np.cos(0.5*t3) + np.sin(0.5*t3)*np.cos(0.5*t1)*np.cos(0.5*t2)
+            q2 = np.sin(0.5*t1)*np.sin(0.5*t3)*np.cos(0.5*t2) + np.sin(0.5*t2)*np.cos(0.5*t1)*np.cos(0.5*t3)
+            q3 = np.sin(0.5*t1)*np.cos(0.5*t2)*np.cos(0.5*t3) - np.sin(0.5*t2)*np.sin(0.5*t3)*np.cos(0.5*t1)
             q = Quaternion(np.array([q0, q1, q2, q3]))
             return q
 
-        q = get_q(alpha, beta, gamma)
-        recovered_v1 = q_to_v1(q)
+        # For testing
+        # q = get_q(alpha, beta, gamma)
+        # recovered_back_base = q_to_back_base(q)  # should equal back_base_vector
         """
 
+
         # Method 2
-        rot_matrix = np.array([base_vector, np.cross(base_normal, base_vector), base_normal]).T
+        rot_matrix = np.array([back_base_vector, np.cross(base_normal, back_base_vector), base_normal]).T
         tr = np.trace(rot_matrix)
         q0 = np.sqrt((tr + 1) / 4)
         q1 = np.sqrt(rot_matrix[0, 0] / 2 + (1 - tr) / 4)
         q2 = np.sqrt(rot_matrix[1, 1] / 2 + (1 - tr) / 4)
         q3 = np.sqrt(rot_matrix[2, 2] / 2 + (1 - tr) / 4)
 
-        # q = Quaternion(np.array([q0, q1, q2, q3]))
-        # recovered_v1 = q_to_v1(q)
-        # recovered_v2 = q_to_v2(q)
-        # recovered_v3 = q_to_v3(q)
+        q = Quaternion(np.array([q0, q1, q2, q3]))
+        """
+        # Testing
+        recovered_back_base = q_to_back_base(q) # should equal back_base_vector
+        recovered_cross_prod = q_to_cross_prod(q) # should equal np.cross(base_normal, back_base_vector)
+        recovered_base_normal = q_to_base_normal(q) # should equal base_normal
+        """
 
         R[i, :] = com
         quat[i, :] = np.array([q0, q1, q2, q3])
@@ -86,34 +111,34 @@ def read_config(fpath):
 # Transform quaternions to nucleotide orientations
 
 ## backbone-bsae orientation
-def q_to_v1(q):
+def q_to_back_base(q):
     q0, q1, q2, q3 = q.vec
     return jnp.array([
         q0**2 + q1**2 - q2**2 - q3**2,
         2*(q1*q2 + q0*q3),
         2*(q1*q3 - q0*q2)
     ])
-Q_to_v1 = vmap(q_to_v1) # Q is system of quaternions, q is an individual quaternion
+Q_to_back_base = vmap(q_to_back_base) # Q is system of quaternions, q is an individual quaternion
 
 ## normal orientation
-def q_to_v2(q):
+def q_to_base_normal(q):
     q0, q1, q2, q3 = q.vec
     return jnp.array([
         2*(q1*q3 + q0*q2),
         2*(q2*q3 - q0*q1),
         q0**2 - q1**2 - q2**2 + q3**2
     ])
-Q_to_v2 = vmap(q_to_v2)
+Q_to_base_normal = vmap(q_to_base_normal)
 
 ## third axis (n x b)
-def q_to_v3(q):
+def q_to_cross_prod(q):
     q0, q1, q2, q3 = q.vec
     return jnp.array([
         2*(q1*q2 - q0*q3),
         q0**2 - q1**2 + q2**2 - q3**2,
         2*(q2*q3 + q0*q1)
     ])
-Q_to_v3 = vmap(q_to_v3)
+Q_to_cross_prod = vmap(q_to_cross_prod)
 
 
 # FIXME: should really take temperature as input (or kT)
@@ -378,4 +403,4 @@ def get_params(config_path="tom.toml"):
 if __name__ == "__main__":
     # final_params = get_params()
 
-    read_config("data/polyA_10bp/generated.dat")
+    body, box_size = read_config("data/polyA_10bp/generated.dat")

@@ -3,7 +3,7 @@ import jax.numpy as jnp
 import toml
 from jax_md import energy
 
-from utils import get_params, Q_to_v1
+from utils import get_params, Q_to_back_base, Q_to_cross_prod, Q_to_base_norm
 
 
 PARAMS = get_params()
