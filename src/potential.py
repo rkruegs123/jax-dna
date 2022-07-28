@@ -42,6 +42,16 @@ def f1(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
        eps, a, r0, r_c, # morse parameters
        b_low, b_high, # smoothing parameters
 ):
+
+    return jnp.where(jnp.logical_and(jnp.less(r_low, r), jnp.less(r, r_high)),
+                     v_morse(r, eps, r0, a) - v_morse(r_c, eps, r0, a),
+                     jnp.where(jnp.logical_and(jnp.less(r_c_low, r), jnp.less(r, r_low)),
+                               eps * v_smooth(r, b_low, r_c_low),
+                               jnp.where(jnp.logical_and(jnp.less(r_high, r), jnp.less(r, r_c_high)),
+                                         eps * v_smooth(r, b_high, r_c_high),
+                                         0.0)))
+
+    """
     if r_low < r and r < r_high:
         return v_morse(r, eps, r0, a) - v_morse(r_c, eps, r0, a)
     elif r_c_low < r and r < r_low:
@@ -50,12 +60,22 @@ def f1(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
         return eps * v_smooth(r, b_high, r_c_high)
     else:
         return 0.0
+    """
 
 
 def f2(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
        k, r0, r_c, # harmonic parameters
        b_low, b_high # smoothing parameters
 ):
+    return jnp.where(jnp.logical_and(jnp.less(r_low, r), jnp.less(r, r_high)),
+                     v_harmonic(r, k, r0) - v_harmonic(r_c, k, r0),
+                     jnp.where(jnp.logical_and(jnp.less(r_c_low, r), jnp.less(r, r_low)),
+                               k * v_smooth(r, b_low, r_c_low),
+                               jnp.where(jnp.logical_and(jnp.less(r_high, r), jnp.less(r, r_c_high)),
+                                         k * v_smooth(r, b_high, r_c_high),
+                                         0.0)))
+
+    """
     if r_low < r and r < r_high:
         return v_harmonic(r, k, r0) - v_harmonic(r_c, k, r0)
     elif r_c_low < r and r < r_low:
@@ -64,6 +84,7 @@ def f2(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
         return k * v_smooth(r, b_high, r_c_high)
     else:
         return 0.0
+    """
 
 
 def get_f3(r_star, r_c,
@@ -98,6 +119,17 @@ def f4(theta, theta0, delta_theta_star, delta_theta_c, # thresholding/smoothing 
        a, # mod parameters
        b # smoothing parameters
 ):
+    return jnp.where(jnp.logical_and(
+        jnp.less(theta0 - delta_theta_star, theta),
+        jnp.less(theta, theta0 + delta_theta_star)), v_mod(theta, a, theta0),
+              jnp.where(jnp.logical_and(
+                  jnp.less(theta0 - delta_theta_c, theta),
+                  jnp.less(theta, theta0 - delta_theta_star)), v_smooth(theta, b, theta0 - delta_theta_c),
+                  jnp.where(jnp.logical_and(
+                      jnp.less(theta0 + delta_theta_star, theta),
+                      jnp.less(theta, theta0 + delta_theta_c)), v_smooth(theta, b, theta0 + delta_theta_c),
+                      0.0)))
+    """
     if theta0 - delta_theta_star < theta and theta < theta0 + delta_theta_star:
         return v_mod(theta, a, theta0)
     elif theta0 - delta_theta_c < theta and theta < theta0 - delta_theta_star:
@@ -106,6 +138,7 @@ def f4(theta, theta0, delta_theta_star, delta_theta_c, # thresholding/smoothing 
         return v_smooth(theta, b, theta0 + delta_theta_c)
     else:
         return 0.0
+    """
 
 # FIXME: Confirm with megan that phi should be x in def of f5.
 # Note: for stacking, e.g. x = cos(phi)
@@ -113,6 +146,12 @@ def f5(x, x_star, x_c, # thresholding/smoothing parameters
        a, # mod parameters
        b # smoothing parameters
 ):
+    return jnp.where(jnp.greater(x, 0.0), 1.0,
+                     jnp.where(jnp.logical_and(jnp.less(x_star, x), jnp.less(x, 0.0)),
+                               v_mod(x, a, 0),
+                               jnp.where(jnp.logical_and(jnp.less(x_c, x), jnp.less(x, x_star)),
+                                         v_smooth(x, b, x_c), 0.0)))
+    """
     if x > 0:
         return 1.0
     elif x_star < x and x < 0:
@@ -121,6 +160,7 @@ def f5(x, x_star, x_c, # thresholding/smoothing parameters
         return v_smooth(x, b, x_c)
     else:
         return 0.0
+    """
 
 
 
@@ -162,7 +202,6 @@ def exc_vol_bonded(dr_base, dr_back_base, dr_base_back):
     t3 = f3_base_back(r_base_back)
 
     return t1 + t2 + t3
-
 
 
 def stacking(dr_stack, orientations):

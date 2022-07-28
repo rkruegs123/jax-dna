@@ -127,7 +127,7 @@ if __name__ == "__main__":
 
 
     # Test stacking f1 dr_stack
-    """
+
     eps = 1.3448 # FIXME: + 2.6568 kT
     a = 6
     x0 = 0.4
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     plt.axvline(x=x_low, linestyle='--')
     plt.axvline(x=x_high, linestyle='--')
     plt.show()
-    """
+
 
     # Test cross-stacking f2
     """
@@ -161,7 +161,9 @@ if __name__ == "__main__":
     """
 
 
+
     # Test excluded volume f3
+    """
     r_star = 0.675
     eps = 2.0
     sigma = 0.70
@@ -174,6 +176,7 @@ if __name__ == "__main__":
     plt.axvline(x=r_star, linestyle='--')
     plt.axvline(x=rc, linestyle='--')
     plt.show()
+    """
 
 
     # Test stacking f4_theta4
@@ -205,6 +208,7 @@ if __name__ == "__main__":
     plt.axvline(x0 + delta_xc, linestyle='--')
     plt.show()
     """
+
 
     # Test stack f5 -cos(phi1)
     """
