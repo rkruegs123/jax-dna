@@ -1,12 +1,86 @@
 import toml
 from pathlib import Path
 import pdb
+import numpy as np
 
 from jax import vmap
-from jax_md.rigid_body import Quaternion
+from jax_md.rigid_body import Quaternion, RigidBody
+import jax.numpy as jnp
 
 from smoothing import get_f1_smoothing_params, get_f2_smoothing_params, get_f3_smoothing_params, \
     get_f4_smoothing_params, get_f5_smoothing_params
+
+
+
+# FIXME: wrong?
+def principal_axes_to_euler_angles(x, y, z):
+    alpha = np.arccos(-z[1] / (np.sqrt(1 - z[2]**2)))
+    beta = np.arccos(z[2])
+    gamma = np.arccos(y[2] / np.sqrt(1 - z[2]**2))
+    return alpha, beta, gamma
+
+
+# Read in oxDNA file
+def read_config(fpath):
+    if not Path(fpath).exists():
+        raise RuntimeError(f"Configuration file does not exist at location: {fpath}")
+
+    with open(fpath) as f:
+        config_lines = f.readlines()
+
+    box_size = config_lines[1].split('=')[1].strip().split(' ')
+    box_size = np.array(box_size).astype(np.float64)
+
+    nuc_lines = config_lines[3:]
+    n = len(nuc_lines)
+    R = np.empty((n, 3), dtype=np.float64)
+    quat = np.empty((n, 4), dtype=np.float64)
+    for i, nuc_line in enumerate(nuc_lines):
+        nuc_info = np.array(nuc_line.strip().split(' '), dtype=np.float64)
+        assert(nuc_info.shape[0] == 15)
+
+        com = nuc_info[:3]
+        base_vector = nuc_info[3:6]
+        base_normal = nuc_info[6:9]
+        velocity = nuc_info[9:12]
+        angular_velocity = nuc_info[12:15]
+
+        # Method 1
+        """
+        alpha, beta, gamma = principal_axes_to_euler_angles(base_vector,
+                                                            base_normal,
+                                                            np.cross(base_normal, base_vector))
+
+        def get_q(eenie, meenie, miney):
+            q0 = np.cos(meenie / 2) * np.cos(0.5*(eenie + miney))
+            q1 = np.sin(meenie / 2) * np.cos(0.5*(eenie - miney))
+            q2 = np.sin(meenie / 2) * np.sin(0.5*(eenie - miney))
+            q3 = np.cos(meenie / 2) * np.sin(0.5*(eenie + miney))
+            q = Quaternion(np.array([q0, q1, q2, q3]))
+            return q
+
+        q = get_q(alpha, beta, gamma)
+        recovered_v1 = q_to_v1(q)
+        """
+
+        # Method 2
+        rot_matrix = np.array([base_vector, np.cross(base_normal, base_vector), base_normal]).T
+        tr = np.trace(rot_matrix)
+        q0 = np.sqrt((tr + 1) / 4)
+        q1 = np.sqrt(rot_matrix[0, 0] / 2 + (1 - tr) / 4)
+        q2 = np.sqrt(rot_matrix[1, 1] / 2 + (1 - tr) / 4)
+        q3 = np.sqrt(rot_matrix[2, 2] / 2 + (1 - tr) / 4)
+
+        # q = Quaternion(np.array([q0, q1, q2, q3]))
+        # recovered_v1 = q_to_v1(q)
+        # recovered_v2 = q_to_v2(q)
+        # recovered_v3 = q_to_v3(q)
+
+        R[i, :] = com
+        quat[i, :] = np.array([q0, q1, q2, q3])
+
+    body = RigidBody(R, Quaternion(quat))
+    return body, box_size
 
 
 # Transform quaternions to nucleotide orientations
@@ -302,8 +376,6 @@ def get_params(config_path="tom.toml"):
 
 
 if __name__ == "__main__":
-    final_params = get_params()
+    # final_params = get_params()
 
-    pdb.set_trace()
-
-    print("done")
+    read_config("data/polyA_10bp/generated.dat")
