@@ -23,6 +23,9 @@ from jax_md import rigid_body
 from jax_md.rigid_body import RigidBody, Quaternion
 
 from potential import v_fene, exc_vol_bonded, stacking
+from utils import read_config, jax_traj_to_oxdna_traj
+from utils import com_to_backbone, com_to_stacking, com_to_hb
+from utils import nucleotide_mass, get_kt
 
 
 FLAGS = jax_config.FLAGS
@@ -73,9 +76,8 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
         # dr_stack = d(stack_sites[nbs_i], stack_sites[nbs_j])
         # stacking(dr_stack, Q)
 
-        pdb.set_trace()
-
-        return jnp.sum(fene) / 2.0 # FIXME: placeholder
+        # return jnp.sum(fene) + jnp.sum(exc_vol)
+        return jnp.sum(fene)
 
     return energy_fn
 
@@ -89,12 +91,16 @@ if __name__ == "__main__":
     # Bug in rigid body -- Nose-Hoover defaults to f32(1.0) rather than a RigidBody with this value
     shape = rigid_body.point_union_shape(
       onp.array([[0.0, 0.0, 0.0]], f32),
-      f32(1.0)
+      f32(nucleotide_mass)
     ) # just to get the mass from
 
     mass = shape.mass()
 
-    box_size = 20.0
+    body, box_size = read_config("data/polyA_10bp/generated.dat")
+
+    # box_size = 20.0
+    box_size = box_size[0]
+
     displacement, shift = space.periodic(box_size)
     key = random.PRNGKey(0)
     key, pos_key, quat_key = random.split(key, 3)
@@ -103,43 +109,60 @@ if __name__ == "__main__":
     ## Uncomment to: Get random rigid body
     # R = box_size * random.uniform(pos_key, (N, 3), dtype=dtype)
 
-    N = 5
+    N = 10
 
     ## Initialize centers of mass via evenly spaced vertical heights
+    """
     R = jnp.array([
         [0.0, 0.0, 4.0],
+        [0.0, 0.0, 4.5],
         [0.0, 0.0, 5.0],
+        [0.0, 0.0, 5.5],
         [0.0, 0.0, 6.0],
+        [0.0, 0.0, 6.5],
         [0.0, 0.0, 7.0],
-        [0.0, 0.0, 8.0]
+        [0.0, 0.0, 7.5],
+        [0.0, 0.0, 8.0],
+        [0.0, 0.0, 8.5]
     ])
+    """
 
     ## Uncomment to: Get 5 different quaternions
     # quat_key = random.split(quat_key, N)
     # quaternion = rand_quat(quat_key, dtype) # FIXME: Does this not generate *pure* quaternions?
 
     ## Get one quaternion and copy it 5 times
+    """
     quat_key = random.split(quat_key, 1)
     single_quat = rand_quat(quat_key, dtype)
     quaternion = Quaternion(jnp.tile(single_quat.vec[0], (N, 1)))
 
     body = rigid_body.RigidBody(R, quaternion)
+    """
+
 
     base_site = jnp.array(
-        [1.0, 0.0, 0.0]
+        [com_to_hb, 0.0, 0.0]
     )
     stack_site = jnp.array(
-        [0.5, 0.0, 0.0]
+        [com_to_stacking, 0.0, 0.0]
     )
     back_site = jnp.array(
-        [-1.0, 0.0, 0.0]
+        [com_to_backbone, 0.0, 0.0]
     )
+    """
     bonded_neighbors = onp.array([
         [0, 1],
         [1, 2],
         [2, 3],
         [3, 4]
     ])
+    """
+
+    n = 10
+    bonded_neighbors = onp.array(
+        [[i, i+1] for i in range(n - 1)]
+    )
 
     energy_fn = static_energy_fn_factory(displacement,
                                          back_site=back_site,
@@ -150,8 +173,9 @@ if __name__ == "__main__":
 
     # Simulate with the energy function via Nose-Hoover
 
-    kT = 1e-3
-    dt = 5e-4
+    # kT = 1e-3
+    kT = get_kt(t=300) # 300 Kelvin = 0.1 kT
+    dt = 5e-3
 
     init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift, dt, kT)
 
@@ -163,11 +187,16 @@ if __name__ == "__main__":
     trajectory = list()
 
     for i in range(DYNAMICS_STEPS):
-      state = step_fn(state)
+        state = step_fn(state)
 
-      trajectory.append(state.position)
+        trajectory.append(state.position)
 
-    E_final = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
+    # E_final = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
 
 
-    # Add excluded volume and stacking
+    # FIXME: Add excluded volume and stacking
+
+
+    # jax_traj_to_oxdna_traj(trajectory, box_size, every_n=100)
+
+    print("done")
