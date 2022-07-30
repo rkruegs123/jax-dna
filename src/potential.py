@@ -2,8 +2,9 @@ from functools import partial
 import jax.numpy as jnp
 import toml
 from jax_md import energy
+import pdb
 
-from utils import get_params, Q_to_back_base, Q_to_cross_prod, Q_to_base_norm
+from utils import get_params, Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 
 
 PARAMS = get_params()
@@ -14,6 +15,7 @@ PARAMS = get_params()
 # FIXME: need some initial positions from Megan
 def v_fene(r, eps=PARAMS["fene"]["eps_backbone"],
            r0=PARAMS["fene"]["r0_backbone"], delt=PARAMS["fene"]["delta_backbone"]):
+    pdb.set_trace()
     x = (r - r0)**2 / delt**2
     # Note: if `x` is too big, we will easily try to take the log of negatives, wihch will yield `nan`
     return -eps / 2.0 * jnp.log(1 - x)
@@ -96,22 +98,34 @@ def f3(r, r_star, r_c, # thresholding/smoothing parameters
        eps, sigma, # lj parameters
        b # smoothing parameters
 ):
-
     return jnp.where(jnp.less(r, r_star),
                      v_lj(r, eps, sigma),
                      jnp.where(jnp.logical_and(jnp.less(r_star, r), jnp.less(r, r_c)),
                      # jnp.where(jnp.less(r_star, r) and jnp.less(r, r_c), # throws an error
                                eps * v_smooth(r, b, r_c),
                                jnp.zeros(r.shape[0])))
+"""
+# From Sam
+return jnp.where(r < r_star,
+v_lj(r, eps, sigma),
+jnp.where(r < r_c, # note that other condition is implicit
+eps * v_smooth(r, b r_c),
+0))
 
-    """
-    if r < r_star:
-        return v_lj(r, eps, sigma)
-    elif r_star < r and r < r_c:
-        return eps * v_smooth(r, b, r_c)
-    else:
-        return 0.0
-    """
+# Note that if you *do* need a logical and, you can use `(r > r_star) & (r < r_c)`
+# pythonic `and` always tries to coerce arguments into boolean
+# Jax has overridden & -- it is (1) jittable, (2) element wise, and (3) doesn't force serial execution (and therefore GPU->CPU data transfer)
+"""
+
+"""
+if r < r_star:
+    return v_lj(r, eps, sigma)
+elif r_star < r and r < r_c:
+    return eps * v_smooth(r, b, r_c)
+else:
+    return 0.0
+"""
+
 
 
 
