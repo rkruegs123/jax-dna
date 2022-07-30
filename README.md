@@ -42,3 +42,10 @@ July 24, 2022
 Next Questions for Sam
 - Why is if-statement throwing error when not even jit-ing it?
   - e.g. for f3
+
+July 29, 2022
+- I *think* when we add the real sites w.r.t. the COM, we get a NAN from the config for a 10bp polyA. This is probably because the config is for oxDNA2, not 1
+  - TODO: check by reverting back to old site relative positions
+- Can visualize either using cogli2 or just oxView
+  - TODO: F/u with Lorenzo about +/- for toggling configurations in cogli2
+- Should really just add a rough sketch of stacking and dynamic neighbors...
