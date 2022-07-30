@@ -12,6 +12,80 @@ from smoothing import get_f1_smoothing_params, get_f2_smoothing_params, get_f3_s
 
 
 
+# oxDNA unit conversions
+
+# Tom's thesis, page 23, bottom
+ang_per_oxdna_length = 8.518
+def angstroms_to_oxdna_length(ang):
+    return ang / ang_per_oxdna_length
+def oxdna_length_to_angstroms(l):
+    return l * ang_per_oxdna_length
+# Tom's thesis, page 24, top
+joules_per_oxdna_energy = 4.142e-20
+def joules_to_oxdna_energy(j):
+    return j / joules_per_oxdna_energy
+def oxdna_energy_to_joules(e):
+    return e * joules_per_oxdna_energy
+kb = 1.380649e-23 # joules per kelvin
+kb_oxdna = kb / joules_per_oxdna_energy # oxdna energy per kelvin
+def get_kt(t): # t is temperature in kelvin
+    return kb_oxdna * t
+# Tom's thesis, page 36, bottom (Section 2.5)
+amu_per_oxdna_mass = 100
+def amu_to_oxdna_mass(amu):
+    return amu / amu_per_oxdna_mass
+def oxdna_mass_to_amu(m):
+    return m * amu_per_oxdna_mass
+nucleotide_mass = 3.1575 # 3.1575 M
+moment_of_inertia = 0.43512 # FIXME: do we use this?
+
+backbone_to_com = 0.24 # 0.24 l. Tom's thesis, page 36, bottom (Section 2.5)
+backbone_to_stacking_angstroms = 6.3 # 6.3 A. Tom's thesis, page 23
+backbone_to_stacking = angstroms_to_oxdna_length(backbone_to_stacking_angstroms)
+backbone_to_hb_angstroms = 6.8 # 6.8 A. Tom's thesis, page 23
+backbone_to_hb = angstroms_to_oxdna_length(backbone_to_hb_angstroms)
+"""
+Diagram (not to scale):
+(backbone)----[com]------(stacking)--(hb)
+"""
+com_to_stacking = backbone_to_stacking - backbone_to_com
+com_to_hb = backbone_to_hb - backbone_to_com
+com_to_backbone = -backbone_to_com
+
+
+
+# Box size is float, jax_traj is list of RigidBody's
+def jax_traj_to_oxdna_traj(jax_traj, box_size, every_n=1):
+    # jax_traj is a list of state.position (of rigid bodies)
+    output_lines = list()
+    n = jax_traj[0].center.shape[0]
+
+    for i, st in enumerate(jax_traj):
+        if i % every_n != 0:
+            continue
+        output_lines.append(f"t = {i}\n")
+        output_lines.append(f"b = {box_size} {box_size} {box_size}\n") # FIXME: only cubes for now
+        output_lines.append(f"E = 0.0 0.0 0.0\n") # FIXME: dummy
+        back_base_vectors = Q_to_back_base(st.orientation)
+        base_normal_vectors = Q_to_base_normal(st.orientation)
+        velocities = np.zeros((n, 3))
+        angular_velocities = np.zeros((n, 3))
+
+        for idx in range(n):
+            line_vals = np.concatenate((st.center[idx], back_base_vectors[idx],
+                                        base_normal_vectors[idx], velocities[idx],
+                                        angular_velocities[idx])).astype(str)
+            output_lines.append(' '.join(line_vals) + "\n")
+
+
+    pdb.set_trace()
+    with open('test.dat', 'w') as of:
+        of.writelines(output_lines)
+
+    return
+
+
+
 def principal_axes_to_euler_angles(x, y, z):
     """
     There are two options to compute the Tait-Bryan angles. Each can be seen at the respective links:
