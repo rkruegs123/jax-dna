@@ -1,0 +1,153 @@
+import numpy as onp
+import pdb
+import toml
+from functools import partial
+
+from jax import jit
+from jax import vmap
+from jax import random
+from jax import lax
+
+from jax.config import config as jax_config
+import jax.numpy as jnp
+
+from jax_md import quantity
+from jax_md import simulate
+from jax_md import space
+from jax_md import smap
+from jax_md import energy
+from jax_md import test_util
+from jax_md import partition
+from jax_md import util
+from jax_md import rigid_body
+from jax_md.rigid_body import RigidBody, Quaternion
+
+from potential import v_fene, exc_vol_bonded, stacking
+from utils import read_config, jax_traj_to_oxdna_traj
+from utils import com_to_backbone, com_to_stacking, com_to_hb
+from utils import nucleotide_mass, get_kt
+
+
+FLAGS = jax_config.FLAGS
+DYNAMICS_STEPS = 100
+
+
+f32 = util.f32
+f64 = util.f64
+
+DTYPE = [f32]
+if FLAGS.jax_enable_x64:
+    DTYPE += [f64]
+
+@partial(vmap, in_axes=(0, None))
+def rand_quat(key, dtype):
+    return rigid_body.random_quaternion(key, dtype)
+
+
+def dynamic_energy_fn_factory(displacement_fn, back_site, stack_site, base_site):
+
+    d = space.map_bond(partial(displacement_fn))
+
+    def energy_fn(body: RigidBody, neighbor: partition.NeighborList) -> float:
+        Q = body.orientation
+        back_sites = body.center + rigid_body.quaternion_rotate(Q, back_site) # (N, 3)
+        stack_sites = body.center + rigid_body.quaternion_rotate(Q, stack_site)
+        base_sites = body.center + rigid_body.quaternion_rotate(Q, base_site)
+
+        pdb.set_trace()
+        nbs_i = neighbor[:, 0]
+        nbs_j = neighbor[:, 1]
+
+        # FIXME: completey wrong potential
+        # FENE
+        dr_back = d(back_sites[nbs_i], back_sites[nbs_j]) # N x N x 3
+        r_back = jnp.linalg.norm(dr_back, axis=1)
+        fene = v_fene(r_back)
+
+        return jnp.sum(fene)
+
+    return energy_fn
+
+
+if __name__ == "__main__":
+
+    # Bug in rigid body -- Nose-Hoover defaults to f32(1.0) rather than a RigidBody with this value
+    shape = rigid_body.point_union_shape(
+      onp.array([[0.0, 0.0, 0.0]], f32),
+      f32(nucleotide_mass)
+    ) # just to get the mass from
+
+    mass = shape.mass()
+
+    body, box_size = read_config("data/polyA_10bp/generated.dat")
+
+    # box_size = 20.0
+    box_size = box_size[0]
+
+    displacement, shift = space.periodic(box_size)
+    key = random.PRNGKey(0)
+    key, pos_key, quat_key = random.split(key, 3)
+    dtype = DTYPE[0]
+
+
+    N = 10
+
+
+    base_site = jnp.array(
+        [com_to_hb, 0.0, 0.0]
+    )
+    stack_site = jnp.array(
+        [com_to_stacking, 0.0, 0.0]
+    )
+    back_site = jnp.array(
+        [com_to_backbone, 0.0, 0.0]
+    )
+
+
+    n = 10
+    bonded_neighbors = onp.array(
+        [[i, i+1] for i in range(n - 1)]
+    )
+
+    neighbor_fn = partition.neighbor_list(
+        displacement,
+        box_size,
+        r_cutoff=100.0,
+        dr_threshold=0.0,
+        mask_self=True,
+        custom_mask_function=None, # FIXME: update to mask anything in first sum
+        fractional_coordinates=False,
+        format=partition.OrderedSparse, # important. We can just ensure that 5'->3' ordering is consistent with i<j
+    )
+    energy_fn = dynamic_energy_fn_factory(displacement,
+                                          back_site=back_site,
+                                          stack_site=stack_site,
+                                          base_site=base_site)
+
+
+    # Simulate with the energy function via Nose-Hoover
+
+    # kT = 1e-3
+    kT = get_kt(t=300) # 300 Kelvin = 0.1 kT
+    dt = 5e-3
+
+    init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift, dt, kT)
+
+    # step_fn = jit(step_fn)
+    nbrs = neighbor_fn.allocate(body)
+    state = init_fn(key, body, mass=mass, neighbor=nbrs)
+    E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT, neighbor=nbrs)
+
+    # trajectory = list()
+
+    for i in range(DYNAMICS_STEPS):
+        state = step_fn(state, neighbor=nbrs)
+        # nbrs = jit(neighbor_fn.update)(state.position, nbrs)
+        nbrs = neighbor_fn.update(state.position, nbrs)
+
+        # trajectory.append(state.position)
+
+    # E_final = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT, neighbor=nbrs)
+
+
+    print("done")

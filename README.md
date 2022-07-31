@@ -52,3 +52,8 @@ July 29, 2022
 - For first neighbor function, can probably just use partition.neighbor_list
   - Will have to see if smap elevates the neighbor function at all, hoewver. I think not -- i.e. `smap.pair_neighbor_list` only elevates `fn` to *use* a neighbor list. The neighbor function produced by `partition.neighbor_list` should be all we need...
   - The one negative is that `partition.neighbor_list` appears to only be built for defining a radius w.r.t to some metric. I imagine the neighbor list in oxDNA is more complicated than that...
+
+July 30, 2022
+- So, `partition.neighbor_list` is exactly what we want, but it doesn't support `RigidBody` yet. Emailed Sam.
+  - Note that by fixing the format as `partition.OrderedSparse`, we can assure that `i < j` for a pair `(i, j)` in the neighbor list. So, we can enforce the direction that gets passed to the potentials!
+- In the meantime, we should just implement all the potentials. Note the above ability to constrain the direction when doing so.
