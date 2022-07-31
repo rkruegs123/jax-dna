@@ -13,6 +13,7 @@ EXC_VOL_PARAMS = PARAMS["excluded_volume"]
 STACK_PARAMS = PARAMS["stacking"]
 HB_PARAMS = PARAMS["hydrogen_bonding"]
 CROSS_PARAMS = PARAMS["cross_stacking"]
+COAX_PARAMS = PARAMS["coaxial_stacking"]
 
 
 # Define individual potentials
@@ -189,19 +190,19 @@ f3_base = get_f3(r_star=EXC_VOL_PARAMS["dr_star_base"],
                  eps=EXC_VOL_PARAMS["eps_exc"],
                  sigma=EXC_VOL_PARAMS["sigma_base"])
 """
-f3_base = partial(f3,
+f3_base_exc_vol = partial(f3,
                   r_star=EXC_VOL_PARAMS["dr_star_base"],
                   r_c=EXC_VOL_PARAMS["dr_c_base"],
                   eps=EXC_VOL_PARAMS["eps_exc"],
                   sigma=EXC_VOL_PARAMS["sigma_base"],
                   b=EXC_VOL_PARAMS["b_base"])
-f3_back_base = partial(f3,
+f3_back_base_exc_vol = partial(f3,
                        r_star=EXC_VOL_PARAMS["dr_star_back_base"],
                        r_c=EXC_VOL_PARAMS["dr_c_back_base"],
                        eps=EXC_VOL_PARAMS["eps_exc"],
                        sigma=EXC_VOL_PARAMS["sigma_back_base"],
                        b=EXC_VOL_PARAMS["b_back_base"])
-f3_base_back = partial(f3,
+f3_base_back_exc_vol = partial(f3,
                        r_star=EXC_VOL_PARAMS["dr_star_base_back"],
                        r_c=EXC_VOL_PARAMS["dr_c_base_back"],
                        eps=EXC_VOL_PARAMS["eps_exc"],
@@ -213,7 +214,8 @@ def exc_vol_bonded(dr_base, dr_back_base, dr_base_back):
     r_back_base = jnp.linalg.norm(dr_back_base, axis=1)
     r_base_back = jnp.linalg.norm(dr_base_back, axis=1)
 
-    return f3_base(r_base) + f3_back_base(r_back_base) + f3_base_back(r_base_back)
+    return f3_base_exc_vol(r_base) + f3_back_base_exc_vol(r_back_base) \
+        + f3_base_back_exc_vol(r_base_back)
 
 
 f1_dr_stack = partial(f1,
@@ -227,34 +229,34 @@ f1_dr_stack = partial(f1,
                       r_c=STACK_PARAMS["dr_c_stack"],
                       b_low=STACK_PARAMS["b_low_stack"],
                       b_high=STACK_PARAMS["b_high_stack"])
-f4_theta_4 = partial(f4,
-                     theta0=STACK_PARAMS["theta0_stack_4"],
-                     delta_theta_star=STACK_PARAMS["delta_theta_star_stack_4"],
-                     delta_theta_c=STACK_PARAMS["delta_theta_4_c"],
-                     a=STACK_PARAMS["a_stack_4"],
-                     b=STACK_PARAMS["b_theta_4"])
-f4_theta_5p = partial(f4,
-                      theta0=STACK_PARAMS["theta0_stack_5"],
-                      delta_theta_star=STACK_PARAMS["delta_theta_star_stack_5"],
-                      delta_theta_c=STACK_PARAMS["delta_theta_5_c"],
-                      a=STACK_PARAMS["a_stack_5"],
-                      b=STACK_PARAMS["b_theta_5"])
-f4_theta_6p = partial(f4,
-                      theta0=STACK_PARAMS["theta0_stack_6"],
-                      delta_theta_star=STACK_PARAMS["delta_theta_star_stack_6"],
-                      delta_theta_c=STACK_PARAMS["delta_theta_6_c"],
-                      a=STACK_PARAMS["a_stack_6"],
-                      b=STACK_PARAMS["b_theta_6"])
-f5_neg_cosphi1 = partial(f5,
-                         x_star=STACK_PARAMS["neg_cos_phi1_star_stack"],
-                         x_c=STACK_PARAMS["neg_cos_phi1_c"],
-                         a=STACK_PARAMS["a_stack_1"],
-                         b=STACK_PARAMS["b_neg_cos_phi1"])
-f5_neg_cosphi2 = partial(f5,
-                         x_star=STACK_PARAMS["neg_cos_phi2_star_stack"],
-                         x_c=STACK_PARAMS["neg_cos_phi2_c"],
-                         a=STACK_PARAMS["a_stack_2"],
-                         b=STACK_PARAMS["b_neg_cos_phi2"])
+f4_theta_4_stack = partial(f4,
+                           theta0=STACK_PARAMS["theta0_stack_4"],
+                           delta_theta_star=STACK_PARAMS["delta_theta_star_stack_4"],
+                           delta_theta_c=STACK_PARAMS["delta_theta_4_c"],
+                           a=STACK_PARAMS["a_stack_4"],
+                           b=STACK_PARAMS["b_theta_4"])
+f4_theta_5p_stack = partial(f4,
+                            theta0=STACK_PARAMS["theta0_stack_5"],
+                            delta_theta_star=STACK_PARAMS["delta_theta_star_stack_5"],
+                            delta_theta_c=STACK_PARAMS["delta_theta_5_c"],
+                            a=STACK_PARAMS["a_stack_5"],
+                            b=STACK_PARAMS["b_theta_5"])
+f4_theta_6p_stack = partial(f4,
+                            theta0=STACK_PARAMS["theta0_stack_6"],
+                            delta_theta_star=STACK_PARAMS["delta_theta_star_stack_6"],
+                            delta_theta_c=STACK_PARAMS["delta_theta_6_c"],
+                            a=STACK_PARAMS["a_stack_6"],
+                            b=STACK_PARAMS["b_theta_6"])
+f5_neg_cosphi1_stack = partial(f5,
+                               x_star=STACK_PARAMS["neg_cos_phi1_star_stack"],
+                               x_c=STACK_PARAMS["neg_cos_phi1_c"],
+                               a=STACK_PARAMS["a_stack_1"],
+                               b=STACK_PARAMS["b_neg_cos_phi1"])
+f5_neg_cosphi2_stack = partial(f5,
+                               x_star=STACK_PARAMS["neg_cos_phi2_star_stack"],
+                               x_c=STACK_PARAMS["neg_cos_phi2_c"],
+                               a=STACK_PARAMS["a_stack_2"],
+                               b=STACK_PARAMS["b_neg_cos_phi2"])
 def stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2):
     # need dr_stack, theta_4, theta_5, theta_6, phi1, and phi2
     # theta_4: angle between base normal vectors
@@ -264,8 +266,9 @@ def stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2):
 
     r_stack = jnp.linalg.norm(dr_stack, axis=1)
 
-    return f1_dr_stack(r_stack) * f4_theta_4(theta_4) * f4_theta_5p(theta_5) \
-        * f4_theta_6p(theta_6) * f5_neg_cosphi1(-cosphi1) * f5_neg_cosphi2(-cosphi2)
+    return f1_dr_stack(r_stack) * f4_theta_4_stack(theta_4) \
+        * f4_theta_5p_stack(theta_5) * f4_theta_6p_stack(theta_6) \
+        * f5_neg_cosphi1_stack(-cosphi1) * f5_neg_cosphi2_stack(-cosphi2)
 
 
 f1_dr_hb = partial(f1,
@@ -377,6 +380,20 @@ def cross_stacking(dr_hb, theta1, theta2, theta3, theta4, theta7, theta8):
         * (f4_theta_4_cross(theta4) + f4_theta_4_cross(jnp.pi - theta4)) \
         * (f4_theta_7_cross(theta7) + f4_theta_7_cross(jnp.pi - theta7)) \
         * (f4_theta_8_cross(theta8) + f4_theta_8_cross(jnp.pi - theta8))
+
+
+# FIXME: Coaxial stacking
+f2_dr_coax = partial(f2,
+                     r_low=COAX_PARAMS["dr_low_coax"],
+                     r_high=COAX_PARAMS["dr_high_coax"],
+                     r_c_low=COAX_PARAMS["dr_c_low_coax"],
+                     r_c_high=COAX_PARAMS["dr_c_high_coax"],
+                     k=COAX_PARAMS["k_coax"],
+                     r0=COAX_PARAMS["dr0_coax"],
+                     r_c=COAX_PARAMS["dr_c_coax"],
+                     b_low=COAX_PARAMS["b_low_coax"],
+                     b_high=COAX_PARAMS["b_high_coax"])
+
 
 if __name__ == "__main__":
     pass
