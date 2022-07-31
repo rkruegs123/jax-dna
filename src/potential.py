@@ -4,7 +4,7 @@ import toml
 from jax_md import energy
 import pdb
 
-from utils import get_params, Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
+from utils import get_params
 
 
 PARAMS = get_params()
@@ -15,7 +15,6 @@ PARAMS = get_params()
 # FIXME: need some initial positions from Megan
 def v_fene(r, eps=PARAMS["fene"]["eps_backbone"],
            r0=PARAMS["fene"]["r0_backbone"], delt=PARAMS["fene"]["delta_backbone"]):
-    pdb.set_trace()
     x = (r - r0)**2 / delt**2
     # Note: if `x` is too big, we will easily try to take the log of negatives, wihch will yield `nan`
     return -eps / 2.0 * jnp.log(1 - x)
@@ -211,14 +210,43 @@ def exc_vol_bonded(dr_base, dr_back_base, dr_base_back):
     # FIXME: need to add rc's and b's
     # Note: r_c must be greater than r*
 
-    t1 = f3_base(r_base)
-    t2 = f3_back_base(r_back_base)
-    t3 = f3_base_back(r_base_back)
+    term1 = f3_base(r_base)
+    term2 = f3_back_base(r_back_base)
+    term3 = f3_base_back(r_base_back)
 
-    return t1 + t2 + t3
+    return term1 + term2 + term3
 
 
-def stacking(dr_stack, orientations):
+f1_dr_stack = partial(f1,
+                      r_low=PARAMS["stacking"]["dr_low_stack"],
+                      r_high=PARAMS["stacking"]["dr_high_stack"],
+                      r_c_low=PARAMS["stacking"]["dr_c_low_stack"],
+                      r_c_high=PARAMS["stacking"]["dr_c_high_stack"],
+                      eps=PARAMS["stacking"]["eps_stack"],
+                      a=PARAMS["stacking"]["a_stack"],
+                      r0=PARAMS["stacking"]["dr0_stack"],
+                      r_c=PARAMS["stacking"]["dr_c_stack"],
+                      b_low=PARAMS["stacking"]["b_low_stack"],
+                      b_high=PARAMS["stacking"]["b_high_stack"])
+f4_theta_4 = partial(f4,
+                     theta0=PARAMS["stacking"]["theta0_stack_4"],
+                     delta_theta_star=PARAMS["stacking"]["delta_theta_star_stack_4"],
+                     delta_theta_c=PARAMS["stacking"]["delta_theta_4_c"],
+                     a=PARAMS["stacking"]["a_stack_4"],
+                     b=PARAMS["stacking"]["b_theta_4"])
+f4_theta_5p = partial(f4,
+                      theta0=PARAMS["stacking"]["theta0_stack_5"],
+                      delta_theta_star=PARAMS["stacking"]["delta_theta_star_stack_5"],
+                      delta_theta_c=PARAMS["stacking"]["delta_theta_5_c"],
+                      a=PARAMS["stacking"]["a_stack_5"],
+                      b=PARAMS["stacking"]["b_theta_5"])
+f4_theta_6p = partial(f4,
+                      theta0=PARAMS["stacking"]["theta0_stack_6"],
+                      delta_theta_star=PARAMS["stacking"]["delta_theta_star_stack_6"],
+                      delta_theta_c=PARAMS["stacking"]["delta_theta_6_c"],
+                      a=PARAMS["stacking"]["a_stack_6"],
+                      b=PARAMS["stacking"]["b_theta_6"])
+def stacking(dr_stack, theta4, theta5, theta6):
     # need dr_stack, theta_4, theta_5, theta_6, phi1, and phi2
     # theta_4: angle between base normal vectors
     # theta_5: angle between base normal and line passing throug stacking
@@ -227,21 +255,13 @@ def stacking(dr_stack, orientations):
 
     r_stack = jnp.linalg.norm(dr_stack, axis=1)
 
-    normals_sf = rigid_body.quaternion_rotate(orientations, normal) # space frame
+    term1 = f1_dr_stack(r_stack)
 
-
-    # t4 = jnp.arccos(jnp.einsum('ij, ij->i', normals_sf, normals_sf)) # FIXME: should probably be (N, N) rather than (N,)
-    t4 = normals_sf @ normals_sf.T # TODO: check that transposing keeps the appropriate ordering of the indices
-
-    pdb.set_trace()
-
-
-    # FIXME: FORGOT that we had already selected the neighbors by this point. Don't really want to have access to them here -- e.g., just compute t4 outside and pass in. Should check that we similarly abide by this logic in exc_volume_bonded
 
 
     # for the phi's, we also need dr_backbone and the cross product of the normal and backbone-base vectors
     # phi1:
-    pass
+    raise NotImplementedError
 
 
 
