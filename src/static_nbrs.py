@@ -26,6 +26,7 @@ from potential import v_fene, exc_vol_bonded, stacking
 from utils import read_config, jax_traj_to_oxdna_traj
 from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import nucleotide_mass, get_kt
+from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 
 
 FLAGS = jax_config.FLAGS
@@ -73,7 +74,15 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
         dr_base_back = d(base_sites[nbs_i], back_sites[nbs_j])
         exc_vol = exc_vol_bonded(dr_base, dr_back_base, dr_base_back)
 
-        # dr_stack = d(stack_sites[nbs_i], stack_sites[nbs_j])
+        # Stacking
+        dr_stack = d(stack_sites[nbs_i], stack_sites[nbs_j])
+        base_normals = Q_to_base_normal(Q) # space frame, normalized
+        pdb.set_trace()
+        theta4 = jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], base_normals[nbs_j])) # FIXME: understand `einsum`
+        pdb.set_trace()
+        # FIXME: have to normalize the cosine here by the magnitude of dr_stack
+        theta5 = jnp.pi - jnp.arccos(jnp.einsum('ij, ij->i', dr_stack, base_normals[nbs_j]))
+        theta6 = jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], dr_stack))
         # stacking(dr_stack, Q)
 
         # return jnp.sum(fene) + jnp.sum(exc_vol)
@@ -84,8 +93,6 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
 
 if __name__ == "__main__":
 
-
-    # Next: Read original carl notebook, then look at my oxDNA notebook and corroborate with data, smooth versions for each f_i, then simple...
 
 
     # Bug in rigid body -- Nose-Hoover defaults to f32(1.0) rather than a RigidBody with this value
