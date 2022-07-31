@@ -108,7 +108,7 @@ delta_theta_star_hb_8 = 0.45
 # Cross Stacking
 [cross_stacking]
 
-## f2(dr_hb) # FIXME: is the _hb a typo?
+## f2(dr_cross) # FIXME: is the _hb a typo? (in Tom's thesis, called f2(dr_hb)
 k = 47.5
 r0_cross = 0.575
 dr_c_cross = 0.675
