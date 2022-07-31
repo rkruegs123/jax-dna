@@ -12,6 +12,7 @@ FENE_PARAMS = PARAMS["fene"]
 EXC_VOL_PARAMS = PARAMS["excluded_volume"]
 STACK_PARAMS = PARAMS["stacking"]
 HB_PARAMS = PARAMS["hydrogen_bonding"]
+CROSS_PARAMS = PARAMS["cross_stacking"]
 
 
 # Define individual potentials
@@ -278,49 +279,104 @@ f1_dr_hb = partial(f1,
                    r_c=HB_PARAMS["dr_c_hb"],
                    b_low=HB_PARAMS["b_low_hb"],
                    b_high=HB_PARAMS["b_high_hb"])
-f4_theta_1 = partial(f4,
-                     theta0=HB_PARAMS["theta0_hb_1"],
-                     delta_theta_star=HB_PARAMS["delta_theta_star_hb_1"],
-                     delta_theta_c=HB_PARAMS["delta_theta_1_c"],
-                     a=HB_PARAMS["a_hb_1"],
-                     b=HB_PARAMS["b_theta_1"])
-f4_theta_2 = partial(f4,
-                     theta0=HB_PARAMS["theta0_hb_2"],
-                     delta_theta_star=HB_PARAMS["delta_theta_star_hb_2"],
-                     delta_theta_c=HB_PARAMS["delta_theta_2_c"],
-                     a=HB_PARAMS["a_hb_2"],
-                     b=HB_PARAMS["b_theta_2"])
-f4_theta_3 = partial(f4,
-                     theta0=HB_PARAMS["theta0_hb_3"],
-                     delta_theta_star=HB_PARAMS["delta_theta_star_hb_3"],
-                     delta_theta_c=HB_PARAMS["delta_theta_3_c"],
-                     a=HB_PARAMS["a_hb_3"],
-                     b=HB_PARAMS["b_theta_3"])
-f4_theta_4 = partial(f4,
-                     theta0=HB_PARAMS["theta0_hb_4"],
-                     delta_theta_star=HB_PARAMS["delta_theta_star_hb_4"],
-                     delta_theta_c=HB_PARAMS["delta_theta_4_c"],
-                     a=HB_PARAMS["a_hb_4"],
-                     b=HB_PARAMS["b_theta_4"])
-f4_theta_7 = partial(f4,
-                     theta0=HB_PARAMS["theta0_hb_7"],
-                     delta_theta_star=HB_PARAMS["delta_theta_star_hb_7"],
-                     delta_theta_c=HB_PARAMS["delta_theta_7_c"],
-                     a=HB_PARAMS["a_hb_7"],
-                     b=HB_PARAMS["b_theta_7"])
-f4_theta_8 = partial(f4,
-                     theta0=HB_PARAMS["theta0_hb_8"],
-                     delta_theta_star=HB_PARAMS["delta_theta_star_hb_8"],
-                     delta_theta_c=HB_PARAMS["delta_theta_8_c"],
-                     a=HB_PARAMS["a_hb_8"],
-                     b=HB_PARAMS["b_theta_8"])
+f4_theta_1_hb = partial(f4,
+                        theta0=HB_PARAMS["theta0_hb_1"],
+                        delta_theta_star=HB_PARAMS["delta_theta_star_hb_1"],
+                        delta_theta_c=HB_PARAMS["delta_theta_1_c"],
+                        a=HB_PARAMS["a_hb_1"],
+                        b=HB_PARAMS["b_theta_1"])
+f4_theta_2_hb = partial(f4,
+                        theta0=HB_PARAMS["theta0_hb_2"],
+                        delta_theta_star=HB_PARAMS["delta_theta_star_hb_2"],
+                        delta_theta_c=HB_PARAMS["delta_theta_2_c"],
+                        a=HB_PARAMS["a_hb_2"],
+                        b=HB_PARAMS["b_theta_2"])
+f4_theta_3_hb = partial(f4,
+                        theta0=HB_PARAMS["theta0_hb_3"],
+                        delta_theta_star=HB_PARAMS["delta_theta_star_hb_3"],
+                        delta_theta_c=HB_PARAMS["delta_theta_3_c"],
+                        a=HB_PARAMS["a_hb_3"],
+                        b=HB_PARAMS["b_theta_3"])
+f4_theta_4_hb = partial(f4,
+                        theta0=HB_PARAMS["theta0_hb_4"],
+                        delta_theta_star=HB_PARAMS["delta_theta_star_hb_4"],
+                        delta_theta_c=HB_PARAMS["delta_theta_4_c"],
+                        a=HB_PARAMS["a_hb_4"],
+                        b=HB_PARAMS["b_theta_4"])
+f4_theta_7_hb = partial(f4,
+                        theta0=HB_PARAMS["theta0_hb_7"],
+                        delta_theta_star=HB_PARAMS["delta_theta_star_hb_7"],
+                        delta_theta_c=HB_PARAMS["delta_theta_7_c"],
+                        a=HB_PARAMS["a_hb_7"],
+                        b=HB_PARAMS["b_theta_7"])
+f4_theta_8_hb = partial(f4,
+                        theta0=HB_PARAMS["theta0_hb_8"],
+                        delta_theta_star=HB_PARAMS["delta_theta_star_hb_8"],
+                        delta_theta_c=HB_PARAMS["delta_theta_8_c"],
+                        a=HB_PARAMS["a_hb_8"],
+                        b=HB_PARAMS["b_theta_8"])
 def hydrogen_bonding(dr_hb, theta1, theta2, theta3, theta4, theta7, theta8):
     r_hb = jnp.linalg.norm(dr_hb, axis=1)
-    return f1_dr_hb(r_hb) * f4_theta_1(theta1) * f4_theta_2(theta2) * \
-        f4_theta_3(theta3) * f4_theta_4(theta4) * f4_theta_7(theta7) * f4_theta_8(theta8)
+    return f1_dr_hb(r_hb) * f4_theta_1_hb(theta1) * f4_theta_2_hb(theta2) \
+        * f4_theta_3_hb(theta3) * f4_theta_4_hb(theta4) * f4_theta_7_hb(theta7) \
+        * f4_theta_8_hb(theta8)
 
 
+# Cross Stacking
+f2_dr_cross = partial(f2,
+                      r_low=CROSS_PARAMS["dr_low_cross"],
+                      r_high=CROSS_PARAMS["dr_high_cross"],
+                      r_c_low=CROSS_PARAMS["dr_c_low_cross"],
+                      r_c_high=CROSS_PARAMS["dr_c_high_cross"],
+                      k=CROSS_PARAMS["k"],
+                      r0=CROSS_PARAMS["r0_cross"],
+                      r_c=CROSS_PARAMS["dr_c_cross"],
+                      b_low=CROSS_PARAMS["b_low_cross"],
+                      b_high=CROSS_PARAMS["b_high_cross"])
+f4_theta_1_cross = partial(f4,
+                           theta0=CROSS_PARAMS["theta0_cross_1"],
+                           delta_theta_star=CROSS_PARAMS["delta_theta_star_cross_1"],
+                           delta_theta_c=CROSS_PARAMS["delta_theta_1_c"],
+                           a=CROSS_PARAMS["a_cross_1"],
+                           b=CROSS_PARAMS["b_theta_1"])
+f4_theta_2_cross = partial(f4,
+                           theta0=CROSS_PARAMS["theta0_cross_2"],
+                           delta_theta_star=CROSS_PARAMS["delta_theta_star_cross_2"],
+                           delta_theta_c=CROSS_PARAMS["delta_theta_2_c"],
+                           a=CROSS_PARAMS["a_cross_2"],
+                           b=CROSS_PARAMS["b_theta_2"])
+f4_theta_3_cross = partial(f4,
+                           theta0=CROSS_PARAMS["theta0_cross_3"],
+                           delta_theta_star=CROSS_PARAMS["delta_theta_star_cross_3"],
+                           delta_theta_c=CROSS_PARAMS["delta_theta_3_c"],
+                           a=CROSS_PARAMS["a_cross_3"],
+                           b=CROSS_PARAMS["b_theta_3"])
+f4_theta_4_cross = partial(f4,
+                           theta0=CROSS_PARAMS["theta0_cross_4"],
+                           delta_theta_star=CROSS_PARAMS["delta_theta_star_cross_4"],
+                           delta_theta_c=CROSS_PARAMS["delta_theta_4_c"],
+                           a=CROSS_PARAMS["a_cross_4"],
+                           b=CROSS_PARAMS["b_theta_4"])
+f4_theta_7_cross = partial(f4,
+                           theta0=CROSS_PARAMS["theta0_cross_7"],
+                           delta_theta_star=CROSS_PARAMS["delta_theta_star_cross_7"],
+                           delta_theta_c=CROSS_PARAMS["delta_theta_7_c"],
+                           a=CROSS_PARAMS["a_cross_7"],
+                           b=CROSS_PARAMS["b_theta_7"])
+f4_theta_8_cross = partial(f4,
+                           theta0=CROSS_PARAMS["theta0_cross_8"],
+                           delta_theta_star=CROSS_PARAMS["delta_theta_star_cross_8"],
+                           delta_theta_c=CROSS_PARAMS["delta_theta_8_c"],
+                           a=CROSS_PARAMS["a_cross_8"],
+                           b=CROSS_PARAMS["b_theta_8"])
 
+def cross_stacking(dr_hb, theta1, theta2, theta3, theta4, theta7, theta8):
+    r_hb = jnp.linalg.norm(dr_hb, axis=1) # FIXME: repeated computation. May just want to do in the energy function and pass along
+    return f2_dr_cross(r_hb) * f4_theta_1_cross(theta1) \
+        * f4_theta_2_cross(theta2) * f4_theta_3_cross(theta3) \
+        * (f4_theta_4_cross(theta4) + f4_theta_4_cross(jnp.pi - theta4)) \
+        * (f4_theta_7_cross(theta7) + f4_theta_7_cross(jnp.pi - theta7)) \
+        * (f4_theta_8_cross(theta8) + f4_theta_8_cross(jnp.pi - theta8))
 
 if __name__ == "__main__":
     pass
