@@ -94,7 +94,6 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
 if __name__ == "__main__":
 
 
-
     # Bug in rigid body -- Nose-Hoover defaults to f32(1.0) rather than a RigidBody with this value
     shape = rigid_body.point_union_shape(
       onp.array([[0.0, 0.0, 0.0]], f32),
@@ -105,7 +104,6 @@ if __name__ == "__main__":
 
     body, box_size = read_config("data/polyA_10bp/generated.dat")
 
-    # box_size = 20.0
     box_size = box_size[0]
 
     displacement, shift = space.periodic(box_size)
@@ -113,40 +111,7 @@ if __name__ == "__main__":
     key, pos_key, quat_key = random.split(key, 3)
     dtype = DTYPE[0]
 
-    ## Uncomment to: Get random rigid body
-    # R = box_size * random.uniform(pos_key, (N, 3), dtype=dtype)
-
-    N = 10
-
-    ## Initialize centers of mass via evenly spaced vertical heights
-    """
-    R = jnp.array([
-        [0.0, 0.0, 4.0],
-        [0.0, 0.0, 4.5],
-        [0.0, 0.0, 5.0],
-        [0.0, 0.0, 5.5],
-        [0.0, 0.0, 6.0],
-        [0.0, 0.0, 6.5],
-        [0.0, 0.0, 7.0],
-        [0.0, 0.0, 7.5],
-        [0.0, 0.0, 8.0],
-        [0.0, 0.0, 8.5]
-    ])
-    """
-
-    ## Uncomment to: Get 5 different quaternions
-    # quat_key = random.split(quat_key, N)
-    # quaternion = rand_quat(quat_key, dtype) # FIXME: Does this not generate *pure* quaternions?
-
-    ## Get one quaternion and copy it 5 times
-    """
-    quat_key = random.split(quat_key, 1)
-    single_quat = rand_quat(quat_key, dtype)
-    quaternion = Quaternion(jnp.tile(single_quat.vec[0], (N, 1)))
-
-    body = rigid_body.RigidBody(R, quaternion)
-    """
-
+    N = body.center.shape[0]
 
     base_site = jnp.array(
         [com_to_hb, 0.0, 0.0]
