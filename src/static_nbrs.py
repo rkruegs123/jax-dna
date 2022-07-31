@@ -77,15 +77,18 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
         # Stacking
         dr_stack = d(stack_sites[nbs_i], stack_sites[nbs_j])
         base_normals = Q_to_base_normal(Q) # space frame, normalized
+        cross_prods = Q_to_cross_prod(Q) # space frame, normalized
         pdb.set_trace()
-        theta4 = jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], base_normals[nbs_j])) # FIXME: understand `einsum`
+        theta4 = jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], base_normals[nbs_j])) # FIXME: understand `np.einsum`
         pdb.set_trace()
         # FIXME: have to normalize the cosine here by the magnitude of dr_stack
         theta5 = jnp.pi - jnp.arccos(jnp.einsum('ij, ij->i', dr_stack, base_normals[nbs_j]))
         theta6 = jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], dr_stack))
-        # stacking(dr_stack, Q)
+        cosphi1 = jnp.einsum('ij, ij->i', cross_prod[nbs_i], dr_back) # FIXME: Ordering is probably wrong here. E.g. directionality of dr_back. Also, may or may not need a minus sign
+        cosphi2 = jnp.einsum('ij, ij->i', cross_prod[nbs_j], dr_back) # FIXME: same as for cosphi1
+        # stack = stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2)
 
-        # return jnp.sum(fene) + jnp.sum(exc_vol)
+        # return jnp.sum(fene) + jnp.sum(exc_vol) + jnp.sum(stack)
         return jnp.sum(fene)
 
     return energy_fn
