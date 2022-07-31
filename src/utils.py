@@ -51,6 +51,7 @@ Diagram (not to scale):
 com_to_stacking = backbone_to_stacking - backbone_to_com
 com_to_hb = backbone_to_hb - backbone_to_com
 com_to_backbone = -backbone_to_com
+# FIXME: the computed values here for `com_to_X` conflict with the values in "Geometry of the Model": https://dna.physics.ox.ac.uk/index.php/Documentation
 
 
 
