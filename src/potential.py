@@ -382,8 +382,8 @@ def cross_stacking(dr_hb, theta1, theta2, theta3, theta4, theta7, theta8):
         * (f4_theta_8_cross(theta8) + f4_theta_8_cross(jnp.pi - theta8))
 
 
-# FIXME: Coaxial stacking
-f2_dr_coax = partial(f2,
+# Coaxial stacking
+f2_dr_coax = partial(f2, # FIXME: naming, and many like this. Should be f2_dr_stack_coax
                      r_low=COAX_PARAMS["dr_low_coax"],
                      r_high=COAX_PARAMS["dr_high_coax"],
                      r_c_low=COAX_PARAMS["dr_c_low_coax"],
@@ -393,6 +393,48 @@ f2_dr_coax = partial(f2,
                      r_c=COAX_PARAMS["dr_c_coax"],
                      b_low=COAX_PARAMS["b_low_coax"],
                      b_high=COAX_PARAMS["b_high_coax"])
+f4_theta_4_coax = partial(f4,
+                          theta0=COAX_PARAMS["theta0_coax_4"],
+                          delta_theta_star=COAX_PARAMS["delta_theta_star_coax_4"],
+                          delta_theta_c=COAX_PARAMS["delta_theta_4_c"],
+                          a=COAX_PARAMS["a_coax_4"],
+                          b=COAX_PARAMS["b_theta_4"])
+f4_theta_1_coax = partial(f4,
+                          theta0=COAX_PARAMS["theta0_coax_1"],
+                          delta_theta_star=COAX_PARAMS["delta_theta_star_coax_1"],
+                          delta_theta_c=COAX_PARAMS["delta_theta_1_c"],
+                          a=COAX_PARAMS["a_coax_1"],
+                          b=COAX_PARAMS["b_theta_1"])
+f4_theta_5_coax = partial(f4,
+                          theta0=COAX_PARAMS["theta0_coax_5"],
+                          delta_theta_star=COAX_PARAMS["delta_theta_star_coax_5"],
+                          delta_theta_c=COAX_PARAMS["delta_theta_5_c"],
+                          a=COAX_PARAMS["a_coax_5"],
+                          b=COAX_PARAMS["b_theta_5"])
+f4_theta_6_coax = partial(f4,
+                          theta0=COAX_PARAMS["theta0_coax_6"],
+                          delta_theta_star=COAX_PARAMS["delta_theta_star_coax_6"],
+                          delta_theta_c=COAX_PARAMS["delta_theta_6_c"],
+                          a=COAX_PARAMS["a_coax_6"],
+                          b=COAX_PARAMS["b_theta_6"])
+f5_cosphi3_coax = partial(f5,
+                          x_star=COAX_PARAMS["cos_phi3_star_coax"],
+                          x_c=COAX_PARAMS["cos_phi3_c"],
+                          a=COAX_PARAMS["a_coax_3p"],
+                          b=COAX_PARAMS["b_cos_phi3"])
+f5_cosphi4_coax = partial(f5,
+                          x_star=COAX_PARAMS["cos_phi4_star_coax"],
+                          x_c=COAX_PARAMS["cos_phi4_c"],
+                          a=COAX_PARAMS["a_coax_4p"],
+                          b=COAX_PARAMS["b_cos_phi4"])
+def coaxial_stacking(dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4):
+    r_stack = jnp.linalg.norm(dr_stack, axis=1)
+    return f2_dr_coax(r_stack) * f4_theta_4_coax(theta4) \
+        * (f4_theta_1_coax(theta1) + f4_theta_1_coax(2 * jnp.pi - theta1)) \
+        * (f4_theta_5_coax(theta5) + f4_theta_5_coax(jnp.pi - theta5)) \
+        * (f4_theta_6_coax(theta6) + f4_theta_6_coax(jnp.pi - theta6)) \
+        * f5_cosphi3_coax(cosphi3) * f5_cosphi4_coax(cosphi4)
+
 
 
 if __name__ == "__main__":
