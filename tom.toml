@@ -156,15 +156,15 @@ dr_c_coax = 0.6
 dr_low_coax = 0.22
 dr_high_coax = 0.58
 
+## f4(theta_4)
+a_coax_4 = 1.30
+theta0_coax_4 = 0.0
+delta_theta_star_coax_4 = 0.8/
+
 ## f4(theta_1) + f4(2*pi - theta_1)
 a_coax_1 = 2.00
 theta0_coax_1 = 2.54159 # FIXME: pi - 0.60
 delta_theta_star_coax_1 = 0.65
-
-## f4(theta_4)
-a_coax_4 = 1.30
-theta0_coax_4 = 0.0
-delta_theta_star_coax_4 = 0.8
 
 ## f4(theta_5) + f4(pi - theta_5)
 a_coax_5 = 0.90
