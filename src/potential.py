@@ -191,23 +191,23 @@ f3_base = get_f3(r_star=EXC_VOL_PARAMS["dr_star_base"],
                  sigma=EXC_VOL_PARAMS["sigma_base"])
 """
 f3_base_exc_vol = partial(f3,
-                  r_star=EXC_VOL_PARAMS["dr_star_base"],
-                  r_c=EXC_VOL_PARAMS["dr_c_base"],
-                  eps=EXC_VOL_PARAMS["eps_exc"],
-                  sigma=EXC_VOL_PARAMS["sigma_base"],
-                  b=EXC_VOL_PARAMS["b_base"])
+                          r_star=EXC_VOL_PARAMS["dr_star_base"],
+                          r_c=EXC_VOL_PARAMS["dr_c_base"],
+                          eps=EXC_VOL_PARAMS["eps_exc"],
+                          sigma=EXC_VOL_PARAMS["sigma_base"],
+                          b=EXC_VOL_PARAMS["b_base"])
 f3_back_base_exc_vol = partial(f3,
-                       r_star=EXC_VOL_PARAMS["dr_star_back_base"],
-                       r_c=EXC_VOL_PARAMS["dr_c_back_base"],
-                       eps=EXC_VOL_PARAMS["eps_exc"],
-                       sigma=EXC_VOL_PARAMS["sigma_back_base"],
-                       b=EXC_VOL_PARAMS["b_back_base"])
+                               r_star=EXC_VOL_PARAMS["dr_star_back_base"],
+                               r_c=EXC_VOL_PARAMS["dr_c_back_base"],
+                               eps=EXC_VOL_PARAMS["eps_exc"],
+                               sigma=EXC_VOL_PARAMS["sigma_back_base"],
+                               b=EXC_VOL_PARAMS["b_back_base"])
 f3_base_back_exc_vol = partial(f3,
-                       r_star=EXC_VOL_PARAMS["dr_star_base_back"],
-                       r_c=EXC_VOL_PARAMS["dr_c_base_back"],
-                       eps=EXC_VOL_PARAMS["eps_exc"],
-                       sigma=EXC_VOL_PARAMS["sigma_base_back"],
-                       b=EXC_VOL_PARAMS["b_base_back"])
+                               r_star=EXC_VOL_PARAMS["dr_star_base_back"],
+                               r_c=EXC_VOL_PARAMS["dr_c_base_back"],
+                               eps=EXC_VOL_PARAMS["eps_exc"],
+                               sigma=EXC_VOL_PARAMS["sigma_base_back"],
+                               b=EXC_VOL_PARAMS["b_base_back"])
 def exc_vol_bonded(dr_base, dr_back_base, dr_base_back):
     # Note: r_c must be greater than r*
     r_base = jnp.linalg.norm(dr_base, axis=1)
@@ -217,6 +217,22 @@ def exc_vol_bonded(dr_base, dr_back_base, dr_base_back):
     return f3_base_exc_vol(r_base) + f3_back_base_exc_vol(r_back_base) \
         + f3_base_back_exc_vol(r_base_back)
 
+f3_back_exc_vol = partial(f3,
+                          r_star=EXC_VOL_PARAMS["dr_star_backbone"],
+                          r_c=EXC_VOL_PARAMS["dr_c_backbone"],
+                          eps=EXC_VOL_PARAMS["eps_exc"],
+                          sigma=EXC_VOL_PARAMS["sigma_backbone"],
+                          b=EXC_VOL_PARAMS["b_backbone"])
+
+# FIXME: lots of duplicated computation with exc_vol_bonded
+# Should (a) compute the r's outside these functions, and (b) have a base that we then add on to
+def exc_vol_unbonded(dr_base, dr_backbone, dr_back_base, dr_base_back):
+    r_back = jnp.linalg.norm(dr_backbone, axis=1)
+    r_base = jnp.linalg.norm(dr_base, axis=1)
+    r_back_base = jnp.linalg.norm(dr_back_base, axis=1)
+    r_base_back = jnp.linalg.norm(dr_base_back, axis=1)
+    return f3_back_exc_vol(r_back) + f3_base_exc_vol(r_base) \
+        + f3_back_base_exc_vol(r_back_base) + f3_base_back_exc_vol(r_base_back)
 
 f1_dr_stack = partial(f1,
                       r_low=STACK_PARAMS["dr_low_stack"],
