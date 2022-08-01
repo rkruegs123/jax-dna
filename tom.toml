@@ -159,7 +159,7 @@ dr_high_coax = 0.58
 ## f4(theta_4)
 a_coax_4 = 1.30
 theta0_coax_4 = 0.0
-delta_theta_star_coax_4 = 0.8/
+delta_theta_star_coax_4 = 0.8
 
 ## f4(theta_1) + f4(2*pi - theta_1)
 a_coax_1 = 2.00
