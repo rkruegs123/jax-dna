@@ -48,6 +48,7 @@ def rand_quat(key, dtype):
 def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, neighbors):
 
     d = space.map_bond(partial(displacement_fn))
+    pdb.set_trace()
     nbs_i = neighbors[:, 0]
     nbs_j = neighbors[:, 1]
 

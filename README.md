@@ -57,3 +57,36 @@ July 30, 2022
 - So, `partition.neighbor_list` is exactly what we want, but it doesn't support `RigidBody` yet. Emailed Sam.
   - Note that by fixing the format as `partition.OrderedSparse`, we can assure that `i < j` for a pair `(i, j)` in the neighbor list. So, we can enforce the direction that gets passed to the potentials!
 - In the meantime, we should just implement all the potentials. Note the above ability to constrain the direction when doing so.
+
+Aug. 2, 2022: The state of things as it stands, in no particular order:
+- Should really learn to use oxDNA by myself -- running small-scale simulations, generating configuration files, etc
+- Need to figure out 5'-3' for reading and config files (and setting neighbors) and for potentials
+- Dynamic neighbors
+  - `partition.neighbor_list` should be exactly what we want for an initial implementation (only parameterized by distance, dr) but isn't compatible with RigidBodies
+  - We should use `OrderedSparse` to enforce directionality. Just have to be sure to have `i < j` for the directionality that we want to always pass in
+  - Have to mask out bonded pairs using a custom mask function, or something like that. Not sure the best way to do this.
+  - To begin, we were just going to set a massive radius to effectively include everything. Even simpler (and to relieve any blockage) would be to just treat is as a static neighbor list for now, as long as we are in keeping with `SparseOrdereed` semantics
+- Need to update parameters with `kT`
+- Need to debug understanding of interaction site distances from COM
+- Can visualize easily with either `cogli2` (using `]` or `/`) and `oxView`
+- Eventually, will want to use `multiplicative_isotropic_cutoff`. Not a major thing to worry about for now
+  - Can do 1 - the normal function or multiply two together (one of which is 1 - ) to get a cutoff on one or both sides
+  - Should check how this is implemented in the backend with `jnp.where`. Should also understand that expression it's based off of
+- If we want to optimize over the original parameters, have to be careful about hings like taking logs of negatives, like with the FENE. Can always have a cutoff for this.
+- Could replace `sympy` expressions with normal python functions to save time, and also to have differentiability should we later want that
+- Langevin integrator with Sam
+  - Have Megan explain stuff to me
+- Talk to people about exactly what thye want to do with oxDNA 3 post-doc advertisement
+  - As easy as oxDNA 1.5?
+- Potentials have to take in the probabilistic sequence. Again, likely indexed by `nbs_i` and `nbs_j`
+- Should really start collecting the data we'll want to use for a benchmark
+- Should check differences in parameters between 1.0, 1.5, and 2.0
+- Have to normalize dot products by magnitudes every now and then. Might be some other straggling FIXMEs
+- Better way to take matrix-wise dot products?
+- Review quaternions
+- Watch those MD lectures
+- For future: convert trajectory to all-atom trajectory for cooler visualization? Would it be too unrealistic?
+- Sam also recommended the `fresnel` visualizer. I think from Chrisy's Sharon's lab. Might want to look into.
+- Note that we get trace errors when using normal `if` statements without any `jit`ing because JAX-MD traces to determine force vs. energy
+- Non-bonded excluded volume
+- Go over all code with Megan
