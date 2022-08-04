@@ -8,8 +8,8 @@ from utils import get_params
 
 
 # FIXME: pass around better
-T = 300 # Kelvin
-PARAMS = get_params(t=T)
+TEMP = 10 # Kelvin
+PARAMS = get_params(t=TEMP)
 FENE_PARAMS = PARAMS["fene"]
 EXC_VOL_PARAMS = PARAMS["excluded_volume"]
 STACK_PARAMS = PARAMS["stacking"]
@@ -26,6 +26,7 @@ def v_fene(r, eps=FENE_PARAMS["eps_backbone"],
            r0=FENE_PARAMS["r0_backbone"], delt=FENE_PARAMS["delta_backbone"]):
     x = (r - r0)**2 / delt**2
     # Note: if `x` is too big, we will easily try to take the log of negatives, wihch will yield `nan`
+    pdb.set_trace()
     return -eps / 2.0 * jnp.log(1 - x)
 
 def v_morse(r, eps, r0, a):
@@ -456,4 +457,11 @@ def coaxial_stacking(dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4)
 
 
 if __name__ == "__main__":
-    pass
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    xs = np.linspace(0.65, 0.85, 50)
+    ys = v_fene(xs)
+    pdb.set_trace()
+    plt.plot(xs, ys)
+    plt.show()

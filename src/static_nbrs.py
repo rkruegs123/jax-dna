@@ -22,7 +22,7 @@ from jax_md import util
 from jax_md import rigid_body
 from jax_md.rigid_body import RigidBody, Quaternion
 
-from potential import v_fene, exc_vol_bonded, stacking
+from potential import v_fene, exc_vol_bonded, stacking, TEMP
 from utils import read_config, jax_traj_to_oxdna_traj
 from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import nucleotide_mass, get_kt
@@ -30,7 +30,7 @@ from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 
 
 FLAGS = jax_config.FLAGS
-DYNAMICS_STEPS = 100
+DYNAMICS_STEPS = 10000
 
 
 f32 = util.f32
@@ -48,7 +48,6 @@ def rand_quat(key, dtype):
 def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, neighbors):
 
     d = space.map_bond(partial(displacement_fn))
-    pdb.set_trace()
     nbs_i = neighbors[:, 0]
     nbs_j = neighbors[:, 1]
 
@@ -79,14 +78,12 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
         dr_stack = d(stack_sites[nbs_i], stack_sites[nbs_j])
         base_normals = Q_to_base_normal(Q) # space frame, normalized
         cross_prods = Q_to_cross_prod(Q) # space frame, normalized
-        pdb.set_trace()
         theta4 = jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], base_normals[nbs_j])) # FIXME: understand `np.einsum`
-        pdb.set_trace()
         # FIXME: have to normalize the cosine here by the magnitude of dr_stack
         theta5 = jnp.pi - jnp.arccos(jnp.einsum('ij, ij->i', dr_stack, base_normals[nbs_j]))
         theta6 = jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], dr_stack))
-        cosphi1 = jnp.einsum('ij, ij->i', cross_prod[nbs_i], dr_back) # FIXME: Ordering is probably wrong here. E.g. directionality of dr_back. Also, may or may not need a minus sign
-        cosphi2 = jnp.einsum('ij, ij->i', cross_prod[nbs_j], dr_back) # FIXME: same as for cosphi1
+        cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) # FIXME: Ordering is probably wrong here. E.g. directionality of dr_back. Also, may or may not need a minus sign
+        cosphi2 = jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back) # FIXME: same as for cosphi1
         # stack = stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2)
 
         # return jnp.sum(fene) + jnp.sum(exc_vol) + jnp.sum(stack)
@@ -150,8 +147,8 @@ if __name__ == "__main__":
     # Simulate with the energy function via Nose-Hoover
 
     # kT = 1e-3
-    kT = get_kt(t=300) # 300 Kelvin = 0.1 kT
-    dt = 5e-3
+    kT = get_kt(t=TEMP) # 300 Kelvin = 0.1 kT
+    dt = 5e-4
 
     init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift, dt, kT)
 
@@ -164,6 +161,7 @@ if __name__ == "__main__":
 
     for i in range(DYNAMICS_STEPS):
         state = step_fn(state)
+        pdb.set_trace()
 
         trajectory.append(state.position)
 
@@ -173,6 +171,6 @@ if __name__ == "__main__":
     # FIXME: Add excluded volume and stacking
 
 
-    # jax_traj_to_oxdna_traj(trajectory, box_size, every_n=100)
+    jax_traj_to_oxdna_traj(trajectory, box_size, every_n=50)
 
     print("done")

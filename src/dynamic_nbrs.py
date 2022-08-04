@@ -143,7 +143,7 @@ if __name__ == "__main__":
     for i in range(DYNAMICS_STEPS):
         state = step_fn(state, neighbor=nbrs)
         # nbrs = jit(neighbor_fn.update)(state.position, nbrs)
-        nbrs = neighbor_fn.update(state.position, nbrs)
+        nbrs = neighbor_fn.update(state.position.center, nbrs) # Note the .center
 
         # trajectory.append(state.position)
 

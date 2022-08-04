@@ -55,10 +55,16 @@ backbone_to_hb = angstroms_to_oxdna_length(backbone_to_hb_angstroms)
 Diagram (not to scale):
 (backbone)----[com]------(stacking)--(hb)
 """
+"""
+Note: for whatever reason, using the 0.24 value from Tom's thesis doesn't give the values from the oxDNA code and/or documentation. We use those directly, without understanding why they are the way they are
+# FIXME: the computed values here for `com_to_X` conflict with the values in "Geometry of the Model": https://dna.physics.ox.ac.uk/index.php/Documentation
 com_to_stacking = backbone_to_stacking - backbone_to_com
 com_to_hb = backbone_to_hb - backbone_to_com
 com_to_backbone = -backbone_to_com
-# FIXME: the computed values here for `com_to_X` conflict with the values in "Geometry of the Model": https://dna.physics.ox.ac.uk/index.php/Documentation
+"""
+com_to_stacking = 0.34
+com_to_hb = 0.4
+com_to_backbone = -0.4
 
 
 
