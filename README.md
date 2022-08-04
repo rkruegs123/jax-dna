@@ -66,7 +66,7 @@ Aug. 2, 2022: The state of things as it stands, in no particular order:
   - We should use `OrderedSparse` to enforce directionality. Just have to be sure to have `i < j` for the directionality that we want to always pass in
   - Have to mask out bonded pairs using a custom mask function, or something like that. Not sure the best way to do this.
   - To begin, we were just going to set a massive radius to effectively include everything. Even simpler (and to relieve any blockage) would be to just treat is as a static neighbor list for now, as long as we are in keeping with `SparseOrdereed` semantics
-- Need to update parameters with `kT`
+- ~~Need to update parameters with `kT`~~
 - Need to debug understanding of interaction site distances from COM
 - Can visualize easily with either `cogli2` (using `]` or `/`) and `oxView`
 - Eventually, will want to use `multiplicative_isotropic_cutoff`. Not a major thing to worry about for now
@@ -90,3 +90,4 @@ Aug. 2, 2022: The state of things as it stands, in no particular order:
 - Note that we get trace errors when using normal `if` statements without any `jit`ing because JAX-MD traces to determine force vs. energy
 - Non-bonded excluded volume
 - Go over all code with Megan
+- Need to ask sam: how is the moment of inertia passed to the rigid body integrators? Is it calculated from the mass somehow? If so, how does it generalize beyond isotropic spheres (i.e. take the shape of the rigid body into account)?

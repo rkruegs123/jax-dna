@@ -28,8 +28,15 @@ def oxdna_energy_to_joules(e):
     return e * joules_per_oxdna_energy
 kb = 1.380649e-23 # joules per kelvin
 kb_oxdna = kb / joules_per_oxdna_energy # oxdna energy per kelvin
+
+"""
+Option 1: Exact, but source of minor error
 def get_kt(t): # t is temperature in kelvin
     return kb_oxdna * t
+"""
+# Option 2: Inexact, but exactly what was intended (i.e. kt=0.1E @ 300 K)
+def get_kt(t):
+    return 0.1 * t/300.0
 # Tom's thesis, page 36, bottom (Section 2.5)
 amu_per_oxdna_mass = 100
 def amu_to_oxdna_mass(amu):
@@ -218,7 +225,10 @@ Q_to_cross_prod = vmap(q_to_cross_prod)
 
 # FIXME: should really take temperature as input (or kT)
 # FIXME: so, this means that thing rely on kT should really only be intermediate values in the *.toml file and they should be updaed to the full (whose name currently exists in the toml file) herex
-def get_params(config_path="tom.toml"):
+# Temperature (t) in Kelvin
+def get_params(t, config_path="tom.toml"):
+    kt = get_kt(t)
+
     if not Path(config_path).exists():
         raise RuntimeError(f"No file at location: {config_path}")
     params = toml.load(config_path)
@@ -256,6 +266,7 @@ def get_params(config_path="tom.toml"):
 
 
     # Stacking
+    params['stacking']['eps_stack'] = params['stacking']['eps_stack_base'] + params['stacking']['eps_stack_kt_coeff'] * kt # Do this quickly so that it's included in `stacking`
     stacking = params['stacking']
 
     ## f1(dr_stack)
@@ -478,4 +489,7 @@ def get_params(config_path="tom.toml"):
 if __name__ == "__main__":
     # final_params = get_params()
 
-    body, box_size = read_config("data/polyA_10bp/generated.dat")
+    # body, box_size = read_config("data/polyA_10bp/generated.dat")
+
+    pdb.set_trace()
+    print("done")

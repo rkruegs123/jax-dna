@@ -32,7 +32,8 @@ dr_star_base_back = 0.50
 [stacking]
 
 ## f1(dr_stack)
-eps_stack = 1.3448 # FIXME: + 2.6568 kT
+eps_stack_base = 1.3448
+eps_stack_kt_coeff = 2.6568
 a_stack = 6.0
 dr0_stack = 0.4
 dr_c_stack = 0.9

@@ -7,7 +7,9 @@ import pdb
 from utils import get_params
 
 
-PARAMS = get_params()
+# FIXME: pass around better
+T = 300 # Kelvin
+PARAMS = get_params(t=T)
 FENE_PARAMS = PARAMS["fene"]
 EXC_VOL_PARAMS = PARAMS["excluded_volume"]
 STACK_PARAMS = PARAMS["stacking"]

@@ -135,7 +135,7 @@ if __name__ == "__main__":
     ])
     """
 
-    n = 10
+    n = 10 # FIXME: redundant. Use `N` from above
     bonded_neighbors = onp.array(
         [[i, i+1] for i in range(n - 1)]
     )
