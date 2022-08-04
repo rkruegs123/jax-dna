@@ -91,3 +91,17 @@ Aug. 2, 2022: The state of things as it stands, in no particular order:
 - Non-bonded excluded volume
 - Go over all code with Megan
 - Need to ask sam: how is the moment of inertia passed to the rigid body integrators? Is it calculated from the mass somehow? If so, how does it generalize beyond isotropic spheres (i.e. take the shape of the rigid body into account)?
+
+
+Sam RigidBody notes:
+- can set moment of inertia explicitly as RigidBody(center of mass mass, moment of inertia). E.g. RigidBody(float, [float, float, float])
+  - Something about the moment of inertia having to be idaognal?
+- neighbor_fn.update(state.position.center, nbrs) instead of neighbor_fn.update(state.position, nbrs)
+- custom mask function to omit bonded things from neighbor calculation?
+- Psatbine has one function in particular that takes you from a sparse mask function a dense mask function. Note just sparse, not ordered sparse. Should be easy to go from one to the other
+  - https://pastebin.com/57Hn10d1
+  - So, allows you to go from mask function that acts on tuples to work with custom_mask_function
+- For loops and jitting:
+  - for i in range(CONSTANT) IS jittable because it can be unrolled
+  - For i in range(VARIABLE) is not jittable becaues it cannot be unrolled -- you are trying to do a pythonic thing on a trace object
+  - So, in stuff with max, e.g. for b in range(2) can be done PYTHONICALLY.
