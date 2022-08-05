@@ -43,8 +43,15 @@ def amu_to_oxdna_mass(amu):
     return amu / amu_per_oxdna_mass
 def oxdna_mass_to_amu(m):
     return m * amu_per_oxdna_mass
+
+"""
 nucleotide_mass = 3.1575 # 3.1575 M
 moment_of_inertia = 0.43512
+"""
+
+# Peter's thesis changes mass and moment of inertia to 1
+nucleotide_mass = 1.0
+moment_of_inertia = [1.0, 1.0, 1.0]
 
 backbone_to_com = 0.24 # 0.24 l. Tom's thesis, page 36, bottom (Section 2.5)
 backbone_to_stacking_angstroms = 6.3 # 6.3 A. Tom's thesis, page 23
@@ -176,6 +183,10 @@ def read_config(fpath):
 
         # Method 2 -- BROKEN
         """
+        # https://www.iri.upc.edu/files/scidoc/2068-Accurate-Computation-of-Quaternions-from-Rotation-Matrices.pdf
+        # Table 1, page 6 gives the accuracy of this method -- it's terrible. This is also summarized in the conclusion on page 8
+
+
         rot_matrix = np.array([back_base_vector, np.cross(base_normal, back_base_vector), base_normal]).T
         tr = np.trace(rot_matrix)
         q0 = np.sqrt((tr + 1) / 4)
