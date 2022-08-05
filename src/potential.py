@@ -22,12 +22,24 @@ COAX_PARAMS = PARAMS["coaxial_stacking"]
 # FIXME: Could use ones from JAX-MD when appropriate (e.g. morse, harmonic). Could just add ones to JAX-MD that are missing (e.g. FENE)
 
 # FIXME: need some initial positions from Megan
-def v_fene(r, eps=FENE_PARAMS["eps_backbone"],
+def _v_fene(r, eps=FENE_PARAMS["eps_backbone"],
            r0=FENE_PARAMS["r0_backbone"], delt=FENE_PARAMS["delta_backbone"]):
     x = (r - r0)**2 / delt**2
     # Note: if `x` is too big, we will easily try to take the log of negatives, wihch will yield `nan`
-    pdb.set_trace()
     return -eps / 2.0 * jnp.log(1 - x)
+
+def v_fene(r):
+
+    return _v_fene(r)
+    """
+    # Thresholded version -- analogous to allowing broken bakcbone from oxDNA
+    rbackr0 = r - FENE_PARAMS["r0_backbone"]
+
+    return jnp.where(jnp.abs(rbackr0) >= FENE_PARAMS["delta_backbone"],
+                     1.0e12,
+                     _v_fene(r))
+    """
+
 
 def v_morse(r, eps, r0, a):
     x = -(r - r0) * a
@@ -285,8 +297,8 @@ def stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2):
 
     r_stack = jnp.linalg.norm(dr_stack, axis=1)
 
-    return f1_dr_stack(r_stack) * f4_theta_4_stack(theta_4) \
-        * f4_theta_5p_stack(theta_5) * f4_theta_6p_stack(theta_6) \
+    return f1_dr_stack(r_stack) * f4_theta_4_stack(theta4) \
+        * f4_theta_5p_stack(theta5) * f4_theta_6p_stack(theta6) \
         * f5_neg_cosphi1_stack(-cosphi1) * f5_neg_cosphi2_stack(-cosphi2)
 
 
@@ -460,8 +472,47 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import numpy as np
 
+    """
     xs = np.linspace(0.65, 0.85, 50)
     ys = v_fene(xs)
+    pdb.set_trace()
+    plt.plot(xs, ys)
+    plt.show()
+    """
+
+
+    # Test making FENE smooth beyond valid range
+    _mbf_fmax = 1000.0 # max_backbone_force, must be > 0
+    FENE_EPS = FENE_PARAMS["eps_backbone"]
+    FENE_DELTA = FENE_PARAMS["delta_backbone"]
+    FENE_DELTA2 = FENE_PARAMS["delta_backbone"]**2
+    _mbf_xmax = (-FENE_EPS + np.sqrt(FENE_EPS * FENE_EPS + 4.0 * _mbf_fmax * _mbf_fmax * FENE_DELTA2)) / (2.0 * _mbf_fmax) # from DNAInteraction.cpp::get_settings()
+
+    _mbf_finf = 0.4 # default value. Could also take as argument. Must be > 0
+
+
+    _use_mbf = False
+    def fene_smooth(r):
+
+        rbackr0 = r - FENE_PARAMS["r0_backbone"]
+
+        if _use_mbf and np.abs(rbackr0) > _mbf_xmax:
+            fene_xmax = -(FENE_EPS / 2.0) * np.log(1.0 - np.sqrt(_mbf_xmax) / FENE_DELTA2)
+            long_xmax = (_mbf_fmax - _mbf_finf) * _mbf_xmax * np.log(_mbf_xmax) + _mbf_finf * _mbf_xmax
+            energy = (_mbf_fmax - _mbf_finf) * _mbf_xmax * np.log(np.abs(rbackr0)) + _mbf_finf * np.abs(rbackr0) - long_xmax + fene_xmax
+            return energy
+        elif np.abs(rbackr0) >= FENE_DELTA:
+            return 1.0e12
+        else:
+            return v_fene(r)
+
+
+    max_dr = 0.5
+    xs = np.linspace(FENE_PARAMS["r0_backbone"] - max_dr, FENE_PARAMS["r0_backbone"] + max_dr, 50)
+    ys = list()
+    for x in xs:
+        ys.append(fene_smooth(x))
+
     pdb.set_trace()
     plt.plot(xs, ys)
     plt.show()

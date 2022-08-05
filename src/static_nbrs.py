@@ -25,12 +25,12 @@ from jax_md.rigid_body import RigidBody, Quaternion
 from potential import v_fene, exc_vol_bonded, stacking, TEMP
 from utils import read_config, jax_traj_to_oxdna_traj
 from utils import com_to_backbone, com_to_stacking, com_to_hb
-from utils import nucleotide_mass, get_kt
+from utils import nucleotide_mass, get_kt, moment_of_inertia
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 
 
 FLAGS = jax_config.FLAGS
-DYNAMICS_STEPS = 10000
+DYNAMICS_STEPS = 100
 
 
 f32 = util.f32
@@ -53,6 +53,14 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
 
     def energy_fn(body: RigidBody, **kwargs) -> float:
         Q = body.orientation
+        """
+        # Conversion in Tom's thesis, Appendix A
+        back_base_vectors = Q_to_back_base(Q)
+        back_sites = body.center + com_to_backbone * back_base_vectors
+        stack_sites = body.center + com_to_stacking * back_base_vectors
+        base_sites = body.center + com_to_hb * back_base_vectors
+        """
+
         back_sites = body.center + rigid_body.quaternion_rotate(Q, back_site) # (N, 3)
         stack_sites = body.center + rigid_body.quaternion_rotate(Q, stack_site)
         base_sites = body.center + rigid_body.quaternion_rotate(Q, base_site)
@@ -84,10 +92,12 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
         theta6 = jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], dr_stack))
         cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) # FIXME: Ordering is probably wrong here. E.g. directionality of dr_back. Also, may or may not need a minus sign
         cosphi2 = jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back) # FIXME: same as for cosphi1
-        # stack = stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2)
+        stack = stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2)
+
 
         # return jnp.sum(fene) + jnp.sum(exc_vol) + jnp.sum(stack)
         return jnp.sum(fene)
+        # return jnp.sum(fene) + jnp.sum(exc_vol)
 
     return energy_fn
 
@@ -96,14 +106,17 @@ if __name__ == "__main__":
 
 
     # Bug in rigid body -- Nose-Hoover defaults to f32(1.0) rather than a RigidBody with this value
+    """
     shape = rigid_body.point_union_shape(
       onp.array([[0.0, 0.0, 0.0]], f32),
       f32(nucleotide_mass)
     ) # just to get the mass from
-
     mass = shape.mass()
+    """
 
-    body, box_size = read_config("data/polyA_10bp/generated.dat")
+    mass = rigid_body.RigidBody(center=jnp.array([nucleotide_mass]), orientation=jnp.array([[0.0, moment_of_inertia, moment_of_inertia]]))
+
+    body, box_size = read_config("data/polyA_10bp/equilibrated.dat")
 
     box_size = box_size[0]
 
@@ -148,21 +161,20 @@ if __name__ == "__main__":
 
     # kT = 1e-3
     kT = get_kt(t=TEMP) # 300 Kelvin = 0.1 kT
-    dt = 5e-4
+    dt = 5e-3
 
     init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift, dt, kT)
 
     # step_fn = jit(step_fn)
 
+    pdb.set_trace()
     state = init_fn(key, body, mass=mass)
     E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
 
-    trajectory = list()
+    trajectory = [state.position]
 
     for i in range(DYNAMICS_STEPS):
         state = step_fn(state)
-        pdb.set_trace()
-
         trajectory.append(state.position)
 
     # E_final = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)

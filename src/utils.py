@@ -44,7 +44,7 @@ def amu_to_oxdna_mass(amu):
 def oxdna_mass_to_amu(m):
     return m * amu_per_oxdna_mass
 nucleotide_mass = 3.1575 # 3.1575 M
-moment_of_inertia = 0.43512 # FIXME: do we use this?
+moment_of_inertia = 0.43512
 
 backbone_to_com = 0.24 # 0.24 l. Tom's thesis, page 36, bottom (Section 2.5)
 backbone_to_stacking_angstroms = 6.3 # 6.3 A. Tom's thesis, page 23
@@ -69,7 +69,7 @@ com_to_backbone = -0.4
 
 
 # Box size is float, jax_traj is list of RigidBody's
-def jax_traj_to_oxdna_traj(jax_traj, box_size, every_n=1):
+def jax_traj_to_oxdna_traj(jax_traj, box_size, every_n=1, output_name="test.dat"):
     # jax_traj is a list of state.position (of rigid bodies)
     output_lines = list()
     n = jax_traj[0].center.shape[0]
@@ -93,7 +93,7 @@ def jax_traj_to_oxdna_traj(jax_traj, box_size, every_n=1):
 
 
     pdb.set_trace()
-    with open('test.dat', 'w') as of:
+    with open(output_name, 'w') as of:
         of.writelines(output_lines)
 
     return
@@ -151,7 +151,6 @@ def read_config(fpath):
         angular_velocity = nuc_info[12:15]
 
         # Method 1
-        """
         alpha, beta, gamma = principal_axes_to_euler_angles(back_base_vector,
                                                             np.cross(base_normal, back_base_vector),
                                                             base_normal)
@@ -164,26 +163,32 @@ def read_config(fpath):
             q1 = -np.sin(0.5*t1)*np.sin(0.5*t2)*np.cos(0.5*t3) + np.sin(0.5*t3)*np.cos(0.5*t1)*np.cos(0.5*t2)
             q2 = np.sin(0.5*t1)*np.sin(0.5*t3)*np.cos(0.5*t2) + np.sin(0.5*t2)*np.cos(0.5*t1)*np.cos(0.5*t3)
             q3 = np.sin(0.5*t1)*np.cos(0.5*t2)*np.cos(0.5*t3) - np.sin(0.5*t2)*np.sin(0.5*t3)*np.cos(0.5*t1)
-            q = Quaternion(np.array([q0, q1, q2, q3]))
-            return q
+            # q = Quaternion(np.array([q0, q1, q2, q3]))
+            return q0, q1, q2, q3
+
+        q0, q1, q2, q3 = get_q(alpha, beta, gamma)
+
 
         # For testing
-        # q = get_q(alpha, beta, gamma)
+        # q = Quaternion(np.array([q0, q1, q2, q3]))
         # recovered_back_base = q_to_back_base(q)  # should equal back_base_vector
+
+
+        # Method 2 -- BROKEN
         """
-
-
-        # Method 2
         rot_matrix = np.array([back_base_vector, np.cross(base_normal, back_base_vector), base_normal]).T
         tr = np.trace(rot_matrix)
         q0 = np.sqrt((tr + 1) / 4)
         q1 = np.sqrt(rot_matrix[0, 0] / 2 + (1 - tr) / 4)
         q2 = np.sqrt(rot_matrix[1, 1] / 2 + (1 - tr) / 4)
         q3 = np.sqrt(rot_matrix[2, 2] / 2 + (1 - tr) / 4)
+        """
 
-        q = Quaternion(np.array([q0, q1, q2, q3]))
+
+
         """
         # Testing
+        q = Quaternion(np.array([q0, q1, q2, q3]))
         recovered_back_base = q_to_back_base(q) # should equal back_base_vector
         recovered_cross_prod = q_to_cross_prod(q) # should equal np.cross(base_normal, back_base_vector)
         recovered_base_normal = q_to_base_normal(q) # should equal base_normal
@@ -496,6 +501,14 @@ if __name__ == "__main__":
     # final_params = get_params()
 
     # body, box_size = read_config("data/polyA_10bp/generated.dat")
+
+    body, box_size = read_config("data/polyA_10bp/equilibrated.dat")
+
+    pdb.set_trace()
+
+    jax_traj_to_oxdna_traj([body], box_size[0], output_name="recovered.dat")
+
+
 
     pdb.set_trace()
     print("done")
