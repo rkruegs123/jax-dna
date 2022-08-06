@@ -8,7 +8,7 @@ from utils import get_params
 
 
 # FIXME: pass around better
-TEMP = 10 # Kelvin
+TEMP = 300 # Kelvin
 PARAMS = get_params(t=TEMP)
 FENE_PARAMS = PARAMS["fene"]
 EXC_VOL_PARAMS = PARAMS["excluded_volume"]
@@ -30,15 +30,13 @@ def _v_fene(r, eps=FENE_PARAMS["eps_backbone"],
 
 def v_fene(r):
 
-    return _v_fene(r)
-    """
+    # return _v_fene(r)
     # Thresholded version -- analogous to allowing broken bakcbone from oxDNA
     rbackr0 = r - FENE_PARAMS["r0_backbone"]
 
     return jnp.where(jnp.abs(rbackr0) >= FENE_PARAMS["delta_backbone"],
                      1.0e12,
                      _v_fene(r))
-    """
 
 
 def v_morse(r, eps, r0, a):
@@ -482,6 +480,7 @@ if __name__ == "__main__":
 
 
     # Test making FENE smooth beyond valid range
+    """
     _mbf_fmax = 1000.0 # max_backbone_force, must be > 0
     FENE_EPS = FENE_PARAMS["eps_backbone"]
     FENE_DELTA = FENE_PARAMS["delta_backbone"]
@@ -513,6 +512,116 @@ if __name__ == "__main__":
     for x in xs:
         ys.append(fene_smooth(x))
 
-    pdb.set_trace()
     plt.plot(xs, ys)
     plt.show()
+    """
+
+    # Test subterms of stacking for a given configuration
+
+    import matplotlib.pyplot as plt
+    from jax_md import space
+    from jax_md import rigid_body
+    import jax.numpy as jnp
+
+    from utils import read_config
+    from utils import Q_to_base_normal, Q_to_cross_prod, Q_to_back_base
+    from utils import com_to_backbone, com_to_stacking, com_to_hb
+
+
+    body, box_size = read_config("data/polyA_10bp/equilibrated.dat")
+    displacement, shift = space.periodic(box_size)
+    d = space.map_bond(partial(displacement))
+
+    nbs_i = np.array(list(range(9)))
+    nbs_j = np.array(list(range(1, 10)))
+
+    base_site = jnp.array(
+        [com_to_hb, 0.0, 0.0]
+    )
+    stack_site = jnp.array(
+        [com_to_stacking, 0.0, 0.0]
+    )
+    back_site = jnp.array(
+        [com_to_backbone, 0.0, 0.0]
+    )
+
+    Q = body.orientation
+    back_sites = body.center + rigid_body.quaternion_rotate(Q, back_site) # (N, 3)
+    stack_sites = body.center + rigid_body.quaternion_rotate(Q, stack_site)
+    base_sites = body.center + rigid_body.quaternion_rotate(Q, base_site)
+
+    dr_back = d(back_sites[nbs_i], back_sites[nbs_j])
+    dr_stack = d(stack_sites[nbs_i], stack_sites[nbs_j])
+    base_normals = Q_to_base_normal(Q)
+    cross_prods = Q_to_cross_prod(Q)
+    theta4 = jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], base_normals[nbs_j]))
+    theta5 = jnp.pi - jnp.arccos(jnp.einsum('ij, ij->i', dr_stack, base_normals[nbs_j]) / jnp.linalg.norm(dr_stack, axis=1))
+    theta6 = jnp.pi - jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], dr_stack) / jnp.linalg.norm(dr_stack, axis=1)) # NOTE: WE CHANGED THIS
+
+    dr_back2 = d(back_sites[nbs_j], back_sites[nbs_i]) # same as dr_back but in the opposite direction
+    # cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) / jnp.linalg.norm(dr_back, axis=1) # orig. not OK. (goes to 0)
+    # cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # not OK (goes to 0)
+    # cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # not OK. (goes to 0)
+    # cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back, axis=1) # not OK (goes to 0)
+    # cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back, axis=1) # OK (goes to 1)
+    cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) / jnp.linalg.norm(dr_back, axis=1) # OK (goes to 1)
+    # cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # OK (goes to 1)
+    # cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # OK. (goes to 1)
+
+    # cosphi2 = jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back) / jnp.linalg.norm(dr_back, axis=1) # orig. not OK (goes to 0)
+    # cosphi2 = jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # OK (goes to 1)
+    # cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # not OK (goes to 0)
+    # cosphi2 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # OK (goes to 1)
+    # cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # not OK (goes to 0)
+    cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back) / jnp.linalg.norm(dr_back, axis=1) # OK (goes to 1)
+    # cosphi2 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) / jnp.linalg.norm(dr_back, axis=1) # not OK (goes to 0)
+    # cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) / jnp.linalg.norm(dr_back, axis=1) # OK (goes to 1). Note, however, that things like this are identical to cosphi1
+
+    r_stack = jnp.linalg.norm(dr_stack, axis=1) # Would happen in `stacking`
+    """
+    # Note: all negative
+    f1_dr_stack_vals = f1_dr_stack(r_stack)
+
+    plt.hist(f1_dr_stack_vals)
+    plt.show()
+    """
+
+    """
+    # Note: all positive between 0 and 1
+    f4_theta_4_stack_vals = f4_theta_4_stack(theta4)
+    plt.hist(f4_theta_4_stack_vals)
+    plt.show()
+    """
+
+    """
+    # Note: all positive bewteen 0 and 1
+    f4_theta_5p_stack_vals = f4_theta_5p_stack(theta5)
+    plt.hist(f4_theta_5p_stack_vals)
+    plt.show()
+    """
+
+    """
+    # NOTE: Once we corrected by doing jnp.pi - (original theta6), we went from ~0 to ~1!
+    f4_theta_6p_stack_vals = f4_theta_6p_stack(theta6)
+    plt.hist(f4_theta_6p_stack_vals)
+    plt.show()
+    """
+
+
+    """
+    # NOTE: Once we corrected by taking a negative
+    f5_neg_cosphi1_stack_vals = f5_neg_cosphi1_stack(-cosphi1)
+    plt.hist(f5_neg_cosphi1_stack_vals)
+    plt.show()
+    """
+
+    """
+    # NOTE: Also, corrected by taking a negative
+    f5_neg_cosphi2_stack_vals = f5_neg_cosphi2_stack(-cosphi2)
+    plt.hist(f5_neg_cosphi2_stack_vals)
+    plt.show()
+    """
+
+
+    # Major note: I think all things are up to this point such that "labelled nucleotide is in the 3' direction"
+    # Next: simulate. If good, send and respond to Megan

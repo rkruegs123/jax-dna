@@ -30,7 +30,7 @@ from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 
 
 FLAGS = jax_config.FLAGS
-DYNAMICS_STEPS = 3000
+DYNAMICS_STEPS = 100
 
 
 f32 = util.f32
@@ -89,14 +89,16 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
         theta4 = jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], base_normals[nbs_j])) # FIXME: understand `np.einsum`
         # FIXME: have to normalize the cosine here by the magnitude of dr_stack
         theta5 = jnp.pi - jnp.arccos(jnp.einsum('ij, ij->i', dr_stack, base_normals[nbs_j]) / jnp.linalg.norm(dr_stack, axis=1))
-        theta6 = jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], dr_stack) / jnp.linalg.norm(dr_stack, axis=1))
-        cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) / jnp.linalg.norm(dr_back, axis=1) # FIXME: Ordering is probably wrong here. E.g. directionality of dr_back. Also, may or may not need a minus sign
-        cosphi2 = jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back) / jnp.linalg.norm(dr_back, axis=1) # FIXME: same as for cosphi1
+        theta6 = jnp.pi - jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], dr_stack) / jnp.linalg.norm(dr_stack, axis=1))
+        cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) / jnp.linalg.norm(dr_back, axis=1) # FIXME: Ordering is probably wrong here. E.g. directionality of dr_back. Also, may or may not need a minus sign
+        cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back) / jnp.linalg.norm(dr_back, axis=1) # FIXME: same as for cosphi1
         stack = stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2)
 
 
-        # return jnp.sum(fene) + jnp.sum(exc_vol) + jnp.sum(stack)
-        return jnp.sum(fene) + jnp.sum(exc_vol)
+        return jnp.sum(fene) + jnp.sum(exc_vol) + jnp.sum(stack)
+        # return jnp.sum(fene) + jnp.sum(exc_vol)
+        # return jnp.sum(exc_vol)
+
 
     return energy_fn
 
