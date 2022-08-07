@@ -24,7 +24,7 @@ from dynamic_nbrs import dynamic_energy_fn_factory_fixed
 
 
 FLAGS = jax_config.FLAGS
-DYNAMICS_STEPS = 3000
+DYNAMICS_STEPS = 5000
 
 f32 = util.f32
 f64 = util.f64
@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
     # Simulate with the energy function via Nose-Hoover
     kT = get_kt(t=TEMP) # 300 Kelvin = 0.1 kT
-    dt = 5e-3
+    dt = 5e-4
 
     init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift, dt, kT)
 

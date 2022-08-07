@@ -563,7 +563,7 @@ if __name__ == "__main__":
     # cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # not OK (goes to 0)
     # cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # not OK. (goes to 0)
     # cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back, axis=1) # not OK (goes to 0)
-    # cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back, axis=1) # OK (goes to 1)
+    # cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # OK (goes to 1)
     cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) / jnp.linalg.norm(dr_back, axis=1) # OK (goes to 1)
     # cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # OK (goes to 1)
     # cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # OK. (goes to 1)
