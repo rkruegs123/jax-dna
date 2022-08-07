@@ -24,7 +24,7 @@ from dynamic_nbrs import dynamic_energy_fn_factory_fixed
 
 
 FLAGS = jax_config.FLAGS
-DYNAMICS_STEPS = 1000
+DYNAMICS_STEPS = 3000
 
 f32 = util.f32
 f64 = util.f64
@@ -63,8 +63,7 @@ if __name__ == "__main__":
 
     body, box_size = read_config("data/polyA_10bp/equilibrated.dat")
 
-    # box_size = box_size[0]
-    box_size = 30.0
+    box_size = box_size[0]
 
     displacement, shift = space.periodic(box_size)
     key = random.PRNGKey(0)
@@ -113,6 +112,7 @@ if __name__ == "__main__":
     E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
 
     trajectory = [state.position]
+
 
     for i in range(DYNAMICS_STEPS):
         state = step_fn(state)

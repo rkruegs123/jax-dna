@@ -45,6 +45,10 @@ def rand_quat(key, dtype):
     return rigid_body.random_quaternion(key, dtype)
 
 
+def clamp(x, lo=-0.99, hi=0.99):
+    return jnp.clip(x, lo, hi)
+
+
 def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, neighbors):
 
     d = space.map_bond(partial(displacement_fn))
@@ -86,14 +90,13 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
         dr_stack = d(stack_sites[nbs_i], stack_sites[nbs_j])
         base_normals = Q_to_base_normal(Q) # space frame, normalized
         cross_prods = Q_to_cross_prod(Q) # space frame, normalized
-        theta4 = jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], base_normals[nbs_j])) # FIXME: understand `np.einsum`
+        theta4 = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nbs_i], base_normals[nbs_j]))) # FIXME: understand `np.einsum`
         # FIXME: have to normalize the cosine here by the magnitude of dr_stack
-        theta5 = jnp.pi - jnp.arccos(jnp.einsum('ij, ij->i', dr_stack, base_normals[nbs_j]) / jnp.linalg.norm(dr_stack, axis=1))
-        theta6 = jnp.pi - jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], dr_stack) / jnp.linalg.norm(dr_stack, axis=1))
+        theta5 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', dr_stack, base_normals[nbs_j]) / jnp.linalg.norm(dr_stack, axis=1)))
+        theta6 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nbs_i], dr_stack) / jnp.linalg.norm(dr_stack, axis=1)))
         cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) / jnp.linalg.norm(dr_back, axis=1) # FIXME: Ordering is probably wrong here. E.g. directionality of dr_back. Also, may or may not need a minus sign
         cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back) / jnp.linalg.norm(dr_back, axis=1) # FIXME: same as for cosphi1
         stack = stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2)
-
 
         return jnp.sum(fene) + jnp.sum(exc_vol) + jnp.sum(stack)
         # return jnp.sum(fene) + jnp.sum(exc_vol)
@@ -101,6 +104,7 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
 
 
     return energy_fn
+
 
 
 if __name__ == "__main__":
