@@ -559,21 +559,26 @@ if __name__ == "__main__":
     theta6 = jnp.pi - jnp.arccos(jnp.einsum('ij, ij->i', base_normals[nbs_i], dr_stack) / jnp.linalg.norm(dr_stack, axis=1)) # NOTE: WE CHANGED THIS
 
     dr_back2 = d(back_sites[nbs_j], back_sites[nbs_i]) # same as dr_back but in the opposite direction
+
     # cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) / jnp.linalg.norm(dr_back, axis=1) # orig. not OK. (goes to 0)
-    # cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # not OK (goes to 0)
-    # cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # not OK. (goes to 0)
-    # cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back, axis=1) # not OK (goes to 0)
-    # cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # OK (goes to 1)
     cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) / jnp.linalg.norm(dr_back, axis=1) # OK (goes to 1)
     # cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # OK (goes to 1)
+    # cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # not OK (goes to 0)
+
+    # cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # OK (goes to 1)
+    # cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # not OK. (goes to 0)
     # cosphi1 = jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # OK. (goes to 1)
+    # cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back, axis=1) # not OK (goes to 0)
+
+    # FIXME: messed this up. missing some nbjs_j for cosphi1
 
     # cosphi2 = jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back) / jnp.linalg.norm(dr_back, axis=1) # orig. not OK (goes to 0)
+    cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back) / jnp.linalg.norm(dr_back, axis=1) # OK (goes to 1)
     # cosphi2 = jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # OK (goes to 1)
     # cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # not OK (goes to 0)
+
     # cosphi2 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # OK (goes to 1)
     # cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back2) / jnp.linalg.norm(dr_back2, axis=1) # not OK (goes to 0)
-    cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back) / jnp.linalg.norm(dr_back, axis=1) # OK (goes to 1)
     # cosphi2 = jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) / jnp.linalg.norm(dr_back, axis=1) # not OK (goes to 0)
     # cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) / jnp.linalg.norm(dr_back, axis=1) # OK (goes to 1). Note, however, that things like this are identical to cosphi1
 

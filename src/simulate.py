@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
     # Simulate with the energy function via Nose-Hoover
     kT = get_kt(t=TEMP) # 300 Kelvin = 0.1 kT
-    dt = 5e-4
+    dt = 5e-3
 
     init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift, dt, kT)
 
