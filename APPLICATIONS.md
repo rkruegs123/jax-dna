@@ -15,6 +15,7 @@
   - Pass in all radial and angular parameters
   - Could try to extract a symbolic expression from it
 - Try a different spring rather than the FENE spring? The log term is annoying
+- the madrid DNA thing. MadDNA?
 
 ## Inverse Design
 - Secondary structure

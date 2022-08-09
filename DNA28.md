@@ -19,7 +19,9 @@
 - Efforts to model interaction with proteins and/or small molecules
 - dynamic neighbor calculation
 - single strand dynamics iwth coaxial and cross stacking and hydrogen bonding (e.g. for a polyA strand)
-
+- should also talk to tom about applications that are small scale that we can probably do backprop on them -- maybe some displacement thing
+- what is nupack?
+- www.molecularprogrammers.org
 
 ## Notes
 
@@ -199,4 +201,72 @@ e.g. oxDNA-viewer, scadnano, abstract tile method thing from winfree group
 - RNA folding is a subset of Oritatami Systems which is asubset of Turedos
 - skipping notes on next couple because they are quite theoretical and irrelevant
 
-### Single-pass transmembrane double-stranded DNA with functional toeholds for non-destructive intra- and extravesicular nucleic acid target recognition
+### Single-pass transmembrane double-stranded DNA with functional toeholds for non-destructive intra- and extravesicular nucleic acid target recognition (Gde Bimanananda M. Wisna)
+- would be very useful if we can detect intra and extracellular transcripts ot do, e.g. cell classification
+- "Can we use DNA nanotstructures to simultaneously recognize intra- and extr-acellualr specific nucleic acids in situ? (something like this)
+- Existing studies using DNA nanotech for lipid bilayers: nanopores, and isngle stranded  DNA detection
+  - they want to recognize outside of vesicle AND inside of vesicle
+- two strand design such that it sits in the membrane
+  - first confirmed that it binds to th emembrane.
+  - how to detect things within the vesicle?
+  - encapsulate DNA with DNA-Cy5 and incubate. See if you have recruitment of the target transcript on th emembrane. If so, you'd expect a Cy5 ring to form on the membrane of the vesicles. Cool images...
+- Also checked for false positives
+- Can do Cy3B for extraceullar. Then, you can do both and get a unique color. Cool!
+- Want to know if the sensor is invasive or not...
+  - e.g. does the insertion of the sensor cause leakage of small membranes?
+  - Do a leakage assay.
+  - Q: does it eventually leave the membrane?
+- Q: how sensitive is this to the concentration of the sensor?
+  - e.g. do you get either leakage or a poor signal if you have a lot or too little of the sensor?
+  - saw signalf orrange of concentraitons. Didn't test leakage for range of concentrations.
+- This is very very cool
+- Q: how exactly does it get in the membrane?
+  - add hydrophobic things (cholesterols) to get it in th emembrane. But, if you add too many, they can aggregate with eachother
+  - 2-4 cholesterols
+  - Q: how do you get the cholesterols on? Either IDT, or synthesize in-house
+- Q: what does it have to do with signal amplification?
+- PI: Rizal Hariadi at ASU
+- Poster number 47
+- A good question from someone else: how to relay information from outside to inside
+  - this is where signal amplification likely comes in.
+  - in the real case, you don't want to use a fluorrophore. He doesn't have any immediate ideas on this
+- Erik Winfree question: how does it insert in the right orientation?
+  - so, are only half of your sensors doing something?
+  - yes! There is no explicit control over this insertion direction... They are trying to do some biasing... E.g. add hydrophilic/phobic parts to certain ends
+  - Erik Winfree asks if the protein community has a sense of why membrane proteins insert in a particular direction
+    - "membrane biogenesis"
+  - can mess around with length to achieve some netropy cost...
+
+### Fast and robust strand displacement cascades via systematic design strategies
+- issue of strand displacement: downstream leak
+  - not very robust!
+- can try and fix by adding redundant domains
+  - gets a leakless design, (but slow?)
+  - other strategies that are also more robust but are slow...
+- many strategies for a robust translator cascade to go from X to Y reversibly
+  - might not be as fast as a single dipslacement
+- there's an issue when you have reundant domains because you can get non-specific binding/spurious invasion...
+- many faculty questions on this one. people seemed to be a bit skeptical. should read about this more...
+
+### A Cooperative DNA Catalyst (Dallas Taylor, Lulu Qian's group)
+- presenter is an undergrad at Caltech
+- two important kinds of catalysts: (i) covalent catalysts (covalent bond created b/w catalyst and substrate), and (ii) noncovalent catalysts (HB bonds instead)
+- it's known that designed DNA systems have the ability to perform non-covalent catalytic functions
+  - using DNA strand displacement. highly programmable and cascadabel
+    - used for many things such as signal amplification for molecular diagnostics (Chen et al 2013 "STakcing nonezymatic circuits for high signal gain" and some other 2011 paper)
+    - Signal restoration in digitral logic ocmputation. Can restor an analog signal to a digital signal
+    - algebraic functions (e.g. multiplication and division)
+    - weight multiplication and learning in neural network computation
+- type sof non-covalent catalysts
+  - basic catalyst - non-allosterically controlled
+    - allows for continuous production of output signal even with very low concentration of input signal
+  - allosterically controlled catalyst WITH A CONSUMABLE ACTIVATOR
+    - has steady state output concentrations that are directly related to initial activator concentration (below the initial gate concentration)
+  - cooperative catalyst (this work)
+    - make the activator catalytic as well!
+    - so the input and the activator can be present at a low concentration, and still do a good amount of signal amplification!
+- how to make the cooperative one?
+  - criteria: no sequence dependence, all signals should be of same format -- toeohld foollowed by branch migration domain, and motifs should be simple
+  - allosteric catalyst violates some of these -- i.e. sequence dependence. Need 2 and 2*. Complementarity can lead to spurious unwanted interactions
+  - in this case, they use trimolecular interactions
+- ok, going all a bit fast... don't understand toehold displacement enough to really folllow any of this...
