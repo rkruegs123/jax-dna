@@ -79,6 +79,7 @@ if __name__ == "__main__":
     step_fn = jit(step_fn)
 
     state = init_fn(key, body, mass=shape.mass())
+    # state = init_fn(key, body) # Doesn't work -- must provide mass explicitly
     E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
 
     trajectory = list()
@@ -90,6 +91,7 @@ if __name__ == "__main__":
 
     E_final = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
 
+    """
     remapped = list()
     for pt in trajectory:
       remapped.append(vmap(rigid_body.transform, (0, None))(pt, shape))
@@ -97,6 +99,7 @@ if __name__ == "__main__":
     remapped = jnp.array(remapped)
     remapped.shape
     remapped = remapped.reshape(remapped.shape[0], -1, 3) # squash the particles in on each other
+    """
 
     pdb.set_trace()
     print("done")
