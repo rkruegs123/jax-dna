@@ -16,6 +16,7 @@
   - Could try to extract a symbolic expression from it
 - Try a different spring rather than the FENE spring? The log term is annoying
 - the madrid DNA thing. MadDNA?
+- fit parameters to things other than B-DNA
 
 ## Inverse Design
 - Secondary structure
@@ -24,3 +25,4 @@
 ## Misc.
 - Blender visualization. Convert to all-atom?
 - Really wonder how speed (e.g. of XLA) compares with CUDA
+- If we are to collaborate with other labs for parameter fitting and experiments, Tom's may be best as we may be able to do both with him

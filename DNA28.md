@@ -5,23 +5,33 @@
 - Is it inappropriate to visualize oxDNA output at an atomistic level?
 - Need to talk about oxDNA 3
 - Ask about moment of inertia in Peter's thesis
+  - Something about how its effective and they were just being lazy
 - Ask Matt Patitz and Erik Winfree what type of search they have done over the space of circuits
   . e.g. rather than explicit design, do they ever search the space of solutions to a particular algorithm
   - Might be some interesting "compressibility" notions here as well
-- Note: lunch tomorrow with Tom
+- Note: lunch Thursday with Tom
 - Really need to get a sense of how long simulations take to see if backprop is feasible
   - E.g. some of Petr's simulations for thingsa as simpleas a generalized 3D aTAM take ~2 weeks
 - Should get source for Anderson thermosat -- is it described in a paper somewhere?
 - Where is the Langevin thermostat on the oxDNA documentation?
 - is oxDNA CUDA implementation vectorized at all?
 - have people done profiling? what is the slow part?
+  - they have done this. slowest part is of course the potential claclulation, mroe specifically for angular terms computing the cross product of things
 - What about different forms of DNA other than B-DNA? Efforts to do this? Is there any purpose/application in the world of DNA nanotechnology?
 - Efforts to model interaction with proteins and/or small molecules
 - dynamic neighbor calculation
+  - A: should be something about maximum interaction radius + some verlet scheme thing... thing it wlil be something like from https://en.wikipedia.org/wiki/Verlet_list
 - single strand dynamics iwth coaxial and cross stacking and hydrogen bonding (e.g. for a polyA strand)
 - should also talk to tom about applications that are small scale that we can probably do backprop on them -- maybe some displacement thing
 - what is nupack?
-- www.molecularprogrammers.org
+- anyway to get energy subterms?
+  - `output_bonds.py` script. Should be well documented in lorenzo's oxDNA github repo
+  - great to iterate with!
+- why don't you use quaternions
+  - they do in the CUDA code. They just don't have the resources to optimize the CPU code
+- maybe re-ask about verlet lists
+- should really ask about the interaction site distances from Tom's thesis
+  - Petr says that Tom doesn't make mistakes. But, if its 0.4l instead of 0.24l, everything makes sense
 
 ## Notes
 
@@ -68,6 +78,22 @@
   - in theory, maybe this isn't a massive bottleneck because you can just run N simultaions across N GPUs, and maybe you'd want to run N simulations anyway
 - i get the sense that Petr thinks a JAX-MD implementation would be useful for parameter fitting, but not for inverse design because simulations are just too slow
   - Note: emulator would be a reaosnable next step if this is the case
+- www.molecularprogrammers.org
+- what's the most basic way to protect DNA nanotech in vivo? coat with something called like "polylyceine". You just make your nanotech then put in a bath of that, so you can stlil produce at scale
+- The problem with the L-DNA thing is just that it's expensive. There ARE polymerases for other kinds of DNA, like L-DNA, LNA and PNA, but they are more finicky. Out of Andrew Ellington's lab at UT Austin -- they basically just do directed evolution on existing polymerases. Could be a relly good future direction
+- Most basic "bioproduction" for aplications is what Heinrik Dietz: encode DNAses into your tihng to replicate that will actually cut out the staples. This allows you to bioproduce in a fixed stiochiometry (in the presence of zinc)
+  - same for tiles. just more finicky (tiles)
+- known issue with oxDNA -- a polyA/polyT duplex isn't right. The thing preventing it from being right is that the stacking site (the normal vector) is orthogonal to the backbone-base vector. In a sense, would need an additional gamma. Could deifnitely optimize for this.
+- for proteins, you typically need implicit solvent as well as more than pairwise reactions
+- one thing they've been wanting to add: ion interactions, e.g. for magnesium bridges
+- don't forget to cure the original sin (an Adam and even reference could be funny here) -- 5' to 3' issue
+- what about simulating other forms of DNA?
+  - could prob do L-DNA by just flipping the phi's. For others, you'd need datra that doesn't exist. Best ou could do at the omment is fitting to small scale atomistic simulations
+- note that you can ofcourse link proteins to PNAs, but this is expensive. Other people are workign on connecting normal DNA to protein via some small molecules. Cheaper, and also good because you know the dynamics of normal DNa a bit better
+- oxRNA currently has no 3D information. Would be great to be able to add
+- some people out of ohio state have the thing for HDR as a dna nanostructure to be way more stable
+- oxDNA/RNA also has no DNA/RNA interactions. Too bad. Would be nic efor guid RNAs
+
 
 
 ### Models of self-assembling systems: varying levels of abstraction and objectives (Matt Patitz)
@@ -270,3 +296,100 @@ e.g. oxDNA-viewer, scadnano, abstract tile method thing from winfree group
   - allosteric catalyst violates some of these -- i.e. sequence dependence. Need 2 and 2*. Complementarity can lead to spurious unwanted interactions
   - in this case, they use trimolecular interactions
 - ok, going all a bit fast... don't understand toehold displacement enough to really folllow any of this...
+
+
+### Dynamic control of biomolecular phase separation (Elisa Franco)
+- Start day 2
+- control of phase separation using nucleic acids
+- so, what is phase separation in this context...
+- she claims that lifle is characterized by sparation
+  - e.g. there is a membrane. that defines a cell in some sense
+- have discovered organelles that remain separated in the absence of a membrane
+  - "membraneless organeslls" (aka condensetes)
+  - raise interesting origin of life questions
+  - e.g. ribosomes have a structure! but no membrane
+- stimulated attempts to develop artificial organelles... (from bottom up)
+  - e.g. synthetic proteins
+  - e.g. dna/rna
+  - e.g. synthetic polymrers
+- she will focus on the question of: "how can we design chemical reactions to control condensation?"
+  - want the controller in the test tube rather than outside of it
+- two main things in the talk: (i) modeling, and (ii) experiments (with dna nanotech)
+- the modeling concerns the thermodynamic perspective (e.g. phase diagrams, and deriving them. How can we derive chemical reactions that help us shape phase diagrams?)
+  - so, will first focus on thermodynamics of phsae separation...
+  - following a review by hyman in 2014. anual reviews cell dev bio
+- when we mix two species, two things can happen...
+  - entropy driven mixing... all things will mix. can describe free energy just with entropic term -T*S. There's a single minimum. For two species, can be derived exactly
+  - what if we have chemical interactions bi/w the species? than we have to look at the enthalpy...
+    - if like-neighbors are desired (i.e. same species like to bond to eachother), mixing can be disfavored.
+      - can get mor ethan one local minima. linear combination of them will be favorable...
+      - if we change the temperature, we get a family of curves. for each one, we can get the minima and the inflectoin points (the spinodes)
+      - can take this family of curves and their associated points to a phase diagram
+- concentratoin adn temperature are control parameters to decide if you are phase separating or not...
+- We can also change the interaction energy
+- we understand these control parmeters... so how do cells control phsae separation while maintaining physiological conditoins?
+  - concentration can be changed through chemical reactions! cell can change concentration quite easily
+- Dino Osmanovic. Want to (1) control condensate size and (2) control growth and dissolution
+  - have additional species that interconvert b/w eachother that affect abundance of x1 and x2, which can phase separate
+  - use a CRN to determine how species inter-convet
+  - then use a Cahn-Hilliard model for interactions for how species arrange in space
+  - then some other theory stuff...
+- kind of tuned out afterwards... used DNA nanostars in experiments
+
+### Protecting heterochiral DNA nanostructures against exonuclease-mediated degradation (Tracy Mallette, from Matthew Lakin's lab)
+- need to defend DNA for in vivo delivery
+- what are existing ways to defend against nucleases?
+  - chemical modifications. e.g. phosphorothioate bonds or 2-O-methyl group. Used in antisense therapy now...
+    - drawbacks: need to be carefully integrated during the design phase. Can't easily swap it for an unmodified bsae and expect it to behave exactly the same. also cause cellular toxicity
+  - alternate nucleic acids
+    - e.g. locked nucleic acid (LNA) or peptide nucleic acid (PNA)
+      - very nuclease resistant
+      - also improving on the toxicity scale
+      - can' teasily design with these using cmmon DNA computing tools like NUPACK
+        - have very different reaction kinetics and bond dffernetly
+        - NOTE: GREAT OPPORTUNITY FOR INVERSE DESING
+        - QUESTION: HOW DOES THIS EFFECT PRODUCTION?
+- what's a better way?
+  - use L-DNA for DNA computing
+  - L-DNA is the enantiomer of naturla DNA
+  - can create this synthetically
+  - naturaly nuclease resistant, and identical in thermostability and hybridization. and not really toxic
+  - still a problem: doesn't bind predictably to D-DNA!
+    - Watson-Crick base pairing doesn't act predictably with a chiral mismatch
+- solution: use hetrochiral tranlsators
+  - strands contaiing both - and L-chiralities
+  - allows for hybridization of matching chiral sections!
+- this works well, but how will this work for production:
+  - note that there an L-chirsal polymerase! Very cool. Problem is that in general L-DNA is harder to synthesize.
+  - would be cool if there is one that is easier to synthesize that also has a polymerase
+  - if so, seems like your problem would kind of be solved...
+
+### DNA Strand-Displacement Temporal Logic Circuits (Anna Lapteva, Lulu Qian's lab)
+- temporal information processing is important...
+- strategies for temporal information processing:
+  - cross inhibition: arrival of first input generates circuit soutput as well as inhibitors targeting subsequent inputs
+  - temporal memory: no circut output untill all inputs arrive -- memory of earlier inputs determines circuit behavior for later inputs
+    - allows for combinatoral regulation bsaed on small number of inputs
+- skipping a few next talks...
+
+### Hourglass emergence + collective computation in nature (Jessica Flack)
+- a lot of words, but the most interesting thing is the following:
+  - the idea that when macroscopic variables change at a much slower rate than the microscopic level changes, then the microscopic level can depend on them in a sense. Relates to Jamie's thoughts...
+
+### Strand exchange reactions for analysis and computation (Andrew Ellington, UT Austin)
+- starting wednesday...
+- I think tihs is the guy who makes new polymerases for different kinds of DNA
+- very interested in applications
+- He thinks nucleic acids are good because they are quick
+- things molecluar diagnostics in the form of nucleic acids have a role to play
+- advocate of: loop-mediate isothermal amplicaiation (LAMP) trandsduced by strand exchange probes (OSD). LAMP-OSD
+  - make things that can grow because they fold back on themselves. need a 4-6 primer scheme to get the growth working in the first place
+  - one polymerase
+- question: how can we use strand exchange as a probe?
+- consdiers strand exchange a unique chemistry. even though he critiques a lot
+  - two reasons: (1) base pairing is special. DNA can both hold information (in a form that is replicable). DNA is special. Also, (2) it's a ckinetic trap. Two steps. Toehold binding, then zipper like function. Special that you can separate binding/initiation from the propagation of a strand displcaement/exchange reaction
+- try to bring down cost by making all components biosynthesized
+  - e.g. not ordering from NEB, but growing from bacteria
+  - suggests that you don't really need purifications. Sometimes, rather than just using NEB enzyme,s they put in actual colony forming units (CFUs). Trying to make accessible.
+- particular platforms: glucose monitors(ook up oligo into invertase). lateral flow, pregnancy strips.
+- stopped listening.. lots of diagnostic stuff
