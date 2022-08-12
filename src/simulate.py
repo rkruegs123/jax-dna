@@ -24,7 +24,7 @@ from dynamic_nbrs import dynamic_energy_fn_factory_fixed
 
 
 FLAGS = jax_config.FLAGS
-DYNAMICS_STEPS = 5000
+DYNAMICS_STEPS = 1000
 
 f32 = util.f32
 f64 = util.f64
