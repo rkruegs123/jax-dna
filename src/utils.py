@@ -11,6 +11,27 @@ import jax.numpy as jnp
 from smoothing import get_f1_smoothing_params, get_f2_smoothing_params, get_f3_smoothing_params, \
     get_f4_smoothing_params, get_f5_smoothing_params
 
+from jax.config import config
+config.update("jax_enable_x64", True)
+
+
+# Probabilistic sequence utilities
+DNA_MAPPER = {
+    "A": [1, 0, 0, 0],
+    "C": [0, 1, 0, 0],
+    "G": [0, 0, 1, 0],
+    "T": [0, 0, 0, 1]
+}
+DNA_BASES = set("ACGT")
+
+# seq is a string
+def get_one_hot(seq):
+    seq = seq.upper()
+    if not set(seq).issubset(DNA_BASES):
+        raise RuntimeError(f"Sequence contains bases other than ACGT: {seq}")
+    seq_one_hot = [DNA_MAPPER[b] for b in seq]
+    return np.array(seq_one_hot, dtype=np.float64) # float so they can become probabilistic
+
 
 
 # oxDNA unit conversions
@@ -227,6 +248,7 @@ def read_topology(top_path):
     n = int(sys_info[0])
     n_strands = int(sys_info[1])
     bonded_nbrs = list()
+    seq = "" # distinct strands are concatenated with each other
     for i, nuc_line in enumerate(top_lines[1:]):
         nuc_info = nuc_line.strip().split()
         strand = int(nuc_info[0])
@@ -236,10 +258,11 @@ def read_topology(top_path):
 
         if nbr_5p != -1:
             bonded_nbrs.append((i, nbr_5p)) # 3' to 5' for now. Should fix later...
+        seq += base
 
     unbonded_nbrs = get_unbonded_neighbors(n, bonded_nbrs)
 
-    return n, n_strands, bonded_nbrs, unbonded_nbrs
+    return n, n_strands, bonded_nbrs, unbonded_nbrs, seq
 
 
 # Read in oxDNA .conf file
@@ -249,7 +272,7 @@ def read_config(conf_path, top_path):
     if not Path(top_path).exists():
         raise RuntimeError(f"Topology file does not exist at location: {top_path}")
 
-    n, n_strands, bonded_nbrs, unbonded_nbrs = read_topology(top_path)
+    n, n_strands, bonded_nbrs, unbonded_nbrs, seq = read_topology(top_path)
 
     with open(conf_path) as f:
         config_lines = f.readlines()
@@ -260,7 +283,7 @@ def read_config(conf_path, top_path):
     nuc_lines = config_lines[3:]
     body = read_state(nuc_lines)
 
-    return body, box_size, n_strands, bonded_nbrs, unbonded_nbrs
+    return body, box_size, n_strands, bonded_nbrs, unbonded_nbrs, seq
 
 # Note: Could maybe subsume read_config... but then everything would be a list
 def read_trajectory(traj_path, top_path):
@@ -269,7 +292,7 @@ def read_trajectory(traj_path, top_path):
     if not Path(top_path).exists():
         raise RuntimeError(f"Topology file does not exist at location: {top_path}")
 
-    n, n_strands, bonded_nbrs, unbonded_nbrs = read_topology(top_path)
+    n, n_strands, bonded_nbrs, unbonded_nbrs, seq = read_topology(top_path)
 
     with open(traj_path) as f:
         traj_lines = f.readlines()
@@ -299,7 +322,7 @@ def read_trajectory(traj_path, top_path):
     bs = np.array(bs, dtype=np.float64)
     Es = np.array(Es, dtype=np.float64)
 
-    return states, bs, ts, Es, n_strands, bonded_nbrs, unbonded_nbrs
+    return states, bs, ts, Es, n_strands, bonded_nbrs, unbonded_nbrs, seq
 
 
 # Transform quaternions to nucleotide orientations
@@ -601,15 +624,13 @@ def get_params(t, config_path="tom.toml"):
 if __name__ == "__main__":
     # final_params = get_params()
 
-    # body, box_size = read_config("data/polyA_10bp/generated.dat")
-
-    body, box_size = read_config("data/polyA_10bp/equilibrated.dat")
+    top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/generated.top"
+    conf_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/start.conf"
+    body, box_size, n_strands, bonded_nbrs, unbonded_nbrs, seq = read_config(conf_path, top_path)
 
     pdb.set_trace()
 
     jax_traj_to_oxdna_traj([body], box_size[0], output_name="recovered.dat")
-
-
 
     pdb.set_trace()
     print("done")

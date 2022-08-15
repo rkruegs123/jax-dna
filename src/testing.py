@@ -16,10 +16,15 @@ from jax_md.rigid_body import RigidBody, Quaternion
 from potential import TEMP # FIXME: TEMP should really be an argument to the potentials... Should have getters that take in a temp
 from utils import read_config, jax_traj_to_oxdna_traj
 from utils import com_to_backbone, com_to_stacking, com_to_hb
+from utils import get_one_hot
+
 
 from static_nbrs import static_energy_fn_factory
 from dynamic_nbrs import dynamic_energy_fn_factory_fixed
 
+
+from jax.config import config
+config.update("jax_enable_x64", True)
 
 FLAGS = jax_config.FLAGS
 DYNAMICS_STEPS = 1000
@@ -50,20 +55,20 @@ if __name__ == "__main__":
 
 
 
-
-
-
-
-
     """
     conf_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/oxpy-testing/relaxed.conf"
     traj_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/oxpy-testing/output.dat"
     top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/oxpy-testing/test.top"
     """
-    traj_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/test.dat"
-    top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/polyA_10bp/generated.top"
 
-    states, bs, ts, Es, n_strands, bonded_nbrs, unbonded_nbrs = read_trajectory(traj_path, top_path)
+    # traj_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/test.dat"
+    # top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/polyA_10bp/generated.top"
+    top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/generated.top"
+    traj_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/output.dat"
+
+    states, bs, ts, Es, n_strands, bonded_nbrs, unbonded_nbrs, seq = read_trajectory(traj_path, top_path)
+    pdb.set_trace()
+    seq = jnp.array(get_one_hot(seq), dtype=f64)
 
     # Maybe static/dynaimic_neighbor_fn should use a helper that returns all the energy subterms, and then in the actual *_energy_fn we just sum them...
 
@@ -86,26 +91,28 @@ if __name__ == "__main__":
 
 
 
-    _, subterms_fn = static_energy_fn_factory(displacement,
+    _, static_subterms_fn = static_energy_fn_factory(displacement,
                                               back_site=back_site,
                                               stack_site=stack_site,
                                               base_site=base_site,
                                               neighbors=bonded_nbrs)
 
-    dynamic_energy_fn = dynamic_energy_fn_factory_fixed(displacement,
+    _, dynamic_subterms_fn = dynamic_energy_fn_factory_fixed(displacement,
                                                         back_site=back_site,
                                                         stack_site=stack_site,
                                                         base_site=base_site,
                                                         neighbors=unbonded_nbrs)
 
 
-    subterms_fn = jit(subterms_fn)
-    dynamic_energy_fn = jit(dynamic_energy_fn)
+    static_subterms_fn = jit(static_subterms_fn)
+    # dynamic_energy_fn = jit(dynamic_energy_fn)
     es = list()
     for state in tqdm(states):
-        fene, exc_vol_bonded, stack = subterms_fn(state)
-        exc_vol_unbonded = dynamic_energy_fn(state)
-        es.append(fene + exc_vol_bonded + stack + exc_vol_unbonded)
+        fene, exc_vol_bonded, stack = static_subterms_fn(state)
+        exc_vol_unbonded, v_hb, cross_stack = dynamic_subterms_fn(state, seq)
+        pdb.set_trace()
+        # es.append(fene + exc_vol_bonded + stack + exc_vol_unbonded)
+        es.append(fene + exc_vol_bonded + stack)
 
     plt.plot(list(range(len(es))), es)
     plt.show()

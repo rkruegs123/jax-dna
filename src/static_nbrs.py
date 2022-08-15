@@ -29,6 +29,9 @@ from utils import nucleotide_mass, get_kt, moment_of_inertia
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 
 
+from jax.config import config
+config.update("jax_enable_x64", True)
+
 FLAGS = jax_config.FLAGS
 DYNAMICS_STEPS = 100
 
@@ -45,7 +48,7 @@ def rand_quat(key, dtype):
     return rigid_body.random_quaternion(key, dtype)
 
 
-def clamp(x, lo=-0.99, hi=0.99):
+def clamp(x, lo=-1.0, hi=1.0):
     return jnp.clip(x, lo, hi)
 
 
@@ -55,7 +58,7 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
     nbs_i = neighbors[:, 0]
     nbs_j = neighbors[:, 1]
 
-    def _compute_subterms(body: RigidBody) -> float:
+    def _compute_subterms(body: RigidBody):
         Q = body.orientation
         """
         # Conversion in Tom's thesis, Appendix A
@@ -131,7 +134,7 @@ if __name__ == "__main__":
     displacement, shift = space.periodic(box_size)
     key = random.PRNGKey(0)
     key, pos_key, quat_key = random.split(key, 3)
-    dtype = DTYPE[0]
+    dtype = f64
 
     N = body.center.shape[0]
 

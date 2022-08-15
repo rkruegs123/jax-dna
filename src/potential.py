@@ -6,6 +6,9 @@ import pdb
 
 from utils import get_params
 
+from jax.config import config
+config.update("jax_enable_x64", True)
+
 
 # FIXME: pass around better
 TEMP = 300 # Kelvin
@@ -21,7 +24,7 @@ COAX_PARAMS = PARAMS["coaxial_stacking"]
 # Define individual potentials
 # FIXME: Could use ones from JAX-MD when appropriate (e.g. morse, harmonic). Could just add ones to JAX-MD that are missing (e.g. FENE)
 
-# FIXME: need some initial positions from Megan
+
 def _v_fene(r, eps=FENE_PARAMS["eps_backbone"],
            r0=FENE_PARAMS["r0_backbone"], delt=FENE_PARAMS["delta_backbone"]):
     x = (r - r0)**2 / delt**2
@@ -30,13 +33,15 @@ def _v_fene(r, eps=FENE_PARAMS["eps_backbone"],
 
 def v_fene(r):
 
-    # return _v_fene(r)
+    return _v_fene(r)
     # Thresholded version -- analogous to allowing broken bakcbone from oxDNA
+    """
     rbackr0 = r - FENE_PARAMS["r0_backbone"]
 
     return jnp.where(jnp.abs(rbackr0) >= FENE_PARAMS["delta_backbone"],
                      1.0e12,
                      _v_fene(r))
+    """
 
 
 def v_morse(r, eps, r0, a):
