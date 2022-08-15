@@ -63,8 +63,8 @@ if __name__ == "__main__":
 
     # traj_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/test.dat"
     # top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/polyA_10bp/generated.top"
-    top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/generated.top"
-    traj_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/output.dat"
+    top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-coax/generated.top"
+    traj_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-coax/output.dat"
 
     states, bs, ts, Es, n_strands, bonded_nbrs, unbonded_nbrs, seq = read_trajectory(traj_path, top_path)
     pdb.set_trace()
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     es = list()
     for state in tqdm(states):
         fene, exc_vol_bonded, stack = static_subterms_fn(state)
-        exc_vol_unbonded, v_hb, cross_stack = dynamic_subterms_fn(state, seq)
+        exc_vol_unbonded, v_hb, cross_stack, coax_stack = dynamic_subterms_fn(state, seq)
         pdb.set_trace()
         # es.append(fene + exc_vol_bonded + stack + exc_vol_unbonded)
         es.append(fene + exc_vol_bonded + stack)

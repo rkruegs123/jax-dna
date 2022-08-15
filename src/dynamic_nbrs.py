@@ -76,8 +76,8 @@ def dynamic_energy_fn_factory_fixed(displacement_fn, back_site, stack_site, base
         # Excluded volume (unbonded)
         # dr_base = d(base_sites[nbs_i], base_sites[nbs_j])
         dr_base = d(base_sites[nbs_j], base_sites[nbs_i]) # Note the flip here
-        dr_backbone = d(back_sites[nbs_i], back_sites[nbs_j])
-        dr_back_base = d(back_sites[nbs_i], base_sites[nbs_j])
+        dr_backbone = d(back_sites[nbs_j], back_sites[nbs_i]) # Note the flip here
+        dr_back_base = d(back_sites[nbs_i], base_sites[nbs_j]) # Note: didn't flip this one (and others) because no need, but should look into at some point
         dr_base_back = d(base_sites[nbs_i], back_sites[nbs_j])
         exc_vol = exc_vol_unbonded(dr_base, dr_backbone, dr_back_base, dr_base_back)
 
@@ -108,12 +108,22 @@ def dynamic_energy_fn_factory_fixed(displacement_fn, back_site, stack_site, base
         # Cross stacking
         cross_stack = cross_stacking(dr_base, theta1, theta2, theta3, theta4, theta7, theta8)
 
+        # Coaxial stacking
+        dr_stack = d(stack_sites[nbs_j], stack_sites[nbs_i]) # note: reversed
+        dr_stack_norm = dr_stack / jnp.linalg.norm(dr_stack, axis=1, keepdims=True)
+        dr_backbone_norm = dr_backbone / jnp.linalg.norm(dr_backbone, axis=1, keepdims=True)
+        theta5 = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nbs_i], dr_stack_norm)))
+        theta6 = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -base_normals[nbs_j], dr_stack_norm)))
+        cosphi3 = jnp.einsum('ij, ij->i', dr_stack_norm, jnp.cross(dr_backbone_norm, back_bases[nbs_j]))
+        cosphi4 = jnp.einsum('ij, ij->i', dr_stack_norm, jnp.cross(dr_backbone_norm, back_bases[nbs_i]))
+        coax_stack = coaxial_stacking(dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4)
 
-        return jnp.sum(exc_vol), jnp.sum(v_hb), jnp.sum(cross_stack)
+
+        return jnp.sum(exc_vol), jnp.sum(v_hb), jnp.sum(cross_stack), jnp.sum(coax_stack)
 
     def energy_fn(body: RigidBody, seq: util.Array) -> float:
-        exc_vol, v_hb, cross_stack = _compute_subterms(body, seq)
-        return exc_vol + v_hb + cross_stack
+        exc_vol, v_hb, cross_stack, coax_stack = _compute_subterms(body, seq)
+        return exc_vol + v_hb + cross_stack + coax_stack
 
     return energy_fn, _compute_subterms
 
