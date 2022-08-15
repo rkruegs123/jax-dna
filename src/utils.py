@@ -2,6 +2,7 @@ import toml
 from pathlib import Path
 import pdb
 import numpy as np
+from itertools import combinations
 
 from jax import vmap
 from jax_md.rigid_body import Quaternion, RigidBody
@@ -125,6 +126,10 @@ def principal_axes_to_euler_angles(x, y, z):
     """
 
     psi = np.arctan2(x[1], x[0])
+    if np.abs(x[2]) > 1:
+        # FIXME: could clamp?
+        # pdb.set_trace()
+        x[2] = np.round(x[2])
     theta = np.arcsin(-x[2])
     phi = np.arctan2(y[2], z[2])
 
@@ -132,22 +137,15 @@ def principal_axes_to_euler_angles(x, y, z):
 
 
 
-# Read in oxDNA file
-def read_config(fpath):
-    if not Path(fpath).exists():
-        raise RuntimeError(f"Configuration file does not exist at location: {fpath}")
-
-    with open(fpath) as f:
-        config_lines = f.readlines()
-
-    box_size = config_lines[1].split('=')[1].strip().split(' ')
-    box_size = np.array(box_size).astype(np.float64)
-
-    nuc_lines = config_lines[3:]
-    n = len(nuc_lines)
+# Takes in a list of lines and returns a RigidBody
+# Note: it is the burden of the user of this function to pass the right number of lines
+# in other words, this function should be able to infer `n`
+def read_state(state_lines):
+    n = len(state_lines)
     R = np.empty((n, 3), dtype=np.float64)
     quat = np.empty((n, 4), dtype=np.float64)
-    for i, nuc_line in enumerate(nuc_lines):
+
+    for i, nuc_line in enumerate(state_lines):
         nuc_info = np.array(nuc_line.strip().split(' '), dtype=np.float64)
         assert(nuc_info.shape[0] == 15)
 
@@ -209,7 +207,99 @@ def read_config(fpath):
         quat[i, :] = np.array([q0, q1, q2, q3])
 
     body = RigidBody(R, Quaternion(quat))
-    return body, box_size
+    return body
+
+
+# FIXME: will have to flip around if we go to 5'->3' neighbors
+def get_unbonded_neighbors(n, bonded_neighbors):
+    unbonded_neighbors = set(combinations(range(n), 2)) # first, set to all neighbors
+    unbonded_neighbors -= set(bonded_neighbors) # remove bonded neighbors
+    unbonded_neighbors -= set([(i, i) for i in range(n)]) # remove identities (they shouldn't be in there)
+    unbonded_neighbors = list(unbonded_neighbors)
+    return unbonded_neighbors
+
+def read_topology(top_path):
+    with open(top_path) as f:
+        top_lines = f.readlines()
+
+    # FIXME: no error checking
+    sys_info = top_lines[0].strip().split()
+    n = int(sys_info[0])
+    n_strands = int(sys_info[1])
+    bonded_nbrs = list()
+    for i, nuc_line in enumerate(top_lines[1:]):
+        nuc_info = nuc_line.strip().split()
+        strand = int(nuc_info[0])
+        base = nuc_info[1]
+        nbr_3p = int(nuc_info[2])
+        nbr_5p = int(nuc_info[3])
+
+        if nbr_5p != -1:
+            bonded_nbrs.append((i, nbr_5p)) # 3' to 5' for now. Should fix later...
+
+    unbonded_nbrs = get_unbonded_neighbors(n, bonded_nbrs)
+
+    return n, n_strands, bonded_nbrs, unbonded_nbrs
+
+
+# Read in oxDNA .conf file
+def read_config(conf_path, top_path):
+    if not Path(conf_path).exists():
+        raise RuntimeError(f"Configuration file does not exist at location: {conf_path}")
+    if not Path(top_path).exists():
+        raise RuntimeError(f"Topology file does not exist at location: {top_path}")
+
+    n, n_strands, bonded_nbrs, unbonded_nbrs = read_topology(top_path)
+
+    with open(conf_path) as f:
+        config_lines = f.readlines()
+
+    box_size = config_lines[1].split('=')[1].strip().split(' ')
+    box_size = np.array(box_size).astype(np.float64)
+
+    nuc_lines = config_lines[3:]
+    body = read_state(nuc_lines)
+
+    return body, box_size, n_strands, bonded_nbrs, unbonded_nbrs
+
+# Note: Could maybe subsume read_config... but then everything would be a list
+def read_trajectory(traj_path, top_path):
+    if not Path(traj_path).exists():
+        raise RuntimeError(f"Trajectory file does not exist at location: {traj_path}")
+    if not Path(top_path).exists():
+        raise RuntimeError(f"Topology file does not exist at location: {top_path}")
+
+    n, n_strands, bonded_nbrs, unbonded_nbrs = read_topology(top_path)
+
+    with open(traj_path) as f:
+        traj_lines = f.readlines()
+
+    assert(len(traj_lines) % (n+3) == 0)
+    time_steps = int(len(traj_lines) / (n+3))
+    all_state_lines = [traj_lines[(n+3)*t:(n+3)*t+(n+3)]  for t in range(time_steps)]
+
+    ts = list()
+    bs = list()
+    Es = list()
+    states = list()
+    for state_lines in all_state_lines:
+        t = float(state_lines[0].split('=')[1].strip())
+        b = state_lines[1].split('=')[1].strip().split(' ')
+        b = np.array(b).astype(np.float64)
+        E = state_lines[2].split('=')[1].strip().split(' ')
+        E = np.array(E).astype(np.float64)
+        state = read_state(state_lines[3:])
+
+        ts.append(t)
+        bs.append(b)
+        Es.append(E)
+        states.append(state)
+
+    ts = np.array(ts, dtype=np.float64)
+    bs = np.array(bs, dtype=np.float64)
+    Es = np.array(Es, dtype=np.float64)
+
+    return states, bs, ts, Es, n_strands, bonded_nbrs, unbonded_nbrs
 
 
 # Transform quaternions to nucleotide orientations

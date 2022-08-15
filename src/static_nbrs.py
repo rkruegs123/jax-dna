@@ -55,7 +55,7 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
     nbs_i = neighbors[:, 0]
     nbs_j = neighbors[:, 1]
 
-    def energy_fn(body: RigidBody, **kwargs) -> float:
+    def _compute_subterms(body: RigidBody) -> float:
         Q = body.orientation
         """
         # Conversion in Tom's thesis, Appendix A
@@ -90,20 +90,21 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
         dr_stack = d(stack_sites[nbs_i], stack_sites[nbs_j])
         base_normals = Q_to_base_normal(Q) # space frame, normalized
         cross_prods = Q_to_cross_prod(Q) # space frame, normalized
-        theta4 = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nbs_i], base_normals[nbs_j]))) # FIXME: understand `np.einsum`
-        # FIXME: have to normalize the cosine here by the magnitude of dr_stack
+        theta4 = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nbs_i], base_normals[nbs_j])))
         theta5 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', dr_stack, base_normals[nbs_j]) / jnp.linalg.norm(dr_stack, axis=1)))
         theta6 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nbs_i], dr_stack) / jnp.linalg.norm(dr_stack, axis=1)))
-        cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) / jnp.linalg.norm(dr_back, axis=1) # FIXME: Ordering is probably wrong here. E.g. directionality of dr_back. Also, may or may not need a minus sign
-        cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back) / jnp.linalg.norm(dr_back, axis=1) # FIXME: same as for cosphi1
+        cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) / jnp.linalg.norm(dr_back, axis=1)
+        cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back) / jnp.linalg.norm(dr_back, axis=1)
         stack = stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2)
 
-        return jnp.sum(fene) + jnp.sum(exc_vol) + jnp.sum(stack)
-        # return jnp.sum(fene) + jnp.sum(exc_vol)
-        # return jnp.sum(exc_vol)
+        return jnp.sum(fene), jnp.sum(exc_vol), jnp.sum(stack)
+
+    def energy_fn(body: RigidBody) -> float:
+        fene, exc_vol, stack = _compute_subterms(body)
+        return fene + exc_vol + stack
 
 
-    return energy_fn
+    return energy_fn, _compute_subterms
 
 
 

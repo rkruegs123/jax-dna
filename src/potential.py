@@ -63,7 +63,6 @@ def f1(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
        eps, a, r0, r_c, # morse parameters
        b_low, b_high, # smoothing parameters
 ):
-
     return jnp.where(jnp.logical_and(jnp.less(r_low, r), jnp.less(r, r_high)),
                      v_morse(r, eps, r0, a) - v_morse(r_c, eps, r0, a),
                      jnp.where(jnp.logical_and(jnp.less(r_c_low, r), jnp.less(r, r_low)),
@@ -73,15 +72,38 @@ def f1(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
                                          0.0)))
 
     """
-    if r_low < r and r < r_high:
-        return v_morse(r, eps, r0, a) - v_morse(r_c, eps, r0, a)
-    elif r_c_low < r and r < r_low:
-        return eps * v_smooth(r, b_low, r_c_low)
-    elif r_high < r and r < r_c_high:
-        return eps * v_smooth(r, b_high, r_c_high)
-    else:
-        return 0.0
+    # Our own
+    def _sub(_r):
+        if r_low < _r and _r < r_high:
+            return v_morse(_r, eps, r0, a) - v_morse(r_c, eps, r0, a)
+        elif r_c_low < _r and _r < r_low:
+            return eps * v_smooth(_r, b_low, r_c_low)
+        elif r_high < _r and _r < r_c_high:
+            return eps * v_smooth(_r, b_high, r_c_high)
+        else:
+            return 0.0
     """
+
+    """
+    # from DNAInteraction.cpp::_f1
+    def _sub(_r):
+        val = 0.0
+        shift = eps * onp.sqrt(1 - onp.exp(-(r_c - r0) * a))
+        if _r < r_c_high:
+            if _r > r_high:
+                val = eps * b_high * onp.sqrt(_r - r_c_high)
+            elif _r > r_low:
+                tmp = 1 - onp.exp(-(_r - r0) * a)
+                val = eps * onp.sqrt(tmp) - shift
+            elif _r > r_c_low:
+                val = eps * b_low * onp.sqrt(_r - r_c_low)
+        return val
+
+
+    return jnp.array([_sub(r1) for r1 in r])
+    """
+
+
 
 
 def f2(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters

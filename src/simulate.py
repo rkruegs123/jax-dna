@@ -1,6 +1,5 @@
 import numpy as onp
 import pdb
-from itertools import combinations
 
 from jax import jit
 from jax import random
@@ -24,7 +23,7 @@ from dynamic_nbrs import dynamic_energy_fn_factory_fixed
 
 
 FLAGS = jax_config.FLAGS
-DYNAMICS_STEPS = 1000
+DYNAMICS_STEPS = 5000
 
 f32 = util.f32
 f64 = util.f64
@@ -39,11 +38,11 @@ if FLAGS.jax_enable_x64:
 def energy_fn_factory(displacement_fn,
                       back_site, stack_site, base_site,
                       bonded_neighbors, unbonded_neighbors):
-    static_energy_fn = static_energy_fn_factory(displacement,
-                                                back_site=back_site,
-                                                stack_site=stack_site,
-                                                base_site=base_site,
-                                                neighbors=bonded_neighbors)
+    static_energy_fn, _ = static_energy_fn_factory(displacement,
+                                                   back_site=back_site,
+                                                   stack_site=stack_site,
+                                                   base_site=base_site,
+                                                   neighbors=bonded_neighbors)
     dynamic_energy_fn = dynamic_energy_fn_factory_fixed(
         displacement,
         back_site=back_site,
@@ -61,7 +60,12 @@ def energy_fn_factory(displacement_fn,
 if __name__ == "__main__":
     mass = rigid_body.RigidBody(center=jnp.array([nucleotide_mass]), orientation=jnp.array([moment_of_inertia]))
 
-    body, box_size = read_config("data/polyA_10bp/equilibrated.dat")
+    conf_path = "data/polyA_10bp/equilibrated.dat"
+    top_path = "data/polyA_10bp/generated.top"
+    body, box_size, n_strands, bonded_neighbors, unbonded_neighbors = read_config(conf_path, top_path)
+    n = body.center.shape[0]
+    bonded_neighbors = onp.array(bonded_neighbors)
+    unbonded_neighbors = onp.array(unbonded_neighbors)
 
     box_size = box_size[0]
 
@@ -69,8 +73,6 @@ if __name__ == "__main__":
     key = random.PRNGKey(0)
     key, pos_key, quat_key = random.split(key, 3)
     dtype = DTYPE[0]
-
-    N = body.center.shape[0]
 
     base_site = jnp.array(
         [com_to_hb, 0.0, 0.0]
@@ -81,19 +83,6 @@ if __name__ == "__main__":
     back_site = jnp.array(
         [com_to_backbone, 0.0, 0.0]
     )
-
-    n = 10 # FIXME: redundant. Use `N` from above
-    bonded_neighbors = [(i, i+1) for i in range(n - 1)] # first store as tuples because lists aren't hashable
-
-    pdb.set_trace()
-    unbonded_neighbors = set(combinations(range(n), 2)) # first, set to all neighbors
-    unbonded_neighbors -= set(bonded_neighbors) # remove bonded neighbors
-    unbonded_neighbors -= set([(i, i) for i in range(n)]) # remove identities (they shouldn't be in there)
-    unbonded_neighbors = list(unbonded_neighbors)
-
-    # convert to numpy arrays
-    bonded_neighbors = onp.array(bonded_neighbors)
-    unbonded_neighbors = onp.array(unbonded_neighbors)
 
     energy_fn = energy_fn_factory(displacement,
                                   back_site, stack_site, base_site,
@@ -119,8 +108,6 @@ if __name__ == "__main__":
         trajectory.append(state.position)
 
     pdb.set_trace()
-    # FIXME: now turns nan around 139... why?? Energy of 138 is around -9, which is great.
-    # FIXME: first, try smooth FENE first...
 
     # E_final = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
 
