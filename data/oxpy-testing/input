@@ -1,7 +1,8 @@
 # Core options
-T = 30C
+T = 300K
 steps = 10
-conf_file = test.conf # starting configuration
+# conf_file = test.conf # starting configuration
+conf_file = relaxed.conf
 topology = test.top # starting topology file
 trajectory_file = output.dat # where the trajectory WILL be outputted
 time_scale = linear
@@ -11,7 +12,7 @@ interaction_type = DNA
 seed = 0
 lastconf_file = last_conf.dat
 list_type = no
-restart_step_counter = false
+restart_step_counter = true
 energy_file = energy.dat
 
 # Molecular dynamics options
@@ -41,5 +42,29 @@ data_output_1 = {
           type = potential_energy
           # type = pair_energy
           split = true
+  }
+}
+data_output_2 = {
+  name = potential.dat
+  print_every = 1
+  col_1 = {
+          type = step
+          units = MD
+  }
+  col_2 = {
+          type = potential_energy
+          split = false
+  }
+}
+data_output_3 = {
+  name = pair.dat
+  print_every = 1
+  col_1 = {
+          type = step
+          units = MD
+  }
+  col_2 = {
+          type = pair_energy
+          split = false
   }
 }
