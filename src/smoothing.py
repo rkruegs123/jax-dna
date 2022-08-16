@@ -109,17 +109,6 @@ def get_f5_smoothing_params(a, x_star):
     return float(solved_b.evalf()), float(solved_xc.evalf())
 
 
-"""
-TODO:
-- make a "get_params" in a `utils.py` that takes in a .toml, calls these, subs with existing, and upates the dictionary
-- fix potential.py based on new parameter TOML structure
-- then, using this, can compare the if statements with jnp.where. Also, with the multiplicative isotropic cutoff
-- Note: tomorrow HAS to be Liu stuff AND Max stuff!
-- Finish stacking, put in real numbers, etc
-"""
-
-
-
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from potential import f1, f2, f3, f4, f5
