@@ -86,7 +86,9 @@ def test_custom_mask_function():
       r_cutoff=r_cutoff,
       dr_threshold=dr_threshold,
       custom_mask_function=custom_mask_function,
+      # format=NeighborListFormat.Sparse
       format=NeighborListFormat.Sparse
+
     )
 
     neighbors = neighbor_list_fn.allocate(R)

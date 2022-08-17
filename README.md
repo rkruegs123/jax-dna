@@ -105,3 +105,33 @@ Sam RigidBody notes:
   - for i in range(CONSTANT) IS jittable because it can be unrolled
   - For i in range(VARIABLE) is not jittable becaues it cannot be unrolled -- you are trying to do a pythonic thing on a trace object
   - So, in stuff with max, e.g. for b in range(2) can be done PYTHONICALLY.
+
+
+
+#### Aug 17. 2022
+State of things
+- we have a 3p to 5p energy function that we think works. The only thing we haven't been able to test is excluded volume -- we probably could if we tried harder. We've been comparing with oxDNA utilites that give the subterms of the energy function (note: should submit an issue saying that it should b emade explicit that it's the averages. Could probably make a GitHub issue on this documentation)
+- we've just been using "static" dynamic neighbors for now. in `test_neighbors.py`, we have a method for taking a set of pairs to mask out and oin ht eneighbor function. Also note that we can just call `neighbor_fn` on `body.position` instead of `body`, so neighbor lists in general are no problem for rigid bodies
+  - Have to talk to Sam about the ordering issue, backwards compatability, and what is best to use (i.e. sparse vs. dense)
+- we try to simulat ewith Nose Hoover right now but at the oxDNa dt, the energy diverges. Hopefully this isn't a problem wtih Langevin and/or MC/VMMC. to be determined.
+  - note: htink we've tried smaller dts and it doesn't diverge. Coul doduble check...
+
+
+Sam questions/notes
+- tried your neighbor list recomendation for sparse -> dense
+  - got it working with some modifications. However, for a disallowed set of pairs, isn't it just easier to mask them on the dense representation?
+    - barring any other suggestion from you, I'd just like to do this. However, how will this work with backwards compatability?
+  - Why does the sparse list appear to be [y, x] instead of [x, y]? In that, for i < j, the 2xN matrix looks like [j, i] instead of [j, ]
+- Nose Hoover NVT diverging/unstable. Could just be that we need langevin or brownian. We will see and keep you posted...
+- since JAX-MD automatically traces, debugging can be hard
+  - can't debug past the first iteration
+  - what do you recommend?
+
+Next stepss:
+- talk to Sam about above
+- ryan implements 5p to 3p utiliites
+  1. 5pTO3p <-> 3pTO5p
+  2. (topology, trajectoroy/configuration pair, 5pTO3p) <-> (same pair 3pTO5p)
+- don't forget to updat ehtings like `read_config` and the papropriat neighbors...
+- ryan then updates and tests energy function appropriately
+- Megan gets started on observables (see `PARAMETERIZATION.md`)
