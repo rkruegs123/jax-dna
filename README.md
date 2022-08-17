@@ -126,6 +126,9 @@ Sam questions/notes
 - since JAX-MD automatically traces, debugging can be hard
   - can't debug past the first iteration
   - what do you recommend?
+- return log prob from integrator
+- external forces
+
 
 Next stepss:
 - talk to Sam about above

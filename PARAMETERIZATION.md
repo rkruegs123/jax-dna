@@ -16,6 +16,9 @@ Note that there is an open question about how the log adjustment to gradients hs
 Ah -- one other thing that I forgot. Note that Tom used a lot of MC/VMMC to do his parameterization. One first thought, one would think that this is just for speed (and myabe it is, because Tom fixed the backbone adn stacking lengths). However, with random parameters, MC will also be important -- this is because we could have exploding MD for very wrong parameters. This is another reason we might have to split up our optimization -- it mayb e the case that some simulations require MD, so therefore need some reasonable starting parameters.
 
 
+Update: note that for stochastic simulations, the gradient over a batch of trajectories isn't the same as the gradient of the loss function. Instead, we have an estimate of the gradient that includes the log probability. So, for each test case, we actually want three bitrs of informatoin: (i) simulation info, (ii) grad estimate, and (iii) the actual loss temr. What we really want is functions that will give all of these
+
+
 ## Misc
 - Need to understand the smoothed FENE spring with a max backbone force. In Ben's paper?
 - note that we can use th eoxDNa observables as a reference
