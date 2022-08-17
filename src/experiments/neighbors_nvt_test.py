@@ -78,16 +78,19 @@ if __name__ == "__main__":
 
     init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift, dt, kT)
 
-    step_fn = jit(step_fn)
+    # step_fn = jit(step_fn)
 
     nbrs = neighbor_fn.allocate(body)
     state = init_fn(key, body, mass=shape.mass(), neighbor=nbrs)
     E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT, neighbor=nbrs)
 
+    import pdb; pdb.set_trace()
+
     # trajectory = list()
     for i in range(DYNAMICS_STEPS):
       state = step_fn(state, neighbor=nbrs)
-      nbrs = jit(neighbor_fn.update)(state.position, nbrs)
+      # nbrs = jit(neighbor_fn.update)(state.position, nbrs)
+      nbrs = neighbor_fn.update(state.position, nbrs)
       # trajectory.append(state.position)
     E_final = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT, neighbor=nbrs)
 
