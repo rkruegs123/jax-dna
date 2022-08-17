@@ -41,7 +41,7 @@ def sparse_mask_to_dense_mask(sparse_mask_fn):
 
 
 # FIXME: could clean up existing, could test with OrderedSparse, then could do the more streaightofraward dense mask function. Need to also confirm that we're doing it right -- e.g. talk about occupancy, and the pruning -- because at face value, :max_occupancy looks like it'd be doing the wrong thing... shouldn't be a problem as we follow how self-masking is done. Also, put in actual dynamic_nbrs
-def rkk_custom(pairs, mask_val=5):
+def get_rkk_sparse_custom(pairs, mask_val=5):
     check_pairs = partial(vmap(jnp.array_equal, in_axes=(0, None)), pairs)
     def mask_single(nbr_pr):
         is_prohibited_pair = check_pairs(nbr_pr).any()
@@ -51,6 +51,16 @@ def rkk_custom(pairs, mask_val=5):
     check_sparse = vmap(mask_single, in_axes=1)
     check_sparse_trans = lambda sparse_idx: check_sparse(sparse_idx).T # FIXME: better way to do this?
     return check_sparse_trans
+
+
+# pairs must be a list of tuples
+# e.g. pairs = [(0, 1), (1, 2)]
+def get_rkk_dense_custom(pairs, mask_val):
+    pairs = tuple(jnp.array(pairs).T) # will be a tuple of jnp arrays
+    def custom_mask_dense(dense_idx):
+        return dense_idx.at[pairs].set(mask_val)
+    return custom_mask_dense
+
 
 
 # For testing
@@ -67,7 +77,8 @@ def test_custom_mask_function():
 
 
     to_mask = jnp.array([(0, 1), (0, 2), (0, 3)], dtype=jnp.int32)
-    custom_mask_function = sparse_mask_to_dense_mask(rkk_custom(to_mask, mask_val=mask_val))
+    # custom_mask_function = sparse_mask_to_dense_mask(get_rkk_sparse_custom(to_mask, mask_val=mask_val))
+    custom_mask_function = get_rkk_dense_custom(to_mask, mask_val=mask_val)
 
     neighbor_list_fn = partition.neighbor_list(
       displacement_fn,
@@ -84,9 +95,6 @@ def test_custom_mask_function():
     pdb.set_trace()
 
     return
-
-
-
 
 
 if __name__ == "__main__":
