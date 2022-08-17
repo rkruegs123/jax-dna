@@ -13,6 +13,8 @@ If this doesn't work, then we'll likely have to do some iterative procedure, whe
 
 Note that there is an open question about how the log adjustment to gradients hsould be taken into account in oyur pairs. To be continued...
 
+Ah -- one other thing that I forgot. Note that Tom used a lot of MC/VMMC to do his parameterization. One first thought, one would think that this is just for speed (and myabe it is, because Tom fixed the backbone adn stacking lengths). However, with random parameters, MC will also be important -- this is because we could have exploding MD for very wrong parameters. This is another reason we might have to split up our optimization -- it mayb e the case that some simulations require MD, so therefore need some reasonable starting parameters.
+
 
 ## Misc
 - Need to understand the smoothed FENE spring with a max backbone force. In Ben's paper?
