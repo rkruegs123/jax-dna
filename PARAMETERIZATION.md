@@ -19,4 +19,12 @@ Note that there is an open question about how the log adjustment to gradients hs
 - note that we can use th eoxDNa observables as a reference
   - e.g th epitch observable to compute angles between two bonded nucldoetides. Note the 3->5 vs 5->3. Then sum over all bonded pairs, divide by 360 to get pitch (e.g. bp per turn)
 
--test test
+STRUCTURAL
+-pitch
+-helix radius
+-avg base-base distance
+-avg backbone-backbone distance
+
+MECHANICAL
+
+THERMODYNAMIC
