@@ -128,6 +128,7 @@ Sam questions/notes
   - what do you recommend?
 - return log prob from integrator
 - external forces
+- umbrella sampling for VMMC
 
 
 Next stepss:
