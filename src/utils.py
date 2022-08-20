@@ -3,6 +3,8 @@ from pathlib import Path
 import pdb
 import numpy as np
 from itertools import combinations
+from io import StringIO
+import pandas as pd
 
 from jax import vmap
 from jax_md.rigid_body import Quaternion, RigidBody
@@ -13,6 +15,20 @@ from smoothing import get_f1_smoothing_params, get_f2_smoothing_params, get_f3_s
 
 from jax.config import config
 config.update("jax_enable_x64", True)
+
+
+
+# Always 5'->3'
+class TopologyInfo:
+    def __init__(self, n, n_strands, bonded_nbrs, unbonded_nbrs, seq, top_df):
+        self.n = n
+        self.n_strands = n_strands
+        self.bonded_nbrs = bonded_nbrs
+        self.unbonded_nbrs = unbonded_nbrs
+        self.seq = seq
+        self.top_df = top_df
+
+
 
 
 # Probabilistic sequence utilities
@@ -161,14 +177,16 @@ def principal_axes_to_euler_angles(x, y, z):
 # Takes in a list of lines and returns a RigidBody
 # Note: it is the burden of the user of this function to pass the right number of lines
 # in other words, this function should be able to infer `n`
-def read_state(state_lines):
-    n = len(state_lines)
+def read_state(state_df):
+    n = state_df.shape[0]
     R = np.empty((n, 3), dtype=np.float64)
     quat = np.empty((n, 4), dtype=np.float64)
 
-    for i, nuc_line in enumerate(state_lines):
-        nuc_info = np.array(nuc_line.strip().split(' '), dtype=np.float64)
-        assert(nuc_info.shape[0] == 15)
+    # for i, nuc_line in state_df.iterrows(): # i won't start at 0 as iterrows() sets `i` to be the absolute index
+    for i, (idx, nuc_line) in enumerate(state_df.iterrows()):
+        nuc_info = nuc_line.tolist()
+        assert(len(nuc_info) == 16)
+        nuc_info = nuc_info[1:] # remove time
 
         com = nuc_info[:3]
         back_base_vector = nuc_info[3:6] # back_base
@@ -239,88 +257,227 @@ def get_unbonded_neighbors(n, bonded_neighbors):
     unbonded_neighbors = list(unbonded_neighbors)
     return unbonded_neighbors
 
-def read_topology(top_path):
+
+
+
+def _read_traj_info(traj_lines, n):
+    assert(len(traj_lines) % (n+3) == 0)
+    time_steps = int(len(traj_lines) / (n+3))
+    all_state_lines = [traj_lines[(n+3)*t:(n+3)*t+(n+3)]  for t in range(time_steps)]
+
+    # Construct trajectory df
+    df_lines = list()
+    bs = list()
+    Es = list()
+    ts = list()
+    for state_lines in all_state_lines:
+        t = float(state_lines[0].split('=')[1].strip())
+        ts.append(t)
+
+        b = state_lines[1].split('=')[1].strip().split(' ')
+        b = np.array(b).astype(np.float64)
+        bs.append(b)
+
+        E = state_lines[2].split('=')[1].strip().split(' ')
+        E = np.array(E).astype(np.float64)
+        Es.append(E)
+
+        t_lines = [[t] + state_info.strip().split() for state_info in state_lines[3:]]
+        df_lines += t_lines
+
+
+    ts = np.array(ts, dtype=np.float64)
+    bs = np.array(bs, dtype=np.float64)
+    Es = np.array(Es, dtype=np.float64)
+    traj_df = pd.DataFrame(df_lines,
+                           columns=["t",
+                                    "com_x", "com_y", "com_z",
+                                    "a1_x", "a1_y", "a1_z",
+                                    "a3_x", "a3_y", "a3_z",
+                                    "v_x", "v_y", "v_z",
+                                    "L_x", "L_y", "L_z"],
+                           dtype=float)
+    return traj_df, ts, bs, Es
+
+
+def get_rev_orientation_idx_mapper(top_df, n, n_strands):
+
+    master_idx_mapper = dict()
+
+    # FIXME: error check that strands are 1-indexed? Or take top_df.strands.unique().min()...
+    for strand in range(1, n_strands + 1): # strands are 1-indexed
+        # Get the indexes
+        index_orig = top_df[top_df.strand == strand].index
+        index_rev = index_orig[::-1]
+
+        strand_idx_mapper = dict(zip(index_orig, index_rev))
+        master_idx_mapper.update(strand_idx_mapper)
+    return master_idx_mapper
+
+
+# jax_traj is always a list of RigidBodys which are 5'->3'
+# FIXME: since the topology file should be given as 3'->5' OR 5'->3', we should actually always pass around a `top_df` that is guaranteed to be 5'->3'... then this can take that
+def write_jax_traj(jax_traj):
+    pass
+
+
+# Helper for `read_3to5`
+# FIXME: should leave better comments here -- e.g. that read_topology only operates on 5' to 3'. Also,
+# FIXME: should also have 5to3 to 3to5
+def _read_3to5(top_lines_3to5, traj_lines_3to5):
+
+    traj_info = None
+
+    sys_info = top_lines_3to5[0].strip().split()
+    n = int(sys_info[0])
+    n_strands = int(sys_info[1])
+
+    top_df = pd.read_csv(StringIO('\n'.join(top_lines_3to5[1:])),
+                     names=["strand", "base", "3p_nbr", "5p_nbr"],
+                     delim_whitespace=True)
+
+    pdb.set_trace()
+    master_idx_mapper = get_rev_orientation_idx_mapper(top_df, n, n_strands)
+    top_df = top_df.iloc[top_df.index.map(master_idx_mapper).argsort()].reset_index(drop=True)
+    top_df.replace({"5p_nbr": master_idx_mapper, "3p_nbr": master_idx_mapper}, inplace=True)
+    cols_reordered = ["strand", "base", "5p_nbr", "3p_nbr"]
+    top_df = top_df.reindex(columns=cols_reordered)
+    top_info = (top_df, n, n_strands)
+
+
+    if traj_lines_3to5 is not None:
+
+        traj_df, ts, bs, Es = _read_traj_info(traj_lines_3to5, n)
+
+        # Reorder each timestep using a master_idx_mapper that we populate during above loop and pd.argsort
+        # Note: https://stackoverflow.com/questions/61355655/pandas-how-to-sort-rows-of-a-column-using-a-dictionary-with-indexes
+        for t in traj_df['t'].unique():
+            t_df = traj_df[traj_df.t == t]
+            t_df_resorted = t_df.iloc[t_df.index.map(master_idx_mapper).argsort()].reset_index(drop=True)
+            traj_df.loc[traj_df.t == t] = t_df_resorted.values
+
+
+        # Then, flip all base normals by 180 -- just take the negative?
+        pdb.set_trace()
+        for a3_col in ['a3_x', 'a3_y', 'a3_z']:
+            traj_df[a3_col] = -traj_df[a3_col]
+
+        traj_info = (traj_df, ts, bs, Es)
+
+    return top_info, traj_info
+
+
+# Reads a topology file, and optionally a trajectory file, in 3'->5' format and returns unprocessed information in 5'->3' format
+def read_3to5(top_path, traj_path=None):
+    if not Path(top_path).exists():
+        raise RuntimeError(f"Topology file does not exist at location: {top_path}")
+    if traj_path is not None and not Path(traj_path).exists():
+        raise RuntimeError(f"Trajectory file does not exist at location: {traj_path}")
+    with open(top_path) as f:
+        top_lines_3to5 = f.readlines()
+
+    traj_lines_3to5 = None
+    if traj_path is not None:
+        with open(traj_path) as f:
+            traj_lines_3to5 = f.readlines()
+
+    top_info, traj_info = _read_3to5(top_lines_3to5, traj_lines_3to5)
+    return top_info, traj_info
+
+# Reads a topology file, and optionally a trajectory file, in 5'->3' format and returns unprocessed information in 5'->3' format
+def read_5to3(top_path, traj_path=None):
+    if not Path(top_path).exists():
+        raise RuntimeError(f"Topology file does not exist at location: {top_path}")
+    if traj_path is not None and not Path(traj_path).exists():
+        raise RuntimeError(f"Trajectory file does not exist at location: {traj_path}")
     with open(top_path) as f:
         top_lines = f.readlines()
 
-    # FIXME: no error checking
     sys_info = top_lines[0].strip().split()
     n = int(sys_info[0])
     n_strands = int(sys_info[1])
+    top_df = pd.read_csv(StringIO('\n'.join(top_lines[1:])),
+                         names=["strand", "base", "5p_nbr", "3p_nbr"],
+                         delim_whitespace=True)
+
+    top_info = (top_df, n, n_strands)
+
+    traj_info = None
+    if traj_path is not None:
+        with open(traj_path) as f:
+            traj_lines = f.readlines()
+
+        traj_df, ts, bs, Es = _read_traj_info(traj_lines, n)
+        traj_info = (traj_df, ts, bs, Es)
+
+    return top_info, traj_info
+
+# Takes unprocessed topology information in the 5'->3' format and processes it for simulations
+# Requires that we are in 5'->3'
+def _process_topology_5to3(top_df, n, n_strands):
     bonded_nbrs = list()
-    seq = "" # distinct strands are concatenated with each other
-    for i, nuc_line in enumerate(top_lines[1:]):
-        nuc_info = nuc_line.strip().split()
-        strand = int(nuc_info[0])
-        base = nuc_info[1]
-        nbr_3p = int(nuc_info[2])
-        nbr_5p = int(nuc_info[3])
 
-        if nbr_5p != -1:
-            bonded_nbrs.append((i, nbr_5p)) # 3' to 5' for now. Should fix later...
-        seq += base
+    for i, nuc_row in top_df.iterrows():
+        nbr_5p = int(nuc_row['5p_nbr'])
+        nbr_3p = int(nuc_row['3p_nbr'])
 
+        if nuc_row.base not in DNA_BASES:
+            raise RuntimeError(f"Invalid base: {nuc_row.base}")
+
+        if nbr_3p != -1:
+            if not i < nbr_3p:
+                # Note: need this for OrderedSparse
+                raise RuntimeError(f"Nucleotides must be ordered such that i < j where j is 3' of i and i and j are on the same strand") # Note: circular strands wouldn't obey this
+            bonded_nbrs.append((i, nbr_3p)) # 5'->3'
+
+    seq = ''.join(top_df.base.tolist())
     unbonded_nbrs = get_unbonded_neighbors(n, bonded_nbrs)
 
+    return bonded_nbrs, unbonded_nbrs, seq
+
+
+
+# Can operate at either 3'->5' or 5'->3'
+# set `reverse=True` if the topology file is 3'->5' instead of 5'->'3
+# FIXME: need more error checking
+def read_topology(top_path, reverse):
+    with open(top_path) as f:
+        top_lines = f.readlines()
+
+    if reverse:
+        (top_df, n, n_strands), _ = read_3to5(top_path, traj_path=None)
+    else:
+        (top_df, n, n_strands), _ = read_5to3(top_path, traj_path=None)
+
+    # Now, all information is in 5'->3'
+    bonded_nbrs, unbonded_nbrs, seq = _process_topology_5to3(top_df, n, n_strands)
     return n, n_strands, bonded_nbrs, unbonded_nbrs, seq
 
 
-# Read in oxDNA .conf file
-def read_config(conf_path, top_path):
-    if not Path(conf_path).exists():
-        raise RuntimeError(f"Configuration file does not exist at location: {conf_path}")
-    if not Path(top_path).exists():
-        raise RuntimeError(f"Topology file does not exist at location: {top_path}")
-
-    n, n_strands, bonded_nbrs, unbonded_nbrs, seq = read_topology(top_path)
-
-    with open(conf_path) as f:
-        config_lines = f.readlines()
-
-    box_size = config_lines[1].split('=')[1].strip().split(' ')
-    box_size = np.array(box_size).astype(np.float64)
-
-    nuc_lines = config_lines[3:]
-    body = read_state(nuc_lines)
-
-    return body, box_size, n_strands, bonded_nbrs, unbonded_nbrs, seq
-
+# set `reverse=True` if the topology file and trajectory files are 3'->5' instead of 5'->'3
 # Note: Could maybe subsume read_config... but then everything would be a list
-def read_trajectory(traj_path, top_path):
+# FIXME: note that we shouldn't have separate logic for read_config. Just calls read_traj and returns its first elements. Deleted read_config and have to implement this
+def read_trajectory(traj_path, top_path, reverse):
     if not Path(traj_path).exists():
         raise RuntimeError(f"Trajectory file does not exist at location: {traj_path}")
     if not Path(top_path).exists():
         raise RuntimeError(f"Topology file does not exist at location: {top_path}")
 
-    n, n_strands, bonded_nbrs, unbonded_nbrs, seq = read_topology(top_path)
+    if reverse:
+        top_info, traj_info = read_3to5(top_path, traj_path)
+    else:
+        top_info, traj_info = read_5to3(top_path, traj_path)
 
-    with open(traj_path) as f:
-        traj_lines = f.readlines()
+    (top_df, n, n_strands) = top_info
+    (traj_df, ts, bs, Es) = traj_info
 
-    assert(len(traj_lines) % (n+3) == 0)
-    time_steps = int(len(traj_lines) / (n+3))
-    all_state_lines = [traj_lines[(n+3)*t:(n+3)*t+(n+3)]  for t in range(time_steps)]
+    bonded_nbrs, unbonded_nbrs, seq = _process_topology_5to3(top_df, n, n_strands)
 
-    ts = list()
-    bs = list()
-    Es = list()
     states = list()
-    for state_lines in all_state_lines:
-        t = float(state_lines[0].split('=')[1].strip())
-        b = state_lines[1].split('=')[1].strip().split(' ')
-        b = np.array(b).astype(np.float64)
-        E = state_lines[2].split('=')[1].strip().split(' ')
-        E = np.array(E).astype(np.float64)
-        state = read_state(state_lines[3:])
-
-        ts.append(t)
-        bs.append(b)
-        Es.append(E)
+    for t in ts:
+        state_df = traj_df[traj_df['t'] == t]
+        state = read_state(state_df) # FIXME: need to implement this
         states.append(state)
-
-    ts = np.array(ts, dtype=np.float64)
-    bs = np.array(bs, dtype=np.float64)
-    Es = np.array(Es, dtype=np.float64)
 
     return states, bs, ts, Es, n_strands, bonded_nbrs, unbonded_nbrs, seq
 
@@ -626,11 +783,34 @@ if __name__ == "__main__":
 
     top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/generated.top"
     conf_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/start.conf"
-    body, box_size, n_strands, bonded_nbrs, unbonded_nbrs, seq = read_config(conf_path, top_path)
+    traj_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/output.dat"
+
+    read_trajectory(traj_path, top_path, reverse=True)
+    # convert_3to5_to_5to3(top_path, traj_path)
+
+
+    # body, box_size, n_strands, bonded_nbrs, unbonded_nbrs, seq = read_config(conf_path, top_path)
 
     pdb.set_trace()
 
-    jax_traj_to_oxdna_traj([body], box_size[0], output_name="recovered.dat")
+    # jax_traj_to_oxdna_traj([body], box_size[0], output_name="recovered.dat")
 
     pdb.set_trace()
     print("done")
+
+
+
+    """
+    Next steps:
+    - make the `write` function
+      - options to output (i) in 3to5 instead of 5to3, and (ii) the topology file
+      - when we output the a file in 3to5, should have a default suffix (e.g. '_3to5')
+      - we should just regenerate a master_idx_mapper from the topology file
+        - for now, jaxDNA will still have topology files, just 5'->3'. We can change this later.
+    - implement `read_config` using `read_trajectory`
+    - update the energy function accordingly
+      - test the new energy function
+  """
+
+
+    # FIXME: next, we do (i) a trajectory to 3pto5p for oxdna, as well as (ii) read_config
