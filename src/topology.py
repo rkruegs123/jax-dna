@@ -1,0 +1,150 @@
+from pathlib import Path
+import pdb
+import pandas as pd
+from io import StringIO
+from itertools import combinations
+
+from utils import DNA_BASES
+
+
+
+def get_unbonded_neighbors(n, bonded_neighbors):
+     # First, set to all neighbors
+    unbonded_neighbors = set(combinations(range(n), 2))
+
+    # Then, remove all bonded neighbors
+    unbonded_neighbors -= set(bonded_neighbors)
+
+    # Finally, remove identities (which shouldn't be in there in the first place)
+    unbonded_neighbors -= set([(i, i) for i in range(n)])
+
+    # Return as a list
+    return list(unbonded_neighbors) # return as list
+
+
+def get_rev_orientation_idx_mapper(top_df, n, n_strands):
+
+    master_idx_mapper = dict()
+
+    # FIXME: error check that strands are 1-indexed? Or take top_df.strands.unique().min()...
+    for strand in range(1, n_strands + 1): # strands are 1-indexed
+        # Get the indexes
+        index_orig = top_df[top_df.strand == strand].index
+        index_rev = index_orig[::-1]
+
+        strand_idx_mapper = dict(zip(index_orig, index_rev))
+        master_idx_mapper.update(strand_idx_mapper)
+    return master_idx_mapper
+
+
+# Always 5'->3'
+# reverse_direction=True if top_path points to a 3'->5' topology file, False otherwise (5'->3')
+class TopologyInfo:
+    def __init__(self, top_path, reverse_direction):
+        self.top_path = top_path
+        self.reverse_direction = reverse_direction
+        self.read()
+
+
+    def build_5to3_df(self, top_lines_5to3):
+        self.top_df = pd.read_csv(StringIO('\n'.join(top_lines_5to3[1:])),
+                                  names=["strand", "base", "5p_nbr", "3p_nbr"],
+                                  delim_whitespace=True)
+
+    def build_3to5_df(self, top_lines_3to5):
+        # Load in a 3'->'5 dataframe
+        top_df_3to5 = pd.read_csv(StringIO('\n'.join(top_lines_3to5[1:])),
+                                  names=["strand", "base", "3p_nbr", "5p_nbr"],
+                                  delim_whitespace=True)
+
+        # Change the order of nucleotides to be 5'->3'
+        idx_mapper_3to5_to_5to3 = get_rev_orientation_idx_mapper(top_df_3to5, self.n, self.n_strands)
+        top_df_5to3 = top_df_3to5.iloc[top_df_3to5.index.map(idx_mapper_3to5_to_5to3).argsort()].reset_index(drop=True)
+
+        # Update the values of neighbors appropriately
+        top_df_5to3.replace({"5p_nbr": idx_mapper_3to5_to_5to3, "3p_nbr": idx_mapper_3to5_to_5to3}, inplace=True)
+
+        # Swap the order of the 3p and 5p neighbor columns
+        cols_reordered = ["strand", "base", "5p_nbr", "3p_nbr"]
+        top_df_5to3 = top_df_5to3.reindex(columns=cols_reordered)
+
+        # Set self.top_df to be the new, 5'->3' dataframe
+        self.top_df = top_df_5to3
+
+
+    # Once we have self.top_df populated (note: self.top_df is always 5'->3'), process its information
+    def process(self):
+        bonded_nbrs = list()
+
+        for i, nuc_row in self.top_df.iterrows():
+            nbr_5p = int(nuc_row['5p_nbr'])
+            nbr_3p = int(nuc_row['3p_nbr'])
+
+            if nuc_row.base not in DNA_BASES:
+                raise RuntimeError(f"Invalid base: {nuc_row.base}")
+
+            if nbr_3p != -1:
+                if not i < nbr_3p:
+                    # Note: need this for OrderedSparse
+                    raise RuntimeError(f"Nucleotides must be ordered such that i < j where j is 3' of i and i and j are on the same strand") # Note: circular strands wouldn't obey this
+                bonded_nbrs.append((i, nbr_3p)) # 5'->3'
+
+        self.bonded_nbrs = bonded_nbrs
+        self.seq = ''.join(self.top_df.base.tolist())
+        self.unbonded_nbrs = get_unbonded_neighbors(self.n, bonded_nbrs)
+
+    def read(self):
+        # Check that our topology file exists
+        if not Path(self.top_path).exists():
+            raise RuntimeError(f"Topology file does not exist: {top_path}")
+
+        # Read the lines from our topology file
+        with open(self.top_path) as f:
+            top_lines = f.readlines()
+
+        # Read the information from the first line -- # of nucleotides and # of strands
+        sys_info = top_lines[0].strip().split()
+        self.n = int(sys_info[0])
+        self.n_strands = int(sys_info[1])
+
+        # Populate our 5'->3' `self.top_df` depending on the direction of our initial file
+        if self.reverse_direction:
+            self.build_3to5_df(top_lines)
+        else:
+            self.build_5to3_df(top_lines)
+
+        # Once we've constructed our 5'->3' `self.top_df`, infer the neighbors and sequence
+        self.process()
+
+    def write(self):
+        # can use the idx mapper generator, and should take a flag in what generation you want to write
+        raise NotImplementedError
+
+if __name__ == "__main__":
+    top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/generated.top"
+    top_info = TopologyInfo(top_path, True)
+    pdb.set_trace()
+    print("done")
+
+    """
+    TODO:
+    - make trajectory.py. Note this should have jax_traj_to_oxdna_traj
+    - remove unecessary stuff from utils.py
+    - implement write (and write_to_3to5) in trajectory
+      - might need that idx mapper generator that currently live sin topology...
+    - look at other things
+      - do things appropriately
+    - clean
+    """
+
+    """
+     Next steps (from last time):
+     - make the `write` function
+       - options to output (i) in 3to5 instead of 5to3, and (ii) the topology file
+       - when we output the a file in 3to5, should have a default suffix (e.g. '_3to5')
+       - we should just regenerate a master_idx_mapper from the topology file
+         - for now, jaxDNA will still have topology files, just 5'->3'. We can change this later.
+     - implement `read_config` using `read_trajectory`
+     - update the energy function accordingly
+       - test the new energy function
+   """

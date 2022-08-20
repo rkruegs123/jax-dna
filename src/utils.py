@@ -18,18 +18,6 @@ config.update("jax_enable_x64", True)
 
 
 
-# Always 5'->3'
-class TopologyInfo:
-    def __init__(self, n, n_strands, bonded_nbrs, unbonded_nbrs, seq, top_df):
-        self.n = n
-        self.n_strands = n_strands
-        self.bonded_nbrs = bonded_nbrs
-        self.unbonded_nbrs = unbonded_nbrs
-        self.seq = seq
-        self.top_df = top_df
-
-
-
 
 # Probabilistic sequence utilities
 DNA_MAPPER = {
@@ -47,7 +35,6 @@ def get_one_hot(seq):
         raise RuntimeError(f"Sequence contains bases other than ACGT: {seq}")
     seq_one_hot = [DNA_MAPPER[b] for b in seq]
     return np.array(seq_one_hot, dtype=np.float64) # float so they can become probabilistic
-
 
 
 # oxDNA unit conversions
@@ -249,15 +236,6 @@ def read_state(state_df):
     return body
 
 
-# FIXME: will have to flip around if we go to 5'->3' neighbors
-def get_unbonded_neighbors(n, bonded_neighbors):
-    unbonded_neighbors = set(combinations(range(n), 2)) # first, set to all neighbors
-    unbonded_neighbors -= set(bonded_neighbors) # remove bonded neighbors
-    unbonded_neighbors -= set([(i, i) for i in range(n)]) # remove identities (they shouldn't be in there)
-    unbonded_neighbors = list(unbonded_neighbors)
-    return unbonded_neighbors
-
-
 
 
 def _read_traj_info(traj_lines, n):
@@ -299,26 +277,6 @@ def _read_traj_info(traj_lines, n):
                            dtype=float)
     return traj_df, ts, bs, Es
 
-
-def get_rev_orientation_idx_mapper(top_df, n, n_strands):
-
-    master_idx_mapper = dict()
-
-    # FIXME: error check that strands are 1-indexed? Or take top_df.strands.unique().min()...
-    for strand in range(1, n_strands + 1): # strands are 1-indexed
-        # Get the indexes
-        index_orig = top_df[top_df.strand == strand].index
-        index_rev = index_orig[::-1]
-
-        strand_idx_mapper = dict(zip(index_orig, index_rev))
-        master_idx_mapper.update(strand_idx_mapper)
-    return master_idx_mapper
-
-
-# jax_traj is always a list of RigidBodys which are 5'->3'
-# FIXME: since the topology file should be given as 3'->5' OR 5'->3', we should actually always pass around a `top_df` that is guaranteed to be 5'->3'... then this can take that
-def write_jax_traj(jax_traj):
-    pass
 
 
 # Helper for `read_3to5`
@@ -797,20 +755,3 @@ if __name__ == "__main__":
 
     pdb.set_trace()
     print("done")
-
-
-
-    """
-    Next steps:
-    - make the `write` function
-      - options to output (i) in 3to5 instead of 5to3, and (ii) the topology file
-      - when we output the a file in 3to5, should have a default suffix (e.g. '_3to5')
-      - we should just regenerate a master_idx_mapper from the topology file
-        - for now, jaxDNA will still have topology files, just 5'->3'. We can change this later.
-    - implement `read_config` using `read_trajectory`
-    - update the energy function accordingly
-      - test the new energy function
-  """
-
-
-    # FIXME: next, we do (i) a trajectory to 3pto5p for oxdna, as well as (ii) read_config
