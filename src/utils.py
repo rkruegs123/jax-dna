@@ -99,40 +99,6 @@ com_to_hb = 0.4
 com_to_backbone = -0.4
 
 
-
-# Box size is float, jax_traj is list of RigidBody's
-def jax_traj_to_oxdna_traj(jax_traj, box_size, every_n=1, output_name="test.dat"):
-    # jax_traj is a list of state.position (of rigid bodies)
-    output_lines = list()
-    n = jax_traj[0].center.shape[0]
-
-    for i, st in enumerate(jax_traj):
-        if i % every_n != 0:
-            continue
-        output_lines.append(f"t = {i}\n")
-        output_lines.append(f"b = {box_size} {box_size} {box_size}\n") # FIXME: only cubes for now
-        output_lines.append(f"E = 0.0 0.0 0.0\n") # FIXME: dummy
-        back_base_vectors = Q_to_back_base(st.orientation)
-        base_normal_vectors = Q_to_base_normal(st.orientation)
-        velocities = np.zeros((n, 3))
-        angular_velocities = np.zeros((n, 3))
-
-        for idx in range(n):
-            line_vals = np.concatenate((st.center[idx], back_base_vectors[idx],
-                                        base_normal_vectors[idx], velocities[idx],
-                                        angular_velocities[idx])).astype(str)
-            output_lines.append(' '.join(line_vals) + "\n")
-
-
-    pdb.set_trace()
-    with open(output_name, 'w') as of:
-        of.writelines(output_lines)
-
-    return
-
-
-
-
 # Transform quaternions to nucleotide orientations
 
 ## backbone-bsae orientation
