@@ -23,11 +23,9 @@ from jax_md import rigid_body
 from jax_md.rigid_body import RigidBody, Quaternion
 
 from potential import exc_vol_unbonded, hydrogen_bonding, cross_stacking, coaxial_stacking
-from utils import read_config, jax_traj_to_oxdna_traj
 from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import nucleotide_mass, get_kt
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
-
 
 from jax.config import config
 config.update("jax_enable_x64", True)
