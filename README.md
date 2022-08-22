@@ -139,3 +139,22 @@ Next stepss:
 - don't forget to updat ehtings like `read_config` and the papropriat neighbors...
 - ryan then updates and tests energy function appropriately
 - Megan gets started on observables (see `PARAMETERIZATION.md`)
+- minor ryan note: for neighbor_testing.py, have to update j,i as well as i,j
+
+#### August 22, 2022
+
+TODO (been working on `topology.py` and `trajectory.py`)
+- test everything. e.g...
+  - (i) read and write, no simulation. note that this is just through traj_df
+    - first a config, then an entire trajectory
+  - then, maybe some utilities?
+- update the energy function accordingly
+  - some things should be the same, e.g. FENE
+  - test the new energy function
+    - (ii) read, simulate, and write. This way, we go between traj_df and states. Couldn't test this until we could actually simulate...
+- clean (e.g. comments, todos, fixmes)
+  - could add every_n to TrajectoryInfo.write()
+  - can probably remove jax_traj_to_oxdna_traj
+  - update simulate.py and others
+  - remove unecessary stuff from utils.py
+- implement `read_config` using `read_trajectory`?
