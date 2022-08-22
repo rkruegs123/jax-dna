@@ -23,11 +23,11 @@ from jax_md import rigid_body
 from jax_md.rigid_body import RigidBody, Quaternion
 
 from potential import v_fene, exc_vol_bonded, stacking, TEMP
-from utils import read_config, jax_traj_to_oxdna_traj
 from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import nucleotide_mass, get_kt, moment_of_inertia
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
-
+from trajectory import TrajectoryInfo
+from topology import TopologyInfo
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -113,30 +113,22 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
 
 if __name__ == "__main__":
 
+    top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/polyA_10bp/generated.top"
+    config_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/polyA_10bp/equilibrated.dat"
 
-    # Bug in rigid body -- Nose-Hoover defaults to f32(1.0) rather than a RigidBody with this value
+    top_info = TopologyInfo(top_path, reverse_direction=True)
+    config_info = TrajectoryInfo(top_info, traj_path=config_path, reverse_direction=True)
 
-    """
-    shape = rigid_body.point_union_shape(
-      onp.array([[0.0, 0.0, 0.0]], f32),
-      f32(nucleotide_mass)
-    ) # just to get the mass from
-    mass = shape.mass()
-    """
-
-
+    # FIXME: Petr changed to just 1.0 and 1.0
     mass = rigid_body.RigidBody(center=jnp.array([nucleotide_mass]), orientation=jnp.array([moment_of_inertia]))
 
-    body, box_size = read_config("data/polyA_10bp/equilibrated.dat")
-
-    box_size = box_size[0]
+    body = config_info.states[0]
+    box_size = config_info.box_size
 
     displacement, shift = space.periodic(box_size)
     key = random.PRNGKey(0)
     key, pos_key, quat_key = random.split(key, 3)
     dtype = f64
-
-    N = body.center.shape[0]
 
     base_site = jnp.array(
         [com_to_hb, 0.0, 0.0]
@@ -147,19 +139,9 @@ if __name__ == "__main__":
     back_site = jnp.array(
         [com_to_backbone, 0.0, 0.0]
     )
-    """
-    bonded_neighbors = onp.array([
-        [0, 1],
-        [1, 2],
-        [2, 3],
-        [3, 4]
-    ])
-    """
 
-    n = 10 # FIXME: redundant. Use `N` from above
-    bonded_neighbors = onp.array(
-        [[i, i+1] for i in range(n - 1)]
-    )
+    n = config_info.top_info.n
+    bonded_neighbors = config_info.top_info.bonded_nbrs
 
     energy_fn = static_energy_fn_factory(displacement,
                                          back_site=back_site,
@@ -194,6 +176,7 @@ if __name__ == "__main__":
     # FIXME: Add excluded volume and stacking
     pdb.set_trace()
 
-    jax_traj_to_oxdna_traj(trajectory, box_size, every_n=50)
+    # FIXME: convert states to TrajInfo and write the new traj_info to file
+    # jax_traj_to_oxdna_traj(trajectory, box_size, every_n=50)
 
     print("done")

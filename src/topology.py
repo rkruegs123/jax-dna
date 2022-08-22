@@ -3,6 +3,7 @@ import pdb
 import pandas as pd
 from io import StringIO
 from itertools import combinations
+import numpy as np
 
 from utils import DNA_BASES
 
@@ -112,9 +113,10 @@ class TopologyInfo:
                     raise RuntimeError(f"Nucleotides must be ordered such that i < j where j is 3' of i and i and j are on the same strand") # Note: circular strands wouldn't obey this
                 bonded_nbrs.append((i, nbr_3p)) # 5'->3'
 
-        self.bonded_nbrs = bonded_nbrs
-        self.seq = ''.join(self.top_df.base.tolist())
+        self.bonded_nbrs = np.array(bonded_nbrs)
+        self.seq = ''.join(self.top_df.base.tolist()) # FIXME: could one-hot
         self.unbonded_nbrs = get_unbonded_neighbors(self.n, bonded_nbrs)
+        self.unbonded_nbrs = np.array(self.unbonded_nbrs)
 
     def read(self):
         # Check that our topology file exists
