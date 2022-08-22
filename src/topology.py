@@ -37,13 +37,40 @@ def get_rev_orientation_idx_mapper(top_df, n, n_strands):
     return master_idx_mapper
 
 
+
+# Reverses the orientation of a top_df (either from 5'->3' to 3'->5' *or* from 3'->5' to 5'->3')
+def get_rev_top_df(top_df, rev_orientation_mapper):
+    rev_top_df = top_df.copy(deep=True)
+
+    rev_top_df = rev_top_df.iloc[rev_top_df.index.map(rev_orientation_mapper).argsort()].reset_index(drop=True)
+
+    # Update the values of neighbors appropriately
+    rev_top_df.replace({"5p_nbr": rev_orientation_mapper, "3p_nbr": rev_orientation_mapper}, inplace=True)
+
+    # Swap the order of the 3p and 5p neighbor columns
+    cols = list(top_df.columns.values)
+    cols_reordered = ["strand", "base", cols[3], cols[2]]
+    # cols_reordered = ["strand", "base", "5p_nbr", "3p_nbr"] # e.g. if we are going 3'->5' to 5'->3'
+    rev_top_df = rev_top_df.reindex(columns=cols_reordered)
+
+    return rev_top_df
+
 # Always 5'->3'
 # reverse_direction=True if top_path points to a 3'->5' topology file, False otherwise (5'->3')
 class TopologyInfo:
     def __init__(self, top_path, reverse_direction):
+        # Store our initial information
         self.top_path = top_path
         self.reverse_direction = reverse_direction
+        self.rev_orientation_mapper = None
+
+        # Read in our topology information in 5'->3' format
         self.read()
+
+        # If we didn't populate it during reading, populate our orientation mapper
+        if self.rev_orientation_mapper is None:
+            self.rev_orientation_mapper = get_rev_orientation_idx_mapper(
+                self.top_df, self.n, self.n_strands)
 
 
     def build_5to3_df(self, top_lines_5to3):
@@ -57,16 +84,12 @@ class TopologyInfo:
                                   names=["strand", "base", "3p_nbr", "5p_nbr"],
                                   delim_whitespace=True)
 
+        # Construct the idx mapper to reverse orientations, and save it
+        rev_orientation_mapper = get_rev_orientation_idx_mapper(top_df_3to5, self.n, self.n_strands)
+        self.rev_orientation_mapper = rev_orientation_mapper
+
         # Change the order of nucleotides to be 5'->3'
-        idx_mapper_3to5_to_5to3 = get_rev_orientation_idx_mapper(top_df_3to5, self.n, self.n_strands)
-        top_df_5to3 = top_df_3to5.iloc[top_df_3to5.index.map(idx_mapper_3to5_to_5to3).argsort()].reset_index(drop=True)
-
-        # Update the values of neighbors appropriately
-        top_df_5to3.replace({"5p_nbr": idx_mapper_3to5_to_5to3, "3p_nbr": idx_mapper_3to5_to_5to3}, inplace=True)
-
-        # Swap the order of the 3p and 5p neighbor columns
-        cols_reordered = ["strand", "base", "5p_nbr", "3p_nbr"]
-        top_df_5to3 = top_df_5to3.reindex(columns=cols_reordered)
+        top_df_5to3 = get_rev_top_df(top_df_3to5, self.rev_orientation_mapper)
 
         # Set self.top_df to be the new, 5'->3' dataframe
         self.top_df = top_df_5to3
@@ -116,35 +139,24 @@ class TopologyInfo:
         # Once we've constructed our 5'->3' `self.top_df`, infer the neighbors and sequence
         self.process()
 
-    def write(self):
-        # can use the idx mapper generator, and should take a flag in what generation you want to write
-        raise NotImplementedError
+
+    # Write self.top_df (always 5'->3') to an oxDNA-style topology file
+    # if reverse=True, write in 3'->5' format
+    def write(self, opath, reverse):
+        top_df_to_write = self.top_df
+        if reverse:
+            top_df_to_write = get_rev_top_df(self.top_df, self.rev_orientation_mapper)
+
+        out_lines_top = [f"{self.n} {self.n_strands}"]
+        out_lines_top += top_df_to_write.to_csv(
+            header=None, index=False, sep=" ").strip('\n').split('\n')
+
+        with open(opath, 'w+') as of:
+            of.write('\n'.join(out_lines_top))
+
 
 if __name__ == "__main__":
     top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/generated.top"
     top_info = TopologyInfo(top_path, True)
     pdb.set_trace()
     print("done")
-
-    """
-    TODO:
-    - make trajectory.py. Note this should have jax_traj_to_oxdna_traj
-    - remove unecessary stuff from utils.py
-    - implement write (and write_to_3to5) in trajectory
-      - might need that idx mapper generator that currently live sin topology...
-    - look at other things
-      - do things appropriately
-    - clean
-    """
-
-    """
-     Next steps (from last time):
-     - make the `write` function
-       - options to output (i) in 3to5 instead of 5to3, and (ii) the topology file
-       - when we output the a file in 3to5, should have a default suffix (e.g. '_3to5')
-       - we should just regenerate a master_idx_mapper from the topology file
-         - for now, jaxDNA will still have topology files, just 5'->3'. We can change this later.
-     - implement `read_config` using `read_trajectory`
-     - update the energy function accordingly
-       - test the new energy function
-   """
