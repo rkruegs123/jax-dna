@@ -19,8 +19,8 @@ from utils import nucleotide_mass, get_kt, moment_of_inertia
 from utils import get_one_hot
 
 from get_params import get_params, get_default_params
-from static_nbrs import static_energy_fn_factory
-from dynamic_nbrs import dynamic_energy_fn_factory_fixed
+from bonded_energy import static_energy_fn_factory
+from unbonded_energy import dynamic_energy_fn_factory_fixed
 from trajectory import TrajectoryInfo
 from topology import TopologyInfo
 
