@@ -7,6 +7,7 @@ from jax import jit
 from jax import vmap
 from jax import random
 from jax import lax
+from jax.tree_util import Partial
 
 from jax.config import config as jax_config
 import jax.numpy as jnp
@@ -22,12 +23,12 @@ from jax_md import util
 from jax_md import rigid_body
 from jax_md.rigid_body import RigidBody, Quaternion
 
-from potential import v_fene, exc_vol_bonded, stacking, TEMP
 from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import nucleotide_mass, get_kt, moment_of_inertia
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 from trajectory import TrajectoryInfo
 from topology import TopologyInfo
+from potential import v_fene, exc_vol_bonded, stacking
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -52,13 +53,21 @@ def clamp(x, lo=-1.0, hi=1.0):
     return jnp.clip(x, lo, hi)
 
 
-def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, neighbors):
+def static_energy_fn_factory(displacement_fn,
+                             back_site, stack_site, base_site,
+                             neighbors):
 
     d = space.map_bond(partial(displacement_fn))
     nbs_i = neighbors[:, 0]
     nbs_j = neighbors[:, 1]
 
-    def _compute_subterms(body: RigidBody):
+    def _compute_subterms(body: RigidBody, seq: util.Array, params):
+
+
+        params_v_fene = Partial(v_fene, params=params)
+        params_exc_vol_bonded = Partial(exc_vol_bonded, params=params)
+        params_stacking = Partial(stacking, params=params)
+
         Q = body.orientation
         """
         # Conversion in Tom's thesis, Appendix A
@@ -81,13 +90,13 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
         # FENE
         dr_back = d(back_sites[nbs_i], back_sites[nbs_j]) # N x N x 3
         r_back = jnp.linalg.norm(dr_back, axis=1)
-        fene = v_fene(r_back)
+        fene = params_v_fene(r_back)
 
         # Excluded volume (bonded)
         dr_base = d(base_sites[nbs_i], base_sites[nbs_j])
         dr_back_base = d(back_sites[nbs_i], base_sites[nbs_j])
         dr_base_back = d(base_sites[nbs_i], back_sites[nbs_j])
-        exc_vol = exc_vol_bonded(dr_base, dr_back_base, dr_base_back)
+        exc_vol = params_exc_vol_bonded(dr_base, dr_back_base, dr_base_back)
 
         # Stacking
         dr_stack = d(stack_sites[nbs_i], stack_sites[nbs_j])
@@ -98,12 +107,13 @@ def static_energy_fn_factory(displacement_fn, back_site, stack_site, base_site, 
         theta6 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nbs_i], dr_stack) / jnp.linalg.norm(dr_stack, axis=1)))
         cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nbs_i], dr_back) / jnp.linalg.norm(dr_back, axis=1)
         cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nbs_j], dr_back) / jnp.linalg.norm(dr_back, axis=1)
-        stack = stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2)
+        stack = params_stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2)
 
         return jnp.sum(fene), jnp.sum(exc_vol), jnp.sum(stack)
 
-    def energy_fn(body: RigidBody) -> float:
-        fene, exc_vol, stack = _compute_subterms(body)
+    # Philosophy: use `functools.partial` to fix either `seq` or `potential_fns` depending on what is being optimized
+    def energy_fn(body: RigidBody, seq: util.Array, params) -> float:
+        fene, exc_vol, stack = _compute_subterms(body, seq, params)
         return fene + exc_vol + stack
 
 

@@ -10,6 +10,7 @@ from jax import lax
 
 from jax.config import config as jax_config
 import jax.numpy as jnp
+from jax.tree_util import Partial
 
 from jax_md import quantity
 from jax_md import simulate
@@ -22,10 +23,10 @@ from jax_md import util
 from jax_md import rigid_body
 from jax_md.rigid_body import RigidBody, Quaternion
 
-from potential import exc_vol_unbonded, hydrogen_bonding, cross_stacking, coaxial_stacking
 from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import nucleotide_mass, get_kt
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
+from potential import exc_vol_unbonded, hydrogen_bonding, cross_stacking, coaxial_stacking
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -64,7 +65,12 @@ def dynamic_energy_fn_factory_fixed(displacement_fn, back_site, stack_site, base
     nbs_i = neighbors[:, 0]
     nbs_j = neighbors[:, 1]
 
-    def _compute_subterms(body: RigidBody, seq:util.Array):
+    def _compute_subterms(body: RigidBody, seq: util.Array, params):
+        params_exc_vol_unbonded = Partial(exc_vol_unbonded, params=params)
+        params_hydrogen_bonding = Partial(hydrogen_bonding, params=params)
+        params_cross_stacking = Partial(cross_stacking, params=params)
+        params_coaxial_stacking = Partial(coaxial_stacking, params=params)
+
         Q = body.orientation
 
         back_sites = body.center + rigid_body.quaternion_rotate(Q, back_site) # (N, 3)
@@ -77,9 +83,8 @@ def dynamic_energy_fn_factory_fixed(displacement_fn, back_site, stack_site, base
         dr_backbone = d(back_sites[nbs_j], back_sites[nbs_i]) # Note the flip here
         dr_back_base = d(back_sites[nbs_i], base_sites[nbs_j]) # Note: didn't flip this one (and others) because no need, but should look into at some point
         dr_base_back = d(base_sites[nbs_i], back_sites[nbs_j])
-        exc_vol = exc_vol_unbonded(dr_base, dr_backbone, dr_back_base, dr_base_back)
+        exc_vol = params_exc_vol_unbonded(dr_base, dr_backbone, dr_back_base, dr_base_back)
 
-        # FIXME: add the others
 
         # Hydrogen bonding
         back_bases = Q_to_back_base(Q) # space frame, normalized
@@ -94,7 +99,7 @@ def dynamic_energy_fn_factory_fixed(displacement_fn, back_site, stack_site, base
         # Note: are these swapped in Lorenzo's code?
         theta7 = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -base_normals[nbs_j], dr_base) / jnp.linalg.norm(dr_base, axis=1)))
         theta8 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nbs_i], dr_base) / jnp.linalg.norm(dr_base, axis=1)))
-        v_hb = hydrogen_bonding(dr_base, theta1, theta2, theta3, theta4, theta7, theta8)
+        v_hb = params_hydrogen_bonding(dr_base, theta1, theta2, theta3, theta4, theta7, theta8)
 
         ## Dot product to only be between appropriate bases
         hb_probs = get_hb_probs(seq, nbs_i, nbs_j) # get the probabilities of all possibile hydrogen bonds for all neighbors
@@ -104,7 +109,7 @@ def dynamic_energy_fn_factory_fixed(displacement_fn, back_site, stack_site, base
 
 
         # Cross stacking
-        cross_stack = cross_stacking(dr_base, theta1, theta2, theta3, theta4, theta7, theta8)
+        cross_stack = params_cross_stacking(dr_base, theta1, theta2, theta3, theta4, theta7, theta8)
 
         # Coaxial stacking
         dr_stack = d(stack_sites[nbs_j], stack_sites[nbs_i]) # note: reversed
@@ -114,45 +119,18 @@ def dynamic_energy_fn_factory_fixed(displacement_fn, back_site, stack_site, base
         theta6 = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -base_normals[nbs_j], dr_stack_norm)))
         cosphi3 = jnp.einsum('ij, ij->i', dr_stack_norm, jnp.cross(dr_backbone_norm, back_bases[nbs_j]))
         cosphi4 = jnp.einsum('ij, ij->i', dr_stack_norm, jnp.cross(dr_backbone_norm, back_bases[nbs_i]))
-        coax_stack = coaxial_stacking(dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4)
+        coax_stack = params_coaxial_stacking(dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4)
 
 
         return jnp.sum(exc_vol), jnp.sum(v_hb), jnp.sum(cross_stack), jnp.sum(coax_stack)
 
-    def energy_fn(body: RigidBody, seq: util.Array) -> float:
-        exc_vol, v_hb, cross_stack, coax_stack = _compute_subterms(body, seq)
+    # Philosophy: use `functools.partial` to fix either `seq` or `potential_fns` depending on what is being optimized
+    def energy_fn(body: RigidBody, seq: util.Array, params) -> float:
+        exc_vol, v_hb, cross_stack, coax_stack = _compute_subterms(body, seq, params)
         return exc_vol + v_hb + cross_stack + coax_stack
 
     return energy_fn, _compute_subterms
 
-
-
-
-
-# For variable neighbors
-def dynamic_energy_fn_factory(displacement_fn, back_site, stack_site, base_site):
-
-    d = space.map_bond(partial(displacement_fn))
-
-    def energy_fn(body: RigidBody, neighbor: partition.NeighborList) -> float:
-        Q = body.orientation
-        back_sites = body.center + rigid_body.quaternion_rotate(Q, back_site) # (N, 3)
-        stack_sites = body.center + rigid_body.quaternion_rotate(Q, stack_site)
-        base_sites = body.center + rigid_body.quaternion_rotate(Q, base_site)
-
-        pdb.set_trace()
-        nbs_i = neighbor[:, 0]
-        nbs_j = neighbor[:, 1]
-
-        # FIXME: completey wrong potential
-        # FENE
-        dr_back = d(back_sites[nbs_i], back_sites[nbs_j]) # N x N x 3
-        r_back = jnp.linalg.norm(dr_back, axis=1)
-        fene = v_fene(r_back)
-
-        return jnp.sum(fene)
-
-    return energy_fn
 
 
 if __name__ == "__main__":

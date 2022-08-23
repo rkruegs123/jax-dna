@@ -1,23 +1,24 @@
 import pdb
 import numpy as np
+import jax.numpy as jnp
 
 
 def get_f1_smoothing_params(eps, x0, a, xc, x_low, x_high):
 
     def solve_f1_b(x):
-        return a**2*(-np.exp(a*(3*x0 + 2*xc)) + 2*np.exp(a*(x + 2*x0 + 2*xc)) \
-                     - np.exp(a*(2*x + x0 + 2*xc)))*np.exp(-2*a*x) \
-                     / (2*np.exp(a*(x + 2*xc)) \
-                        + np.exp(a*(2*x + x0)) \
-                        - 2*np.exp(a*(2*x + xc)) \
-                        - np.exp(a*(x0 + 2*xc)))
+        return a**2*(-jnp.exp(a*(3*x0 + 2*xc)) + 2*jnp.exp(a*(x + 2*x0 + 2*xc)) \
+                     - jnp.exp(a*(2*x + x0 + 2*xc)))*jnp.exp(-2*a*x) \
+                     / (2*jnp.exp(a*(x + 2*xc)) \
+                        + jnp.exp(a*(2*x + x0)) \
+                        - 2*jnp.exp(a*(2*x + xc)) \
+                        - jnp.exp(a*(x0 + 2*xc)))
     solved_b_low = solve_f1_b(x_low)
     solved_b_high = solve_f1_b(x_high)
 
     def solve_f1_xc_star(x):
-        return (a*x*np.exp(a*(x + 2*xc)) - a*x*np.exp(a*(x0 + 2*xc))
-                + 2*np.exp(a*(x + 2*xc)) + np.exp(a*(2*x + x0)) - 2*np.exp(a*(2*x + xc))
-                - np.exp(a*(x0 + 2*xc)))*np.exp(-2*a*xc)/(a*(np.exp(a*x) - np.exp(a*x0)))
+        return (a*x*jnp.exp(a*(x + 2*xc)) - a*x*jnp.exp(a*(x0 + 2*xc))
+                + 2*jnp.exp(a*(x + 2*xc)) + jnp.exp(a*(2*x + x0)) - 2*jnp.exp(a*(2*x + xc))
+                - jnp.exp(a*(x0 + 2*xc)))*jnp.exp(-2*a*xc)/(a*(jnp.exp(a*x) - jnp.exp(a*x0)))
 
     solved_xc_low = solve_f1_xc_star(x_low)
     solved_xc_high = solve_f1_xc_star(x_high)
@@ -64,7 +65,7 @@ def get_f4_smoothing_params(a, x0, delta_x_star):
     solved_b_plus = solve_f4_b(x0 + delta_x_star)
     solved_b_minus = solve_f4_b(x0 - delta_x_star)
 
-    assert(np.abs(solved_b_plus - solved_b_minus) < tol) # FIXME: don't understand why this is true
+    # assert(jnp.abs(solved_b_plus - solved_b_minus) < tol) # FIXME: don't understand why this is true
 
     def solve_f4_xc(x):
         return (-a*x*x0 + a*x0**2 - 1)/(a*(-x + x0))
@@ -75,7 +76,7 @@ def get_f4_smoothing_params(a, x0, delta_x_star):
     solved_xc_minus = solve_f4_xc(x0 - delta_x_star)
     solved_delta_xc_minus = x0 - solved_xc_minus
 
-    assert(np.abs(solved_delta_xc_plus - solved_delta_xc_minus) < tol) # FIXME: don't understand why this is true
+    # assert(jnp.abs(solved_delta_xc_plus - solved_delta_xc_minus) < tol) # FIXME: don't understand why this is true
 
     return solved_b_plus, solved_delta_xc_plus
 

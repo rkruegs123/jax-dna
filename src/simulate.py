@@ -13,20 +13,22 @@ from jax_md import util
 from jax_md import rigid_body
 from jax_md.rigid_body import RigidBody, Quaternion
 
-from potential import TEMP # FIXME: TEMP should really be an argument to the potentials... Should have getters that take in a temp
-from utils import read_config, jax_traj_to_oxdna_traj
+from utils import DEFAULT_TEMP
 from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import nucleotide_mass, get_kt, moment_of_inertia
 from utils import get_one_hot
 
+from get_params import get_params, get_default_params
 from static_nbrs import static_energy_fn_factory
 from dynamic_nbrs import dynamic_energy_fn_factory_fixed
+from trajectory import TrajectoryInfo
+from topology import TopologyInfo
 
 from jax.config import config
 config.update("jax_enable_x64", True)
 
 FLAGS = jax_config.FLAGS
-DYNAMICS_STEPS = 1000
+DYNAMICS_STEPS = 10
 
 f32 = util.f32
 f64 = util.f64
@@ -34,7 +36,6 @@ f64 = util.f64
 DTYPE = [f32]
 if FLAGS.jax_enable_x64:
     DTYPE += [f64]
-
 
 
 
@@ -54,8 +55,10 @@ def energy_fn_factory(displacement_fn,
         neighbors=unbonded_neighbors
     )
 
-    def energy_fn(body: RigidBody, seq: util.Array) -> float:
-        return static_energy_fn(body) + dynamic_energy_fn(body, seq)
+    # FIXME: maybe we should pass `params` instead of `potential_fns` and calculate `potential_fns` in `energy_fn`
+    # one argument against the above is if we do it outside, we can variably update potential_fns...
+    def energy_fn(body: RigidBody, seq: util.Array, params) -> float:
+        return static_energy_fn(body, seq, params) + dynamic_energy_fn(body, seq, params)
 
     return energy_fn
 
@@ -63,22 +66,22 @@ def energy_fn_factory(displacement_fn,
 if __name__ == "__main__":
     mass = rigid_body.RigidBody(center=jnp.array([nucleotide_mass]), orientation=jnp.array([moment_of_inertia]))
 
-    # conf_path = "data/polyA_10bp/equilibrated.dat"
-    # top_path = "data/polyA_10bp/generated.top"
+    """
+    conf_path = "data/polyA_10bp/equilibrated.dat"
+    top_path = "data/polyA_10bp/generated.top"
+    """
 
-
-    conf_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/start.dat"
+    conf_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/start.conf"
     top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/generated.top"
 
-    body, box_size, n_strands, bonded_neighbors, unbonded_neighbors, seq = read_config(conf_path, top_path)
-    seq = jnp.array(get_one_hot(seq), dtype=f64)
-    n = body.center.shape[0]
-    bonded_neighbors = onp.array(bonded_neighbors)
-    unbonded_neighbors = onp.array(unbonded_neighbors)
+    top_info = TopologyInfo(top_path, reverse_direction=True)
+    config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
 
-    box_size = box_size[1]
+    body = config_info.states[0]
+    seq = jnp.array(get_one_hot(top_info.seq), dtype=f64)
+    n = top_info.n
 
-    displacement, shift = space.periodic(box_size)
+    displacement, shift = space.periodic(config_info.box_size)
     key = random.PRNGKey(0)
     key, pos_key, quat_key = random.split(key, 3)
     dtype = f64
@@ -95,31 +98,46 @@ if __name__ == "__main__":
 
     energy_fn = energy_fn_factory(displacement,
                                   back_site, stack_site, base_site,
-                                  bonded_neighbors, unbonded_neighbors)
+                                  top_info.bonded_nbrs, top_info.unbonded_nbrs)
 
+    """
+    TODO:
+    - test all of this
+    - then put energy function in its own file called `energy.py`
+    - make seq and potential_fns fixed with `functools.partial`
+    - call this file `forward` and move the energy function to its own thing (maybe `energy.py`)
+    - start a `optimize_parameters.py` that only makes `seq` fixed and updates `params`, and therefore `potential_fns`
+      - see if we can take grads w.r.t. to some dummy loss function
+      - first see if we can get non-zero/nan grads, then see if we can optimize some subset of the params dictionary (e.g. we  can overwrite some subset of the dictionary with some parameters that we optimize over)
+    """
+
+
+    params = get_default_params()
 
     # Simulate with the energy function via Nose-Hoover
-    kT = get_kt(t=TEMP) # 300 Kelvin = 0.1 kT
+    kT = get_kt(t=DEFAULT_TEMP) # 300 Kelvin = 0.1 kT
     dt = 5e-3
 
     init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift, dt, kT)
 
     step_fn = jit(step_fn)
 
-    state = init_fn(key, body, mass=mass, seq=seq)
-    E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT, seq=seq)
+    state = init_fn(key, body, mass=mass, seq=seq, params=params)
+    E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT,
+                                                   seq=seq, params=params
+    )
 
     trajectory = [state.position]
 
-
     for i in range(DYNAMICS_STEPS):
-        state = step_fn(state, seq=seq)
+        state = step_fn(state, seq=seq, params=params)
         trajectory.append(state.position)
 
     pdb.set_trace()
 
     # E_final = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
 
-    jax_traj_to_oxdna_traj(trajectory, box_size, every_n=10)
+
+    # FIXME: store in TrajectoryInfo and write to file (potentially also write topology file)
 
     print("done")

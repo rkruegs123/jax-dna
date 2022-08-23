@@ -11,7 +11,7 @@ from jax_md import util
 from jax_md import rigid_body
 from jax_md.rigid_body import RigidBody, Quaternion
 
-from potential import TEMP # FIXME: TEMP should really be an argument to the potentials... Should have getters that take in a temp
+from utils import DEFAULT_TEMP
 from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import get_one_hot
 
@@ -19,6 +19,7 @@ from static_nbrs import static_energy_fn_factory
 from dynamic_nbrs import dynamic_energy_fn_factory_fixed
 from trajectory import TrajectoryInfo
 from topology import TopologyInfo
+from get_params import get_default_params
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -68,6 +69,7 @@ if __name__ == "__main__":
     top_info = TopologyInfo(top_path, reverse_direction=True)
     traj_info = TrajectoryInfo(top_info, traj_path=traj_path, reverse_direction=True)
 
+    params = get_default_params()
     seq_oh = jnp.array(get_one_hot(traj_info.top_info.seq), dtype=f64)
 
     displacement, shift = space.periodic(traj_info.box_size)
@@ -97,13 +99,14 @@ if __name__ == "__main__":
                                                              neighbors=traj_info.top_info.unbonded_nbrs)
 
 
+
     static_subterms_fn = jit(static_subterms_fn)
     # dynamic_energy_fn = jit(dynamic_energy_fn)
     es = list()
     n = traj_info.top_info.n
     for state in tqdm(traj_info.states):
-        fene, exc_vol_bonded, stack = static_subterms_fn(state)
-        exc_vol_unbonded, v_hb, cross_stack, coax_stack = dynamic_subterms_fn(state, seq_oh)
+        fene, exc_vol_bonded, stack = static_subterms_fn(state, seq_oh, params)
+        exc_vol_unbonded, v_hb, cross_stack, coax_stack = dynamic_subterms_fn(state, seq_oh, params)
 
         avg_subterms = [
             ('backbone', fene / n),
@@ -123,6 +126,3 @@ if __name__ == "__main__":
 
     pdb.set_trace()
     print("done")
-
-
-    # TODO: OK. We show that static energy increases with the Nose Hoover trajectory. Just have to double check when we include the nonbonded excluded volume that this stays true...
