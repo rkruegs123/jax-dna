@@ -265,11 +265,11 @@ def get_params(params, t):
     return params
 
 
-def get_default_params(params_path="tom.toml"):
+def get_default_params(params_path="tom.toml", t=DEFAULT_TEMP):
     if not Path(params_path).exists():
         raise RuntimeError(f"No file at location: {params_path}")
     params = toml.load(params_path)
-    return get_params(params, t=DEFAULT_TEMP)
+    return get_params(params, t=t)
 
 
 if __name__ == "__main__":
