@@ -1,16 +1,13 @@
-import numpy as onp
 import pdb
 
 from jax import jit
 from jax import random
-
 from jax.config import config as jax_config
 import jax.numpy as jnp
 
 from jax_md import simulate
 from jax_md import space
 from jax_md import util
-from jax_md import rigid_body
 from jax_md.rigid_body import RigidBody, Quaternion
 
 from utils import DEFAULT_TEMP
@@ -18,53 +15,20 @@ from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import nucleotide_mass, get_kt, moment_of_inertia
 from utils import get_one_hot
 
-from get_params import get_params, get_default_params
-from bonded_energy import static_energy_fn_factory
-from unbonded_energy import dynamic_energy_fn_factory_fixed
+from get_params import get_default_params
 from trajectory import TrajectoryInfo
 from topology import TopologyInfo
+from energy import energy_fn_factory
 
 from jax.config import config
 config.update("jax_enable_x64", True)
 
-FLAGS = jax_config.FLAGS
-DYNAMICS_STEPS = 10
-
-f32 = util.f32
-f64 = util.f64
-
-DTYPE = [f32]
-if FLAGS.jax_enable_x64:
-    DTYPE += [f64]
-
-
-
-def energy_fn_factory(displacement_fn,
-                      back_site, stack_site, base_site,
-                      bonded_neighbors, unbonded_neighbors):
-    static_energy_fn, _ = static_energy_fn_factory(displacement,
-                                                   back_site=back_site,
-                                                   stack_site=stack_site,
-                                                   base_site=base_site,
-                                                   neighbors=bonded_neighbors)
-    dynamic_energy_fn, _ = dynamic_energy_fn_factory_fixed(
-        displacement,
-        back_site=back_site,
-        stack_site=stack_site,
-        base_site=base_site,
-        neighbors=unbonded_neighbors
-    )
-
-    # FIXME: maybe we should pass `params` instead of `potential_fns` and calculate `potential_fns` in `energy_fn`
-    # one argument against the above is if we do it outside, we can variably update potential_fns...
-    def energy_fn(body: RigidBody, seq: util.Array, params) -> float:
-        return static_energy_fn(body, seq, params) + dynamic_energy_fn(body, seq, params)
-
-    return energy_fn
 
 
 if __name__ == "__main__":
-    mass = rigid_body.RigidBody(center=jnp.array([nucleotide_mass]), orientation=jnp.array([moment_of_inertia]))
+    DYNAMICS_STEPS = 10
+
+    mass = RigidBody(center=jnp.array([nucleotide_mass]), orientation=jnp.array([moment_of_inertia]))
 
     """
     conf_path = "data/polyA_10bp/equilibrated.dat"
