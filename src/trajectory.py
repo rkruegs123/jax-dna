@@ -254,7 +254,7 @@ class TrajectoryInfo:
         states = list()
         for t in self.traj_df.t.unique(): # better than iterating over self.ts in case of numerical instability
             state_df = self.traj_df[self.traj_df['t'] == t]
-            state = read_state(state_df) # FIXME: need to implement this
+            state = read_state(state_df)
             states.append(state)
 
         self.states = states

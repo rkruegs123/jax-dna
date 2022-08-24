@@ -53,9 +53,9 @@ def clamp(x, lo=-1.0, hi=1.0):
     return jnp.clip(x, lo, hi)
 
 
-def static_energy_fn_factory(displacement_fn,
-                             back_site, stack_site, base_site,
-                             neighbors):
+def nn_energy_fn_factory(displacement_fn,
+                         back_site, stack_site, base_site,
+                         neighbors):
 
     d = space.map_bond(partial(displacement_fn))
     nbs_i = neighbors[:, 0]
@@ -153,11 +153,11 @@ if __name__ == "__main__":
     n = config_info.top_info.n
     bonded_neighbors = config_info.top_info.bonded_nbrs
 
-    energy_fn = static_energy_fn_factory(displacement,
-                                         back_site=back_site,
-                                         stack_site=stack_site,
-                                         base_site=base_site,
-                                         neighbors=bonded_neighbors)
+    energy_fn = nn_energy_fn_factory(displacement,
+                                     back_site=back_site,
+                                     stack_site=stack_site,
+                                     base_site=base_site,
+                                     neighbors=bonded_neighbors)
 
 
     # Simulate with the energy function via Nose-Hoover

@@ -59,7 +59,7 @@ HB_WEIGHTS = jnp.array([
 ])
 get_hb_probs = vmap(lambda seq, i, j: jnp.kron(seq[i], seq[j]), in_axes=(None, 0, 0), out_axes=0)
 
-def dynamic_energy_fn_factory_fixed(displacement_fn, back_site, stack_site, base_site, neighbors):
+def other_pairs_energy_fn_factory_fixed(displacement_fn, back_site, stack_site, base_site, neighbors):
 
     d = space.map_bond(partial(displacement_fn))
     nbs_i = neighbors[:, 0]
