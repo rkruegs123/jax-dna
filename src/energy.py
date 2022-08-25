@@ -8,13 +8,13 @@ def energy_fn_factory(displacement_fn,
                       back_site, stack_site, base_site,
                       bonded_neighbors, unbonded_neighbors):
     nn_energy_fn, _ = nn_energy_fn_factory(
-        displacement,
+        displacement_fn,
         back_site=back_site,
         stack_site=stack_site,
         base_site=base_site,
         neighbors=bonded_neighbors)
     other_pairs_energy_fn, _ = other_pairs_energy_fn_factory_fixed(
-        displacement,
+        displacement_fn,
         back_site=back_site,
         stack_site=stack_site,
         base_site=base_site,
