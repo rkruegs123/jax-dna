@@ -151,7 +151,7 @@ delta_theta_star_cross_8 = 0.68
 [coaxial_stacking]
 
 ## f2(dr_coax)
-k_coax = 46
+k_coax = 46.0
 dr0_coax = 0.4
 dr_c_coax = 0.6
 dr_low_coax = 0.22
