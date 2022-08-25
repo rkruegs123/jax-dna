@@ -158,3 +158,11 @@ TODO (been working on `topology.py` and `trajectory.py`)
   - update simulate.py and others
   - remove unecessary stuff from utils.py
 - implement `read_config` using `read_trajectory`?
+
+#### August 24, 2022 
+
+TODO: 
+- draft skeleton for parameter optimization
+- think about optimizing for speed. Need to benchmark first 
+
+
