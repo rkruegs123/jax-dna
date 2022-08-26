@@ -42,7 +42,7 @@ back_site = jnp.array(
 )
 
 
-## simulator function that returns loss
+# Simulator function that returns loss
 def run_simulation(params, key, displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP):
     """
     currently, this is a dummy function whose "loss" is the end-to-end distance between nucleotides
@@ -68,7 +68,7 @@ def run_simulation(params, key, displacement_fn, shift_fn, top_info, config_info
     state = init_fn(key, body, mass=mass, seq=seq, params=params)
     E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT, seq=seq, params=params)
     """
-    ### lax scan version of simulation
+    # Take steps with `lax.scan`
 
     # @jit
     def scan_fn(state, step):
@@ -81,17 +81,21 @@ def run_simulation(params, key, displacement_fn, shift_fn, top_info, config_info
     # state, (_, _, _) = lax.scan(step_fn, state, eq_steps)
     state, (trajectory, log_probs, loss) = lax.scan(scan_fn, state, jnp.arange(steps))
     """
+
     pdb.set_trace()
+
+    # Take steps with normal for-loop
     trajectory = [state.position]
-    log_probs = 1.0
-    loss = 1.0
+    loss = jnp.zeros(steps + 1)
     for i in range(steps):
         state = step_fn(state, seq=seq, params=params)
         trajectory.append(state.position)
+        loss = loss.at[i].set(state.position.center[0][0])
 
+    log_probs = jnp.full((steps + 1,), 0.0)
     return trajectory, log_probs, loss
 
-## single gradient estimator
+# Single gradient estimator
 def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP):
     @functools.partial(jax.value_and_grad, has_aux=True)
     def _single_estimate(params, seed): # function only of the params to be differentiated w.r.t.
@@ -104,7 +108,7 @@ def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=
         return gradient_estimator, avg_loss
     return _single_estimate
 
-## mapped gradient estimate
+# Mapped gradient estimate
 def estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP):
     # mapped_estimate = jax.vmap(single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP), [None, 0])
     my_fun = single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP)
@@ -126,6 +130,49 @@ def estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_in
 
         return avg_grad, (gradient_estimator, avg_loss)
     return _estimate_gradient
+
+
+def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix/start.conf"):
+
+    # Information for a single "test case"
+    # Note: in the future, we will have multiple of these
+    top_info = TopologyInfo(top_path, reverse_direction=True)
+    config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
+    displacement_fn, shift_fn = space.periodic(config_info.box_size)
+    sim_length = 2
+    batch_size = 2
+    grad_fxn = estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info,
+                                 sim_length, dt=5e-3, T=DEFAULT_TEMP)
+
+    # Initialize values relevant for the optimization loop
+    init_params = get_default_params()
+    opt_steps = 1
+    lr = jopt.exponential_decay(0.1, opt_steps, 0.01)
+    optimizer = jopt.adam(lr)
+    init_state = optimizer.init_fn(init_params)
+    opt_state = optimizer.init_fn(init_params)
+    key = random.PRNGKey(0)
+
+    # Setup some logging, some required and some not
+    params_ = []
+    losses = []
+    grads = []
+    save_every = 1
+    params_.append((0,) + (optimizer.params_fn(opt_state),))
+
+    # Do the optimization
+    for i in tqdm.trange(opt_steps, position=0):
+        key, split = random.split(key)
+
+        # Get the grad for our single test case
+        grad, (_, avg_loss) = grad_fxn(optimizer.params_fn(opt_state), split)
+        opt_state = optimizer.update_fn(i, grad, opt_state)
+        losses.append(avg_loss)
+        grads.append(grad)
+        if i % save_every == 0 | i == (opt_steps-1):
+            coeffs_.append(((i+1),) + (optimizer.params_fn(opt_state),))
+
+
 
 """
 test function
@@ -166,43 +213,8 @@ print(state.position[0].shape)
 
 """
 
-def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix/start.conf"):
-    ## optimization training loop
 
 
-    ## information for a single "test case"
-    top_info = TopologyInfo(top_path, reverse_direction=True)
-    config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
-    displacement_fn, shift_fn = space.periodic(config_info.box_size)
-    sim_length = 2
-    batch_size = 2
-    grad_fxn = estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info,
-                                 sim_length, dt=5e-3, T=DEFAULT_TEMP)
-
-    ## initialize values relevant for the optimization loop
-    init_params = get_default_params()
-    opt_steps = 1
-    lr = jopt.exponential_decay(0.1, opt_steps, 0.01)
-    optimizer = jopt.adam(lr)
-    init_state = optimizer.init_fn(init_params)
-    opt_state = optimizer.init_fn(init_params)
-    key = random.PRNGKey(0)
-
-
-    params_ = []
-    losses = []
-    grads = []
-    save_every = 1
-    params_.append((0,) + (optimizer.params_fn(opt_state),))
-
-    for j in tqdm.trange(opt_steps, position=0):
-        key, split = random.split(key)
-        grad, (_, avg_loss) = grad_fxn(optimizer.params_fn(opt_state), split)
-        opt_state = optimizer.update_fn(j, grad, opt_state)
-        losses.append(avg_loss)
-        grads.append(grad)
-        if j % save_every == 0 | j == (opt_steps-1):
-            coeffs_.append(((j+1),) + (optimizer.params_fn(opt_state),))
 
 if __name__ == "__main__":
     run()
