@@ -108,10 +108,19 @@ def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=
         return gradient_estimator, avg_loss
     return _single_estimate
 
-# Mapped gradient estimate
+"""
+Mapped gradient estimator:
+
+For a stochastic simulation, we have to run multiple instances of the same simulation to estimate
+the true gradient. This function takes the information defining a particular stochastic simulation
+and returns a function that estimates its gradient given a particular set of parameters and
+seed. Note that the returned function will run *multiple* simulations rather than a single one --
+so, it splits the provided seed into `batch_size` seeds.
+"""
 def estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP):
-    # mapped_estimate = jax.vmap(single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP), [None, 0])
     my_fun = single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP)
+
+    # mapped_estimate = jax.vmap(single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP), [None, 0])
     def mapped_estimate(params, keys):
         results = list()
         for k in keys:
