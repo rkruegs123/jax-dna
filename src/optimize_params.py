@@ -163,9 +163,9 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     key = random.PRNGKey(0)
 
     # Setup some logging, some required and some not
-    params_ = []
-    losses = []
-    grads = []
+    params_ = list()
+    losses = list()
+    grads = list()
     save_every = 1
     params_.append((0,) + (optimizer.params_fn(opt_state),))
 
@@ -190,8 +190,8 @@ test function
 
 key = random.PRNGKey(0)
 displacement_fn, shift_fn = space.free()
-conf_path = "/Users/megancengel/Research_apps/jaxmd-oxdna/data/simple-helix/start.conf"
-top_path = "/Users/megancengel/Research_apps/jaxmd-oxdna/data/simple-helix/generated.top"
+conf_path = "data/simple-helix/start.conf"
+top_path = "data/simple-helix/generated.top"
 
 top_info = TopologyInfo(top_path, reverse_direction=True)
 config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
