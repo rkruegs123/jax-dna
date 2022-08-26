@@ -26,7 +26,7 @@ from energy import energy_fn_factory
 
 from jax.config import config
 config.update("jax_enable_x64", True)
-
+config.update('jax_disable_jit', True)
 
 
 f64 = util.f64
@@ -46,7 +46,6 @@ back_site = jnp.array(
 # Simulator function that returns loss
 # Note: for now, we use a dummy loss
 def run_simulation(params, key, displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP):
-    pdb.set_trace()
     body = config_info.states[0]
 
     seq = jnp.array(get_one_hot(top_info.seq), dtype=f64)
@@ -82,7 +81,6 @@ def run_simulation(params, key, displacement_fn, shift_fn, top_info, config_info
     state, (trajectory, log_probs, loss) = lax.scan(scan_fn, state, jnp.arange(steps))
     """
 
-    pdb.set_trace()
 
     # Take steps with normal for-loop
     trajectory = [state.position]
@@ -96,14 +94,62 @@ def run_simulation(params, key, displacement_fn, shift_fn, top_info, config_info
     avg_loss = jnp.mean(losses)
     return trajectory, log_probs, avg_loss
 
-# Single gradient estimator
+"""
+Single gradient estimator:
+
+For a given "test case" (i.e. a simulation configuration and a loss that is a function
+of the trajectory), we want to get the gradient of the loss with respect to the
+parameters. As discussed in `estimate_gradient`, this requires running multiple simulations.
+
+`single_estimate` (or rather, _single_estimate decorated with `value_and_grad`) takes as
+input the requisite information for test case and returns a function that (i) runs a
+single simulation and (ii) returns the component of that simulation required for estimating
+the gradient from the entire batch of trajectories.
+
+More specifically, suppose we define a stochastic simulation S and also some function L(P)
+that denotes returns a scalar value (i.e. a loss) on a trajectory generated with parameters
+P. This is a "test case." We want `grad(<L(P)>)` where <L(P)> is the average of the loss
+over all of phase space. However, we can't compute the loss over all of phase space.
+So, we can approximate this gradient with the following expression (derivation not shown):
+
+`grad(<L(P)>)` = `<grad(ln(pr))*L(P)> + <grad(L(P))>` = `<grad(ln(pr))*L(P) + grad(L(P))>`
+
+We can rewrite this as
+
+`grad(<L(P)>)` = `<A> + <B>` = `<A + B>`
+
+where
+
+A = grad(ln(pr))*L(P)
+B = grad(L(P))
+
+`single_estimate` returns a function, `_single_estimate` that takes as input some parameters
+P, as well as a seed, and returns the value `A + B`. This is useful because given all values
+`A + B` for every trajectory, we can immediately compute `<A + B>`
+
+So, since we decorate `_single_estimate` with `value_and_grad` and supply an auxiliary value
+(i.e. an additional return value for which we do not return the value and gradient),
+`_single_estimate(P, seed)` will return
+
+`(ln(pr)*L(P) + L(P), L(P)), A + B = grad(ln(pr))*L(P) + grad(L(P))`
+
+Written differently, `_single_estimate(P, seed)` will return
+
+`(V, L(P)), G`
+
+where `G = A + B` and `V` is the original value for which the gradient was taken to obtain
+`G = A+B`. Note that the auxiliary value get's combined with the value as a tuple.
+"""
 def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP):
+    # Note: If has_aux is True then a tuple of ((value, auxiliary_data), gradient) is returned.
+    # From https://jax.readthedocs.io/en/latest/_autosummary/jax.value_and_grad.html
     @functools.partial(jax.value_and_grad, has_aux=True)
     def _single_estimate(params, seed): # function only of the params to be differentiated w.r.t.
-        pdb.set_trace()
-        trajectory, log_probs, avg_loss = run_simulation(params, seed, displacement_fn, shift_fn, top_info,
-                                                         config_info, steps, dt=5e-3, T=DEFAULT_TEMP)
+        trajectory, log_probs, avg_loss = run_simulation(
+            params, seed, displacement_fn, shift_fn, top_info,
+            config_info, steps, dt=5e-3, T=DEFAULT_TEMP)
         tot_log_prob = log_probs.sum()
+        # FIXME: the naming here is confusing. `gradient_estimator` is actually not the gradient estimator -- it's gradient is the gradient estimator
         gradient_estimator = (tot_log_prob * jax.lax.stop_gradient(avg_loss) + avg_loss)
         return gradient_estimator, avg_loss
     return _single_estimate
@@ -113,19 +159,23 @@ Mapped gradient estimator:
 
 For a stochastic simulation, we have to run multiple instances of the same simulation to estimate
 the true gradient. This function takes the information defining a particular stochastic simulation
-and returns a function that estimates its gradient given a particular set of parameters and
-seed. Note that the returned function will run *multiple* simulations rather than a single one --
-so, it splits the provided seed into `batch_size` seeds.
+(i.e. a "test case") and returns a function that estimates its gradient given a particular set of
+parameters and seed. Note that the returned function will run *multiple* simulations rather than a
+single one -- so, it splits the provided seed into `batch_size` seeds.
 """
 def estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP):
-    my_fun = single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP)
+    single_estimate_fn = single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP)
 
-    # mapped_estimate = jax.vmap(single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP), [None, 0])
+    mapped_estimate = jax.vmap(single_estimate_fn, [None, 0])
+
+    # my_fun = single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP)
+    """
     def mapped_estimate(params, keys):
         results = list()
         for k in keys:
             results.append(my_fun(params, k))
         return results
+    """
 
     # @jax.jit
     def _estimate_gradient(params, seed):
@@ -135,7 +185,7 @@ def estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_in
         pdb.set_trace()
         avg_grad = {}
         for i in grad:
-            avg_grad[i] = {k:jnp.mean(v) for k, v in grad[i].items()}
+            avg_grad[i] = {k: jnp.mean(v) for k, v in grad[i].items()}
 
         return avg_grad, (gradient_estimator, avg_loss)
     return _estimate_gradient
@@ -148,8 +198,9 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
-    sim_length = 2
+    sim_length = 3
     batch_size = 2
+    # Note how we get one `grad_fxn` per "test case." The gradient has to be estimated *per* test case
     grad_fxn = estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info,
                                  sim_length, dt=5e-3, T=DEFAULT_TEMP)
 
