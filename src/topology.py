@@ -121,7 +121,7 @@ class TopologyInfo:
     def read(self):
         # Check that our topology file exists
         if not Path(self.top_path).exists():
-            raise RuntimeError(f"Topology file does not exist: {top_path}")
+            raise RuntimeError(f"Topology file does not exist: {self.top_path}")
 
         # Read the lines from our topology file
         with open(self.top_path) as f:

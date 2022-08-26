@@ -25,7 +25,8 @@ from energy import energy_fn_factory
 from jax.config import config
 config.update("jax_enable_x64", True)
 
-import langevin
+# import langevin
+
 
 f64 = util.f64
 
@@ -63,12 +64,14 @@ def forward(top_info, config_info, steps, t=DEFAULT_TEMP, mgamma=0.1, sim_type="
     dt = 5e-3
 
     if(sim_type == "langevin"):
-       init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, mgamma) 
-       state = init_fn(key, body, mass=mass, seq=seq, params=params)
-    elif(sim_type=="nose_hoover"):
-       init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift_fn, dt, kT)
-       state = init_fn(key, body, mass=mass, seq=seq, params=params)
-       E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT, seq=seq, params=params)
+        init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, mgamma)
+        state = init_fn(key, body, mass=mass, seq=seq, params=params)
+    elif(sim_type == "nose-hoover"):
+        init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift_fn, dt, kT)
+        state = init_fn(key, body, mass=mass, seq=seq, params=params)
+        E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT, seq=seq, params=params)
+    else:
+        raise RuntimeError(f"Invalid simulation type: {sim_type}")
 
     step_fn = jit(step_fn)
 
@@ -78,7 +81,7 @@ def forward(top_info, config_info, steps, t=DEFAULT_TEMP, mgamma=0.1, sim_type="
         state = step_fn(state, seq=seq, params=params)
         trajectory.append(state.position)
 
-    #pdb.set_trace()
+    # pdb.set_trace()
 
     # E_final = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
 
@@ -97,14 +100,14 @@ if __name__ == "__main__":
     conf_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/start.conf"
     top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/generated.top"
     """
-    
-    conf_path = "/Users/megancengel/Research_apps/jaxmd-oxdna/data/simple-helix/start.conf"
-    top_path = "/Users/megancengel/Research_apps/jaxmd-oxdna/data/simple-helix/generated.top"
-    
+
+    conf_path = "data/simple-helix/start.conf"
+    top_path = "data/simple-helix/generated.top"
+
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
 
-    forward(top_info, config_info, steps=10, sim_type="langevin")
+    forward(top_info, config_info, steps=10, sim_type="nose-hoover")
 
     """
     TODO:

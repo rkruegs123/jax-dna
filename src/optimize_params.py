@@ -166,35 +166,36 @@ print(state.position[0].shape)
 
 """
 
-def run():
+def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix/start.conf"):
     ## optimization training loop
 
 
-    conf_path = "data/simple-helix/start.conf"
-    top_path = "data/simple-helix/generated.top"
-
+    ## information for a single "test case"
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
+    displacement_fn, shift_fn = space.periodic(config_info.box_size)
+    sim_length = 2
+    batch_size = 2
+    grad_fxn = estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info,
+                                 sim_length, dt=5e-3, T=DEFAULT_TEMP)
 
-    key = random.PRNGKey(0)
-    displacement_fn, shift_fn = space.free()
-    params_ = []
-    losses = []
-    grads = []
+    ## initialize values relevant for the optimization loop
     init_params = get_default_params()
     opt_steps = 1
-    simlength = 2
-    save_every = 1
-    batch_size = 2
     lr = jopt.exponential_decay(0.1, opt_steps, 0.01)
     optimizer = jopt.adam(lr)
     init_state = optimizer.init_fn(init_params)
     opt_state = optimizer.init_fn(init_params)
-    grad_fxn = estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info,
-                                 simlength, dt=5e-3, T=DEFAULT_TEMP)
+    key = random.PRNGKey(0)
+
+
+    params_ = []
+    losses = []
+    grads = []
+    save_every = 1
     params_.append((0,) + (optimizer.params_fn(opt_state),))
 
-    for j in tqdm.trange(opt_steps,position=0):
+    for j in tqdm.trange(opt_steps, position=0):
         key, split = random.split(key)
         grad, (_, avg_loss) = grad_fxn(optimizer.params_fn(opt_state), split)
         opt_state = optimizer.update_fn(j, grad, opt_state)
