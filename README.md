@@ -159,10 +159,19 @@ TODO (been working on `topology.py` and `trajectory.py`)
   - remove unecessary stuff from utils.py
 - implement `read_config` using `read_trajectory`?
 
-#### August 24, 2022 
+#### August 24, 2022
 
-TODO: 
+TODO:
 - draft skeleton for parameter optimization
-- think about optimizing for speed. Need to benchmark first 
+- think about optimizing for speed. Need to benchmark first
 
-
+Some next steps:
+- dynamic neighbors
+  - have to figure out max interaction radius. How to deal with when we have random params? Take one big minimum?
+- understand smooth fene
+- debug langevin
+- debug the first pass at parameter optimization
+  - to not have to worry about exploding gradients or anything, our first pass can just be optimizing using the *existing* parameters as a starting point
+- little things
+  - profile `forward` -- is it the `init_fn` that takes so olong? Is this just because of Nose-Hoover?
+  - optimize a subset of things
