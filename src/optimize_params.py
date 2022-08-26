@@ -28,6 +28,7 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 
 
+
 f64 = util.f64
 
 mass = RigidBody(center=jnp.array([nucleotide_mass]), orientation=jnp.array([moment_of_inertia]))
@@ -43,10 +44,8 @@ back_site = jnp.array(
 
 
 # Simulator function that returns loss
+# Note: for now, we use a dummy loss
 def run_simulation(params, key, displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP):
-    """
-    currently, this is a dummy function whose "loss" is the end-to-end distance between nucleotides
-    """
     pdb.set_trace()
     body = config_info.states[0]
 
@@ -67,6 +66,7 @@ def run_simulation(params, key, displacement_fn, shift_fn, top_info, config_info
 
     state = init_fn(key, body, mass=mass, seq=seq, params=params)
     E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT, seq=seq, params=params)
+
     """
     # Take steps with `lax.scan`
 
@@ -86,24 +86,24 @@ def run_simulation(params, key, displacement_fn, shift_fn, top_info, config_info
 
     # Take steps with normal for-loop
     trajectory = [state.position]
-    loss = jnp.zeros(steps + 1)
+    losses = jnp.zeros(steps + 1)
     for i in range(steps):
         state = step_fn(state, seq=seq, params=params)
         trajectory.append(state.position)
-        loss = loss.at[i].set(state.position.center[0][0])
+        losses = losses.at[i].set(state.position.center[0][0])
 
     log_probs = jnp.full((steps + 1,), 0.0)
-    return trajectory, log_probs, loss
+    avg_loss = jnp.mean(losses)
+    return trajectory, log_probs, avg_loss
 
 # Single gradient estimator
 def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP):
     @functools.partial(jax.value_and_grad, has_aux=True)
     def _single_estimate(params, seed): # function only of the params to be differentiated w.r.t.
         pdb.set_trace()
-        trajectory, log_probs, loss = run_simulation(params, seed, displacement_fn, shift_fn, top_info,
-                                                     config_info, steps, dt=5e-3, T=DEFAULT_TEMP)
+        trajectory, log_probs, avg_loss = run_simulation(params, seed, displacement_fn, shift_fn, top_info,
+                                                         config_info, steps, dt=5e-3, T=DEFAULT_TEMP)
         tot_log_prob = log_probs.sum()
-        avg_loss = jnp.mean(loss)
         gradient_estimator = (tot_log_prob * jax.lax.stop_gradient(avg_loss) + avg_loss)
         return gradient_estimator, avg_loss
     return _single_estimate
@@ -135,7 +135,7 @@ def estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_in
         pdb.set_trace()
         avg_grad = {}
         for i in grad:
-            avg_grad[i] = {k:jnp.mean(v) for k,v in grad[i].items()}
+            avg_grad[i] = {k:jnp.mean(v) for k, v in grad[i].items()}
 
         return avg_grad, (gradient_estimator, avg_loss)
     return _estimate_gradient
