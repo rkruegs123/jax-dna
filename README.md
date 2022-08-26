@@ -175,3 +175,4 @@ Some next steps:
 - little things
   - profile `forward` -- is it the `init_fn` that takes so olong? Is this just because of Nose-Hoover?
   - optimize a subset of things
+  - maybe reimplement scan for the rollout once we've debugged the first parameter optimization
