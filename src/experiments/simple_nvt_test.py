@@ -1,8 +1,5 @@
 import functools
 
-from absl.testing import absltest
-from absl.testing import parameterized
-
 import numpy as onp
 import pdb
 
@@ -24,10 +21,12 @@ from jax_md import test_util
 from jax_md import partition
 from jax_md import util
 from jax_md import rigid_body
-# from jax_md.colab_tools import renderer
 
 from functools import partial
 
+# Note: disabling JIT exposes the bug
+from jax.config import config
+config.update('jax_disable_jit', True)
 
 FLAGS = jax_config.FLAGS
 DYNAMICS_STEPS = 100
@@ -59,9 +58,6 @@ if __name__ == "__main__":
 
     body = rigid_body.RigidBody(R, quaternion)
 
-    # Use a shape of one particle to create an energy function
-    # Below, we will try to reproduce this energy function without using `rigid_body.point_energy`
-
     shape = rigid_body.point_union_shape(
       onp.array([[0.0, 0.0, 0.0]], f32),
       f32(1.0)
@@ -79,14 +75,12 @@ if __name__ == "__main__":
     step_fn = jit(step_fn)
 
     state = init_fn(key, body, mass=shape.mass())
-    # state = init_fn(key, body) # Doesn't work -- must provide mass explicitly
     E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
 
     trajectory = list()
 
     for i in range(DYNAMICS_STEPS):
       state = step_fn(state)
-
       trajectory.append(state.position)
 
     E_final = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
