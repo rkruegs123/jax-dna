@@ -167,9 +167,11 @@ TODO:
 
 Some next steps:
 - dynamic neighbors
-  - have to figure out max interaction radius. How to deal with when we have random params? Take one big minimum?
+  - have to figure out max interaction radius. How to deal with when we have random params? Take one big minimum? Probably just the maximum of some set of parameters that we can fix...
 - understand smooth fene
 - debug langevin
+  - hpoefully not as slow as nose-hoover. hopefully nose-hoover is particularly slow because of the chaining method
+  - then we could actually test the grad stuff better. with nose hoover, we get the warning that the compiltaion is too slow, etc. this really shouldn't be the case...
 - debug the first pass at parameter optimization
   - to not have to worry about exploding gradients or anything, our first pass can just be optimizing using the *existing* parameters as a starting point
 - little things
