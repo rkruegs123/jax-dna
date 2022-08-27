@@ -26,7 +26,7 @@ from energy import energy_fn_factory
 
 from jax.config import config
 config.update("jax_enable_x64", True)
-config.update('jax_disable_jit', True)
+# config.update('jax_disable_jit', True)
 
 
 f64 = util.f64
@@ -86,6 +86,8 @@ def run_simulation(params, key, displacement_fn, shift_fn, top_info, config_info
     trajectory = [state.position]
     losses = jnp.zeros(steps + 1)
     for i in range(steps):
+        # pdb.set_trace()
+        pdb.set_trace()
         state = step_fn(state, seq=seq, params=params)
         trajectory.append(state.position)
         losses = losses.at[i].set(state.position.center[0][0])
@@ -168,8 +170,8 @@ def estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_in
 
     mapped_estimate = jax.vmap(single_estimate_fn, [None, 0])
 
-    # my_fun = single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP)
     """
+    my_fun = single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP)
     def mapped_estimate(params, keys):
         results = list()
         for k in keys:
@@ -220,6 +222,7 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     save_every = 1
     params_.append((0,) + (optimizer.params_fn(opt_state),))
 
+    pdb.set_trace()
     # Do the optimization
     for i in tqdm.trange(opt_steps, position=0):
         key, split = random.split(key)
@@ -272,7 +275,6 @@ key = random.PRNGKey(0)
 print(state.position[0].shape)
 
 """
-
 
 
 

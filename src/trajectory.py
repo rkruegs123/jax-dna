@@ -3,7 +3,9 @@ import pdb
 import pandas as pd
 import numpy as np
 
+import jax.numpy as jnp
 from jax_md.rigid_body import Quaternion, RigidBody
+
 from utils import Q_to_back_base, Q_to_base_normal
 
 
@@ -108,6 +110,8 @@ def read_state(state_df):
         R[i, :] = com
         quat[i, :] = np.array([q0, q1, q2, q3])
 
+    R = jnp.array(R, dtype=jnp.float64)
+    quat = jnp.array(quat, dtype=jnp.float64)
     body = RigidBody(R, Quaternion(quat))
     return body
 
