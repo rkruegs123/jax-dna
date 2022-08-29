@@ -227,7 +227,7 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     for i in tqdm.trange(opt_steps, position=0):
         key, split = random.split(key)
 
-        # Get the grad for our single test case
+        # Get the grad for our single test case (would have to average for multiple)
         grad, (_, avg_loss) = grad_fxn(optimizer.params_fn(opt_state), split)
         opt_state = optimizer.update_fn(i, grad, opt_state)
         losses.append(avg_loss)
