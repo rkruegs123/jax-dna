@@ -178,3 +178,14 @@ Some next steps:
   - profile `forward` -- is it the `init_fn` that takes so olong? Is this just because of Nose-Hoover?
   - optimize a subset of things
   - maybe reimplement scan for the rollout once we've debugged the first parameter optimization
+
+#### August 30, 2022
+
+TODO:
+- characterize the forward simulations using structural observables. Ensure same averages as in oxDNA when Tom's params are used. Also compare subterm energies and total energies for a long langevin simulation. Might as well also confirm constant temperature
+- try an optimization loop for dummy loss
+- get neighbour lists working
+- get jax.lax.scan working in place of for loops (should be much faster)
+- benchmark speeds. How much slower is the Jax-MD version for XXX steps, how does it scale with sim. length and sim. size compared to oxDNA C++ scaling?
+- smooth the FENE potential
+- multiplicative isotropic cut-offs
