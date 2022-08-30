@@ -63,7 +63,7 @@ def forward(top_info, config_info, steps, gamma, mass, t=DEFAULT_TEMP, sim_type=
 
     # Simulate with the energy function via Nose-Hoover
     kT = get_kt(t=t) # 300 Kelvin = 0.1 kT
-    dt = 5e-5
+    dt = 3e-3
 
     if(sim_type == "langevin"):
         init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/generated.top"
     """
 
-    conf_path = "data/polyA_10bp/equilibrated.dat"
+    conf_path = "data/polyA_10bp/generated.dat"
     top_path = "data/polyA_10bp/generated.top"
 
     top_info = TopologyInfo(top_path, reverse_direction=True)
@@ -113,9 +113,9 @@ if __name__ == "__main__":
     # test_traj = TrajectoryInfo(top_info, states=config_info.states, box_size=config_info.box_size)
     # test_traj.write("data/simple-helix/test_langevin_initconf.dat", reverse=True, write_topology=True, top_opath="data/simple-helix/test_langevin_initconf.top")
 
-    final_traj, energies = forward(top_info, config_info, steps=10, gamma=gamma, mass=mass, sim_type="nose-hoover")
+    final_traj, energies = forward(top_info, config_info, steps=100, gamma=gamma, mass=mass, sim_type="langevin")
 
 
     final_traj_info = TrajectoryInfo(top_info, states=final_traj, box_size=config_info.box_size)
     pdb.set_trace()
-    final_traj_info.write("data/polyA_10bp/test_nose_hoover.dat", reverse=True, write_topology=False)
+    final_traj_info.write("data/polyA_10bp/test_langevin.dat", reverse=True, write_topology=False)
