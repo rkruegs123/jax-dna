@@ -24,6 +24,7 @@ from energy import energy_fn_factory
 
 from jax.config import config
 config.update("jax_enable_x64", True)
+config.update("jax_debug_nans", True)
 
 import langevin
 
@@ -113,7 +114,7 @@ if __name__ == "__main__":
 #    test_traj.write("data/simple-helix/test_langevin_initconf.dat", reverse=True, write_topology=True, top_opath="data/simple-helix/test_langevin_initconf.top")
 
     final_traj, energies = forward(top_info, config_info, steps=10, gamma=gamma, mass=mass, sim_type="nose-hoover")
-    
+
 
     final_traj_info = TrajectoryInfo(top_info, states=final_traj, box_size=config_info.box_size)
     pdb.set_trace()
