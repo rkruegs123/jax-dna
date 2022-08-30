@@ -119,12 +119,3 @@ if __name__ == "__main__":
     final_traj_info = TrajectoryInfo(top_info, states=final_traj, box_size=config_info.box_size)
     pdb.set_trace()
     final_traj_info.write("data/polyA_10bp/test_nose_hoover.dat", reverse=True, write_topology=False)
-
-    """
-    TODO:
-    - make seq and potential_fns fixed with `functools.partial` (or jnp.Partial)
-    - call this file `forward` and move the energy function to its own thing (maybe `energy.py`). And test.
-    - start a `optimize_parameters.py` that only makes `seq` fixed and updates `params`, and therefore `potential_fns`
-      - see if we can take grads w.r.t. to some dummy loss function
-      - first see if we can get non-zero/nan grads, then see if we can optimize some subset of the params dictionary (e.g. we  can overwrite some subset of the dictionary with some parameters that we optimize over)
-    """
