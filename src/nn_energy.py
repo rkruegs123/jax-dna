@@ -23,7 +23,7 @@ from jax_md import util
 from jax_md import rigid_body
 from jax_md.rigid_body import RigidBody, Quaternion
 
-from utils import com_to_backbone, com_to_stacking, com_to_hb
+from utils import back_site, stack_site, base_site
 from utils import nucleotide_mass, get_kt, moment_of_inertia
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 from utils import clamp
@@ -137,15 +137,6 @@ if __name__ == "__main__":
     key, pos_key, quat_key = random.split(key, 3)
     dtype = f64
 
-    base_site = jnp.array(
-        [com_to_hb, 0.0, 0.0]
-    )
-    stack_site = jnp.array(
-        [com_to_stacking, 0.0, 0.0]
-    )
-    back_site = jnp.array(
-        [com_to_backbone, 0.0, 0.0]
-    )
 
     n = config_info.top_info.n
     bonded_neighbors = config_info.top_info.bonded_nbrs

@@ -110,6 +110,16 @@ com_to_stacking = 0.34
 com_to_hb = 0.4
 com_to_backbone = -0.4
 
+#the following are the site positions in the BODY frame!
+base_site = jnp.array(
+    [com_to_hb, 0.0, 0.0]
+)   
+stack_site = jnp.array(
+    [com_to_stacking, 0.0, 0.0]
+)   
+back_site = jnp.array(
+    [com_to_backbone, 0.0, 0.0]
+)   
 
 # Transform quaternions to nucleotide orientations
 
