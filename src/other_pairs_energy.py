@@ -125,7 +125,7 @@ def other_pairs_energy_fn_factory_fixed(displacement_fn, back_site, stack_site, 
         return jnp.sum(exc_vol), jnp.sum(v_hb), jnp.sum(cross_stack), jnp.sum(coax_stack)
 
     # Philosophy: use `functools.partial` to fix either `seq` or `potential_fns` depending on what is being optimized
-    def energy_fn(body: RigidBody, seq: util.Array, params) -> float:
+    def energy_fn(body: RigidBody, seq: util.Array, params, **kwargs) -> float:
         exc_vol, v_hb, cross_stack, coax_stack = _compute_subterms(body, seq, params)
         return exc_vol + v_hb + cross_stack + coax_stack
 

@@ -21,7 +21,7 @@ def energy_fn_factory(displacement_fn,
         neighbors=unbonded_neighbors
     )
 
-    def energy_fn(body: RigidBody, seq: util.Array, params) -> float:
-        return nn_energy_fn(body, seq, params) + other_pairs_energy_fn(body, seq, params)
+    def energy_fn(body: RigidBody, seq: util.Array, params, **kwargs) -> float:
+        return nn_energy_fn(body, seq, params, **kwargs) + other_pairs_energy_fn(body, seq, params, **kwargs)
 
     return energy_fn

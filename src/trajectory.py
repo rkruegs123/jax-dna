@@ -275,12 +275,12 @@ class TrajectoryInfo:
             base_normals = Q_to_base_normal(state.orientation)
             coms = state.center
 
-            for i in range(self.n):
-                nuc_at_t_line = [t] + coms[i] + back_base_vs[i] + base_normals[i] \
+            for i in range(self.top_info.n):
+                nuc_at_t_line = [t] + coms[i].tolist() + back_base_vs[i].tolist() + base_normals[i].tolist() \
                                 + [0.0, 0.0, 0.0] + [0.0, 0.0, 0.0] # dummy velocity and momentum for now
                 traj_df_lines.append(nuc_at_t_line)
 
-        traj_df = pd.DataFrame(df_lines,
+        traj_df = pd.DataFrame(traj_df_lines,
                                columns=["t",
                                         "com_x", "com_y", "com_z",
                                         "a1_x", "a1_y", "a1_z",

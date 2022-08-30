@@ -112,7 +112,7 @@ def nn_energy_fn_factory(displacement_fn,
         return jnp.sum(fene), jnp.sum(exc_vol), jnp.sum(stack)
 
     # Philosophy: use `functools.partial` to fix either `seq` or `potential_fns` depending on what is being optimized
-    def energy_fn(body: RigidBody, seq: util.Array, params) -> float:
+    def energy_fn(body: RigidBody, seq: util.Array, params, **kwargs) -> float:
         fene, exc_vol, stack = _compute_subterms(body, seq, params)
         return fene + exc_vol + stack
 

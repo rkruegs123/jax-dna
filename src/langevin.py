@@ -5,6 +5,8 @@ from typing import Any, Callable, TypeVar, Union, Tuple, Dict, Optional
 
 import functools
 
+import pdb
+
 from jax import grad, vmap
 from jax import jit
 from jax import random
@@ -18,8 +20,13 @@ from jax_md import space
 from jax_md import dataclasses
 from jax_md import partition
 from jax_md import smap
+from jax_md import rigid_body
 from jax_md.rigid_body import RigidBody 
+from jax_md import simulate
+from jax_md import util
+from jax_md.simulate import inner_update_fn, velocity_verlet, initialize_momenta, canonicalize_mass
 
+f32 = util.f32
 Array = util.Array
 ShiftFn = space.ShiftFn
 Simulator = simulate.Simulator
@@ -86,7 +93,7 @@ def nvt_langevin(energy_or_force_fn: Callable[..., Array],
                  shift_fn: ShiftFn,
                  dt: float,
                  kT: float,
-                 gamma: float=0.1,
+                 gamma: float,
                  center_velocity: bool=True,
                  **sim_kwargs) -> Simulator:
   force_fn = quantity.canonicalize_force(energy_or_force_fn)
