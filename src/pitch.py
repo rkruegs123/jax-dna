@@ -51,10 +51,13 @@ def compute_single_pitch(quartet, system: RigidBody, base_sites: Array):
 	local_helix = 0.5 * (a2a1 + b2b1)
 	local_helix_dir = local_helix/jnp.linalg.norm(local_helix)
 	#project each of the base-base vectors onto the plane perpendicular to the helical axis
-	bb1_projected = bb1 - (bb1 * local_helix_dir) * local_helix_dir
-	bb2_projected = bb2 - (bb2 * local_helix_dir) * local_helix_dir
+	bb1_projected = bb1 - jnp.dot(bb1, local_helix_dir) * local_helix_dir
+	bb2_projected = bb2 - jnp.dot(bb2, local_helix_dir) * local_helix_dir
+
+	bb1_projected_dir = bb1_projected/jnp.linalg.norm(bb1_projected)
+	bb2_projected_dir = bb2_projected/jnp.linalg.norm(bb2_projected)
 	#find the angle between the projections of the base-base vectors in the plane perpendicular to the "local/average" helical axis
-	theta = jnp.arccos(clamp(bb1_projected * bb2_projected))
+	theta = jnp.arccos(clamp(jnp.dot(bb1_projected_dir, bb2_projected_dir)))
 	pdb.set_trace()
 	return theta
 
@@ -87,9 +90,12 @@ if __name__ == "__main__":
     body = config_info.states[0]
     
     pdb.set_trace()
-    quartets = jnp.array([[0, 7, 1, 8], [0, 7, 1, 8]])
-
+    quartets = jnp.array([[0, 15, 1, 14], [1, 14, 2, 13], [2, 13, 3, 12], [3, 12, 4, 11], [4, 11, 5, 10], [5, 10, 6, 9], [6, 9, 7, 8]])
+    base_sites = body.center + rigid_body.quaternion_rotate(body.orientation, base_site) 
+    #pitch_test = compute_single_pitch(quartet, body, base_sites) 
     pitches = get_pitches(body, quartets)
+    num_turns = jnp.sum(pitches) / (2*jnp.pi)
+    av_pitch = (len(quartets)+1)/(jnp.sum(pitches) / (2*jnp.pi) )
     pdb.set_trace() 
     print("done") 
 
