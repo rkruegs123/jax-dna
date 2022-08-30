@@ -26,6 +26,7 @@ from jax_md.rigid_body import RigidBody, Quaternion
 from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import nucleotide_mass, get_kt
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
+from utils import clamp
 from potential import exc_vol_unbonded, hydrogen_bonding, cross_stacking, coaxial_stacking
 
 from jax.config import config
@@ -46,9 +47,6 @@ if FLAGS.jax_enable_x64:
 def rand_quat(key, dtype):
     return rigid_body.random_quaternion(key, dtype)
 
-
-def clamp(x, lo=-1.0, hi=1.0):
-    return jnp.clip(x, lo, hi)
 
 # Kron: AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT
 HB_WEIGHTS = jnp.array([

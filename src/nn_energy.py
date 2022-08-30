@@ -26,6 +26,7 @@ from jax_md.rigid_body import RigidBody, Quaternion
 from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import nucleotide_mass, get_kt, moment_of_inertia
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
+from utils import clamp
 from trajectory import TrajectoryInfo
 from topology import TopologyInfo
 from potential import v_fene, exc_vol_bonded, stacking
@@ -47,10 +48,6 @@ if FLAGS.jax_enable_x64:
 @partial(vmap, in_axes=(0, None))
 def rand_quat(key, dtype):
     return rigid_body.random_quaternion(key, dtype)
-
-
-def clamp(x, lo=-1.0, hi=1.0):
-    return jnp.clip(x, lo, hi)
 
 
 def nn_energy_fn_factory(displacement_fn,
