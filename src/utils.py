@@ -16,6 +16,21 @@ config.update("jax_enable_x64", True)
 
 DEFAULT_TEMP = 300
 
+def clamp(x, lo=-1.0, hi=1.0):
+    """
+    correction = 1e-10
+    min_ = jnp.where(x + 1e-10 > hi, hi, x)
+    max_ = jnp.where(min_ - 1e-10 < lo, lo, min_)
+    """
+
+    min_ = jnp.where(x >= hi, hi, x)
+    max_ = jnp.where(min_ <= lo, lo, min_)
+    return max_
+
+    # return jnp.clip(x, lo, hi)
+
+
+
 # Probabilistic sequence utilities
 DNA_MAPPER = {
     "A": [1, 0, 0, 0],

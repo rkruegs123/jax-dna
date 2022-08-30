@@ -110,8 +110,8 @@ if __name__ == "__main__":
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
 
-    #test_traj = TrajectoryInfo(top_info, states=config_info.states, box_size=config_info.box_size)
-#    test_traj.write("data/simple-helix/test_langevin_initconf.dat", reverse=True, write_topology=True, top_opath="data/simple-helix/test_langevin_initconf.top")
+    # test_traj = TrajectoryInfo(top_info, states=config_info.states, box_size=config_info.box_size)
+    # test_traj.write("data/simple-helix/test_langevin_initconf.dat", reverse=True, write_topology=True, top_opath="data/simple-helix/test_langevin_initconf.top")
 
     final_traj, energies = forward(top_info, config_info, steps=10, gamma=gamma, mass=mass, sim_type="nose-hoover")
 
