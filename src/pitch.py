@@ -37,41 +37,38 @@ if FLAGS.jax_enable_x64:
     DTYPE += [f64]
 
 
-#the pitch is defined as the angle between the projections of two base-base vectors in a plane perpendicular to the helical axis for two contiguous base pairs
-
+# the pitch is defined as the angle between the projections of two base-base vectors in a plane perpendicular to the helical axis for two contiguous base pairs
 def compute_single_pitch(quartet, system: RigidBody, base_sites: Array):
-	#base pair #1 is comprised of nucs a1 and b1. Base pair #2 is a2, b2. i.e. a1 is H-bonded to b1, a2 is h-bonded to b2/	
-	a1, b1, a2, b2 = quartet #a1, b1, a2, b2 are the indices of the relevant nucleotides
-	#get base-base vectors for each base pair, 1 and 2
-	bb1 = base_sites[b1] - base_sites[a1]
-	bb2 = base_sites[b2] - base_sites[a2]
-	#get "average" helical axis
-	a2a1 = base_sites[a1] - base_sites[a2]
-	b2b1 = base_sites[b1] - base_sites[b2]
-	local_helix = 0.5 * (a2a1 + b2b1)
-	local_helix_dir = local_helix/jnp.linalg.norm(local_helix)
-	#project each of the base-base vectors onto the plane perpendicular to the helical axis
-	bb1_projected = bb1 - jnp.dot(bb1, local_helix_dir) * local_helix_dir
-	bb2_projected = bb2 - jnp.dot(bb2, local_helix_dir) * local_helix_dir
+    # base pair #1 is comprised of nucs a1 and b1. Base pair #2 is a2, b2. i.e. a1 is H-bonded to b1, a2 is h-bonded to b2/
+    a1, b1, a2, b2 = quartet #a1, b1, a2, b2 are the indices of the relevant nucleotides
+    # get base-base vectors for each base pair, 1 and 2
+    bb1 = base_sites[b1] - base_sites[a1]
+    bb2 = base_sites[b2] - base_sites[a2]
+    # get "average" helical axis
+    a2a1 = base_sites[a1] - base_sites[a2]
+    b2b1 = base_sites[b1] - base_sites[b2]
+    local_helix = 0.5 * (a2a1 + b2b1)
+    local_helix_dir = local_helix/jnp.linalg.norm(local_helix)
+    # project each of the base-base vectors onto the plane perpendicular to the helical axis
+    bb1_projected = bb1 - jnp.dot(bb1, local_helix_dir) * local_helix_dir
+    bb2_projected = bb2 - jnp.dot(bb2, local_helix_dir) * local_helix_dir
 
-	bb1_projected_dir = bb1_projected/jnp.linalg.norm(bb1_projected)
-	bb2_projected_dir = bb2_projected/jnp.linalg.norm(bb2_projected)
-	#find the angle between the projections of the base-base vectors in the plane perpendicular to the "local/average" helical axis
-	theta = jnp.arccos(clamp(jnp.dot(bb1_projected_dir, bb2_projected_dir)))
-	pdb.set_trace()
-	return theta
+    bb1_projected_dir = bb1_projected/jnp.linalg.norm(bb1_projected)
+    bb2_projected_dir = bb2_projected/jnp.linalg.norm(bb2_projected)
+    # find the angle between the projections of the base-base vectors in the plane perpendicular to the "local/average" helical axis
+    theta = jnp.arccos(clamp(jnp.dot(bb1_projected_dir, bb2_projected_dir)))
+    return theta
 
 def get_pitches(system: RigidBody, base_quartets: Array):
-	base_sites = system.center + rigid_body.quaternion_rotate(system.orientation, base_site)	
-	get_all_pitches = vmap(compute_single_pitch, in_axes = [0, None, None])
-	all_pitches = get_all_pitches(base_quartets, system, base_sites)
-	return all_pitches
+    base_sites = system.center + rigid_body.quaternion_rotate(system.orientation, base_site)
+    get_all_pitches = vmap(compute_single_pitch, in_axes = [0, None, None])
+    all_pitches = get_all_pitches(base_quartets, system, base_sites)
+    return all_pitches
 
 
 
 if __name__ == "__main__":
-
-    #import matplotlib.pyplot as plt
+    # import matplotlib.pyplot as plt
     from tqdm import tqdm
 
 
@@ -88,15 +85,14 @@ if __name__ == "__main__":
     seq_oh = jnp.array(get_one_hot(config_info.top_info.seq), dtype=f64)
 
     body = config_info.states[0]
-    
+
     pdb.set_trace()
-    quartets = jnp.array([[0, 15, 1, 14], [1, 14, 2, 13], [2, 13, 3, 12], [3, 12, 4, 11], [4, 11, 5, 10], [5, 10, 6, 9], [6, 9, 7, 8]])
-    base_sites = body.center + rigid_body.quaternion_rotate(body.orientation, base_site) 
-    #pitch_test = compute_single_pitch(quartet, body, base_sites) 
+    quartets = jnp.array([[0, 15, 1, 14], [1, 14, 2, 13], [2, 13, 3, 12], [3, 12, 4, 11],
+                          [4, 11, 5, 10], [5, 10, 6, 9], [6, 9, 7, 8]])
+    base_sites = body.center + rigid_body.quaternion_rotate(body.orientation, base_site)
+    # pitch_test = compute_single_pitch(quartet, body, base_sites)
     pitches = get_pitches(body, quartets)
     num_turns = jnp.sum(pitches) / (2*jnp.pi)
-    av_pitch = (len(quartets)+1)/(jnp.sum(pitches) / (2*jnp.pi) )
-    pdb.set_trace() 
-    print("done") 
-
-
+    av_pitch = (len(quartets)+1) / (jnp.sum(pitches) / (2*jnp.pi))
+    pdb.set_trace()
+    print("done")
