@@ -24,7 +24,7 @@ from energy import energy_fn_factory
 
 from jax.config import config
 config.update("jax_enable_x64", True)
-config.update("jax_debug_nans", True)
+# config.update("jax_debug_nans", True)
 
 import langevin
 
@@ -53,7 +53,6 @@ def forward(top_info, config_info, steps, gamma, mass, t=DEFAULT_TEMP, sim_type=
 
     displacement, shift_fn = space.periodic(config_info.box_size)
     key = random.PRNGKey(0)
-    #key, pos_key, quat_key = random.split(key, 3)
 
     energy_fn = energy_fn_factory(displacement,
                                   back_site, stack_site, base_site,
@@ -81,29 +80,24 @@ def forward(top_info, config_info, steps, gamma, mass, t=DEFAULT_TEMP, sim_type=
     energies = [energy_fn(state.position,seq=seq,params=params)]
     for i in range(steps):
         state = step_fn(state, seq=seq, params=params)
-        trajectory.append(state.position)
-        energies.append(energy_fn(state.position,seq=seq,params=params))
 
-    # pdb.set_trace()
+        if i % 1000 == 0:
+            trajectory.append(state.position)
+            energies.append(energy_fn(state.position, seq=seq, params=params))
+            print(i)
 
     # E_final = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
-
-    # FIXME: store in TrajectoryInfo and write to file (potentially also write topology file)
 
     print("Finished Simulation")
     return trajectory, energies
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
 
-    """
-    conf_path = "data/polyA_10bp/equilibrated.dat"
-    top_path = "data/polyA_10bp/generated.top"
-    """
-    """
-    conf_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/start.conf"
-    top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/generated.top"
-    """
+    # conf_path = "data/simple-helix/start.conf"
+    # top_path = "data/simple-helix/generated.top"
 
+    # conf_path = "data/polyA_10bp/equilibrated.dat"
     conf_path = "data/polyA_10bp/generated.dat"
     top_path = "data/polyA_10bp/generated.top"
 
@@ -113,9 +107,15 @@ if __name__ == "__main__":
     # test_traj = TrajectoryInfo(top_info, states=config_info.states, box_size=config_info.box_size)
     # test_traj.write("data/simple-helix/test_langevin_initconf.dat", reverse=True, write_topology=True, top_opath="data/simple-helix/test_langevin_initconf.top")
 
-    final_traj, energies = forward(top_info, config_info, steps=100, gamma=gamma, mass=mass, sim_type="langevin")
+    final_traj, energies = forward(top_info, config_info, steps=100000, gamma=gamma, mass=mass, sim_type="langevin")
 
 
     final_traj_info = TrajectoryInfo(top_info, states=final_traj, box_size=config_info.box_size)
+
+    pdb.set_trace()
+
+    plt.plot(list(range(len(energies))), energies)
+    plt.show()
+
     pdb.set_trace()
     final_traj_info.write("data/polyA_10bp/test_langevin.dat", reverse=True, write_topology=False)

@@ -66,11 +66,9 @@ def get_pitches(system: RigidBody, base_quartets: Array):
     return all_pitches
 
 
-
 if __name__ == "__main__":
     # import matplotlib.pyplot as plt
     from tqdm import tqdm
-
 
     # traj_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/test.dat"
     # top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/polyA_10bp/generated.top"
