@@ -29,3 +29,29 @@ def checkpoint_scan(f, init, xs, checkpoint_every):
 
     final, result = jax.lax.scan(inner_loop, init, reshaped_xs)
     return final, _flatten_n(result, 2)
+
+# Example
+"""
+def simulate_ising(parameters: IsingParameters,
+                   initial_spins: jnp.array,
+                   seed: jnp.array,
+                   checkpoint_every: Optional[int] = None,
+                   return_states: bool = False
+) -> Callable[[IsingState, Tuple[IsingState, jnp.array]], Tuple[IsingState, IsingSummary]]:
+    initial_state = IsingState(initial_spins, map_slice(parameters, 0))
+    parameters_tail = map_slice(parameters, slice(1, None))
+    seeds = jax.random.split(seed, parameters.field.shape[0] - 1)
+    parameters_seeds = (parameters_tail, seeds)
+    def _step(state, parameters_seed):
+        parameters, seed = parameters_seed
+        new_state, summary  = update(state, parameters, seed)
+        if return_states:
+            return new_state, (summary, new_state)
+        return new_state, summary
+    if checkpoint_every is None:
+        scan = jax.lax.scan
+    else:
+        scan = functools.partial(control_flow.checkpoint_scan,
+                                 checkpoint_every=checkpoint_every)
+    return scan(_step, initial_state, parameters_seeds)
+"""
