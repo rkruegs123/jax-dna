@@ -107,7 +107,7 @@ if __name__ == "__main__":
     # test_traj = TrajectoryInfo(top_info, states=config_info.states, box_size=config_info.box_size)
     # test_traj.write("data/simple-helix/test_langevin_initconf.dat", reverse=True, write_topology=True, top_opath="data/simple-helix/test_langevin_initconf.top")
 
-    final_traj, energies = forward(top_info, config_info, steps=100000, gamma=gamma, mass=mass, sim_type="langevin")
+    final_traj, energies = forward(top_info, config_info, steps=10000, gamma=gamma, mass=mass, sim_type="langevin")
 
 
     final_traj_info = TrajectoryInfo(top_info, states=final_traj, box_size=config_info.box_size)

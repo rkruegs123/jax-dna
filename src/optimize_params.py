@@ -151,7 +151,6 @@ Written differently, `_single_estimate(P, seed)` will return
 where `G = A + B` and `V` is the original value for which the gradient was taken to obtain
 `G = A+B`. Note that the auxiliary value get's combined with the value as a tuple.
 """
-@jit
 def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP):
     # Note: If has_aux is True then a tuple of ((value, auxiliary_data), gradient) is returned.
     # From https://jax.readthedocs.io/en/latest/_autosummary/jax.value_and_grad.html
