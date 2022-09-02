@@ -23,6 +23,7 @@ from get_params import get_default_params
 from trajectory import TrajectoryInfo
 from topology import TopologyInfo
 from energy import energy_fn_factory
+import langevin
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -32,6 +33,7 @@ config.update("jax_enable_x64", True)
 f64 = util.f64
 
 mass = RigidBody(center=jnp.array([nucleotide_mass]), orientation=jnp.array([moment_of_inertia]))
+gamma = RigidBody(center=jnp.array([DEFAULT_TEMP/2.5]), orientation=jnp.array([DEFAULT_TEMP/7.5]))
 base_site = jnp.array(
     [com_to_hb, 0.0, 0.0], dtype=f64
 )
@@ -59,12 +61,20 @@ def run_simulation(params, key, displacement_fn, shift_fn, top_info, config_info
     # Simulate with the energy function via Nose-Hoover
     kT = get_kt(t=T) # 300 Kelvin = 0.1 kT
 
+
+    # Langevin
+    init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+    state = init_fn(key, body, mass=mass, seq=seq, params=params)
+
+    # Nose Hoover
+    """
     init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift_fn, dt, kT)
-
-    # step_fn = jit(step_fn)
-
     state = init_fn(key, body, mass=mass, seq=seq, params=params)
     E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT, seq=seq, params=params)
+    """
+
+
+    step_fn = jit(step_fn)
 
     """
     # Take steps with `lax.scan`
@@ -87,7 +97,6 @@ def run_simulation(params, key, displacement_fn, shift_fn, top_info, config_info
     losses = jnp.zeros(steps + 1)
     for i in range(steps):
         # pdb.set_trace()
-        pdb.set_trace()
         state = step_fn(state, seq=seq, params=params)
         trajectory.append(state.position)
         losses = losses.at[i].set(state.position.center[0][0])
@@ -142,6 +151,7 @@ Written differently, `_single_estimate(P, seed)` will return
 where `G = A + B` and `V` is the original value for which the gradient was taken to obtain
 `G = A+B`. Note that the auxiliary value get's combined with the value as a tuple.
 """
+@jit
 def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP):
     # Note: If has_aux is True then a tuple of ((value, auxiliary_data), gradient) is returned.
     # From https://jax.readthedocs.io/en/latest/_autosummary/jax.value_and_grad.html
@@ -179,7 +189,7 @@ def estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_in
         return results
     """
 
-    # @jax.jit
+    @jit
     def _estimate_gradient(params, seed):
         seeds = jax.random.split(seed, batch_size)
         pdb.set_trace()
@@ -222,7 +232,6 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     save_every = 1
     params_.append((0,) + (optimizer.params_fn(opt_state),))
 
-    pdb.set_trace()
     # Do the optimization
     for i in tqdm.trange(opt_steps, position=0):
         key, split = random.split(key)
@@ -234,47 +243,6 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
         grads.append(grad)
         if i % save_every == 0 | i == (opt_steps-1):
             coeffs_.append(((i+1),) + (optimizer.params_fn(opt_state),))
-
-
-
-"""
-test function
-
-###TEST#####
-
-key = random.PRNGKey(0)
-displacement_fn, shift_fn = space.free()
-conf_path = "data/simple-helix/start.conf"
-top_path = "data/simple-helix/generated.top"
-
-top_info = TopologyInfo(top_path, reverse_direction=True)
-config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
-body = config_info.states[0]
-print(body.center,body.orientation)
-seq = jnp.array(get_one_hot(top_info.seq), dtype=f64)
-n = top_info.n
-
-energy_fn = energy_fn_factory(displacement_fn,
-                              back_site, stack_site, base_site,
-                              top_info.bonded_nbrs, top_info.unbonded_nbrs)
-
-
-# Simulate with the energy function via Nose-Hoover
-kT = get_kt(t=DEFAULT_TEMP) # 300 Kelvin = 0.1 kT
-dt=5e-3
-params=get_default_params()
-init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift_fn, dt, kT)
-
-step_fn = jit(step_fn)
-
-state = init_fn(key, body, mass=mass, seq=seq, params=params)
-E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT, seq=seq, params=params)
-
-pdb.set_trace()
-key = random.PRNGKey(0)
-print(state.position[0].shape)
-
-"""
 
 
 
