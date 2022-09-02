@@ -29,7 +29,8 @@ from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 from utils import clamp
 from trajectory import TrajectoryInfo
 from topology import TopologyInfo
-from potential import v_fene, exc_vol_bonded, stacking
+# from potential import v_fene, exc_vol_bonded, stacking
+from potential_hard import v_fene, exc_vol_bonded, stacking
 
 from jax.config import config
 config.update("jax_enable_x64", True)

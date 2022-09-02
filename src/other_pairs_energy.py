@@ -27,7 +27,8 @@ from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import nucleotide_mass, get_kt
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 from utils import clamp
-from potential import exc_vol_unbonded, hydrogen_bonding, cross_stacking, coaxial_stacking
+# from potential import exc_vol_unbonded, hydrogen_bonding, cross_stacking, coaxial_stacking
+from potential_hard import exc_vol_unbonded, hydrogen_bonding, cross_stacking, coaxial_stacking
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -118,7 +119,6 @@ def other_pairs_energy_fn_factory_fixed(displacement_fn, back_site, stack_site, 
         cosphi3 = jnp.einsum('ij, ij->i', dr_stack_norm, jnp.cross(dr_backbone_norm, back_bases[nbs_j]))
         cosphi4 = jnp.einsum('ij, ij->i', dr_stack_norm, jnp.cross(dr_backbone_norm, back_bases[nbs_i]))
         coax_stack = params_coaxial_stacking(dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4)
-
 
         return jnp.sum(exc_vol), jnp.sum(v_hb), jnp.sum(cross_stack), jnp.sum(coax_stack)
 

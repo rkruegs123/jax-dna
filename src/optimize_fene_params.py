@@ -2,6 +2,7 @@ import pdb
 
 import tqdm
 import functools
+from copy import deepcopy
 
 import jax
 from jax import jit, vmap, lax, random
@@ -43,10 +44,11 @@ stack_site = jnp.array(
 back_site = jnp.array(
     [com_to_backbone, 0.0, 0.0], dtype=f64
 )
-
+default_params = get_default_params(no_smoothing=True)
 
 # Simulator function that returns loss
 # Note: for now, we use a dummy loss
+@jit
 def run_simulation(params, key, displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP):
     body = config_info.states[0]
 
@@ -73,30 +75,16 @@ def run_simulation(params, key, displacement_fn, shift_fn, top_info, config_info
     E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT, seq=seq, params=params)
     """
 
-    # step_fn = jit(step_fn)
+    step_fn = jit(step_fn)
 
     # Take steps with `lax.scan`
-    # @jit
+    @jit
     def scan_fn(state, step):
         state = step_fn(state, seq=seq, params=params)
         log_probs = 1.0 # dummy for now; need to update rigidbody state and the integrator to return log_prob
         loss = state.position.center[0][0]
         return state, (state.position, log_probs, loss)
     final_state, (trajectory, log_probs, losses) = lax.scan(scan_fn, init_state, jnp.arange(steps))
-
-    # Take steps with normal for-loop
-    """
-    trajectory = [init_state.position]
-    state = init_state
-    losses = jnp.zeros(steps + 1)
-    for i in range(steps):
-        # pdb.set_trace()
-        state = step_fn(state, seq=seq, params=params)
-        trajectory.append(state.position)
-        losses = losses.at[i].set(state.position.center[0][0])
-
-    log_probs = jnp.full((steps + 1,), 0.0)
-    """
 
     avg_loss = jnp.mean(losses)
     return trajectory, log_probs, avg_loss
@@ -151,7 +139,9 @@ def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=
     # Note: If has_aux is True then a tuple of ((value, auxiliary_data), gradient) is returned.
     # From https://jax.readthedocs.io/en/latest/_autosummary/jax.value_and_grad.html
     @functools.partial(jax.value_and_grad, has_aux=True)
-    def _single_estimate(params, seed): # function only of the params to be differentiated w.r.t.
+    def _single_estimate(fene_params, seed): # function only of the params to be differentiated w.r.t.
+        params = deepcopy(default_params)
+        params['fene'] = fene_params
         trajectory, log_probs, avg_loss = run_simulation(
             params, seed, displacement_fn, shift_fn, top_info,
             config_info, steps, dt=5e-3, T=DEFAULT_TEMP)
@@ -176,14 +166,12 @@ def estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_in
     mapped_estimate = jax.vmap(single_estimate_fn, [None, 0])
 
     # @jit
-    def _estimate_gradient(params, seed):
+    def _estimate_gradient(fene_params, seed):
         seeds = jax.random.split(seed, batch_size)
         pdb.set_trace()
-        (gradient_estimator, avg_loss), grad = mapped_estimate(params, seeds)
+        (gradient_estimator, avg_loss), grad = mapped_estimate(fene_params, seeds)
         pdb.set_trace()
-        avg_grad = {}
-        for i in grad:
-            avg_grad[i] = {k: jnp.mean(v) for k, v in grad[i].items()}
+        avg_grad = {k: jnp.mean(v) for k, v in grad.items()}
 
         return avg_grad, (gradient_estimator, avg_loss)
     return _estimate_gradient
@@ -203,12 +191,12 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
                                  sim_length, dt=5e-3, T=DEFAULT_TEMP)
 
     # Initialize values relevant for the optimization loop
-    init_params = get_default_params(no_smoothing=True)
-    opt_steps = 1
+    init_fene_params = get_default_params(no_smoothing=True)['fene']
+    opt_steps = 5
     lr = jopt.exponential_decay(0.1, opt_steps, 0.01)
     optimizer = jopt.adam(lr)
-    init_state = optimizer.init_fn(init_params)
-    opt_state = optimizer.init_fn(init_params)
+    init_state = optimizer.init_fn(init_fene_params)
+    opt_state = optimizer.init_fn(init_fene_params)
     key = random.PRNGKey(0)
 
     # Setup some logging, some required and some not

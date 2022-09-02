@@ -58,17 +58,15 @@ def v_fene(r, params):
     FENE_PARAMS = params["fene"]
     fene_val = _v_fene(r, eps=FENE_PARAMS["eps_backbone"], r0=FENE_PARAMS["r0_backbone"],
                        delt=FENE_PARAMS["delta_backbone"])
-    return fene_val
+    # return fene_val
 
 
     # Thresholded version -- analogous to allowing broken bakcbone from oxDNA
-    """
     rbackr0 = r - FENE_PARAMS["r0_backbone"]
 
     return jnp.where(jnp.abs(rbackr0) >= FENE_PARAMS["delta_backbone"],
                      1.0e12,
                      fene_val)
-    """
 
 
 def exc_vol_bonded(dr_base, dr_back_base, dr_base_back, params):

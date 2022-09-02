@@ -46,6 +46,8 @@ back_site = jnp.array(
 
 
 def forward(top_info, config_info, steps, gamma, mass, t=DEFAULT_TEMP, sim_type="langevin"):
+    params = get_default_params(t=t, no_smoothing=True)
+
     body = config_info.states[0]
 
     seq = jnp.array(get_one_hot(top_info.seq), dtype=f64)
@@ -58,7 +60,7 @@ def forward(top_info, config_info, steps, gamma, mass, t=DEFAULT_TEMP, sim_type=
                                   back_site, stack_site, base_site,
                                   top_info.bonded_nbrs, top_info.unbonded_nbrs)
 
-    params = get_default_params(t=t)
+
 
     # Simulate with the energy function via Nose-Hoover
     kT = get_kt(t=t) # 300 Kelvin = 0.1 kT
@@ -70,7 +72,6 @@ def forward(top_info, config_info, steps, gamma, mass, t=DEFAULT_TEMP, sim_type=
     elif(sim_type == "nose-hoover"):
         init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift_fn, dt, kT)
         state = init_fn(key, body, mass=mass, seq=seq, params=params)
-        E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT, seq=seq, params=params)
     else:
         raise RuntimeError(f"Invalid simulation type: {sim_type}")
 
@@ -81,12 +82,10 @@ def forward(top_info, config_info, steps, gamma, mass, t=DEFAULT_TEMP, sim_type=
     for i in range(steps):
         state = step_fn(state, seq=seq, params=params)
 
-        if i % 1000 == 0:
+        if i % 100 == 0:
             trajectory.append(state.position)
             energies.append(energy_fn(state.position, seq=seq, params=params))
             print(i)
-
-    # E_final = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT)
 
     print("Finished Simulation")
     return trajectory, energies
@@ -94,12 +93,14 @@ def forward(top_info, config_info, steps, gamma, mass, t=DEFAULT_TEMP, sim_type=
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    # conf_path = "data/simple-helix/start.conf"
-    # top_path = "data/simple-helix/generated.top"
+    conf_path = "data/simple-helix/start.conf"
+    top_path = "data/simple-helix/generated.top"
 
     # conf_path = "data/polyA_10bp/equilibrated.dat"
+    """
     conf_path = "data/polyA_10bp/generated.dat"
     top_path = "data/polyA_10bp/generated.top"
+    """
 
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
@@ -118,4 +119,4 @@ if __name__ == "__main__":
     plt.show()
 
     pdb.set_trace()
-    final_traj_info.write("data/polyA_10bp/test_langevin.dat", reverse=True, write_topology=False)
+    final_traj_info.write("data/simple-helix/test_langevin.dat", reverse=True, write_topology=False)

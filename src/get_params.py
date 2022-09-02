@@ -7,9 +7,13 @@ from smoothing_fast import get_f1_smoothing_params, get_f2_smoothing_params, get
 from utils import get_kt, DEFAULT_TEMP
 
 
-# Temperature (t) in Kelvin
-def get_params(params, t):
+def add_misc(params, t):
     kt = get_kt(t)
+    params['stacking']['eps_stack'] = params['stacking']['eps_stack_base'] \
+                                      + params['stacking']['eps_stack_kt_coeff'] * kt
+    return params
+
+def add_smoothing(params):
 
     # Excluded Volume
     exc_vol = params['excluded_volume']
@@ -44,8 +48,6 @@ def get_params(params, t):
 
 
     # Stacking
-    params['stacking']['eps_stack'] = params['stacking']['eps_stack_base'] \
-                                      + params['stacking']['eps_stack_kt_coeff'] * kt # Do this quickly so that it's included in `stacking`
     stacking = params['stacking']
 
     ## f1(dr_stack)
@@ -264,12 +266,25 @@ def get_params(params, t):
 
     return params
 
+def remove_keys(params):
+    del params['stacking']['eps_stack_kt_coeff']
+    del params['stacking']['eps_stack_base']
+    return params
 
-def get_default_params(params_path="tom.toml", t=DEFAULT_TEMP):
+# Temperature (t) in Kelvin
+def get_params(params, t, no_smoothing=False):
+    params = add_misc(params, t)
+    if not no_smoothing:
+        params = add_smoothing(params)
+    params = remove_keys(params)
+    return params
+
+
+def get_default_params(params_path="tom.toml", t=DEFAULT_TEMP, no_smoothing=False):
     if not Path(params_path).exists():
         raise RuntimeError(f"No file at location: {params_path}")
     params = toml.load(params_path)
-    return get_params(params, t=t)
+    return get_params(params, t=t, no_smoothing=no_smoothing)
 
 
 if __name__ == "__main__":
