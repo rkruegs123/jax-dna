@@ -29,6 +29,8 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 # config.update('jax_disable_jit', True)
 
+from gradients import value_and_jacfwd
+
 
 f64 = util.f64
 
@@ -96,7 +98,7 @@ def single_run(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3,
         tot_log_prob = log_probs.sum()
         gradient_estimator = (tot_log_prob * jax.lax.stop_gradient(avg_loss) + avg_loss)
         return gradient_estimator
-    return jacfwd(_single_run)
+    return value_and_jacfwd(_single_run)
 
 """
 Mapped gradient estimator:
@@ -117,7 +119,7 @@ def run_batch(batch_size, displacement_fn, shift_fn, top_info, config_info, step
     def _run_batch(params, seed):
         seeds = jax.random.split(seed, batch_size)
         pdb.set_trace()
-        grad = mapped_estimate(params, seeds)
+        vals, grad = mapped_estimate(params, seeds)
         pdb.set_trace()
         avg_grad = {}
         for i in grad:
@@ -133,7 +135,7 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
-    sim_length = 300
+    sim_length = 3
     batch_size = 2
     # Note how we get one `grad_fxn` per "test case." The gradient has to be estimated *per* test case
     grad_fxn = run_batch(batch_size, displacement_fn, shift_fn, top_info, config_info,
