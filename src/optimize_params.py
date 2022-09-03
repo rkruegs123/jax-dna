@@ -22,7 +22,8 @@ from utils import get_one_hot
 from get_params import get_default_params
 from trajectory import TrajectoryInfo
 from topology import TopologyInfo
-from energy import energy_fn_factory
+# from energy import energy_fn_factory
+from energy_mini import energy_fn_factory
 import langevin
 
 from jax.config import config
@@ -175,12 +176,10 @@ def estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_in
 
     mapped_estimate = jax.vmap(single_estimate_fn, [None, 0])
 
-    # @jit
+    @jit
     def _estimate_gradient(params, seed):
         seeds = jax.random.split(seed, batch_size)
-        pdb.set_trace()
         (gradient_estimator, avg_loss), grad = mapped_estimate(params, seeds)
-        pdb.set_trace()
         avg_grad = {}
         for i in grad:
             avg_grad[i] = {k: jnp.mean(v) for k, v in grad[i].items()}
@@ -196,7 +195,7 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
-    sim_length = 3
+    sim_length = 1000
     batch_size = 2
     # Note how we get one `grad_fxn` per "test case." The gradient has to be estimated *per* test case
     grad_fxn = estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info,
@@ -204,7 +203,7 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
 
     # Initialize values relevant for the optimization loop
     init_params = get_default_params(no_smoothing=True)
-    opt_steps = 1
+    opt_steps = 5
     lr = jopt.exponential_decay(0.1, opt_steps, 0.01)
     optimizer = jopt.adam(lr)
     init_state = optimizer.init_fn(init_params)
@@ -212,11 +211,11 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     key = random.PRNGKey(0)
 
     # Setup some logging, some required and some not
-    params_ = list()
+    # params_ = list()
     losses = list()
     grads = list()
     save_every = 1
-    params_.append((0,) + (optimizer.params_fn(opt_state),))
+    # params_.append((0,) + (optimizer.params_fn(opt_state),))
 
     # Do the optimization
     for i in tqdm.trange(opt_steps, position=0):
@@ -233,4 +232,10 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
 
 
 if __name__ == "__main__":
+    import time
+
+    start = time.time()
     run()
+    end = time.time()
+    total_time = end - start
+    print(f"Execution took: {total_time}")

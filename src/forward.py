@@ -1,6 +1,6 @@
 import pdb
 
-
+import jax
 from jax import jit
 from jax import random
 from jax.config import config as jax_config
@@ -78,13 +78,15 @@ def forward(top_info, config_info, steps, gamma, mass, t=DEFAULT_TEMP, sim_type=
     step_fn = jit(step_fn)
 
     trajectory = [state.position]
-    energies = [energy_fn(state.position,seq=seq,params=params)]
+    # energies = [energy_fn(state.position,seq=seq,params=params)]
+    energies = jnp.empty(steps)
     for i in range(steps):
         state = step_fn(state, seq=seq, params=params)
 
-        if i % 100 == 0:
+        if i % 10 == 0:
+            energies = energies.at[i].set(energy_fn(state.position, seq=seq, params=params))
             trajectory.append(state.position)
-            energies.append(energy_fn(state.position, seq=seq, params=params))
+            # energies.append(energy_fn(state.position, seq=seq, params=params))
             print(i)
 
     print("Finished Simulation")
@@ -105,12 +107,15 @@ if __name__ == "__main__":
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
 
-    # test_traj = TrajectoryInfo(top_info, states=config_info.states, box_size=config_info.box_size)
-    # test_traj.write("data/simple-helix/test_langevin_initconf.dat", reverse=True, write_topology=True, top_opath="data/simple-helix/test_langevin_initconf.top")
 
-    final_traj, energies = forward(top_info, config_info, steps=10000, gamma=gamma, mass=mass, sim_type="langevin")
+    # with jax.profiler.trace("/tmp/jax-trace", create_perfetto_link=True):
+    final_traj, energies = forward(top_info, config_info, steps=100, gamma=gamma, mass=mass,
+                                   sim_type="langevin")
+    pdb.set_trace()
+    # energies.block_until_ready()
 
 
+    """
     final_traj_info = TrajectoryInfo(top_info, states=final_traj, box_size=config_info.box_size)
 
     pdb.set_trace()
@@ -120,3 +125,4 @@ if __name__ == "__main__":
 
     pdb.set_trace()
     final_traj_info.write("data/simple-helix/test_langevin.dat", reverse=True, write_topology=False)
+    """
