@@ -26,6 +26,7 @@ from jax_md.rigid_body import RigidBody, Quaternion
 from utils import back_site, stack_site, base_site
 from utils import nucleotide_mass, get_kt, moment_of_inertia
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
+from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import clamp
 from trajectory import TrajectoryInfo
 from topology import TopologyInfo
@@ -45,19 +46,28 @@ def energy_fn_factory(displacement_fn,
     nn_j = bonded_neighbors[:, 1]
 
     def energy_fn(body: RigidBody, seq: util.Array, params, **kwargs) -> float:
-        params_v_fene = Partial(v_fene, params=params)
+
+        # params_v_fene = Partial(v_fene, params=params)
+
 
         Q = body.orientation
+        back_base_vectors = Q_to_back_base(Q)
+        back_sites = body.center + com_to_backbone * back_base_vectors
+        stack_sites = body.center + com_to_stacking * back_base_vectors
+        base_sites = body.center + com_to_hb * back_base_vectors
 
-        back_sites = body.center + rigid_body.quaternion_rotate(Q, back_site) # (N, 3)
+        # back_sites = body.center + rigid_body.quaternion_rotate(Q, back_site) # (N, 3)
         # stack_sites = body.center + rigid_body.quaternion_rotate(Q, stack_site)
         # base_sites = body.center + rigid_body.quaternion_rotate(Q, base_site)
 
-        dr_back = d(back_sites[nn_i], back_sites[nn_j]) # N x N x 3
-        r_back = jnp.linalg.norm(dr_back, axis=1)
-        fene = params_v_fene(r_back)
+        # dr_back = d(back_sites[nn_i], back_sites[nn_j]) # N x N x 3
+        # r_back = jnp.linalg.norm(dr_back, axis=1)
+        # fene = params_v_fene(r_back)
+        # return jnp.sum(fene)
 
-        return jnp.sum(fene)
+
+        # return params["fene"]["eps_backbone"]
+        return jnp.sum(params) * jnp.sum(base_sites)
 
     return energy_fn
 

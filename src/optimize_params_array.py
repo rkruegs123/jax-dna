@@ -171,10 +171,7 @@ def estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_in
     def _estimate_gradient(params, seed):
         seeds = jax.random.split(seed, batch_size)
         (gradient_estimator, avg_loss), grad = mapped_estimate(params, seeds)
-        avg_grad = {}
-        for i in grad:
-            avg_grad[i] = {k: jnp.mean(v) for k, v in grad[i].items()}
-
+        avg_grad = jnp.mean(grad, axis=0)
         return avg_grad, (gradient_estimator, avg_loss)
     return _estimate_gradient
 
@@ -186,18 +183,17 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
-    sim_length = 100
-    batch_size = 2
+    sim_length = 10
+    batch_size = 3
     # Note how we get one `grad_fxn` per "test case." The gradient has to be estimated *per* test case
     grad_fxn = estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info,
                                  sim_length, dt=5e-3, T=DEFAULT_TEMP)
 
     # Initialize values relevant for the optimization loop
-    init_params = get_default_params(no_smoothing=True)
+    init_params = jnp.array([10.0, 5.0], dtype=f64)
     opt_steps = 5
     lr = jopt.exponential_decay(0.1, opt_steps, 0.01)
     optimizer = jopt.adam(lr)
-    init_state = optimizer.init_fn(init_params)
     opt_state = optimizer.init_fn(init_params)
     key = random.PRNGKey(0)
 
