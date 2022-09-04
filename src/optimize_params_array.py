@@ -48,7 +48,7 @@ back_site = jnp.array(
 )
 
 
-checkpoint_every = 1
+checkpoint_every = None
 if checkpoint_every is None:
     scan = jax.lax.scan
 else:
