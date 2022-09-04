@@ -48,7 +48,7 @@ back_site = jnp.array(
 )
 
 
-checkpoint_every = None
+checkpoint_every = 1
 if checkpoint_every is None:
     scan = jax.lax.scan
 else:
@@ -190,7 +190,7 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
                                  sim_length, dt=5e-3, T=DEFAULT_TEMP)
 
     # Initialize values relevant for the optimization loop
-    init_params = jnp.array([10.0, 5.0], dtype=f64)
+    init_params = jnp.array([2.0, 0.25, 0.7525], dtype=f64)
     opt_steps = 5
     lr = jopt.exponential_decay(0.1, opt_steps, 0.01)
     optimizer = jopt.adam(lr)

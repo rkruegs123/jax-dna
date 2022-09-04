@@ -68,6 +68,15 @@ def v_fene(r, params):
                      1.0e12,
                      fene_val)
 
+def v_fene2(r, eps_backbone, delta_backbone, r0_backbone):
+    fene_val = _v_fene(r, eps=eps_backbone, r0=r0_backbone,
+                       delt=delta_backbone)
+    # return fene_val
+    rbackr0 = r - r0_backbone
+
+    return jnp.where(jnp.abs(rbackr0) >= delta_backbone,
+                     1.0e12,
+                     fene_val)
 
 def exc_vol_bonded(dr_base, dr_back_base, dr_base_back, params):
     # Note: r_c must be greater than r*

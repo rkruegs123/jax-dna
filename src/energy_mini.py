@@ -31,7 +31,7 @@ from utils import clamp
 from trajectory import TrajectoryInfo
 from topology import TopologyInfo
 # from potential import v_fene, exc_vol_bonded, stacking
-from potential_hard import v_fene, exc_vol_bonded, stacking
+from potential_hard import v_fene, v_fene2, exc_vol_bonded, stacking
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -47,7 +47,8 @@ def energy_fn_factory(displacement_fn,
 
     def energy_fn(body: RigidBody, seq: util.Array, params, **kwargs) -> float:
 
-        # params_v_fene = Partial(v_fene, params=params)
+        params_v_fene = Partial(v_fene2, eps_backbone=params[0], delta_backbone=params[1],
+                                r0_backbone=params[2])
 
 
         Q = body.orientation
@@ -60,14 +61,13 @@ def energy_fn_factory(displacement_fn,
         # stack_sites = body.center + rigid_body.quaternion_rotate(Q, stack_site)
         # base_sites = body.center + rigid_body.quaternion_rotate(Q, base_site)
 
-        # dr_back = d(back_sites[nn_i], back_sites[nn_j]) # N x N x 3
-        # r_back = jnp.linalg.norm(dr_back, axis=1)
-        # fene = params_v_fene(r_back)
-        # return jnp.sum(fene)
-
+        dr_back = d(back_sites[nn_i], back_sites[nn_j]) # N x N x 3
+        r_back = jnp.linalg.norm(dr_back, axis=1)
+        fene = params_v_fene(r_back)
+        return jnp.sum(fene)
 
         # return params["fene"]["eps_backbone"]
-        return jnp.sum(params) * jnp.sum(base_sites)
+        # return jnp.sum(params) * jnp.sum(r_back)
 
     return energy_fn
 
