@@ -23,7 +23,6 @@ def _split_and_pack_like(j, x):
 
 def _tangents_like(x):
     leaves = [leaf for leaf in jax.tree_leaves(x)]
-    pdb.set_trace()
     eye = np.eye(sum([leaf.size for leaf in jax.tree_leaves(x)]))
     return _split_and_pack_like(eye, x)
 
