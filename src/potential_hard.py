@@ -101,6 +101,31 @@ def exc_vol_bonded(dr_base, dr_back_base, dr_base_back, params):
 
     return f3_base_exc_vol + f3_back_base_exc_vol + f3_base_back_exc_vol
 
+def exc_vol_bonded2(dr_base, dr_back_base, dr_base_back,
+                    eps_exc,
+                    dr_star_base, sigma_base,
+                    dr_star_back_base, sigma_back_base,
+                    dr_star_base_back, sigma_base_back):
+    # Note: r_c must be greater than r*
+    r_base = jnp.linalg.norm(dr_base, axis=1)
+    r_back_base = jnp.linalg.norm(dr_back_base, axis=1)
+    r_base_back = jnp.linalg.norm(dr_base_back, axis=1)
+
+    f3_base_exc_vol = f3(r_base,
+                         r_star=dr_star_base,
+                         eps=eps_exc,
+                         sigma=sigma_base)
+    f3_back_base_exc_vol = f3(r_back_base,
+                              r_star=dr_star_back_base,
+                              eps=eps_exc,
+                              sigma=sigma_back_base)
+    f3_base_back_exc_vol = f3(r_base_back,
+                              r_star=dr_star_base_back,
+                              eps=eps_exc,
+                              sigma=sigma_base_back)
+
+    return f3_base_exc_vol + f3_back_base_exc_vol + f3_base_back_exc_vol
+
 
 # FIXME: lots of duplicated computation with exc_vol_bonded
 # E.g. Should (a) compute the r's outside these functions, and (b) have a base that we then add on to
@@ -157,6 +182,57 @@ def stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2, params):
     f5_neg_cosphi2_stack = f5(-cosphi2,
                               x_star=STACK_PARAMS["neg_cos_phi2_star_stack"],
                               a=STACK_PARAMS["a_stack_2"])
+
+    return f1_dr_stack * f4_theta_4_stack \
+        * f4_theta_5p_stack * f4_theta_6p_stack \
+        * f5_neg_cosphi1_stack * f5_neg_cosphi2_stack
+
+def stacking2(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2,
+              dr_low_stack, dr_high_stack, eps_stack, a_stack, dr0_stack, dr_c_stack,
+              theta0_stack_4, delta_theta_star_stack_4, a_stack_4,
+              theta0_stack_5, delta_theta_star_stack_5, a_stack_5,
+              theta0_stack_6, delta_theta_star_stack_6, a_stack_6,
+              neg_cos_phi1_star_stack, a_stack_1,
+              neg_cos_phi2_star_stack, a_stack_2):
+    # need dr_stack, theta_4, theta_5, theta_6, phi1, and phi2
+    # theta_4: angle between base normal vectors
+    # theta_5: angle between base normal and line passing throug stacking
+    # theta_6: theta_5 but with the other base normal
+    # note: for above, really just need dr_stack and base normals
+
+    r_stack = jnp.linalg.norm(dr_stack, axis=1)
+
+
+    f1_dr_stack = f1(r_stack,
+                     r_low=dr_low_stack,
+                     r_high=dr_high_stack,
+                     eps=eps_stack,
+                     a=a_stack,
+                     r0=dr0_stack,
+                     r_c=dr_c_stack)
+
+    f4_theta_4_stack = f4(theta4,
+                          theta0=theta0_stack_4,
+                          delta_theta_star=delta_theta_star_stack_4,
+                          a=a_stack_4)
+
+    f4_theta_5p_stack = f4(theta5,
+                           theta0=theta0_stack_5,
+                           delta_theta_star=delta_theta_star_stack_5,
+                           a=a_stack_5)
+
+    f4_theta_6p_stack = f4(theta6,
+                           theta0=theta0_stack_6,
+                           delta_theta_star=delta_theta_star_stack_6,
+                           a=a_stack_6)
+
+    f5_neg_cosphi1_stack = f5(-cosphi1,
+                              x_star=neg_cos_phi1_star_stack,
+                              a=a_stack_1)
+
+    f5_neg_cosphi2_stack = f5(-cosphi2,
+                              x_star=neg_cos_phi2_star_stack,
+                              a=a_stack_2)
 
     return f1_dr_stack * f4_theta_4_stack \
         * f4_theta_5p_stack * f4_theta_6p_stack \

@@ -358,18 +358,13 @@ class TrajectoryInfo:
 if __name__ == "__main__":
     from topology import TopologyInfo
 
-
-    top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/generated.top"
-    traj_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/output.dat"
-
-
-    """
-    top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/polyA_10bp/generated.top"
-    traj_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/polyA_10bp/generated.dat"
-    """
+    top_path = "data/simple-helix/generated.top"
+    traj_path = "data/simple-helix/output.dat"
+    config_path = "data/simple-helix/start.conf"
 
     top_info = TopologyInfo(top_path, reverse_direction=True)
+    # config_info = TrajectoryInfo(top_info, traj_path=config_path, reverse_direction=True)
     traj_info = TrajectoryInfo(top_info, traj_path=traj_path, reverse_direction=True)
-    pdb.set_trace()
-    traj_info.write("test_out.dat", True, True, "top_out.dat")
+
+    # traj_info.write("test_out.dat", True, True, "top_out.dat")
     print("done")

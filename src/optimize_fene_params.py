@@ -14,6 +14,7 @@ from jax_md import simulate
 from jax_md import space
 from jax_md import util
 from jax_md.rigid_body import RigidBody, Quaternion
+from jax.tree_util import Partial
 
 from utils import DEFAULT_TEMP
 from utils import com_to_backbone, com_to_stacking, com_to_hb
@@ -23,8 +24,10 @@ from utils import get_one_hot
 from get_params import get_default_params
 from trajectory import TrajectoryInfo
 from topology import TopologyInfo
-from energy import energy_fn_factory
+# from energy import energy_fn_factory
+from energy_mini_dict import energy_fn_factory
 import langevin
+from checkpoint import checkpoint_scan
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -46,45 +49,27 @@ back_site = jnp.array(
 )
 default_params = get_default_params(no_smoothing=True)
 
+
+checkpoint_every = None
+if checkpoint_every is None:
+    scan = jax.lax.scan
+else:
+    scan = functools.partial(checkpoint_scan,
+                             checkpoint_every=checkpoint_every)
+
 # Simulator function that returns loss
 # Note: for now, we use a dummy loss
-@jit
-def run_simulation(params, key, displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP):
-    body = config_info.states[0]
+def run_simulation(params, key, steps, init_fn, step_fn):
 
-    seq = jnp.array(get_one_hot(top_info.seq), dtype=f64)
-    n = top_info.n
-
-    energy_fn = energy_fn_factory(displacement_fn,
-                                  back_site, stack_site, base_site,
-                                  top_info.bonded_nbrs, top_info.unbonded_nbrs)
-
-
-    # Simulate with the energy function via Nose-Hoover
-    kT = get_kt(t=T) # 300 Kelvin = 0.1 kT
-
-
-    # Langevin
-    init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
-    init_state = init_fn(key, body, mass=mass, seq=seq, params=params)
-
-    # Nose Hoover
-    """
-    init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift_fn, dt, kT)
-    init_state = init_fn(key, body, mass=mass, seq=seq, params=params)
-    E_initial = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT, seq=seq, params=params)
-    """
-
-    step_fn = jit(step_fn)
-
+    init_state = init_fn(key, params=params)
     # Take steps with `lax.scan`
     @jit
     def scan_fn(state, step):
-        state = step_fn(state, seq=seq, params=params)
+        state = step_fn(state, params=params)
         log_probs = 1.0 # dummy for now; need to update rigidbody state and the integrator to return log_prob
         loss = state.position.center[0][0]
         return state, (state.position, log_probs, loss)
-    final_state, (trajectory, log_probs, losses) = lax.scan(scan_fn, init_state, jnp.arange(steps))
+    final_state, (trajectory, log_probs, losses) = scan(scan_fn, init_state, jnp.arange(steps))
 
     avg_loss = jnp.mean(losses)
     return trajectory, log_probs, avg_loss
@@ -136,17 +121,36 @@ where `G = A + B` and `V` is the original value for which the gradient was taken
 `G = A+B`. Note that the auxiliary value get's combined with the value as a tuple.
 """
 def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=5e-3, T=DEFAULT_TEMP):
+
+    body = config_info.states[0]
+    seq = jnp.array(get_one_hot(top_info.seq), dtype=f64)
+    kT = get_kt(t=T) # 300 Kelvin = 0.1 kT
+
+    energy_fn = energy_fn_factory(displacement_fn,
+                                  back_site, stack_site, base_site,
+                                  top_info.bonded_nbrs, top_info.unbonded_nbrs)
+    energy_fn = Partial(energy_fn, seq=seq)
+
+    # Langevin
+    init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+    # Nose Hoover
+    # init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift_fn, dt, kT)
+
+    step_fn = jit(step_fn)
+
+    init_fn = Partial(init_fn, R=body, mass=mass)
+    init_fn = jit(init_fn)
+
+    run_single_simulation = Partial(run_simulation, steps=steps, init_fn=init_fn, step_fn=step_fn)
+
     # Note: If has_aux is True then a tuple of ((value, auxiliary_data), gradient) is returned.
     # From https://jax.readthedocs.io/en/latest/_autosummary/jax.value_and_grad.html
     @functools.partial(jax.value_and_grad, has_aux=True)
     def _single_estimate(fene_params, seed): # function only of the params to be differentiated w.r.t.
         params = deepcopy(default_params)
         params['fene'] = fene_params
-        trajectory, log_probs, avg_loss = run_simulation(
-            params, seed, displacement_fn, shift_fn, top_info,
-            config_info, steps, dt=5e-3, T=DEFAULT_TEMP)
+        trajectory, log_probs, avg_loss = run_single_simulation(params, seed)
         tot_log_prob = log_probs.sum()
-        # FIXME: the naming here is confusing. `gradient_estimator` is actually not the gradient estimator -- it's gradient is the gradient estimator
         gradient_estimator = (tot_log_prob * jax.lax.stop_gradient(avg_loss) + avg_loss)
         return gradient_estimator, avg_loss
     return _single_estimate
@@ -165,12 +169,10 @@ def estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_in
 
     mapped_estimate = jax.vmap(single_estimate_fn, [None, 0])
 
-    # @jit
+    @jit
     def _estimate_gradient(fene_params, seed):
         seeds = jax.random.split(seed, batch_size)
-        pdb.set_trace()
         (gradient_estimator, avg_loss), grad = mapped_estimate(fene_params, seeds)
-        pdb.set_trace()
         avg_grad = {k: jnp.mean(v) for k, v in grad.items()}
 
         return avg_grad, (gradient_estimator, avg_loss)
@@ -184,8 +186,8 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
-    sim_length = 3
-    batch_size = 2
+    sim_length = 1000
+    batch_size = 3
     # Note how we get one `grad_fxn` per "test case." The gradient has to be estimated *per* test case
     grad_fxn = estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info,
                                  sim_length, dt=5e-3, T=DEFAULT_TEMP)
@@ -195,16 +197,13 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     opt_steps = 5
     lr = jopt.exponential_decay(0.1, opt_steps, 0.01)
     optimizer = jopt.adam(lr)
-    init_state = optimizer.init_fn(init_fene_params)
     opt_state = optimizer.init_fn(init_fene_params)
     key = random.PRNGKey(0)
 
     # Setup some logging, some required and some not
-    params_ = list()
     losses = list()
     grads = list()
     save_every = 1
-    params_.append((0,) + (optimizer.params_fn(opt_state),))
 
     # Do the optimization
     for i in tqdm.trange(opt_steps, position=0):
@@ -215,10 +214,14 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
         opt_state = optimizer.update_fn(i, grad, opt_state)
         losses.append(avg_loss)
         grads.append(grad)
-        # if i % save_every == 0 | i == (opt_steps-1):
-            # coeffs_.append(((i+1),) + (optimizer.params_fn(opt_state),))
 
 
 
 if __name__ == "__main__":
+    import time
+
+    start = time.time()
     run()
+    end = time.time()
+    total_time = end - start
+    print(f"Execution took: {total_time}")

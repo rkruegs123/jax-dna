@@ -23,8 +23,8 @@ from utils import get_one_hot
 from get_params import get_default_params
 from trajectory import TrajectoryInfo
 from topology import TopologyInfo
-# from energy import energy_fn_factory
-from energy_mini import energy_fn_factory
+from energy import energy_fn_factory
+# from energy_mini import energy_fn_factory
 import langevin
 from checkpoint import checkpoint_scan
 
@@ -48,7 +48,7 @@ back_site = jnp.array(
 )
 
 
-checkpoint_every = None
+checkpoint_every = 1
 if checkpoint_every is None:
     scan = jax.lax.scan
 else:
@@ -186,7 +186,7 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
-    sim_length = 100
+    sim_length = 1000
     batch_size = 2
     # Note how we get one `grad_fxn` per "test case." The gradient has to be estimated *per* test case
     grad_fxn = estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info,

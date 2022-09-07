@@ -132,6 +132,18 @@ def q_to_back_base(q):
         2*(q1*q3 - q0*q2)
     ])
 Q_to_back_base = vmap(q_to_back_base) # Q is system of quaternions, q is an individual quaternion
+"""
+def Q_to_back_base_direct(q):
+    q0 = q.vec[:, 0]
+    q1 = q.vec[:, 1]
+    q2 = q.vec[:, 2]
+    q3 = q.vec[:, 3]
+
+    x = q0**2 + q1**2 - q2**2 - q3**2
+    y = 2*(q1*q2 + q0*q3)
+    z = 2*(q1*q3 - q0*q2)
+    return jnp.stack([x, y, z], axis=1)
+"""
 
 ## normal orientation
 def q_to_base_normal(q):
@@ -156,21 +168,10 @@ Q_to_cross_prod = vmap(q_to_cross_prod)
 
 
 if __name__ == "__main__":
-    # final_params = get_params()
 
-    top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/generated.top"
-    conf_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/start.conf"
-    traj_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/simple-helix/output.dat"
-
-    read_trajectory(traj_path, top_path, reverse=True)
-    # convert_3to5_to_5to3(top_path, traj_path)
-
-
-    # body, box_size, n_strands, bonded_nbrs, unbonded_nbrs, seq = read_config(conf_path, top_path)
-
-    pdb.set_trace()
-
-    # jax_traj_to_oxdna_traj([body], box_size[0], output_name="recovered.dat")
+    top_path = "data/simple-helix/generated.top"
+    conf_path = "data/simple-helix/start.conf"
+    traj_path = "data/simple-helix/output.dat"
 
     pdb.set_trace()
     print("done")

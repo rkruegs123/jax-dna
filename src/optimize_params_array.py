@@ -48,7 +48,7 @@ back_site = jnp.array(
 )
 
 
-checkpoint_every = None
+checkpoint_every = 1
 if checkpoint_every is None:
     scan = jax.lax.scan
 else:
@@ -148,7 +148,6 @@ def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=
     def _single_estimate(params, seed): # function only of the params to be differentiated w.r.t.
         trajectory, log_probs, avg_loss = run_single_simulation(params, seed)
         tot_log_prob = log_probs.sum()
-        # FIXME: the naming here is confusing. `gradient_estimator` is actually not the gradient estimator -- it's gradient is the gradient estimator
         gradient_estimator = (tot_log_prob * jax.lax.stop_gradient(avg_loss) + avg_loss)
         return gradient_estimator, avg_loss
     return _single_estimate
@@ -183,14 +182,23 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
-    sim_length = 10
+    sim_length = 10000
     batch_size = 3
     # Note how we get one `grad_fxn` per "test case." The gradient has to be estimated *per* test case
     grad_fxn = estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info,
                                  sim_length, dt=5e-3, T=DEFAULT_TEMP)
 
     # Initialize values relevant for the optimization loop
-    init_params = jnp.array([2.0, 0.25, 0.7525], dtype=f64)
+    init_params = jnp.array([
+        2.0, 0.25, 0.7525, # FENE
+        2.0, 0.32, 0.33, 0.50, 0.515, 0.50, 0.515, # excluded volume bonded
+        0.32, 0.75, 1.61, 6.0, 0.4, 0.9, # stacking
+        0.0, 0.8, 1.30,
+        0.0, 0.95, 0.90,
+        0.0, 0.95, 0.90,
+        -0.65, 2.00,
+        -0.65, 2.00
+    ], dtype=f64)
     opt_steps = 5
     lr = jopt.exponential_decay(0.1, opt_steps, 0.01)
     optimizer = jopt.adam(lr)

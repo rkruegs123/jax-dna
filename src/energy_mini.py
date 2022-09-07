@@ -8,6 +8,7 @@ from jax import vmap
 from jax import random
 from jax import lax
 from jax.tree_util import Partial
+from jax import debug
 
 from jax.config import config as jax_config
 import jax.numpy as jnp
@@ -31,7 +32,7 @@ from utils import clamp
 from trajectory import TrajectoryInfo
 from topology import TopologyInfo
 # from potential import v_fene, exc_vol_bonded, stacking
-from potential_hard import v_fene, v_fene2, exc_vol_bonded, stacking
+from potential_hard import v_fene, v_fene2, exc_vol_bonded, stacking, exc_vol_bonded2, stacking2
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -47,8 +48,26 @@ def energy_fn_factory(displacement_fn,
 
     def energy_fn(body: RigidBody, seq: util.Array, params, **kwargs) -> float:
 
-        params_v_fene = Partial(v_fene2, eps_backbone=params[0], delta_backbone=params[1],
-                                r0_backbone=params[2])
+        # params_v_fene = Partial(v_fene2, eps_backbone=params[0], delta_backbone=params[1],
+                                # r0_backbone=params[2])
+
+        fene_params = dict(zip(["eps_backbone", "delta_backbone", "r0_backbone"], params[:3]))
+        params_v_fene = Partial(v_fene2, **fene_params)
+
+
+        exc_vol_bonded_params = dict(zip([
+            "eps_exc", "dr_star_base", "sigma_base", "dr_star_back_base", "sigma_back_base",
+            "dr_star_base_back", "sigma_base_back"], params[3:10]))
+        params_exc_vol_bonded = Partial(exc_vol_bonded2, **exc_vol_bonded_params)
+
+        stacking_params = dict(zip([
+            "dr_low_stack", "dr_high_stack", "eps_stack", "a_stack", "dr0_stack", "dr_c_stack",
+            "theta0_stack_4", "delta_theta_star_stack_4", "a_stack_4",
+            "theta0_stack_5", "delta_theta_star_stack_5", "a_stack_5",
+            "theta0_stack_6", "delta_theta_star_stack_6", "a_stack_6",
+            "neg_cos_phi1_star_stack", "a_stack_1",
+            "neg_cos_phi2_star_stack", "a_stack_2"], params[10:29]))
+        params_stacking = Partial(stacking2, **stacking_params)
 
 
         Q = body.orientation
@@ -61,13 +80,35 @@ def energy_fn_factory(displacement_fn,
         # stack_sites = body.center + rigid_body.quaternion_rotate(Q, stack_site)
         # base_sites = body.center + rigid_body.quaternion_rotate(Q, base_site)
 
+        # FENE
         dr_back = d(back_sites[nn_i], back_sites[nn_j]) # N x N x 3
         r_back = jnp.linalg.norm(dr_back, axis=1)
         fene = params_v_fene(r_back)
-        return jnp.sum(fene)
+
+        # Excluded volume (bonded)
+
+        dr_base = d(base_sites[nn_i], base_sites[nn_j])
+        dr_back_base = d(back_sites[nn_i], base_sites[nn_j])
+        dr_base_back = d(base_sites[nn_i], back_sites[nn_j])
+        exc_vol = params_exc_vol_bonded(dr_base, dr_back_base, dr_base_back)
+
+        # Stacking
+        dr_stack = d(stack_sites[nn_i], stack_sites[nn_j])
+        base_normals = Q_to_base_normal(Q) # space frame, normalized
+        cross_prods = Q_to_cross_prod(Q) # space frame, normalized
+        theta4 = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nn_i], base_normals[nn_j])))
+        theta5 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', dr_stack, base_normals[nn_j]) / jnp.linalg.norm(dr_stack, axis=1)))
+        theta6 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nn_i], dr_stack) / jnp.linalg.norm(dr_stack, axis=1)))
+        cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nn_i], dr_back) / jnp.linalg.norm(dr_back, axis=1)
+        cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nn_j], dr_back) / jnp.linalg.norm(dr_back, axis=1)
+        stack = params_stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2)
+
 
         # return params["fene"]["eps_backbone"]
         # return jnp.sum(params) * jnp.sum(r_back)
+
+        return jnp.sum(fene) + jnp.sum(exc_vol) + jnp.sum(stack)
+        # return jnp.sum(fene)
 
     return energy_fn
 
