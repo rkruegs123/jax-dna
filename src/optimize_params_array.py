@@ -8,6 +8,7 @@ from jax import jit, vmap, lax, random
 from jax.config import config as jax_config
 import jax.numpy as jnp
 from jax.example_libraries import optimizers as jopt
+from pprint import pprint
 
 from jax_md import simulate
 from jax_md import space
@@ -182,7 +183,7 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
-    sim_length = 10000
+    sim_length = 1000
     batch_size = 3
     # Note how we get one `grad_fxn` per "test case." The gradient has to be estimated *per* test case
     grad_fxn = estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info,
@@ -213,7 +214,9 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     # params_.append((0,) + (optimizer.params_fn(opt_state),))
 
     # Do the optimization
+    step_times = list()
     for i in tqdm.trange(opt_steps, position=0):
+        start = time.time()
         key, split = random.split(key)
 
         # Get the grad for our single test case (would have to average for multiple)
@@ -221,9 +224,11 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
         opt_state = optimizer.update_fn(i, grad, opt_state)
         losses.append(avg_loss)
         grads.append(grad)
+        end = time.time()
+        step_times.append(end - start)
         # if i % save_every == 0 | i == (opt_steps-1):
             # coeffs_.append(((i+1),) + (optimizer.params_fn(opt_state),))
-
+    pprint(step_times)
 
 
 if __name__ == "__main__":

@@ -81,34 +81,46 @@ def energy_fn_factory(displacement_fn,
         # base_sites = body.center + rigid_body.quaternion_rotate(Q, base_site)
 
         # FENE
+
         dr_back = d(back_sites[nn_i], back_sites[nn_j]) # N x N x 3
         r_back = jnp.linalg.norm(dr_back, axis=1)
         fene = params_v_fene(r_back)
 
-        # Excluded volume (bonded)
 
+        # Excluded volume (bonded)
         dr_base = d(base_sites[nn_i], base_sites[nn_j])
         dr_back_base = d(back_sites[nn_i], base_sites[nn_j])
         dr_base_back = d(base_sites[nn_i], back_sites[nn_j])
         exc_vol = params_exc_vol_bonded(dr_base, dr_back_base, dr_base_back)
 
+
         # Stacking
+
         dr_stack = d(stack_sites[nn_i], stack_sites[nn_j])
+        r_stack = jnp.linalg.norm(dr_stack, axis=1)
         base_normals = Q_to_base_normal(Q) # space frame, normalized
         cross_prods = Q_to_cross_prod(Q) # space frame, normalized
+
+        # theta4 = jnp.zeros(len(nn_i))
+        # theta5 = jnp.zeros(len(nn_i))
+        # theta6 = jnp.zeros(len(nn_i))
+        # cosphi1 = jnp.zeros(len(nn_i))
+        # cosphi2 = jnp.zeros(len(nn_i))
+
+
         theta4 = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nn_i], base_normals[nn_j])))
-        theta5 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', dr_stack, base_normals[nn_j]) / jnp.linalg.norm(dr_stack, axis=1)))
-        theta6 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nn_i], dr_stack) / jnp.linalg.norm(dr_stack, axis=1)))
-        cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nn_i], dr_back) / jnp.linalg.norm(dr_back, axis=1)
-        cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nn_j], dr_back) / jnp.linalg.norm(dr_back, axis=1)
+        theta5 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', dr_stack, base_normals[nn_j]) / r_stack))
+        theta6 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nn_i], dr_stack) / r_stack))
+        cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nn_i], dr_back) / r_back
+        cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nn_j], dr_back) / r_back
+
         stack = params_stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2)
 
 
         # return params["fene"]["eps_backbone"]
         # return jnp.sum(params) * jnp.sum(r_back)
-
         return jnp.sum(fene) + jnp.sum(exc_vol) + jnp.sum(stack)
-        # return jnp.sum(fene)
+
 
     return energy_fn
 
