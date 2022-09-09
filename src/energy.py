@@ -20,7 +20,6 @@ def energy_fn_factory(displacement_fn,
         stack_site=stack_site,
         base_site=base_site,
         neighbors=bonded_neighbors)
-    """
     other_pairs_energy_fn, _ = other_pairs_energy_fn_factory_fixed(
         displacement_fn,
         back_site=back_site,
@@ -28,13 +27,12 @@ def energy_fn_factory(displacement_fn,
         base_site=base_site,
         neighbors=unbonded_neighbors
     )
-    """
 
-    # def energy_fn(body: RigidBody, seq: util.Array, params, **kwargs) -> float:
-        # return nn_energy_fn(body, seq, params, **kwargs) # + other_pairs_energy_fn(body, seq, params, **kwargs)
+    def energy_fn(body: RigidBody, seq: util.Array, params, **kwargs) -> float:
+        return nn_energy_fn(body, seq, params, **kwargs) + other_pairs_energy_fn(body, seq, params, **kwargs)
 
-    monomer = rigid_body.point_union_shape(onp.array([[0.0, 0.0, 0.0]], f32), f32(1.0))
-    energy_fn = rigid_body.point_energy(energy.soft_sphere_pair(displacement_fn),
-                                        monomer)
+    # monomer = rigid_body.point_union_shape(onp.array([[0.0, 0.0, 0.0]], f32), f32(1.0))
+    # energy_fn = rigid_body.point_energy(energy.soft_sphere_pair(displacement_fn),
+                                        # monomer)
 
     return energy_fn
