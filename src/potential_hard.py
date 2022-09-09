@@ -140,6 +140,24 @@ def exc_vol_unbonded(dr_base, dr_backbone, dr_back_base, dr_base_back, params):
                          sigma=EXC_VOL_PARAMS["sigma_backbone"])
     return f3_back_exc_vol + exc_vol_bonded(dr_base, dr_back_base, dr_base_back, params)
 
+def exc_vol_unbonded2(dr_base, dr_backbone, dr_back_base, dr_base_back,
+                      eps_exc,
+                      dr_star_base, sigma_base,
+                      dr_star_back_base, sigma_back_base,
+                      dr_star_base_back, sigma_base_back,
+                      dr_star_backbone, sigma_backbone):
+    r_back = jnp.linalg.norm(dr_backbone, axis=1)
+
+    f3_back_exc_vol = f3(r_back,
+                         r_star=dr_star_backbone,
+                         eps=eps_exc,
+                         sigma=sigma_backbone)
+    return f3_back_exc_vol + exc_vol_bonded2(dr_base, dr_back_base, dr_base_back,
+                                             eps_exc,
+                                             dr_star_base, sigma_base,
+                                             dr_star_back_base, sigma_back_base,
+                                             dr_star_base_back, sigma_base_back)
+
 
 def stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2, params):
     # need dr_stack, theta_4, theta_5, theta_6, phi1, and phi2
@@ -187,7 +205,8 @@ def stacking(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2, params):
         * f4_theta_5p_stack * f4_theta_6p_stack \
         * f5_neg_cosphi1_stack * f5_neg_cosphi2_stack
 
-def stacking2(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2,
+# Note that we use r_stack instead of dr_stack
+def stacking2(r_stack, theta4, theta5, theta6, cosphi1, cosphi2,
               dr_low_stack, dr_high_stack, eps_stack, a_stack, dr0_stack, dr_c_stack,
               theta0_stack_4, delta_theta_star_stack_4, a_stack_4,
               theta0_stack_5, delta_theta_star_stack_5, a_stack_5,
@@ -200,7 +219,7 @@ def stacking2(dr_stack, theta4, theta5, theta6, cosphi1, cosphi2,
     # theta_6: theta_5 but with the other base normal
     # note: for above, really just need dr_stack and base normals
 
-    r_stack = jnp.linalg.norm(dr_stack, axis=1)
+    # r_stack = jnp.linalg.norm(dr_stack, axis=1)
 
 
     f1_dr_stack = f1(r_stack,
@@ -284,6 +303,60 @@ def hydrogen_bonding(dr_hb, theta1, theta2, theta3, theta4, theta7, theta8, para
 
     return f1_dr_hb * f4_theta_1_hb * f4_theta_2_hb \
         * f4_theta_3_hb * f4_theta_4_hb * f4_theta_7_hb * f4_theta_8_hb
+
+
+def hydrogen_bonding2(dr_hb, theta1, theta2, theta3, theta4, theta7, theta8,
+                      dr_low_hb, dr_high_hb, eps_hb, a_hb, dr0_hb, dr_c_hb, # f1_dr_hb
+                      theta0_hb_1, delta_theta_star_hb_1, a_hb_1, # f4_theta_1_hb
+                      theta0_hb_2, delta_theta_star_hb_2, a_hb_2, # f4_theta_2_hb
+                      theta0_hb_3, delta_theta_star_hb_3, a_hb_3, # f4_theta_3_hb
+                      theta0_hb_4, delta_theta_star_hb_4, a_hb_4, # f4_theta_4_hb
+                      theta0_hb_7, delta_theta_star_hb_7, a_hb_7, # f7_theta_7_hb
+                      theta0_hb_8, delta_theta_star_hb_8, a_hb_8, # f8_theta_8_hb
+):
+    r_hb = jnp.linalg.norm(dr_hb, axis=1)
+
+    f1_dr_hb = f1(r_hb,
+                  r_low=dr_low_hb,
+                  r_high=dr_high_hb,
+                  eps=eps_hb,
+                  a=a_hb,
+                  r0=dr0_hb,
+                  r_c=dr_c_hb)
+
+    f4_theta_1_hb = f4(theta1,
+                       theta0=theta0_hb_1,
+                       delta_theta_star=delta_theta_star_hb_1,
+                       a=a_hb_1)
+
+    f4_theta_2_hb = f4(theta2,
+                       theta0=theta0_hb_2,
+                       delta_theta_star=delta_theta_star_hb_2,
+                       a=a_hb_2)
+
+    f4_theta_3_hb = f4(theta3,
+                       theta0=theta0_hb_3,
+                       delta_theta_star=delta_theta_star_hb_3,
+                       a=a_hb_3)
+
+    f4_theta_4_hb = f4(theta4,
+                       theta0=theta0_hb_4,
+                       delta_theta_star=delta_theta_star_hb_4,
+                       a=a_hb_4)
+
+    f4_theta_7_hb = f4(theta7,
+                       theta0=theta0_hb_7,
+                       delta_theta_star=delta_theta_star_hb_7,
+                       a=a_hb_7)
+
+    f4_theta_8_hb = f4(theta8,
+                       theta0=theta0_hb_8,
+                       delta_theta_star=delta_theta_star_hb_8,
+                       a=a_hb_8)
+
+    return f1_dr_hb * f4_theta_1_hb * f4_theta_2_hb \
+        * f4_theta_3_hb * f4_theta_4_hb * f4_theta_7_hb * f4_theta_8_hb
+
 
 
 # Cross Stacking
