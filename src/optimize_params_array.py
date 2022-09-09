@@ -3,6 +3,7 @@ import pdb
 import tqdm
 import functools
 import time
+import pickle
 
 import jax
 from jax import jit, vmap, lax, random
@@ -244,6 +245,14 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
         losses.append(avg_loss)
 
     pprint(step_times)
+    pprint(params_)
+
+    with open("params.pkl", "wb") as f:
+        pickle.dump(params_, f)
+    with open("losses.pkl", "wb") as f:
+        pickle.dump(losses, f)
+    with open("grads.pkl", "wb") as f:
+        pickle.dump(grads, f)
     pdb.set_trace()
     return
 
