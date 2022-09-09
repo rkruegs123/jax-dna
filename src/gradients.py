@@ -15,15 +15,15 @@ def _first_arg_partial(f, *args, **kwargs):
     return f_
 
 def _split_and_pack_like(j, x):
-    leaves, structure = jax.tree_flatten(x)
+    leaves, structure = jax.tree_util.tree_flatten(x)
     sizes = [leaf.size for leaf in leaves]
     split = jnp.split(j, np.cumsum(sizes), axis=-1)
     reshaped = [s.reshape(s.shape[:-1] + y.shape) for s, y in zip(split, leaves)]
-    return jax.tree_unflatten(structure, reshaped)
+    return jax.tree_util.tree_unflatten(structure, reshaped)
 
 def _tangents_like(x):
-    leaves = [leaf for leaf in jax.tree_leaves(x)]
-    eye = np.eye(sum([leaf.size for leaf in jax.tree_leaves(x)]))
+    leaves = [leaf for leaf in jax.tree_util.tree_leaves(x)]
+    eye = np.eye(sum([leaf.size for leaf in jax.tree_util.tree_leaves(x)]))
     return _split_and_pack_like(eye, x)
 
 def value_and_jacfwd(f: Callable) -> Callable:
