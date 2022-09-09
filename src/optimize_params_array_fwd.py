@@ -2,6 +2,8 @@ import pdb
 
 import tqdm
 import functools
+from pprint import pprint
+import time
 
 import jax
 from jax import jit, vmap, lax, random
@@ -49,7 +51,7 @@ back_site = jnp.array(
 )
 
 
-checkpoint_every = 1
+checkpoint_every = None
 if checkpoint_every is None:
     scan = jax.lax.scan
 else:
@@ -136,7 +138,16 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
                                  sim_length, dt=5e-3, T=DEFAULT_TEMP)
 
     # Initialize values relevant for the optimization loop
-    init_params = jnp.array([2.0, 0.25, 0.7525], dtype=f64)
+    init_params = jnp.array([
+        2.0, 0.25, 0.7525, # FENE
+        2.0, 0.32, 0.33, 0.50, 0.515, 0.50, 0.515, # excluded volume bonded
+        0.32, 0.75, 1.61, 6.0, 0.4, 0.9, # stacking
+        0.0, 0.8, 1.30,
+        0.0, 0.95, 0.90,
+        0.0, 0.95, 0.90,
+        -0.65, 2.00,
+        -0.65, 2.00
+    ], dtype=f64)
     opt_steps = 5
     lr = jopt.exponential_decay(0.01, opt_steps, 0.001)
     optimizer = jopt.adam(lr)
@@ -148,14 +159,18 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     save_every = 1
 
     # Do the optimization
+    step_times = list()
     for i in tqdm.trange(opt_steps, position=0):
+        start = time.time()
         key, split = random.split(key)
 
         # Get the grad for our single test case (would have to average for multiple)
         grad, grad_estimator = grad_fxn(optimizer.params_fn(opt_state), split)
         opt_state = optimizer.update_fn(i, grad, opt_state)
         grads.append(grad)
-
+        end = time.time()
+        step_times.append(end - start)
+    pprint(step_times)
 
 if __name__ == "__main__":
     import time
