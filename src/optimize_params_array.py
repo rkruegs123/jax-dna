@@ -2,6 +2,7 @@ import pdb
 
 import tqdm
 import functools
+import time
 
 import jax
 from jax import jit, vmap, lax, random
@@ -28,6 +29,7 @@ from topology import TopologyInfo
 from energy_mini import energy_fn_factory
 import langevin
 from checkpoint import checkpoint_scan
+from loss import get_backbone_distance_loss
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -49,7 +51,7 @@ back_site = jnp.array(
 )
 
 
-checkpoint_every = 1
+checkpoint_every = None
 if checkpoint_every is None:
     scan = jax.lax.scan
 else:
@@ -59,7 +61,7 @@ else:
 
 # Simulator function that returns loss
 # Note: for now, we use a dummy loss
-def run_simulation(params, key, steps, init_fn, step_fn):
+def run_simulation(params, key, steps, init_fn, step_fn, loss_fn):
 
     init_state = init_fn(key, params=params)
     # Take steps with `lax.scan`
@@ -67,11 +69,12 @@ def run_simulation(params, key, steps, init_fn, step_fn):
     def scan_fn(state, step):
         state = step_fn(state, params=params)
         log_probs = 1.0 # dummy for now; need to update rigidbody state and the integrator to return log_prob
-        loss = state.position.center[0][0]
+        # loss = state.position.center[0][0]
+        loss = loss_fn(state.position)
         return state, (state.position, log_probs, loss)
     final_state, (trajectory, log_probs, losses) = scan(scan_fn, init_state, jnp.arange(steps))
 
-    avg_loss = jnp.mean(losses)
+    avg_loss = jnp.mean(losses[-100:]) # note how much repeat ocmputation we do given that we only wnat some of them
     return trajectory, log_probs, avg_loss
 
 """
@@ -141,7 +144,10 @@ def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=
     init_fn = Partial(init_fn, R=body, mass=mass)
     init_fn = jit(init_fn)
 
-    run_single_simulation = Partial(run_simulation, steps=steps, init_fn=init_fn, step_fn=step_fn)
+    loss_fn = get_backbone_distance_loss(top_info.bonded_nbrs, displacement_fn)
+    loss_fn = jit(loss_fn)
+
+    run_single_simulation = Partial(run_simulation, steps=steps, init_fn=init_fn, step_fn=step_fn, loss_fn=loss_fn)
 
     # Note: If has_aux is True then a tuple of ((value, auxiliary_data), gradient) is returned.
     # From https://jax.readthedocs.io/en/latest/_autosummary/jax.value_and_grad.html
@@ -183,31 +189,34 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
-    sim_length = 1000
-    batch_size = 3
+    sim_length = 10000
+    batch_size = 10
     # Note how we get one `grad_fxn` per "test case." The gradient has to be estimated *per* test case
     grad_fxn = estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info,
                                  sim_length, dt=5e-3, T=DEFAULT_TEMP)
 
     # Initialize values relevant for the optimization loop
+    """
     init_params = jnp.array([
         2.0, 0.25, 0.7525, # FENE
-        2.0, 0.32, 0.33, 0.50, 0.515, 0.50, 0.515, # excluded volume bonded
-        0.32, 0.75, 1.61, 6.0, 0.4, 0.9, # stacking
-        0.0, 0.8, 1.30,
-        0.0, 0.95, 0.90,
-        0.0, 0.95, 0.90,
-        -0.65, 2.00,
-        -0.65, 2.00
+        # 2.0, 0.32, 0.33, 0.50, 0.515, 0.50, 0.515, # excluded volume bonded
+        # 0.32, 0.75, 1.61, 6.0, 0.4, 0.9, # stacking
+        # 0.0, 0.8, 1.30,
+        # 0.0, 0.95, 0.90,
+        # 0.0, 0.95, 0.90,
+        # -0.65, 2.00,
+        # -0.65, 2.00
     ], dtype=f64)
-    opt_steps = 5
+    """
+    init_params = jnp.array([0.60, 0.75, 1.1]) # my own hard-coded random FENE parameters
+    opt_steps = 100
     lr = jopt.exponential_decay(0.1, opt_steps, 0.01)
     optimizer = jopt.adam(lr)
     opt_state = optimizer.init_fn(init_params)
     key = random.PRNGKey(0)
 
     # Setup some logging, some required and some not
-    # params_ = list()
+    params_ = list()
     losses = list()
     grads = list()
     save_every = 1
@@ -222,18 +231,24 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
         # Get the grad for our single test case (would have to average for multiple)
         grad, (_, avg_loss) = grad_fxn(optimizer.params_fn(opt_state), split)
         opt_state = optimizer.update_fn(i, grad, opt_state)
-        losses.append(avg_loss)
-        grads.append(grad)
+        # losses.append(avg_loss)
+        # grads.append(grad)
         end = time.time()
         step_times.append(end - start)
+        # print(optimizer.params_fn(opt_state))
         # if i % save_every == 0 | i == (opt_steps-1):
             # coeffs_.append(((i+1),) + (optimizer.params_fn(opt_state),))
+
+        grads.append(grad)
+        params_.append(optimizer.params_fn(opt_state))
+        losses.append(avg_loss)
+
     pprint(step_times)
+    pdb.set_trace()
+    return
 
 
 if __name__ == "__main__":
-    import time
-
     start = time.time()
     run()
     end = time.time()
