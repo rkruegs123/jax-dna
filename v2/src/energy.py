@@ -1,13 +1,19 @@
+import pdb
+from functools import partial
 from jax import vmap, jit
 from jax.tree_util import Partial
 from jax import debug
-import pdb
+import jax.numpy as jnp
 
 from jax_md.rigid_body import RigidBody
-from jax_md import util
+from jax_md import util, space
 
 from get_params import get_default_params
-from interactions import v_fene, exc_vol_bonded, stacking, hydrogen_bonding, exc_vol_unbonded, coaxial_stacking
+from interactions import v_fene, exc_vol_bonded, stacking, hydrogen_bonding, \
+    exc_vol_unbonded, coaxial_stacking
+from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
+from utils import com_to_backbone, com_to_stacking, com_to_hb
+from utils import clamp
 
 
 # Kron: AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT
@@ -27,8 +33,9 @@ def energy_fn_factory(displacement_fn,
     # Define which functions we will *not* be optimizing over
     stacking_fn = Partial(stacking, **params["stacking"])
     hb_fn = Partial(hydrogen_bonding, **params["hydrogen_bonding"])
-    exc_vol_unbonded_fn = Partial(exc_vol_unbonded, **params["excluded_volume"])
-    exc_vol_bonded_fn = Partial(exc_vol_bonded, **params["excluded_volume"])
+    pdb.set_trace()
+    exc_vol_unbonded_fn = Partial(exc_vol_unbonded, **(params["excluded_volume"]))
+    exc_vol_bonded_fn = Partial(exc_vol_bonded, **(params["excluded_volume"]))
 
     # Extract relevant neighbor information and define our pairwise displacement function
     d = space.map_bond(partial(displacement_fn))
@@ -42,7 +49,7 @@ def energy_fn_factory(displacement_fn,
         # Use our the parameters to construct the relevant energy functions
         # Note: for each, there are two options -- corresponding to whether we are optimizing over arrays or dicts
         ## FENE
-        fene_params = dict(zip(["eps_backbone", "delta_backbone", "r0_backbone"], params[:3]))
+        # fene_params = dict(zip(["eps_backbone", "delta_backbone", "r0_backbone"], params[:3]))
         fene_params = params["fene"]
         fene_fn = Partial(v_fene, **fene_params)
 
@@ -109,3 +116,4 @@ def energy_fn_factory(displacement_fn,
 
         return jnp.sum(fene) + jnp.sum(exc_vol_bonded) + jnp.sum(stack) \
             + jnp.sum(exc_vol_unbonded) + jnp.sum(v_hb)
+    return energy_fn

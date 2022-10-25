@@ -4,7 +4,13 @@ import jax.numpy as jnp
 from base_functions import f1, f2, f3, f4, f5, _v_fene
 
 
-def v_fene(r, eps, r0, delt, fmax=10, finf=0.04):
+# https://math.stackexchange.com/questions/1172472/differentiable-approximation-of-the-absolute-value-function
+def smooth_abs(x):
+    return jnp.sqrt(x**2 + 1e-5)
+
+def v_fene(r, eps_backbone, r0_backbone, delta_backbone, fmax=10, finf=0.04):
+    eps = eps_backbone; r0 = r0_backbone; delt = delta_backbone
+
     diff = smooth_abs(r - r0)
 
     delt2 = delt**2
@@ -19,6 +25,8 @@ def v_fene(r, eps, r0, delt, fmax=10, finf=0.04):
 
     return jnp.where(diff > xmax, smoothed_energy, _v_fene(r, eps, r0, delt))
 
+
+# def exc_vol_bonded(dr_base, dr_back_base, dr_base_back, **kwargs):
 def exc_vol_bonded(
         dr_base, dr_back_base, dr_base_back,
         eps_exc,
@@ -66,7 +74,7 @@ def exc_vol_unbonded(
     r_back = jnp.linalg.norm(dr_backbone, axis=1)
     f3_back_exc_vol = f3(r_back,
                          r_star=dr_star_backbone,
-                         r_c=dr_c_backbone
+                         r_c=dr_c_backbone,
                          eps=eps_exc,
                          sigma=sigma_backbone,
                          b=b_backbone)

@@ -11,12 +11,6 @@ f64 = util.f64
 Array = util.Array
 
 
-# Utilities
-
-# https://math.stackexchange.com/questions/1172472/differentiable-approximation-of-the-absolute-value-function
-def smooth_abs(x):
-    return jnp.sqrt(x**2 + 1e-5)
-
 # Pairwise potentials
 
 def _v_fene(r, eps, r0, delt): # Note: named as helper as we make `v_fene` the name of the parameterized potential
