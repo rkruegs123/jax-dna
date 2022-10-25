@@ -121,12 +121,12 @@ def energy_fn_factory(displacement_fn,
 
         # FIXME: Add coaxial-stacking back in
 
-        return (fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg)
+        return (jnp.sum(fene_dg), jnp.sum(exc_vol_bonded_dg), jnp.sum(stack_dg), \
+                jnp.sum(exc_vol_unbonded_dg), hb_dg) # hb_dg is already a scalar
 
     def energy_fn(body: RigidBody, seq: util.Array, params, **kwargs) -> float:
         dgs = _compute_subterms(body, seq, params)
         fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg = dgs
-        return jnp.sum(fene_dg) + jnp.sum(exc_vol_bonded_dg) + jnp.sum(stack_dg) \
-            + jnp.sum(exc_vol_unbonded_dg) + jnp.sum(hb_dg)
+        return fene_dg + exc_vol_bonded_dg + stack_dg + exc_vol_unbonded_dg + hb_dg
 
     return energy_fn, _compute_subterms

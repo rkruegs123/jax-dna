@@ -1,9 +1,8 @@
 # Core options
 T = 300K
 steps = 10
-# conf_file = test.conf # starting configuration
-conf_file = relaxed.conf
-topology = test.top # starting topology file
+conf_file = start.conf
+topology = generated.top # starting topology file
 trajectory_file = output.dat # where the trajectory WILL be outputted
 time_scale = linear
 print_conf_interval = 1
@@ -25,7 +24,7 @@ dt = 0.003
 refresh_vel = true
 
 # Common options for DNA simulations
-# use_average_seq = true # FIXME: bug. if set to true, asks for a seq_dep_file
+use_average_seq = true # FIXME: bug. if set to true, asks for a seq_dep_file
 
 # confGenerator options
 generate_consider_bonded_interactions = true
@@ -40,6 +39,7 @@ data_output_1 = {
   }
   col_2 = {
           type = potential_energy
+          # type = pair_energy
           split = true
   }
 }
