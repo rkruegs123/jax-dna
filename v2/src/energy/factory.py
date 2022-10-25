@@ -105,6 +105,8 @@ def energy_fn_factory(displacement_fn,
         theta7_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -base_normals[op_j], dr_base_op) / r_base_op))
         theta8_op = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], dr_base_op) / r_base_op))
 
+        ## Cross stacking variables -- all already computed
+
 
         # Compute the contributions from each interaction
         fene_dg = fene_fn(r_back)
@@ -119,7 +121,8 @@ def energy_fn_factory(displacement_fn,
         hb_weights = jnp.dot(hb_probs, HB_WEIGHTS)
         hb_dg = jnp.dot(hb_weights, v_hb)
 
-        # FIXME: Add coaxial-stacking back in
+
+        # FIXME: Add cross-stacking and coaxial-stacking back in
 
         return (jnp.sum(fene_dg), jnp.sum(exc_vol_bonded_dg), jnp.sum(stack_dg), \
                 jnp.sum(exc_vol_unbonded_dg), hb_dg) # hb_dg is already a scalar

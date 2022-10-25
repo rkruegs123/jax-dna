@@ -229,6 +229,70 @@ def hydrogen_bonding(
         * f4_theta_3_hb * f4_theta_4_hb * f4_theta_7_hb * f4_theta_8_hb
 
 
+def cross_stacking(dr_hb, theta1, theta2, theta3, theta4, theta7, theta8,
+                   dr_low_cross, dr_high_cross, dr_c_low_cross, dr_c_high_cross, # f2_dr_cross
+                   k_cross, r0_cross, dr_c_cross, b_low_cross, b_high_cross, # f2_dr_cross (cont.)
+                   theta0_cross_1, delta_theta_star_cross_1, delta_theta_1_c, a_cross_1, b_theta_1, # f4(theta1)
+                   theta0_cross_2, delta_theta_star_cross_2, delta_theta_2_c, a_cross_2, b_theta_2, #f4(theta2)
+                   theta0_cross_3, delta_theta_star_cross_3, delta_theta_3_c, a_cross_3, b_theta_3, #f4(theta3)
+                   theta0_cross_4, delta_theta_star_cross_4, delta_theta_4_c, a_cross_4, b_theta_4, #f4(theta4)
+                   theta0_cross_7, delta_theta_star_cross_7, delta_theta_7_c, a_cross_7, b_theta_7, #f7(theta7)
+                   theta0_cross_8, delta_theta_star_cross_8, delta_theta_8_c, a_cross_8, b_theta_8 #f8(theta8)
+):
+    r_hb = jnp.linalg.norm(dr_hb, axis=1)
+    f2_dr_cross = f2(r_hb,
+                     r_low=dr_low_cross,
+                     r_high=dr_high_cross,
+                     r_c_low=dr_c_low_cross,
+                     r_c_high=dr_c_high_cross,
+                     k=k_cross,
+                     r0=r0_cross,
+                     r_c=dr_c_cross,
+                     b_low=b_low_cross,
+                     b_high=b_high_cross)
+
+    f4_theta_1_cross = f4(theta1,
+                          theta0=theta0_cross_1,
+                          delta_theta_star=delta_theta_star_cross_1,
+                          delta_theta_c=delta_theta_cross_1_c,
+                          a=a_cross_1,
+                          b=b_cross_1)
+    f4_theta_2_cross = f4(theta2,
+                          theta0=theta0_cross_2,
+                          delta_theta_star=delta_theta_star_cross_2,
+                          delta_theta_c=delta_theta_cross_2_c,
+                          a=a_cross_2,
+                          b=b_cross_2)
+    f4_theta_3_cross = f4(theta3,
+                          theta0=theta0_cross_3,
+                          delta_theta_star=delta_theta_star_cross_3,
+                          delta_theta_c=delta_theta_cross_3_c,
+                          a=a_cross_3,
+                          b=b_cross_3)
+    f4_theta_4_cross = f4(theta4,
+                          theta0=theta0_cross_4,
+                          delta_theta_star=delta_theta_star_cross_4,
+                          delta_theta_c=delta_theta_cross_4_c,
+                          a=a_cross_4,
+                          b=b_cross_4)
+    f4_theta_7_cross = f4(theta7,
+                          theta0=theta0_cross_7,
+                          delta_theta_star=delta_theta_star_cross_7,
+                          delta_theta_c=delta_theta_cross_7_c,
+                          a=a_cross_7,
+                          b=b_cross_7)
+    f4_theta_8_cross = f4(theta8,
+                          theta0=theta0_cross_8,
+                          delta_theta_star=delta_theta_star_cross_8,
+                          delta_theta_c=delta_theta_cross_8_c,
+                          a=a_cross_8,
+                          b=b_cross_8)
+    return f2_dr_cross * f4_theta_1_cross * f4_theta_2_cross \
+        * f4_theta_3_cross * f4_theta_4_cross * f4_theta_7_cross * f4_theta_8_cross
+
+
+
+
 def coaxial_stacking(dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4, # observables
                      dr_low_cross, dr_high_cross, dr_c_low_cross, dr_c_high_cross, # f2(dr)
                      r0_cross, dr_c_cross, b_low_cross, b_high_cross, # f2(dr), cont.
@@ -239,44 +303,42 @@ def coaxial_stacking(dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4,
                      theta0_cross_7, delta_theta_star_cross_7, delta_theta_7_c, a_cross_7, b_theta_7, # f7(theta7)
                      theta0_cross_8, delta_theta_star_cross_8, delta_theta_8_c, a_cross_8, b_theta_8 # f8(theta8)
 ):
-    COAX_PARAMS = params["coaxial_stacking"]
     r_stack = jnp.linalg.norm(dr_stack, axis=1)
 
-
-    f2_dr_coax = f2(r_stack, # FIXME: naming, and many like this. Should be f2_dr_stack_coax
-                    r_low=COAX_PARAMS["dr_low_coax"],
-                    r_high=COAX_PARAMS["dr_high_coax"],
-                    k=COAX_PARAMS["k_coax"],
-                    r0=COAX_PARAMS["dr0_coax"],
-                    r_c=COAX_PARAMS["dr_c_coax"])
+    f2_dr_coax = f2(r_stack,
+                    r_low=dr_low_coax,
+                    r_high=dr_high_coax,
+                    k=k_coax,
+                    r0=dr0_coax,
+                    r_c=dr_c_coax)
 
     f4_theta_4_coax = f4(theta4,
-                         theta0=COAX_PARAMS["theta0_coax_4"],
-                         delta_theta_star=COAX_PARAMS["delta_theta_star_coax_4"],
-                         a=COAX_PARAMS["a_coax_4"])
+                         theta0=theta0_coax_4,
+                         delta_theta_star=delta_theta_star_coax_4,
+                         a=a_coax_4)
 
     f4_theta_1_coax_fn = Partial(f4,
-                                 theta0=COAX_PARAMS["theta0_coax_1"],
-                                 delta_theta_star=COAX_PARAMS["delta_theta_star_coax_1"],
-                                 a=COAX_PARAMS["a_coax_1"])
+                                 theta0=theta0_coax_1,
+                                 delta_theta_star=delta_theta_star_coax_1,
+                                 a=a_coax_1)
 
     f4_theta_5_coax_fn = Partial(f4,
-                                 theta0=COAX_PARAMS["theta0_coax_5"],
-                                 delta_theta_star=COAX_PARAMS["delta_theta_star_coax_5"],
-                                 a=COAX_PARAMS["a_coax_5"])
+                                 theta0=theta0_coax_5,
+                                 delta_theta_star=delta_theta_star_coax_5,
+                                 a=a_coax_5)
 
     f4_theta_6_coax_fn = Partial(f4,
-                                 theta0=COAX_PARAMS["theta0_coax_6"],
-                                 delta_theta_star=COAX_PARAMS["delta_theta_star_coax_6"],
-                                 a=COAX_PARAMS["a_coax_6"])
+                                 theta0=theta0_coax_6,
+                                 delta_theta_star=delta_theta_star_coax_6,
+                                 a=a_coax_6)
 
     f5_cosphi3_coax = f5(cosphi3,
-                         x_star=COAX_PARAMS["cos_phi3_star_coax"],
-                         a=COAX_PARAMS["a_coax_3p"])
+                         x_star=cos_phi3_star_coax,
+                         a=a_coax_3p)
 
     f5_cosphi4_coax = f5(cosphi4,
-                         x_star=COAX_PARAMS["cos_phi4_star_coax"],
-                         a=COAX_PARAMS["a_coax_4p"])
+                         x_star=cos_phi4_star_coax,
+                         a=a_coax_4p)
 
     return f2_dr_coax * f4_theta_4_coax \
         * (f4_theta_1_coax_fn(theta1) + f4_theta_1_coax_fn(2 * jnp.pi - theta1)) \
