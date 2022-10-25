@@ -4,13 +4,14 @@ from jax import vmap, jit
 from jax.tree_util import Partial
 from jax import debug
 import jax.numpy as jnp
+from copy import deepcopy
 
 from jax_md.rigid_body import RigidBody
 from jax_md import util, space
 
-from get_params import get_default_params
-from interactions import v_fene, exc_vol_bonded, stacking, hydrogen_bonding, \
-    exc_vol_unbonded, coaxial_stacking
+from loader import get_params
+from energy.interactions import v_fene, exc_vol_bonded, stacking, \
+    hydrogen_bonding, exc_vol_unbonded, coaxial_stacking
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import clamp
@@ -28,14 +29,19 @@ get_hb_probs = vmap(lambda seq, i, j: jnp.kron(seq[i], seq[j]), in_axes=(None, 0
 def energy_fn_factory(displacement_fn,
                       back_site, stack_site, base_site,
                       bonded_neighbors, unbonded_neighbors):
-    params = get_default_params(t=300, no_smoothing=True) # FIXME: hardcoded temperature for now
+    params = get_params.get_default_params(t=300, no_smoothing=False) # FIXME: hardcoded temperature for now
 
     # Define which functions we will *not* be optimizing over
     stacking_fn = Partial(stacking, **params["stacking"])
     hb_fn = Partial(hydrogen_bonding, **params["hydrogen_bonding"])
-    pdb.set_trace()
-    exc_vol_unbonded_fn = Partial(exc_vol_unbonded, **(params["excluded_volume"]))
-    exc_vol_bonded_fn = Partial(exc_vol_bonded, **(params["excluded_volume"]))
+    exc_vol_unbonded_params = params["excluded_volume"]
+    exc_vol_bonded_params = deepcopy(exc_vol_unbonded_params)
+    del exc_vol_bonded_params["dr_star_backbone"]
+    del exc_vol_bonded_params["sigma_backbone"]
+    del exc_vol_bonded_params["b_backbone"]
+    del exc_vol_bonded_params["dr_c_backbone"]
+    exc_vol_unbonded_fn = Partial(exc_vol_unbonded, **exc_vol_unbonded_params)
+    exc_vol_bonded_fn = Partial(exc_vol_bonded, **exc_vol_bonded_params)
 
     # Extract relevant neighbor information and define our pairwise displacement function
     d = space.map_bond(partial(displacement_fn))
@@ -44,7 +50,7 @@ def energy_fn_factory(displacement_fn,
     op_i = unbonded_neighbors[:, 0]
     op_j = unbonded_neighbors[:, 1]
 
-    def energy_fn(body: RigidBody, seq: util.Array, params, **kwargs) -> float:
+    def _compute_subterms(body: RigidBody, seq: util.Array, params):
 
         # Use our the parameters to construct the relevant energy functions
         # Note: for each, there are two options -- corresponding to whether we are optimizing over arrays or dicts
@@ -112,8 +118,15 @@ def energy_fn_factory(displacement_fn,
         hb_probs = get_hb_probs(seq, op_i, op_j) # get the probabilities of all possibile hydrogen bonds for all neighbors
         hb_weights = jnp.dot(hb_probs, HB_WEIGHTS)
         hb_dg = jnp.dot(hb_weights, v_hb)
+
         # FIXME: Add coaxial-stacking back in
 
-        return jnp.sum(fene) + jnp.sum(exc_vol_bonded) + jnp.sum(stack) \
-            + jnp.sum(exc_vol_unbonded) + jnp.sum(v_hb)
-    return energy_fn
+        return (fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg)
+
+    def energy_fn(body: RigidBody, seq: util.Array, params, **kwargs) -> float:
+        dgs = _compute_subterms(body, seq, params)
+        fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg = dgs
+        return jnp.sum(fene_dg) + jnp.sum(exc_vol_bonded_dg) + jnp.sum(stack_dg) \
+            + jnp.sum(exc_vol_unbonded_dg) + jnp.sum(hb_dg)
+
+    return energy_fn, _compute_subterms

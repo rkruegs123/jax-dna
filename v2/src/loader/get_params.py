@@ -2,8 +2,8 @@ import pdb
 import toml
 from pathlib import Path
 
-from smoothing import get_f1_smoothing_params, get_f2_smoothing_params, get_f3_smoothing_params, \
-    get_f4_smoothing_params, get_f5_smoothing_params
+from loader.smoothing import get_f1_smoothing_params, get_f2_smoothing_params, \
+    get_f3_smoothing_params, get_f4_smoothing_params, get_f5_smoothing_params
 from utils import get_kt, DEFAULT_TEMP
 
 

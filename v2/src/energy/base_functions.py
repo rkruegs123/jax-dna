@@ -32,7 +32,8 @@ def v_lj(r, eps, sigma):
 def v_mod(theta, a, theta0):
     return 1 - a*(theta - theta0)**2
 
-
+def v_smooth(x, b, x_c):
+    return b*(x_c - x)**2
 
 # Functional forms
 def f1(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
@@ -40,12 +41,12 @@ def f1(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
        b_low, b_high, # smoothing parameters
 ):
 
-    oob = jnp.where(r_c_low < r & r < r_low,
+    oob = jnp.where((r_c_low < r) & (r < r_low),
                     eps * v_smooth(r, b_low, r_c_low),
-                    jnp.where(r_high < r & r < r_c_high,
+                    jnp.where((r_high < r) & (r < r_c_high),
                               eps * v_smooth(r, b_high, r_c_high),
                               0.0))
-    return jnp.where(r_low < r & r < r_high,
+    return jnp.where((r_low < r) & (r < r_high),
                      v_morse(r, eps, r0, a) - v_morse(r_c, eps, r0, a),
                      oob)
 
@@ -54,12 +55,12 @@ def f2(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
        k, r0, r_c, # harmonic parameters
        b_low, b_high # smoothing parameters
 ):
-    oob = jnp.where(r_c_low < r & r < r_low,
+    oob = jnp.where((r_c_low < r) & (r < r_low),
                     k * v_smooth(r, b_low, r_c_low),
                     jnp.where(r_high < r & r < r_c_high,
                               k * v_smooth(r, b_high, r_c_high),
                               0.0))
-    return jnp.where(r_low < r & r < r_high,
+    return jnp.where((r_low < r) & (r < r_high),
                      v_harmonic(r, k, r0) - v_harmonic(r_c, k, r0),
                      oob)
 
@@ -68,7 +69,7 @@ def f3(r, r_star, r_c, # thresholding/smoothing parameters
        eps, sigma, # lj parameters
        b # smoothing parameters
 ):
-    oob = jnp.where(r_star < r & r < r_c,
+    oob = jnp.where((r_star < r) & (r < r_c),
                     eps * v_smooth(r, b, r_c),
                     0.0)
     return jnp.where(r < r_star,
@@ -79,12 +80,12 @@ def f4(theta, theta0, delta_theta_star, delta_theta_c, # thresholding/smoothing 
        a, # mod parameters
        b # smoothing parameters
 ):
-    oob = jnp.where(theta0 - delta_theta_c < theta & theta < theta0 - delta_theta_star,
+    oob = jnp.where((theta0 - delta_theta_c < theta) & (theta < theta0 - delta_theta_star),
                     v_smooth(theta, b, theta0 - delta_theta_c),
-                    jnp.where(theta0 + delta_theta_star < theta & theta < theta0 + delta_theta_c,
+                    jnp.where((theta0 + delta_theta_star < theta) & (theta < theta0 + delta_theta_c),
                               v_smooth(theta, b, theta0 + delta_theta_c),
                               0.0))
-    return jnp.where(theta0 - delta_theta_star < theta & theta < theta0 + delta_theta_star,
+    return jnp.where((theta0 - delta_theta_star < theta) & (theta < theta0 + delta_theta_star),
                      v_mod(theta, a, theta0),
                      oob)
 
@@ -96,9 +97,9 @@ def f5(x, x_star, x_c, # thresholding/smoothing parameters
 ):
     return jnp.where(x > 0.0,
                      1.0,
-                     jnp.where(x_star < x & x < 0.0,
+                     jnp.where((x_star < x) & (x < 0.0),
                                v_mod(x, a, 0),
-                               jnp.where(x_c < x & x < x_star,
+                               jnp.where((x_c < x) & (x < x_star),
                                          v_smooth(x, b, x_c),
                                          0.0)))
 

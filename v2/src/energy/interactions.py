@@ -1,7 +1,7 @@
 import pdb
 import jax.numpy as jnp
 
-from base_functions import f1, f2, f3, f4, f5, _v_fene
+from energy.base_functions import f1, f2, f3, f4, f5, _v_fene
 
 
 # https://math.stackexchange.com/questions/1172472/differentiable-approximation-of-the-absolute-value-function
