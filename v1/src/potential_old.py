@@ -16,7 +16,7 @@ def f1(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
        eps, a, r0, r_c, # morse parameters
        b_low, b_high, # smoothing parameters
 ):
-    return jnp.where(jnp.logical_and(jnp.less(r_low, r), jnp.less(r, r_high)),
+    return jnp.where(r_low < r & r < r_high,
                      v_morse(r, eps, r0, a) - v_morse(r_c, eps, r0, a),
                      jnp.where(jnp.logical_and(jnp.less(r_c_low, r), jnp.less(r, r_low)),
                                eps * v_smooth(r, b_low, r_c_low),

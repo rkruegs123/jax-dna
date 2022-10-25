@@ -87,16 +87,17 @@ if __name__ == "__main__":
 
 
     _, nn_subterms_fn = nn_energy_fn_factory(displacement,
-                                                     back_site=back_site,
-                                                     stack_site=stack_site,
-                                                     base_site=base_site,
-                                                     neighbors=traj_info.top_info.bonded_nbrs)
+                                             back_site=back_site,
+                                             stack_site=stack_site,
+                                             base_site=base_site,
+                                             neighbors=traj_info.top_info.bonded_nbrs)
 
-    _, other_pairs_subterms_fn = other_pairs_energy_fn_factory_fixed(displacement,
-                                                             back_site=back_site,
-                                                             stack_site=stack_site,
-                                                             base_site=base_site,
-                                                             neighbors=traj_info.top_info.unbonded_nbrs)
+    _, other_pairs_subterms_fn = other_pairs_energy_fn_factory_fixed(
+        displacement,
+        back_site=back_site,
+        stack_site=stack_site,
+        base_site=base_site,
+        neighbors=traj_info.top_info.unbonded_nbrs)
 
 
 
