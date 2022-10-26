@@ -57,7 +57,7 @@ def f2(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
 ):
     oob = jnp.where((r_c_low < r) & (r < r_low),
                     k * v_smooth(r, b_low, r_c_low),
-                    jnp.where(r_high < r & r < r_c_high,
+                    jnp.where((r_high < r) & (r < r_c_high),
                               k * v_smooth(r, b_high, r_c_high),
                               0.0))
     return jnp.where((r_low < r) & (r < r_high),

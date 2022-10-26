@@ -156,7 +156,7 @@ def add_smoothing(params):
 
     ## f2(dr_hb) (FIXME: is the _hb a typo? Should be _cross_stack, no?)
     b_low_cross, dr_c_low_cross, b_high_cross, dr_c_high_cross = get_f2_smoothing_params(
-        cross['k'],
+        cross['k_cross'],
         cross['r0_cross'],
         cross['dr_c_cross'],
         cross['dr_low_cross'],
@@ -178,7 +178,7 @@ def add_smoothing(params):
                                                                      cross['theta0_cross_2'],
                                                                      cross['delta_theta_star_cross_2'])
     params['cross_stacking']['b_cross_2'] = b_cross_2
-    params['cross_stacking']['delta_theta_2_c'] = delta_theta_cross_2_c
+    params['cross_stacking']['delta_theta_cross_2_c'] = delta_theta_cross_2_c
 
     ## f4(theta_3)
     b_cross_3, delta_theta_cross_3_c = get_f4_smoothing_params(cross['a_cross_3'],

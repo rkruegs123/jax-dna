@@ -11,7 +11,7 @@ from jax_md import util, space
 
 from loader import get_params
 from energy.interactions import v_fene, exc_vol_bonded, stacking, \
-    hydrogen_bonding, exc_vol_unbonded, coaxial_stacking
+    hydrogen_bonding, exc_vol_unbonded, cross_stacking, coaxial_stacking
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import clamp
@@ -42,6 +42,8 @@ def energy_fn_factory(displacement_fn,
     del exc_vol_bonded_params["dr_c_backbone"]
     exc_vol_unbonded_fn = Partial(exc_vol_unbonded, **exc_vol_unbonded_params)
     exc_vol_bonded_fn = Partial(exc_vol_bonded, **exc_vol_bonded_params)
+    cross_stacking_fn = Partial(cross_stacking, **params["cross_stacking"])
+    coaxial_stacking_fn = Partial(coaxial_stacking, **params["coaxial_stacking"])
 
     # Extract relevant neighbor information and define our pairwise displacement function
     d = space.map_bond(partial(displacement_fn))
@@ -107,6 +109,17 @@ def energy_fn_factory(displacement_fn,
 
         ## Cross stacking variables -- all already computed
 
+        ## Coaxial stacking
+        dr_stack_op = d(stack_sites[op_i], stack_sites[op_j])
+        dr_stack_norm_op = dr_stack_op / jnp.linalg.norm(dr_stack_op, axis=1, keepdims=True)
+        dr_backbone_norm_op = dr_backbone_op / jnp.linalg.norm(dr_backbone_op, axis=1, keepdims=True)
+        theta5_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], dr_stack_norm_op)))
+        theta6_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -base_normals[op_j], dr_stack_norm_op)))
+        cosphi3_op = jnp.einsum('ij, ij->i', dr_stack_norm_op,
+                                jnp.cross(dr_backbone_norm_op, back_bases[op_j]))
+        cosphi4_op = jnp.einsum('ij, ij->i', dr_stack_norm_op,
+                                jnp.cross(dr_backbone_norm_op, back_bases[op_i]))
+
 
         # Compute the contributions from each interaction
         fene_dg = fene_fn(r_back)
@@ -121,15 +134,18 @@ def energy_fn_factory(displacement_fn,
         hb_weights = jnp.dot(hb_probs, HB_WEIGHTS)
         hb_dg = jnp.dot(hb_weights, v_hb)
 
-
-        # FIXME: Add cross-stacking and coaxial-stacking back in
+        cr_stack_dg = cross_stacking_fn(r_base_op, theta1_op, theta2_op, theta3_op,
+                                        theta4_op, theta7_op, theta8_op)
+        cx_stack_dg = coaxial_stacking_fn(dr_stack_op, theta4_op, theta1_op, theta5_op,
+                                          theta6_op, cosphi3_op, cosphi4_op)
 
         return (jnp.sum(fene_dg), jnp.sum(exc_vol_bonded_dg), jnp.sum(stack_dg), \
-                jnp.sum(exc_vol_unbonded_dg), hb_dg) # hb_dg is already a scalar
+                jnp.sum(exc_vol_unbonded_dg), hb_dg, jnp.sum(cr_stack_dg),
+                jnp.sum(cx_stack_dg)) # hb_dg is already a scalar
 
     def energy_fn(body: RigidBody, seq: util.Array, params, **kwargs) -> float:
         dgs = _compute_subterms(body, seq, params)
-        fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg = dgs
-        return fene_dg + exc_vol_bonded_dg + stack_dg + exc_vol_unbonded_dg + hb_dg
+        fene_dg, b_exc_dg, stack_dg, n_exc_dg, hb_dg, cr_stack, cx_stack = dgs
+        return fene_dg + b_exc_dg + stack_dg + n_exc_dg + hb_dg + cr_stack + cx_stack
 
     return energy_fn, _compute_subterms
