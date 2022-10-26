@@ -81,10 +81,12 @@ def run(top_path, traj_path, input_path, T=DEFAULT_TEMP):
         print(f"\t\tComputed subterms: {ith_computed_subterms}")
         print(f"\t\toxDNA subterms: {ith_oxpy_subterms}")
         print(f"\t\t|Difference|: {np.abs(ith_computed_subterms - ith_oxpy_subterms)}")
+        print(f"\t\t|HB Difference|: {np.abs(ith_computed_subterms[4] - ith_oxpy_subterms[4])}")
         if not np.allclose(ith_oxpy_subterms, ith_computed_subterms, atol=1e-4, rtol=1e-8):
             print(bcolors.FAIL + "\t\tFail!\n" + bcolors.ENDC)
             pdb.set_trace()
         else:
             print(bcolors.OKGREEN + "\t\tSuccess!\n" + bcolors.ENDC)
 
+    print(bcolors.WARNING + "WARNING: errors for hydrogen bonding and cross stalking are subject to approximation of pi in parameter file" + bcolors.ENDC)
     return

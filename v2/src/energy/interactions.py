@@ -167,8 +167,8 @@ def hydrogen_bonding(
         theta0_hb_2, delta_theta_star_hb_2, a_hb_2, delta_theta_hb_2_c, b_hb_2, # f4_theta_2_hb
         theta0_hb_3, delta_theta_star_hb_3, a_hb_3, delta_theta_hb_3_c, b_hb_3, # f4_theta_3_hb
         theta0_hb_4, delta_theta_star_hb_4, a_hb_4, delta_theta_hb_4_c, b_hb_4, # f4_theta_4_hb
-        theta0_hb_7, delta_theta_star_hb_7, a_hb_7, delta_theta_hb_7_c, b_hb_7, # f7_theta_7_hb
-        theta0_hb_8, delta_theta_star_hb_8, a_hb_8, delta_theta_hb_8_c, b_hb_8, # f8_theta_8_hb
+        theta0_hb_7, delta_theta_star_hb_7, a_hb_7, delta_theta_hb_7_c, b_hb_7, # f4_theta_7_hb
+        theta0_hb_8, delta_theta_star_hb_8, a_hb_8, delta_theta_hb_8_c, b_hb_8, # f4_theta_8_hb
 ):
     r_hb = jnp.linalg.norm(dr_hb, axis=1)
 
