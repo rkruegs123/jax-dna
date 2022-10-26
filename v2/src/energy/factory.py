@@ -111,7 +111,7 @@ def energy_fn_factory(displacement_fn,
         ## Cross stacking variables -- all already computed
 
         ## Coaxial stacking
-        dr_stack_op = d(stack_sites[op_i], stack_sites[op_j])
+        dr_stack_op = d(stack_sites[op_j], stack_sites[op_i]) # note: reversed
         dr_stack_norm_op = dr_stack_op / jnp.linalg.norm(dr_stack_op, axis=1, keepdims=True)
         dr_backbone_norm_op = dr_backbone_op / jnp.linalg.norm(dr_backbone_op, axis=1, keepdims=True)
         theta5_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], dr_stack_norm_op)))
