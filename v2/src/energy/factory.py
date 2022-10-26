@@ -42,6 +42,7 @@ def energy_fn_factory(displacement_fn,
     del exc_vol_bonded_params["dr_c_backbone"]
     exc_vol_unbonded_fn = Partial(exc_vol_unbonded, **exc_vol_unbonded_params)
     exc_vol_bonded_fn = Partial(exc_vol_bonded, **exc_vol_bonded_params)
+
     cross_stacking_fn = Partial(cross_stacking, **params["cross_stacking"])
     coaxial_stacking_fn = Partial(coaxial_stacking, **params["coaxial_stacking"])
 

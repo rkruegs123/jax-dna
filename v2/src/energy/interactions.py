@@ -269,28 +269,28 @@ def cross_stacking(r_hb, theta1, theta2, theta3, theta4, theta7, theta8,
                           delta_theta_c=delta_theta_cross_3_c,
                           a=a_cross_3,
                           b=b_cross_3)
-    f4_theta_4_cross = f4(theta4,
-                          theta0=theta0_cross_4,
-                          delta_theta_star=delta_theta_star_cross_4,
-                          delta_theta_c=delta_theta_cross_4_c,
-                          a=a_cross_4,
-                          b=b_cross_4)
-    f4_theta_7_cross = f4(theta7,
-                          theta0=theta0_cross_7,
-                          delta_theta_star=delta_theta_star_cross_7,
-                          delta_theta_c=delta_theta_cross_7_c,
-                          a=a_cross_7,
-                          b=b_cross_7)
-    f4_theta_8_cross = f4(theta8,
-                          theta0=theta0_cross_8,
-                          delta_theta_star=delta_theta_star_cross_8,
-                          delta_theta_c=delta_theta_cross_8_c,
-                          a=a_cross_8,
-                          b=b_cross_8)
-    return f2_dr_cross * f4_theta_1_cross * f4_theta_2_cross \
-        * f4_theta_3_cross * f4_theta_4_cross * f4_theta_7_cross * f4_theta_8_cross
-
-
+    f4_theta_4_cross_fn = Partial(f4,
+                                  theta0=theta0_cross_4,
+                                  delta_theta_star=delta_theta_star_cross_4,
+                                  delta_theta_c=delta_theta_cross_4_c,
+                                  a=a_cross_4,
+                                  b=b_cross_4)
+    f4_theta_7_cross_fn = Partial(f4,
+                               theta0=theta0_cross_7,
+                               delta_theta_star=delta_theta_star_cross_7,
+                               delta_theta_c=delta_theta_cross_7_c,
+                               a=a_cross_7,
+                               b=b_cross_7)
+    f4_theta_8_cross_fn = Partial(f4,
+                                  theta0=theta0_cross_8,
+                                  delta_theta_star=delta_theta_star_cross_8,
+                                  delta_theta_c=delta_theta_cross_8_c,
+                                  a=a_cross_8,
+                                  b=b_cross_8)
+    return f2_dr_cross * f4_theta_1_cross * f4_theta_2_cross * f4_theta_3_cross \
+        * (f4_theta_4_cross_fn(theta4) + f4_theta_4_cross_fn(jnp.pi - theta4)) \
+        * (f4_theta_7_cross_fn(theta7) + f4_theta_7_cross_fn(jnp.pi - theta7)) \
+        * (f4_theta_8_cross_fn(theta8) + f4_theta_8_cross_fn(jnp.pi - theta8))
 
 
 def coaxial_stacking(dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4, # observables

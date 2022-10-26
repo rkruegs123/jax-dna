@@ -168,43 +168,43 @@ def add_smoothing(params):
 
     ## f4(theta_1)
     b_cross_1, delta_theta_cross_1_c = get_f4_smoothing_params(cross['a_cross_1'],
-                                                                     cross['theta0_cross_1'],
-                                                                     cross['delta_theta_star_cross_1'])
+                                                               cross['theta0_cross_1'],
+                                                               cross['delta_theta_star_cross_1'])
     params['cross_stacking']['b_cross_1'] = b_cross_1
     params['cross_stacking']['delta_theta_cross_1_c'] = delta_theta_cross_1_c
 
     ## f4(theta_2)
     b_cross_2, delta_theta_cross_2_c = get_f4_smoothing_params(cross['a_cross_2'],
-                                                                     cross['theta0_cross_2'],
-                                                                     cross['delta_theta_star_cross_2'])
+                                                               cross['theta0_cross_2'],
+                                                               cross['delta_theta_star_cross_2'])
     params['cross_stacking']['b_cross_2'] = b_cross_2
     params['cross_stacking']['delta_theta_cross_2_c'] = delta_theta_cross_2_c
 
     ## f4(theta_3)
     b_cross_3, delta_theta_cross_3_c = get_f4_smoothing_params(cross['a_cross_3'],
-                                                                     cross['theta0_cross_3'],
-                                                                     cross['delta_theta_star_cross_3'])
+                                                               cross['theta0_cross_3'],
+                                                               cross['delta_theta_star_cross_3'])
     params['cross_stacking']['b_cross_3'] = b_cross_3
     params['cross_stacking']['delta_theta_cross_3_c'] = delta_theta_cross_3_c
 
     ## f4(theta_4) + f4(pi - theta_4)
     b_cross_4, delta_theta_cross_4_c = get_f4_smoothing_params(cross['a_cross_4'],
-                                                                     cross['theta0_cross_4'],
-                                                                     cross['delta_theta_star_cross_4'])
+                                                               cross['theta0_cross_4'],
+                                                               cross['delta_theta_star_cross_4'])
     params['cross_stacking']['b_cross_4'] = b_cross_4
     params['cross_stacking']['delta_theta_cross_4_c'] = delta_theta_cross_4_c
 
     ## f4(theta_7) + f4(pi - theta_7)
     b_cross_7, delta_theta_cross_7_c = get_f4_smoothing_params(cross['a_cross_7'],
-                                                                     cross['theta0_cross_7'],
-                                                                     cross['delta_theta_star_cross_7'])
+                                                               cross['theta0_cross_7'],
+                                                               cross['delta_theta_star_cross_7'])
     params['cross_stacking']['b_cross_7'] = b_cross_7
     params['cross_stacking']['delta_theta_cross_7_c'] = delta_theta_cross_7_c
 
     ## f4(theta_8) + f4(pi - theta_8)
     b_cross_8, delta_theta_cross_8_c = get_f4_smoothing_params(cross['a_cross_8'],
-                                                                     cross['theta0_cross_8'],
-                                                                     cross['delta_theta_star_cross_8'])
+                                                               cross['theta0_cross_8'],
+                                                               cross['delta_theta_star_cross_8'])
     params['cross_stacking']['b_cross_8'] = b_cross_8
     params['cross_stacking']['delta_theta_cross_8_c'] = delta_theta_cross_8_c
 
@@ -226,29 +226,29 @@ def add_smoothing(params):
 
     ## f4(theta_1) + f4(2*pi - theta_1)
     b_coax_1, delta_theta_coax_1_c = get_f4_smoothing_params(coax['a_coax_1'],
-                                                                   coax['theta0_coax_1'],
-                                                                   coax['delta_theta_star_coax_1'])
+                                                             coax['theta0_coax_1'],
+                                                             coax['delta_theta_star_coax_1'])
     params['coaxial_stacking']['b_coax_1'] = b_coax_1
     params['coaxial_stacking']['delta_theta_coax_1_c'] = delta_theta_coax_1_c
 
     ## f4(theta_4)
     b_coax_4, delta_theta_coax_4_c = get_f4_smoothing_params(coax['a_coax_4'],
-                                                                   coax['theta0_coax_4'],
-                                                                   coax['delta_theta_star_coax_4'])
+                                                             coax['theta0_coax_4'],
+                                                             coax['delta_theta_star_coax_4'])
     params['coaxial_stacking']['b_coax_4'] = b_coax_4
     params['coaxial_stacking']['delta_theta_coax_4_c'] = delta_theta_coax_4_c
 
     ## f4(theta_5) + f4(pi - theta_5)
     b_coax_5, delta_theta_coax_5_c = get_f4_smoothing_params(coax['a_coax_5'],
-                                                                   coax['theta0_coax_5'],
-                                                                   coax['delta_theta_star_coax_5'])
+                                                             coax['theta0_coax_5'],
+                                                             coax['delta_theta_star_coax_5'])
     params['coaxial_stacking']['b_coax_5'] = b_coax_5
     params['coaxial_stacking']['delta_theta_coax_5_c'] = delta_theta_coax_5_c
 
     ## f4(theta_6) + f4(pi - theta_6)
     b_coax_6, delta_theta_coax_6_c = get_f4_smoothing_params(coax['a_coax_6'],
-                                                                   coax['theta0_coax_6'],
-                                                                   coax['delta_theta_star_coax_6'])
+                                                             coax['theta0_coax_6'],
+                                                             coax['delta_theta_star_coax_6'])
     params['coaxial_stacking']['b_coax_6'] = b_coax_6
     params['coaxial_stacking']['delta_theta_coax_6_c'] = delta_theta_coax_6_c
 

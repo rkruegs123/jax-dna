@@ -69,9 +69,9 @@ def run(top_path, traj_path, input_path, T=DEFAULT_TEMP):
 
     # check for equality
     for i, (idx, row) in enumerate(oxpy_subterms.iterrows()): # note: i does not necessarily equal idx
+        ith_oxpy_subterms = row.to_numpy()[1:]
         ith_computed_subterms = computed_subterms[i]
         pdb.set_trace()
         continue
-
 
     return
