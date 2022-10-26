@@ -25,7 +25,7 @@ from loader.topology import TopologyInfo
 f64 = util.f64
 
 def run_single_langevin(top_path, conf_path,
-                        n_steps, key, T=DEFAULT_TEMP, dt=5e-3, save_every=100,
+                        n_steps, key, T=DEFAULT_TEMP, dt=5e-3, save_every=10,
                         output_basedir="v2/data/output/", save_output=False):
 
     if not Path(top_path).exists():
@@ -85,7 +85,11 @@ def run_single_langevin(top_path, conf_path,
             energies.append(energy_fn(state.position))
             trajectory.append(state.position)
 
-    return trajectory, energies
+    final_traj = TrajectoryInfo(top_info ,states=trajectory, box_size=config_info.box_size)
+    if save_output:
+        print(bcolors.OKBLUE + f"Writing trajectory to file..." + bcolors.ENDC)
+        final_traj.write(run_dir / "output.dat", reverse=True, write_topology=False)
+    return final_traj, energies
 
 
 
