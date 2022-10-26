@@ -1,4 +1,3 @@
-
 from collections import namedtuple
 
 from typing import Any, Callable, TypeVar, Union, Tuple, Dict, Optional
@@ -21,7 +20,7 @@ from jax_md import dataclasses
 from jax_md import partition
 from jax_md import smap
 from jax_md import rigid_body
-from jax_md.rigid_body import RigidBody 
+from jax_md.rigid_body import RigidBody
 from jax_md import simulate
 from jax_md import util
 from jax_md.simulate import inner_update_fn, velocity_verlet, initialize_momenta, canonicalize_mass
@@ -63,7 +62,7 @@ def stochastic_step(R: Array, P: Array, M: Array, key: Array, dt:float, kT: floa
 def _(R: RigidBody, P: RigidBody, mass: RigidBody, key: RigidBody, dt:float, kT: float, gamma: RigidBody):
   center_key, orientation_key = random.split(key)
   P_center = stochastic_step(R.center, P.center, mass.center, center_key, dt, kT, gamma.center)
-  
+
   # COMMENT ME
   Pi = P.orientation.vec
   eta = random.normal(orientation_key, (3,) + Pi.shape[:1] + (1,))
@@ -118,11 +117,10 @@ def nvt_langevin(energy_or_force_fn: Callable[..., Array],
       R, P, F, M = update_fn(R, P, F, M, dt / 2)
       # O step
       P = stochastic_step(R, P, M, key, dt, _kT, gamma)
-      # A step 
+      # A step
       R, P, F, M = update_fn(R, P, F, M, dt / 2)
       return R, P, F, M
     rng, kwargs['langevin_key'] = random.split(state.rng)
     state = dataclasses.replace(state, rng=rng)
     return velocity_verlet(force_fn, langevin_update_fn, _dt, state, **kwargs)
   return init_fn, step_fn
-
