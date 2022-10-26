@@ -1,0 +1,5 @@
+## Submission
+
+Title: A Differentiable Model of Nucleic Acid Dynamics
+
+Abstract: Writing molecular dynamics simulations in automatic differentiation libraries has recently emerged as a new paradigm for optimization over physical systems. While practitioners have developed proof-of-concepts for small systems, no biophysical force field complex enough to capture experimental dynamics has been implemented in this fashion. Here, we present an implementation of oxDNA, a popular force field for modelling nucleic acids, in JAX-MD, a state of the art differentiable molecular dynamics library. Using our framework, we reparameterize oxDNA from scratch using the structural, thermodynamic, and mechanical data originally used in its parameterization. Crucially, using automatic differentiation for biophysical modelling permits unprecedented model transparency and reproducibility; in particular, it enables straightforward (i) incorporation of new experimental data and (ii) custom reparameterization. We are also excited by the possibility our framework affords to optimize over sequences in service of inverse design.
