@@ -38,7 +38,7 @@ if FLAGS.jax_enable_x64:
 
 
 # the pitch is defined as the angle between the projections of two base-base vectors in a plane perpendicular to the helical axis for two contiguous base pairs
-def compute_single_pitch(quartet, system: RigidBody, base_sites: Array):
+def compute_single_pitch(quartet, system: RigidBody, base_sites: Array):#TODO: don't need 'system' as input here
     # base pair #1 is comprised of nucs a1 and b1. Base pair #2 is a2, b2. i.e. a1 is H-bonded to b1, a2 is h-bonded to b2/
     a1, b1, a2, b2 = quartet #a1, b1, a2, b2 are the indices of the relevant nucleotides
     # get base-base vectors for each base pair, 1 and 2
