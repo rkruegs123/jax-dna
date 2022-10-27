@@ -6,8 +6,9 @@ from energy.base_functions import f1, f2, f3, f4, f5, _v_fene
 
 
 # https://math.stackexchange.com/questions/1172472/differentiable-approximation-of-the-absolute-value-function
-def smooth_abs(x):
-    return jnp.sqrt(x**2 + 1e-5)
+# note: have to add eps to make first derivatives continuous
+def smooth_abs(x, eps=1e-5):
+    return jnp.sqrt(x**2 + eps)
 
 def v_fene(r, eps_backbone, r0_backbone, delta_backbone, fmax=10, finf=0.04):
     eps = eps_backbone; r0 = r0_backbone; delt = delta_backbone
