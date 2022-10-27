@@ -25,6 +25,8 @@ Update: note that for stochastic simulations, the gradient over a batch of traje
   - e.g th epitch observable to compute angles between two bonded nucldoetides. Note the 3->5 vs 5->3. Then sum over all bonded pairs, divide by 360 to get pitch (e.g. bp per turn)
 
 ## STRUCTURAL
+Required simulations:
+- 1e5-1e7 MD steps (use MD instead of VMMC because you don't need to accelerate sampling of rare configurations)  (can be done in parallel, e.g. 100-1000 batches of 1e4 steps)
 
 Examples:
 - pitch
