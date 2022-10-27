@@ -1,9 +1,11 @@
 import pdb
-
 import tqdm
 import functools
 import time
 import pickle
+from pathlib import Path
+import datetime
+import shutil
 
 import jax
 from jax import jit, vmap, lax, random
@@ -21,7 +23,7 @@ from jax.tree_util import Partial
 from utils import DEFAULT_TEMP
 from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import nucleotide_mass, get_kt, moment_of_inertia
-from utils import get_one_hot
+from utils import get_one_hot, bcolors
 
 from loader.trajectory import TrajectoryInfo
 from loader.topology import TopologyInfo
@@ -181,26 +183,46 @@ def estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_in
     return _estimate_gradient
 
 
-def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix/start.conf"):
+def run(top_path, conf_path,
+        sim_length, batch_size, opt_steps, init_params, key,
+        T=DEFAULT_TEMP, dt=5e-3,
+        output_basedir="v2/data/output"):
+
+    if not Path(top_path).exists():
+        raise RuntimeError(f"Topology file does not exist at location: {top_path}")
+
+    if not Path(conf_path).exists():
+        raise RuntimeError(f"Configuration file does not exist at location: {conf_path}")
+
+    output_basedir = Path(output_basedir)
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    run_name = f"optimize_{timestamp}"
+    run_dir = output_basedir / run_name
+    run_dir.mkdir(parents=False, exist_ok=False)
+    shutil.copy(top_path, run_dir)
+    shutil.copy(conf_path, run_dir)
+    params_str = f"topology file: {top_path}\nconfiguration file: {conf_path}\n"
+    params_str += "sim_length: {sim_length}\nbatch_size: {batch_size}\nopt_steps: {opt_steps}\n"
+    params_str += "init_params: {init_params}\nkey: {key}\ntemperature: {T}\ndt: {dt}\n"
+    with open(run_dir / "params.txt", "w+") as f:
+        f.write(params_str)
+    print(bcolors.WARNING + f"Created directory and copied optimization information at location: {run_dir}" + bcolors.ENDC)
+
+    print(bcolors.OKBLUE + f"Running optimization..." + bcolors.ENDC)
 
     # Information for a single "test case"
     # Note: in the future, we will have multiple of these
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
-    sim_length = 10
-    batch_size = 2
     # Note how we get one `grad_fxn` per "test case." The gradient has to be estimated *per* test case
     grad_fxn = estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info,
-                                 sim_length, dt=5e-3, T=DEFAULT_TEMP)
+                                 sim_length, dt=dt, T=T)
 
     # Initialize values relevant for the optimization loop
-    init_params = jnp.array([0.60, 0.75, 1.1]) # my own hard-coded random FENE parameters
-    opt_steps = 3
     lr = jopt.exponential_decay(0.1, opt_steps, 0.01)
     optimizer = jopt.adam(lr)
     opt_state = optimizer.init_fn(init_params)
-    key = random.PRNGKey(0)
 
     # Setup some logging, some required and some not
     params_ = list()
@@ -229,21 +251,26 @@ def run(top_path="data/simple-helix/generated.top", conf_path="data/simple-helix
         params_.append(optimizer.params_fn(opt_state))
         losses.append(avg_loss)
 
-    pprint(step_times)
-    pprint(params_)
-
-    with open("params.pkl", "wb") as f:
+    with open(run_dir / "params.pkl", "wb") as f:
         pickle.dump(params_, f)
-    with open("losses.pkl", "wb") as f:
+    with open(run_dir / "losses.pkl", "wb") as f:
         pickle.dump(losses, f)
-    with open("grads.pkl", "wb") as f:
+    with open(run_dir / "grads.pkl", "wb") as f:
         pickle.dump(grads, f)
+    with open(run_dir / "step_times.pkl", "wb") as f:
+        pickle.dump(step_times, f)
     return
 
 
 if __name__ == "__main__":
+    top_path = "data/simple-helix/generated.top"
+    conf_path = "data/simple-helix/start.conf"
+    init_params = jnp.array([0.60, 0.75, 1.1]) # my own hard-coded random FENE parameters
+    key = random.PRNGKey(0)
+
     start = time.time()
-    run()
+    run(top_path=top_path, conf_path=conf_path,
+        sim_length=10, batch_size=2, opt_steps=3, init_params=init_params, key=key)
     end = time.time()
     total_time = end - start
     print(f"Execution took: {total_time}")
