@@ -23,8 +23,9 @@ def get_backbone_distance_loss(pairs, displacement_fn,
         back_sites = body.center + com_to_backbone * back_base_vectors
         dr_back = d(back_sites[nbrs_i], back_sites[nbrs_j])
         r_back = jnp.linalg.norm(dr_back, axis=1)
-        avg_r_back = jnp.mean(r_back)
-        return (avg_r_back - target_distance)**2
+        return np.sum((r_back - target_distance)**2)
+        # avg_r_back = jnp.mean(r_back)
+        # return (avg_r_back - target_distance)**2
     return backbone_distance_loss
 
 
