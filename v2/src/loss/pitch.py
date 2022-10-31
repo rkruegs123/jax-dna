@@ -16,11 +16,9 @@ from utils import back_site, stack_site, base_site
 from utils import get_one_hot
 from utils import clamp
 
-from nn_energy import nn_energy_fn_factory
-from other_pairs_energy import other_pairs_energy_fn_factory_fixed
-from trajectory import TrajectoryInfo
-from topology import TopologyInfo
-from get_params import get_default_params
+from loader.trajectory import TrajectoryInfo
+from loader.topology import TopologyInfo
+from loader.get_params import get_default_params
 
 from jax.config import config
 config.update("jax_enable_x64", True)
