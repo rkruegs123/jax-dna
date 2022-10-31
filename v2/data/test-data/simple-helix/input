@@ -67,3 +67,49 @@ data_output_3 = {
           split = false
   }
 }
+data_output_4 = {
+  name = pitch.dat
+  print_every = 1
+  col_1 = {
+    type = pitch
+    bp1a_id = 1
+    bp1b_id = 14
+    bp2a_id = 2
+    bp2b_id = 13
+  }
+  col_2 = {
+    type = pitch
+    bp1a_id = 2
+    bp1b_id = 13
+    bp2a_id = 3
+    bp2b_id = 12
+  }
+  col_3 = {
+    type = pitch
+    bp1a_id = 3
+    bp1b_id = 12
+    bp2a_id = 4
+    bp2b_id = 11
+  }
+  col_4 = {
+    type = pitch
+    bp1a_id = 4
+    bp1b_id = 11
+    bp2a_id = 5
+    bp2b_id = 10
+  }
+  col_5 = {
+    type = pitch
+    bp1a_id = 5
+    bp1b_id = 10
+    bp2a_id = 6
+    bp2b_id = 9
+  }
+  col_6 = {
+    type = pitch
+    bp1a_id = 6
+    bp1b_id = 9
+    bp2a_id = 7
+    bp2b_id = 8
+  }
+}
