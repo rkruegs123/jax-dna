@@ -75,7 +75,7 @@ def run_simulation(params, key, steps, init_fn, step_fn, loss_fn):
         return state, (state.position, log_probs, loss)
     final_state, (trajectory, log_probs, losses) = scan(scan_fn, init_state, jnp.arange(steps))
 
-    avg_loss = jnp.mean(losses[-2:]) # note how much repeat ocmputation we do given that we only wnat some of them
+    avg_loss = jnp.mean(losses[-100:]) # note how much repeat ocmputation we do given that we only wnat some of them
     return trajectory, log_probs, avg_loss
 
 """
@@ -270,7 +270,8 @@ if __name__ == "__main__":
 
     start = time.time()
     run(top_path=top_path, conf_path=conf_path,
-        sim_length=10, batch_size=2, opt_steps=3, init_params=init_params, key=key)
+        sim_length=1000, batch_size=20, opt_steps=200,
+        init_params=init_params, key=key)
     end = time.time()
     total_time = end - start
     print(f"Execution took: {total_time}")
