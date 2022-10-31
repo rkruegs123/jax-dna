@@ -202,8 +202,8 @@ def run(top_path, conf_path,
     shutil.copy(top_path, run_dir)
     shutil.copy(conf_path, run_dir)
     params_str = f"topology file: {top_path}\nconfiguration file: {conf_path}\n"
-    params_str += "sim_length: {sim_length}\nbatch_size: {batch_size}\nopt_steps: {opt_steps}\n"
-    params_str += "init_params: {init_params}\nkey: {key}\ntemperature: {T}\ndt: {dt}\n"
+    params_str += f"sim_length: {sim_length}\nbatch_size: {batch_size}\nopt_steps: {opt_steps}\n"
+    params_str += f"init_params: {init_params}\nkey: {key}\ntemperature: {T}\ndt: {dt}\n"
     with open(run_dir / "params.txt", "w+") as f:
         f.write(params_str)
     print(bcolors.WARNING + f"Created directory and copied optimization information at location: {run_dir}" + bcolors.ENDC)
