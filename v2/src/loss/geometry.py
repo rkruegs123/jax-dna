@@ -16,14 +16,16 @@ def get_backbone_distance_loss(pairs, displacement_fn,
     nbrs_i = pairs[:, 0]
     nbrs_j = pairs[:, 1]
 
-    # so much repeat computatoin given that we've already computed this...
+    # note: so much repeat computatoin given that we've already computed this...
     def backbone_distance_loss(body):
         Q = body.orientation
         back_base_vectors = Q_to_back_base(Q)
         back_sites = body.center + com_to_backbone * back_base_vectors
         dr_back = d(back_sites[nbrs_i], back_sites[nbrs_j])
         r_back = jnp.linalg.norm(dr_back, axis=1)
-        return jnp.sum((r_back - target_distance)**2)
+
+        return jnp.sum(((r_back - target_distance))**2)
+        # return r_back, jnp.sum((100*(r_back - target_distance))**2)
         # avg_r_back = jnp.mean(r_back)
         # return (avg_r_back - target_distance)**2
     return backbone_distance_loss

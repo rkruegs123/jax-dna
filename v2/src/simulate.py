@@ -10,12 +10,12 @@ from pathlib import Path
 import shutil
 
 from jax_md.rigid_body import RigidBody
-from jax_md import space, util
+from jax_md import space, util, simulate
 
 from utils import nucleotide_mass, get_kt, moment_of_inertia, get_one_hot, DEFAULT_TEMP
 from utils import base_site, stack_site, back_site
 from utils import bcolors
-import langevin
+# import langevin
 from energy import factory
 from loader import get_params
 from loader.trajectory import TrajectoryInfo
@@ -54,22 +54,31 @@ def run_single_langevin(top_path, conf_path,
                      orientation=jnp.array([moment_of_inertia]))
     gamma = RigidBody(center=jnp.array([DEFAULT_TEMP/2.5]),
                       orientation=jnp.array([DEFAULT_TEMP/7.5]))
-    params = get_params.get_default_params(t=T, no_smoothing=False)
+    # params = get_params.get_default_params(t=T, no_smoothing=False)
+
+    # params = [0.10450547, 0.5336675 , 1.2209406]
+    params = [2.0, 0.25, 0.7525]
+
 
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
 
+    loss_fn = geometry.get_backbone_distance_loss(top_info.bonded_nbrs, displacement_fn)
+    loss_fn = jit(loss_fn)
+
     body = config_info.states[0]
     seq = jnp.array(get_one_hot(top_info.seq), dtype=f64)
     kT = get_kt(t=T) # 300 Kelvin = 0.1 kT
 
-    energy_fn, _ = factory.energy_fn_factory(displacement_fn,
-                                             back_site, stack_site, base_site,
-                                             top_info.bonded_nbrs, top_info.unbonded_nbrs)
-    energy_fn = Partial(energy_fn, seq=seq, params=params)
+    energy_fn, compute_subterms = factory.energy_fn_factory(displacement_fn,
+                                                            back_site, stack_site, base_site,
+                                                            top_info.bonded_nbrs, top_info.unbonded_nbrs)
+    energy_fn = jit(Partial(energy_fn, seq=seq, params=params))
+    compute_subterms = jit(Partial(compute_subterms, seq=seq, params=params))
 
-    init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+    # init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+    init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
     step_fn = jit(step_fn)
 
 
@@ -77,6 +86,10 @@ def run_single_langevin(top_path, conf_path,
 
     trajectory = [state.position]
     energies = [energy_fn(state.position)]
+    # losses = [loss_fn(state.position)[1]]
+    losses = [loss_fn(state.position)]
+    subterms = [compute_subterms(state.position)]
+    # bb_distances = [loss_fn(state.position)[0]]
     print(bcolors.OKBLUE + f"Starting simulation..." + bcolors.ENDC)
     for i in tqdm(range(n_steps), colour="red"): # note: colour can be one of [hex (#00ff00), BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE]
         state = step_fn(state, seq=seq, params=params)
@@ -84,7 +97,12 @@ def run_single_langevin(top_path, conf_path,
         if i % save_every == 0:
             energies.append(energy_fn(state.position))
             trajectory.append(state.position)
+            # losses.append(loss_fn(state.position)[1])
+            losses.append(loss_fn(state.position))
+            subterms.append(compute_subterms(state.position))
+            # bb_distances.append(loss_fn(state.position)[0])
 
+    pdb.set_trace()
     final_traj = TrajectoryInfo(top_info ,states=trajectory, box_size=config_info.box_size)
     if save_output:
         print(bcolors.OKBLUE + f"Writing trajectory to file..." + bcolors.ENDC)
@@ -96,13 +114,15 @@ def run_single_langevin(top_path, conf_path,
 if __name__ == "__main__":
     import time
     import numpy as np
+    from loss import geometry
 
     top_path = "data/simple-helix/generated.top"
     conf_path = "data/simple-helix/start.conf"
     key = random.PRNGKey(0)
 
     start = time.time()
-    run_single_langevin(top_path, conf_path, n_steps=1000, key=key, save_output=True)
+    traj, energies = run_single_langevin(top_path, conf_path, n_steps=1000,
+                                         key=key, save_output=True, save_every=10)
     end = time.time()
     total_time = end - start
     print(bcolors.OKGREEN + f"Finished simulation in {np.round(total_time, 2)} seconds" + bcolors.ENDC)

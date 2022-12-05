@@ -14,9 +14,7 @@ import jax.numpy as jnp
 from jax.example_libraries import optimizers as jopt # FIXME: change to optax
 from pprint import pprint
 
-from jax_md import simulate
-from jax_md import space
-from jax_md import util
+from jax_md import space, util, simulate
 from jax_md.rigid_body import RigidBody, Quaternion
 from jax.tree_util import Partial
 
@@ -28,7 +26,7 @@ from utils import get_one_hot, bcolors
 from loader.trajectory import TrajectoryInfo
 from loader.topology import TopologyInfo
 from energy import factory
-import langevin
+# import langevin
 from checkpoint import checkpoint_scan
 from loss import geometry
 
@@ -136,7 +134,9 @@ def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=
     energy_fn = Partial(energy_fn, seq=seq)
 
     # Langevin
-    init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+    # init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+    init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+
     # Nose Hoover
     # init_fn, step_fn = simulate.nvt_nose_hoover(energy_fn, shift_fn, dt, kT)
 
