@@ -15,19 +15,21 @@ def get_gaussian(a, b, c):
 def gaussian(height, center, width, x):
     return height * jnp.exp(-(x-center)**2/(2*width**2))
 gaussian_mixture = vmap(gaussian, (0, 0, 0, None)) # takes 3 lists: heights, centers, and widths
-sum_of_gaussians = lambda heights, centers, widths, x: jnp.sum(gaussian_mixture(heights, centers, widths, x))
 
-def get_height_fn(height_0, well_tempered=False):
+sum_of_gaussians = lambda heights, centers, widths, x: jnp.sum(gaussian_mixture(heights, centers, widths, x))
+# sum_of_gaussians = lambda heights, centers, widths, x: jnp.sum(gaussian_mixture(heights, centers, widths, x)) + 1*jnp.sum(gaussian_mixture(heights, -centers, widths, x))
+
+def get_height_fn(height_0, well_tempered=False, delta_T=1.0, kt=None):
     if well_tempered:
-        """
-        # From PySAGES -- have to read papers to figure out if V is just the bias potential or the total potential
-        def next_height(pstate):
-            V = evaluate_potential(pstate)
-            return height_0 * np.exp(-V / (deltaT * kB))
-        """
-        raise NotImplementedError
+        if kt is None:
+            raise RuntimeError(f"Value of kT required for well-tempered metadynamics")
+
+        def height_fn(curr_bias):
+            return height_0 * jnp.exp(-curr_bias / (kt*delta_T))
+        return height_fn
+
     else:
-        return lambda body: height_0 # FIXME: May have to take more than the body at some point
+        return lambda curr_bias: height_0 # FIXME: May have to take more than the body at some point
 
 
 if __name__ == "__main__":

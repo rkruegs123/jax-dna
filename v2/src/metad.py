@@ -88,7 +88,8 @@ def run_single_metad(top_path, conf_path, bps,
     centers = jnp.zeros(n_gaussians, dtype=f64)
     widths = jnp.full(n_gaussians, width_0, dtype=f64)
     heights = jnp.zeros(n_gaussians, dtype=f64)
-    height_fn = get_height_fn(height_0)
+    # height_fn = get_height_fn(height_0, well_tempered=False)
+    height_fn = get_height_fn(height_0, well_tempered=True, kt=kT, delta_T=20.0)
     n_bp_fn = cv.get_n_bp_fn(bps, displacement_fn)
 
     height_fn = jit(height_fn)
@@ -126,9 +127,10 @@ def run_single_metad(top_path, conf_path, bps,
 
         if i % stride == 0:
             iter_cv = n_bp_fn(state.position)
+            iter_bias = sum_of_gaussians(heights, centers, widths, iter_cv)
             num_gauss = i // stride
             # widths = widths.at[num_guass].set(width_0)
-            heights = heights.at[num_gauss].set(height_fn(num_gauss))
+            heights = heights.at[num_gauss].set(height_fn(iter_bias))
             centers = centers.at[num_gauss].set(iter_cv)
 
         if i % save_every == 0:
@@ -140,7 +142,8 @@ def run_single_metad(top_path, conf_path, bps,
         if plot_every and i % plot_every == 0:
             pdb.set_trace()
             # Plot the metapotential
-            test_cvs = onp.linspace(-2, 10, 40)
+            test_cvs = onp.linspace(-2, 10, 200)
+            # test_cvs = onp.linspace(0, 10, 40)
             biases = [sum_of_gaussians(heights, centers, widths, tmp_cv) for tmp_cv in test_cvs]
             plt.plot(test_cvs, biases)
             plt.show()
@@ -157,11 +160,12 @@ def run_single_metad(top_path, conf_path, bps,
 
 if __name__ == "__main__":
     top_path = "data/simple-helix/generated.top"
-    conf_path = "data/simple-helix/start.conf"
+    # conf_path = "data/simple-helix/start.conf"
+    conf_path = "data/simple-helix/unbound.conf"
     key = random.PRNGKey(0)
 
     n_steps = int(1e5)
-    stride = 10
+    stride = 100
     n_gaussians = n_steps // stride
 
     bps = jnp.array([
@@ -177,4 +181,7 @@ if __name__ == "__main__":
 
     run_single_metad(top_path, conf_path, bps,
                      n_steps, stride, n_gaussians,
-                     key, save_every=100, save_output=False, plot_every=2500)
+                     key, save_every=100, save_output=True,
+                     # plot_every=10000,
+                     dt=5e-3
+    )

@@ -12,8 +12,9 @@ def factory(energy_fn, cv_fn):
                         heights: util.Array, centers: util.Array, widths: util.Array,
                         **kwargs) -> float:
         cv = cv_fn(body)
-        # return energy_fn(body, **kwargs) + sum_of_gaussians(heights, centers, widths, cv)
-        return sum_of_gaussians(heights, centers, widths, cv)
+        return energy_fn(body, **kwargs) + sum_of_gaussians(heights, centers, widths, cv)
+        # return sum_of_gaussians(heights, centers, widths, cv)
+        # return 0.0
     return metad_energy_fn
 
 
