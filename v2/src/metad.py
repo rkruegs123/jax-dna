@@ -148,6 +148,7 @@ def run_single_metad(top_path, conf_path, bps,
     height_fn = md_utils.get_height_fn(height_0, well_tempered=False)
     # height_fn = md_utils.get_height_fn(height_0, well_tempered=True, kt=kT, delta_T=20.0)
     n_bp_fn = cv.get_n_bp_fn(bps, displacement_fn) # cv1
+    n_bp_fn2 = cv.get_n_bp_fn(bps, displacement_fn)
 
     str0_3p_idx = bps[:, 0][0] # may have mixed up 3p and 5p but it doesn't matter
     str0_5p_idx = bps[:, 0][-1]
@@ -165,6 +166,7 @@ def run_single_metad(top_path, conf_path, bps,
 
     height_fn = jit(height_fn)
     n_bp_fn = jit(n_bp_fn)
+    n_bp_fn2 = jit(n_bp_fn2)
 
 
     # Wrap the energy function
@@ -178,7 +180,8 @@ def run_single_metad(top_path, conf_path, bps,
     # md_energy_fn = md_energy.factory(base_energy_fn, n_bp_fn)
     md_energy_fn = md_energy.factory2(base_energy_fn,
                                       # n_bp_fn, interstrand_dist_fn,
-                                      theta_fn, interstrand_dist_fn,
+                                      # theta_fn, interstrand_dist_fn,
+                                      n_bp_fn2, interstrand_dist_fn,
                                       repulsive_wall_fn)
     md_energy_fn = jit(md_energy_fn)
 
@@ -211,7 +214,8 @@ def run_single_metad(top_path, conf_path, bps,
             """
 
             # iter_cv1 = n_bp_fn(state.position)
-            iter_cv1 = theta_fn(state.position)
+            # iter_cv1 = theta_fn(state.position)
+            iter_cv1 = n_bp_fn2(state.position)
             iter_cv2 = interstrand_dist_fn(state.position)
             iter_bias = repulsive_wall_fn(heights, centers, widths, iter_cv1, iter_cv2)
             num_gauss = i // stride
@@ -282,7 +286,7 @@ if __name__ == "__main__":
 
     run_single_metad(top_path, conf_path, bps,
                      n_steps, stride, n_gaussians,
-                     key, save_every=100, save_output=True,
+                     key, save_every=500, save_output=True,
                      # plot_every=10000,
                      dt=5e-3
     )

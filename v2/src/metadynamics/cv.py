@@ -1,13 +1,16 @@
 import pdb
 from functools import partial
-# import sys
-# sys.path.insert(0, 'src/')
+import sys
+sys.path.insert(0, 'src/')
 
 import jax.numpy as jnp
 from jax_md import space
+from jax.tree_util import Partial
+from jax import vmap
 
-from utils import Q_to_back_base
+from utils import Q_to_back_base, Q_to_base_normal
 from utils import com_to_hb
+import metadynamics.utils as md_utils
 
 
 # FIXME: sigma is oxDNA length unit. Must fix.
@@ -95,6 +98,38 @@ def get_theta_fn(a_3p_idx, a_5p_idx, b_3p_idx, b_5p_idx):
     return theta_fn
 
 
+# Custom dot-product trick
+def get_n_bp_fn2(bps, displacement_fn):
+    d = space.map_bond(partial(displacement_fn))
+
+    bp_i = bps[:, 0]
+    bp_j = bps[:, 1]
+
+    height = 1.0
+    center = -1.0
+    width = jnp.sqrt(0.05)
+    gauss_fn = lambda x: height * jnp.exp(-(x-center)**2/(2*width**2)) # FIXME: should really just use partial(gaussian) correctly
+    gauss_fn = vmap(gauss_fn)
+
+    def get_n_bp(body):
+        Q = body.orientation
+        back_base_vectors = Q_to_back_base(Q)
+        base_sites = body.center + com_to_hb * back_base_vectors
+
+        dr_base = d(base_sites[bp_i], base_sites[bp_j])
+        r_base = jnp.linalg.norm(dr_base, axis=1)
+
+        cvs = cv(r_base)
+
+        base_normals = Q_to_base_normal(Q) # space frame, normalized
+        norm_dot_products = jnp.einsum('ij, ij->i', base_normals[bp_i], base_normals[bp_j])
+        clamped_norm_dps = gauss_fn(norm_dot_products)
+
+        n_bp = jnp.dot(cvs, clamped_norm_dps)
+        return n_bp
+    return get_n_bp
+
+
 # FIXME: can test by simulating a helix with unbound frays and passing various states in here
 if __name__ == "__main__":
     # plot_cv()
@@ -107,13 +142,13 @@ if __name__ == "__main__":
     from loader.trajectory import TrajectoryInfo
     from loader.topology import TopologyInfo
 
-    # top_path = "data/test-data/simple-helix/generated.top"
-    # conf_path = "data/test-data/simple-helix/start.conf"
-    # traj_path = "data/test-data/simple-helix/output.dat"
+    top_path = "data/test-data/simple-helix/generated.top"
+    conf_path = "data/test-data/simple-helix/start.conf"
+    traj_path = "data/test-data/simple-helix/output.dat"
 
-    top_path = "data/test-data/unbound-strands-overlap/generated.top"
-    conf_path = "data/test-data/unbound-strands-overlap/start.conf"
-    traj_path = "data/test-data/unbound-strands-overlap/output.dat"
+    # top_path = "data/test-data/unbound-strands-overlap/generated.top"
+    # conf_path = "data/test-data/unbound-strands-overlap/start.conf"
+    # traj_path = "data/test-data/unbound-strands-overlap/output.dat"
 
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
@@ -124,20 +159,21 @@ if __name__ == "__main__":
 
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
     bps = jnp.array([
-        # [0, 15],
+        [0, 15],
         [1, 14],
         [2, 13],
         [3, 12],
         [4, 11],
         [5, 10],
         [6, 9],
-        # [7, 8]
+        [7, 8]
     ])
 
-    # n_bp_fn = get_n_bp_fn(bps, displacement_fn)
-    # n_bp = n_bp_fn(body)
-    # print(f"# Base Pairs: {n_bp}")
+    n_bp_fn = get_n_bp_fn2(bps, displacement_fn)
+    n_bp = n_bp_fn(body)
+    print(f"# Base Pairs: {n_bp}")
 
+    pdb.set_trace()
     interstrand_dist_fn = get_interstrand_dist_fn(bps, displacement_fn)
     interstrand_dist = interstrand_dist_fn(body)
     print(f"Interstrand Distance: {interstrand_dist}")
