@@ -5,6 +5,7 @@ import shutil
 import datetime
 import matplotlib.pyplot as plt
 import numpy as onp
+import pickle
 
 from jax.config import config; config.update("jax_enable_x64", True)
 import jax.numpy as jnp
@@ -22,12 +23,54 @@ from loader import get_params
 from loader.trajectory import TrajectoryInfo
 from loader.topology import TopologyInfo
 from metadynamics import cv
-from metadynamics.utils import get_height_fn
-from metadynamics.utils import sum_of_gaussians
+import metadynamics.utils as md_utils
 import metadynamics.energy as md_energy
 from utils import bcolors
 from utils import nucleotide_mass, get_kt, moment_of_inertia, get_one_hot, DEFAULT_TEMP
 from utils import base_site, stack_site, back_site
+
+
+
+
+def plot_1d(heights, centers, widths):
+    test_cvs = onp.linspace(-2, 10, 200)
+    # test_cvs = onp.linspace(0, 10, 40)
+    biases = [md_utils.sum_of_gaussians(heights, centers, widths, tmp_cv) for tmp_cv in test_cvs]
+    plt.plot(test_cvs, biases)
+    plt.show()
+    plt.clf()
+
+
+def plot_2d(repulsive_wall_fn, heights, centers, widths,
+            show_fig=True, save_fig=False, fpath=None):
+    sample_n_bps = onp.linspace(-1, 8, 50)
+    # sample_distances = onp.linspace(0, 3, 30)
+    sample_distances = onp.linspace(0, 1.0, 30)
+    b, a = onp.meshgrid(sample_n_bps, sample_distances)
+    vals = onp.empty((b.shape))
+    for i in range(b.shape[0]):
+        for j in range(b.shape[1]):
+            vals[i, j] = repulsive_wall_fn(heights, centers, widths, b[i, j], a[i, j]) # FIXME: maybe swap a and b?
+    l_a = a.min()
+    r_a = a.max()
+    l_b = b.min()
+    r_b = b.max()
+    # l_val, r_val = -onp.abs(vals).max(), onp.abs(vals).max()
+    l_val, r_val = onp.abs(vals).min(), onp.abs(vals).max()
+
+    figure, axes = plt.subplots()
+    c = axes.pcolormesh(a, b, vals, cmap='cool', vmin=l_val, vmax=r_val)
+    axes.axis([l_a, r_a, l_b, r_b])
+    figure.colorbar(c)
+    plt.xlabel("Interstrand Distance")
+    plt.ylabel("# Base Pairs")
+    if show_fig:
+        plt.show()
+    if save_fig:
+        if not fpath:
+            raise RuntimeError(f"Must provide fname to save 2D plot")
+        plt.savefig(fpath)
+    plt.clf()
 
 
 
@@ -83,14 +126,42 @@ def run_single_metad(top_path, conf_path, bps,
 
 
     # Metapotential information
-    height_0 = 1.0
-    width_0 = 0.25
+    # height_0 = 1.0
+    height_0 = 0.05
+    # width_0 = 0.25
+    width_cv1 = 0.035 # radians
+    width_cv2 = 0.03 # interstrand distance
+
+    heights = jnp.zeros(n_gaussians, dtype=f64)
+
+
+    centers = jnp.zeros((n_gaussians, 2), dtype=f64)
+    # widths = jnp.full((n_gaussians, 2), width_0, dtype=f64)
+    widths = jnp.full((n_gaussians, 2), jnp.array([width_cv1, width_cv2]), dtype=f64)
+
+    """
     centers = jnp.zeros(n_gaussians, dtype=f64)
     widths = jnp.full(n_gaussians, width_0, dtype=f64)
-    heights = jnp.zeros(n_gaussians, dtype=f64)
-    # height_fn = get_height_fn(height_0, well_tempered=False)
-    height_fn = get_height_fn(height_0, well_tempered=True, kt=kT, delta_T=20.0)
-    n_bp_fn = cv.get_n_bp_fn(bps, displacement_fn)
+
+    """
+
+    height_fn = md_utils.get_height_fn(height_0, well_tempered=False)
+    # height_fn = md_utils.get_height_fn(height_0, well_tempered=True, kt=kT, delta_T=20.0)
+    n_bp_fn = cv.get_n_bp_fn(bps, displacement_fn) # cv1
+
+    str0_3p_idx = bps[:, 0][0] # may have mixed up 3p and 5p but it doesn't matter
+    str0_5p_idx = bps[:, 0][-1]
+    str1_3p_idx = bps[:, 1][-1]
+    str1_5p_idx = bps[:, 1][0]
+    theta_fn = cv.get_theta_fn(str0_3p_idx, str0_5p_idx, str1_3p_idx, str1_5p_idx)
+    theta_fn = jit(theta_fn)
+
+    d_critical = 2.0
+    wall_strength = 1000
+    interstrand_dist_fn = cv.get_interstrand_dist_fn(bps, displacement_fn)
+    interstrand_dist_fn = jit(interstrand_dist_fn)
+    repulsive_wall_fn = md_utils.get_repulsive_wall_fn(d_critical, wall_strength)
+    repulsive_wall_fn = jit(repulsive_wall_fn)
 
     height_fn = jit(height_fn)
     n_bp_fn = jit(n_bp_fn)
@@ -104,7 +175,11 @@ def run_single_metad(top_path, conf_path, bps,
     base_energy_fn = Partial(base_energy_fn, seq=seq, params=params)
     # energy_fn = jit(Partial(energy_fn, seq=seq, params=params))
 
-    md_energy_fn = md_energy.factory(base_energy_fn, n_bp_fn)
+    # md_energy_fn = md_energy.factory(base_energy_fn, n_bp_fn)
+    md_energy_fn = md_energy.factory2(base_energy_fn,
+                                      # n_bp_fn, interstrand_dist_fn,
+                                      theta_fn, interstrand_dist_fn,
+                                      repulsive_wall_fn)
     md_energy_fn = jit(md_energy_fn)
 
     # init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
@@ -126,12 +201,23 @@ def run_single_metad(top_path, conf_path, bps,
         state = step_fn(state, heights=heights, centers=centers, widths=widths)
 
         if i % stride == 0:
+            """
             iter_cv = n_bp_fn(state.position)
-            iter_bias = sum_of_gaussians(heights, centers, widths, iter_cv)
+            iter_bias = md_utils.sum_of_gaussians(heights, centers, widths, iter_cv)
             num_gauss = i // stride
             # widths = widths.at[num_guass].set(width_0)
             heights = heights.at[num_gauss].set(height_fn(iter_bias))
             centers = centers.at[num_gauss].set(iter_cv)
+            """
+
+            # iter_cv1 = n_bp_fn(state.position)
+            iter_cv1 = theta_fn(state.position)
+            iter_cv2 = interstrand_dist_fn(state.position)
+            iter_bias = repulsive_wall_fn(heights, centers, widths, iter_cv1, iter_cv2)
+            num_gauss = i // stride
+            heights = heights.at[num_gauss].set(height_fn(iter_bias))
+            centers = centers.at[num_gauss, 0].set(iter_cv1)
+            centers = centers.at[num_gauss, 1].set(iter_cv2)
 
         if i % save_every == 0:
             energies.append(md_energy_fn(state.position,
@@ -142,18 +228,32 @@ def run_single_metad(top_path, conf_path, bps,
         if plot_every and i % plot_every == 0:
             pdb.set_trace()
             # Plot the metapotential
-            test_cvs = onp.linspace(-2, 10, 200)
-            # test_cvs = onp.linspace(0, 10, 40)
-            biases = [sum_of_gaussians(heights, centers, widths, tmp_cv) for tmp_cv in test_cvs]
-            plt.plot(test_cvs, biases)
-            plt.show()
-            plt.clf()
+            # plot_1d(heights, centers, widths)
+
+            plot_2d(repulsive_wall_fn, heights, centers, widths, show_fig=True, save_fig=False, fpath=None)
+
 
 
     final_traj = TrajectoryInfo(top_info ,states=trajectory, box_size=config_info.box_size)
     if save_output:
         print(bcolors.OKBLUE + f"Writing trajectory to file..." + bcolors.ENDC)
         final_traj.write(run_dir / "output.dat", reverse=True, write_topology=False)
+
+        with open(run_dir / "centers.pkl", "wb") as cf:
+            pickle.dump(centers, cf)
+        with open(run_dir / "widths.pkl", "wb") as wf:
+            pickle.dump(widths, wf)
+        with open(run_dir / "heights.pkl", "wb") as hf:
+            pickle.dump(heights, hf)
+
+        plt.plot(list(range(len(centers))), centers)
+        plt.title("Centers")
+        plt.xlabel("# Gaussian")
+        plt.ylabel("Center (i.e. CV)")
+        plt.savefig(run_dir / "centers.png")
+        plt.clf()
+
+        plot_2d(repulsive_wall_fn, heights, centers, widths, show_fig=False, save_fig=True, fpath=run_dir / "heatmap.png")
 
     pdb.set_trace()
     return final_traj, energies
@@ -164,8 +264,9 @@ if __name__ == "__main__":
     conf_path = "data/simple-helix/unbound.conf"
     key = random.PRNGKey(0)
 
-    n_steps = int(1e5)
-    stride = 100
+    n_steps = int(1e6)
+    # stride = 100
+    stride = 500
     n_gaussians = n_steps // stride
 
     bps = jnp.array([

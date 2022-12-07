@@ -70,7 +70,7 @@ def get_interstrand_dist_fn(bps, displacement_fn):
 
     n = bps.shape[0]
 
-    def interstrand_dist_fn(interstrand_dist_fn):
+    def interstrand_dist_fn(body):
         Q = body.orientation
         back_base_vectors = Q_to_back_base(Q)
         base_sites = body.center + com_to_hb * back_base_vectors
@@ -79,11 +79,20 @@ def get_interstrand_dist_fn(bps, displacement_fn):
         norm_strand_2_sum = jnp.sum(base_sites[bp_j], axis=0) / n
 
         cv = jnp.linalg.norm(norm_strand_1_sum - norm_strand_2_sum, axis=0)
-        pdb.set_trace()
         return cv
 
     return interstrand_dist_fn
 
+
+def get_theta_fn(a_3p_idx, a_5p_idx, b_3p_idx, b_5p_idx):
+    def theta_fn(body):
+        a_vec = body.center[a_3p_idx] - body.center[a_5p_idx]
+        b_vec = body.center[b_3p_idx] - body.center[b_5p_idx]
+
+        num = jnp.dot(a_vec, b_vec)
+        denom = jnp.linalg.norm(a_vec) * jnp.linalg.norm(b_vec)
+        return jnp.arccos(num / denom)
+    return theta_fn
 
 
 # FIXME: can test by simulating a helix with unbound frays and passing various states in here
