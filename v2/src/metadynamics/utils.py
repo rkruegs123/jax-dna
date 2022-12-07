@@ -19,6 +19,30 @@ gaussian_mixture = vmap(gaussian, (0, 0, 0, None)) # takes 3 lists: heights, cen
 sum_of_gaussians = lambda heights, centers, widths, x: jnp.sum(gaussian_mixture(heights, centers, widths, x))
 # sum_of_gaussians = lambda heights, centers, widths, x: jnp.sum(gaussian_mixture(heights, centers, widths, x)) + 1*jnp.sum(gaussian_mixture(heights, -centers, widths, x))
 
+
+def gaussian_2d(height, center, width, cv1, cv2):
+    width1, width2 = width
+    center1, center2 = center
+
+    term1 = (cv1 - center1)**2 / (2*width1**2)
+    term2 = (cv2 - center2)**2 / (2*width2**2)
+
+    return height * jnp.exp(-(term1 + term2))
+gaussian_mixture_2d = vmap(gaussian, (0, 0, 0, None, None)) # takes 3 lists: heights, centers, and widths
+sum_of_gaussians_2d = lambda heights, centers, widths, cv1, cv2: jnp.sum(gaussian_mixture_2d(heights, centers, widths, cv1, cv2))
+
+# cv1 is our n_bp
+# cv2 is our interstrand distnace
+def get_repulsive_wall_fn(d_critical, wall_strength):
+    def repulsive_wall_fn(heights, centers, widths, cv1, cv2):
+        g_sum = sum_of_gaussians_2d(heights, centers, widths, cv1, cv2)
+        wall_dg = jax.nn.sigmoid(cv2 - d_critical) * wall_strength
+        return g_sum + wall_dg
+    return repulsive_wall_fn
+
+
+
+
 def get_height_fn(height_0, well_tempered=False, delta_T=1.0, kt=None):
     if well_tempered:
         if kt is None:

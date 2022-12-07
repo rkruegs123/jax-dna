@@ -1,7 +1,7 @@
 import pdb
 from functools import partial
 # import sys
-# sys.path.append('src/')
+# sys.path.insert(0, 'src/')
 
 import jax.numpy as jnp
 from jax_md import space
@@ -45,7 +45,6 @@ def get_n_bp_fn(bps, displacement_fn):
         return n_bp
     return get_n_bp
 
-
 def plot_cv():
     import numpy as onp
     import matplotlib.pyplot as plt
@@ -59,15 +58,39 @@ def plot_cv():
     plt.plot(ds, cvs)
     plt.show()
 
-
     return
+
+
+def get_interstrand_dist_fn(bps, displacement_fn):
+
+    d = space.map_bond(partial(displacement_fn))
+
+    bp_i = bps[:, 0]
+    bp_j = bps[:, 1]
+
+    n = bps.shape[0]
+
+    def interstrand_dist_fn(interstrand_dist_fn):
+        Q = body.orientation
+        back_base_vectors = Q_to_back_base(Q)
+        base_sites = body.center + com_to_hb * back_base_vectors
+
+        norm_strand_1_sum = jnp.sum(base_sites[bp_i], axis=0) / n
+        norm_strand_2_sum = jnp.sum(base_sites[bp_j], axis=0) / n
+
+        cv = jnp.linalg.norm(norm_strand_1_sum - norm_strand_2_sum, axis=0)
+        pdb.set_trace()
+        return cv
+
+    return interstrand_dist_fn
+
 
 
 # FIXME: can test by simulating a helix with unbound frays and passing various states in here
 if __name__ == "__main__":
-    plot_cv()
+    # plot_cv()
 
-    pdb.set_trace()
+    # pdb.set_trace()
 
 
     # import sys
@@ -75,9 +98,13 @@ if __name__ == "__main__":
     from loader.trajectory import TrajectoryInfo
     from loader.topology import TopologyInfo
 
-    top_path = "data/test-data/simple-helix/generated.top"
-    conf_path = "data/test-data/simple-helix/start.conf"
-    traj_path = "data/test-data/simple-helix/output.dat"
+    # top_path = "data/test-data/simple-helix/generated.top"
+    # conf_path = "data/test-data/simple-helix/start.conf"
+    # traj_path = "data/test-data/simple-helix/output.dat"
+
+    top_path = "data/test-data/unbound-strands-overlap/generated.top"
+    conf_path = "data/test-data/unbound-strands-overlap/start.conf"
+    traj_path = "data/test-data/unbound-strands-overlap/output.dat"
 
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
@@ -88,19 +115,22 @@ if __name__ == "__main__":
 
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
     bps = jnp.array([
-        [0, 15],
+        # [0, 15],
         [1, 14],
         [2, 13],
         [3, 12],
         [4, 11],
         [5, 10],
         [6, 9],
-        [7, 8]
+        # [7, 8]
     ])
 
-    n_bp_fn = get_n_bp_fn(bps, displacement_fn)
-    n_bp = n_bp_fn(body)
+    # n_bp_fn = get_n_bp_fn(bps, displacement_fn)
+    # n_bp = n_bp_fn(body)
+    # print(f"# Base Pairs: {n_bp}")
 
-    print(f"# Base Pairs: {n_bp}")
+    interstrand_dist_fn = get_interstrand_dist_fn(bps, displacement_fn)
+    interstrand_dist = interstrand_dist_fn(body)
+    print(f"Interstrand Distance: {interstrand_dist}")
 
     pdb.set_trace()
