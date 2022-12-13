@@ -29,7 +29,7 @@ def cv(d):
 # Returns a function that, given a RigidBody, returns the number of base pairs
 # Takes a list of pairs of indices, representing paired nucleotides
 # FIXME: is d(i, j) defined as the distance between centers of masses? Hydrogen bonding sites?
-def get_n_bp_fn(bps, displacement_fn):
+def get_n_bp_fn_original(bps, displacement_fn):
     d = space.map_bond(partial(displacement_fn))
 
     bp_i = bps[:, 0]
@@ -99,7 +99,7 @@ def get_theta_fn(a_3p_idx, a_5p_idx, b_3p_idx, b_5p_idx):
 
 
 # Custom dot-product trick
-def get_n_bp_fn2(bps, displacement_fn):
+def get_n_bp_fn_custom(bps, displacement_fn):
     d = space.map_bond(partial(displacement_fn))
 
     bp_i = bps[:, 0]

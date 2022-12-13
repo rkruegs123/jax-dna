@@ -32,12 +32,18 @@ from utils import base_site, stack_site, back_site
 
 
 
-def plot_1d(heights, centers, widths):
+def plot_1d(heights, centers, widths,
+            show_fig=True, save_fig=False, fpath=None):
     test_cvs = onp.linspace(-2, 10, 200)
     # test_cvs = onp.linspace(0, 10, 40)
     biases = [md_utils.sum_of_gaussians(heights, centers, widths, tmp_cv) for tmp_cv in test_cvs]
     plt.plot(test_cvs, biases)
-    plt.show()
+    if show_fig:
+        plt.show()
+    if save_fig:
+        if not fpath:
+            raise RuntimeError(f"Must provide fname to save 1D plot")
+        plt.savefig(fpath)
     plt.clf()
 
 
@@ -45,7 +51,7 @@ def plot_2d(repulsive_wall_fn, heights, centers, widths,
             show_fig=True, save_fig=False, fpath=None):
     sample_n_bps = onp.linspace(-1, 8, 50)
     # sample_distances = onp.linspace(0, 3, 30)
-    sample_distances = onp.linspace(0, 1.0, 30)
+    sample_distances = onp.linspace(0, 1.75, 60)
     b, a = onp.meshgrid(sample_n_bps, sample_distances)
     vals = onp.empty((b.shape))
     for i in range(b.shape[0]):
@@ -74,13 +80,13 @@ def plot_2d(repulsive_wall_fn, heights, centers, widths,
 
 
 
-# Note: may not have to run these in batches as the reconstructed free energy landscape may not be (too) stochastic
-
 f64 = util.f64
 
-def run_single_metad(top_path, conf_path, bps,
-                     n_steps, stride, n_gaussians,
-                     key, T=DEFAULT_TEMP, dt=5e-3, save_every=10, plot_every=None,
+def run_single_metad(top_path, conf_path, cv1_bps, cv2_bps,
+                     n_steps, stride, n_gaussians, key,
+                     height_0, width_cv1, width_cv2,
+                     d_critical, wall_strength,
+                     T=DEFAULT_TEMP, dt=5e-3, save_every=10, plot_every=None,
                      output_basedir="v2/data/output/", save_output=False):
 
     if not Path(top_path).exists():
@@ -100,7 +106,10 @@ def run_single_metad(top_path, conf_path, bps,
         run_dir.mkdir(parents=False, exist_ok=False)
         shutil.copy(top_path, run_dir)
         shutil.copy(conf_path, run_dir)
-        params_str = f"topology file: {top_path}\nconfiguration file: {conf_path}\nn_steps: {n_steps}\nkey: {key}\ntemperature: {T}\ndt: {dt}\nsave_every: {save_every}\n"
+        params_str = f"topology file: {top_path}\nconfiguration file: {conf_path}\n"
+        params_str += f"n_steps: {n_steps}\nkey: {key}\ntemperature: {T}\ndt: {dt}\nsave_every: {save_every}\n"
+        params_str += f"height_0: {height_0}\nwidth_cv1: {width_cv1}\nwidth_cv2: {width_cv2}\n"
+        params_str += f"d_critical: {d_critical}\nwall_strength: {wall_strength}"
         with open(run_dir / "params.txt", "w+") as f:
             f.write(params_str)
         print(bcolors.WARNING + f"Created directory and copied simulation information at location: {run_dir}" + bcolors.ENDC)
@@ -126,63 +135,55 @@ def run_single_metad(top_path, conf_path, bps,
 
 
     # Metapotential information
-    # height_0 = 1.0
-    height_0 = 0.05
-    # width_0 = 0.25
-    width_cv1 = 0.035 # radians
-    width_cv2 = 0.03 # interstrand distance
 
     heights = jnp.zeros(n_gaussians, dtype=f64)
-
 
     centers = jnp.zeros((n_gaussians, 2), dtype=f64)
     # widths = jnp.full((n_gaussians, 2), width_0, dtype=f64)
     widths = jnp.full((n_gaussians, 2), jnp.array([width_cv1, width_cv2]), dtype=f64)
 
     """
+    # 1D case
     centers = jnp.zeros(n_gaussians, dtype=f64)
-    widths = jnp.full(n_gaussians, width_0, dtype=f64)
-
+    widths = jnp.full(n_gaussians, width_cv1, dtype=f64)
     """
+
 
     height_fn = md_utils.get_height_fn(height_0, well_tempered=False)
     # height_fn = md_utils.get_height_fn(height_0, well_tempered=True, kt=kT, delta_T=20.0)
-    n_bp_fn = cv.get_n_bp_fn(bps, displacement_fn) # cv1
-    n_bp_fn2 = cv.get_n_bp_fn(bps, displacement_fn)
+    # n_bp_fn = cv.get_n_bp_fn_original(cv1_bps, displacement_fn) # cv1
+    n_bp_fn = cv.get_n_bp_fn_custom(cv1_bps, displacement_fn)
 
-    str0_3p_idx = bps[:, 0][0] # may have mixed up 3p and 5p but it doesn't matter
-    str0_5p_idx = bps[:, 0][-1]
-    str1_3p_idx = bps[:, 1][-1]
-    str1_5p_idx = bps[:, 1][0]
+    str0_3p_idx = cv1_bps[:, 0][0] # may have mixed up 3p and 5p but it doesn't matter
+    str0_5p_idx = cv1_bps[:, 0][-1]
+    str1_3p_idx = cv1_bps[:, 1][-1]
+    str1_5p_idx = cv1_bps[:, 1][0]
     theta_fn = cv.get_theta_fn(str0_3p_idx, str0_5p_idx, str1_3p_idx, str1_5p_idx)
     theta_fn = jit(theta_fn)
 
-    d_critical = 2.0
-    wall_strength = 1000
-    interstrand_dist_fn = cv.get_interstrand_dist_fn(bps, displacement_fn)
+    interstrand_dist_fn = cv.get_interstrand_dist_fn(cv2_bps, displacement_fn)
     interstrand_dist_fn = jit(interstrand_dist_fn)
     repulsive_wall_fn = md_utils.get_repulsive_wall_fn(d_critical, wall_strength)
     repulsive_wall_fn = jit(repulsive_wall_fn)
 
     height_fn = jit(height_fn)
     n_bp_fn = jit(n_bp_fn)
-    n_bp_fn2 = jit(n_bp_fn2)
 
 
     # Wrap the energy function
-    base_energy_fn, compute_subterms = factory.energy_fn_factory(displacement_fn,
-                                                                 back_site, stack_site, base_site,
-                                                                 top_info.bonded_nbrs, top_info.unbonded_nbrs)
+    base_energy_fn, compute_subterms = factory.energy_fn_factory(
+        displacement_fn,
+        back_site, stack_site, base_site,
+        top_info.bonded_nbrs, top_info.unbonded_nbrs)
     compute_subterms = jit(Partial(compute_subterms, seq=seq, params=params))
     base_energy_fn = Partial(base_energy_fn, seq=seq, params=params)
     # energy_fn = jit(Partial(energy_fn, seq=seq, params=params))
 
     # md_energy_fn = md_energy.factory(base_energy_fn, n_bp_fn)
-    md_energy_fn = md_energy.factory2(base_energy_fn,
-                                      # n_bp_fn, interstrand_dist_fn,
-                                      # theta_fn, interstrand_dist_fn,
-                                      n_bp_fn2, interstrand_dist_fn,
-                                      repulsive_wall_fn)
+    md_energy_fn = md_energy.factory_2d(base_energy_fn,
+                                        n_bp_fn, interstrand_dist_fn,
+                                        # theta_fn, interstrand_dist_fn,
+                                        repulsive_wall_fn)
     md_energy_fn = jit(md_energy_fn)
 
     # init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
@@ -200,11 +201,12 @@ def run_single_metad(top_path, conf_path, bps,
     subterms = [compute_subterms(state.position)]
     print(bcolors.OKBLUE + f"Starting simulation..." + bcolors.ENDC)
     for i in tqdm(range(n_steps), colour="blue"):
-        # state = step_fn(state, seq=seq, params=params)
         state = step_fn(state, heights=heights, centers=centers, widths=widths)
 
         if i % stride == 0:
+            
             """
+            # 1D case
             iter_cv = n_bp_fn(state.position)
             iter_bias = md_utils.sum_of_gaussians(heights, centers, widths, iter_cv)
             num_gauss = i // stride
@@ -213,9 +215,8 @@ def run_single_metad(top_path, conf_path, bps,
             centers = centers.at[num_gauss].set(iter_cv)
             """
 
-            # iter_cv1 = n_bp_fn(state.position)
+            iter_cv1 = n_bp_fn(state.position)
             # iter_cv1 = theta_fn(state.position)
-            iter_cv1 = n_bp_fn2(state.position)
             iter_cv2 = interstrand_dist_fn(state.position)
             iter_bias = repulsive_wall_fn(heights, centers, widths, iter_cv1, iter_cv2)
             num_gauss = i // stride
@@ -234,7 +235,8 @@ def run_single_metad(top_path, conf_path, bps,
             # Plot the metapotential
             # plot_1d(heights, centers, widths)
 
-            plot_2d(repulsive_wall_fn, heights, centers, widths, show_fig=True, save_fig=False, fpath=None)
+            plot_2d(repulsive_wall_fn, heights, centers, widths,
+                    show_fig=True, save_fig=False, fpath=None)
 
 
 
@@ -257,23 +259,26 @@ def run_single_metad(top_path, conf_path, bps,
         plt.savefig(run_dir / "centers.png")
         plt.clf()
 
-        plot_2d(repulsive_wall_fn, heights, centers, widths, show_fig=False, save_fig=True, fpath=run_dir / "heatmap.png")
+        plot_2d(repulsive_wall_fn, heights, centers, widths,
+                show_fig=False, save_fig=True, fpath=run_dir / "heatmap.png")
+        # plot_1d(heights, centers, widths,
+        #         show_fig=False, save_fig=True, fpath=run_dir / "metapotential.png")
 
     pdb.set_trace()
     return final_traj, energies
 
 if __name__ == "__main__":
     top_path = "data/simple-helix/generated.top"
-    # conf_path = "data/simple-helix/start.conf"
-    conf_path = "data/simple-helix/unbound.conf"
+    conf_path = "data/simple-helix/start.conf"
+    # conf_path = "data/simple-helix/unbound.conf"
     key = random.PRNGKey(0)
 
-    n_steps = int(1e6)
+    n_steps = int(1e5)
     # stride = 100
-    stride = 500
+    stride = 250
     n_gaussians = n_steps // stride
 
-    bps = jnp.array([
+    cv1_bps = jnp.array([
         [0, 15],
         [1, 14],
         [2, 13],
@@ -284,9 +289,33 @@ if __name__ == "__main__":
         [7, 8]
     ])
 
-    run_single_metad(top_path, conf_path, bps,
-                     n_steps, stride, n_gaussians,
-                     key, save_every=500, save_output=True,
+    cv2_bps = jnp.array([
+        # [0, 15],
+        [1, 14],
+        [2, 13],
+        [3, 12],
+        [4, 11],
+        [5, 10],
+        [6, 9],
+        # [7, 8]
+    ])
+
+    # height_0 = 1.0
+    # height_0 = 0.05 # from chicago group
+    height_0 = 0.25
+    # width_0 = 0.25
+    # width_cv1 = 0.035 # radians
+    width_cv1 = 0.2
+    width_cv2 = 0.03 # interstrand distance
+
+    d_critical = 4.0
+    wall_strength = 1000
+
+    run_single_metad(top_path, conf_path, cv1_bps, cv2_bps,
+                     n_steps, stride, n_gaussians, key,
+                     height_0, width_cv1, width_cv2,
+                     d_critical, wall_strength,
+                     save_every=1000, save_output=True,
                      # plot_every=10000,
                      dt=5e-3
     )

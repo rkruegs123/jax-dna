@@ -17,7 +17,7 @@ def factory(energy_fn, cv_fn):
         # return 0.0
     return metad_energy_fn
 
-def factory2(energy_fn, cv1_fn, cv2_fn, repulsive_wall_fn):
+def factory_2d(energy_fn, cv1_fn, cv2_fn, repulsive_wall_fn):
     def metad_energy_fn(body: RigidBody,
                         heights: util.Array, centers: util.Array, widths: util.Array,
                         **kwargs) -> float:
