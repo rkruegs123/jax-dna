@@ -6,12 +6,14 @@ import datetime
 import matplotlib.pyplot as plt
 import numpy as onp
 import pickle
+import time
 
 from jax.config import config; config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 from jax import random
 from jax import jit
 from jax.tree_util import Partial
+import jax
 
 from jax_md.rigid_body import RigidBody
 from jax_md import space, util, simulate
@@ -49,9 +51,9 @@ def plot_1d(heights, centers, widths,
 
 def plot_2d(repulsive_wall_fn, heights, centers, widths,
             show_fig=True, save_fig=False, fpath=None):
-    sample_n_bps = onp.linspace(-1, 8, 50)
+    sample_n_bps = onp.linspace(-1, 8, 100)
     # sample_distances = onp.linspace(0, 3, 30)
-    sample_distances = onp.linspace(0, 1.75, 60)
+    sample_distances = onp.linspace(0, 13, 200)
     b, a = onp.meshgrid(sample_n_bps, sample_distances)
     vals = onp.empty((b.shape))
     for i in range(b.shape[0]):
@@ -200,20 +202,65 @@ def run_single_metad(top_path, conf_path, cv1_bps, cv2_bps,
                              heights=heights, centers=centers, widths=widths)]
     subterms = [compute_subterms(state.position)]
     print(bcolors.OKBLUE + f"Starting simulation..." + bcolors.ENDC)
+
+
+    def update_heights(i, heights, iter_bias):
+        num_gauss = i // stride
+        heights = heights.at[num_gauss].set(height_fn(iter_bias))
+        return heights
+    update_heights = jit(update_heights)
+
+    def update_centers(i, centers, iter_cv1, iter_cv2):
+        num_gauss = i // stride
+        centers = centers.at[num_gauss, 0].set(iter_cv1)
+        centers = centers.at[num_gauss, 1].set(iter_cv2)
+        return centers
+    update_centers = jit(update_centers)
+
+    def scan_fn(carry, i):
+        state, heights, centers, widths = carry
+        state = step_fn(state, heights=heights, centers=centers, widths=widths)
+
+        iter_cv1 = n_bp_fn(state.position)
+        # iter_cv1 = theta_fn(state.position)
+        iter_cv2 = interstrand_dist_fn(state.position)
+        iter_bias = repulsive_wall_fn(heights, centers, widths, iter_cv1, iter_cv2)
+
+        new_heights = jnp.where(i % stride == 0,
+                                update_heights(i, heights, iter_bias),
+                                heights)
+
+        new_centers = jnp.where(i % stride == 0,
+                                update_centers(i, centers, iter_cv1, iter_cv2),
+                                centers)
+
+        return (state, new_heights, new_centers, widths), state.position
+    scan_fn = jit(scan_fn)
+
+    start = time.time()
+    (final_state, heights, centers, widths), full_trajectory = jax.lax.scan(scan_fn, (state, heights, centers, widths), jnp.arange(n_steps))
+    end = time.time()
+
+    print(f"Simulation took: {onp.round(end - start, 2)} seconds")
+
+    start = time.time()
+    # Subtle: full_trajectory is a stacked RigidBody
+    trajectory = [RigidBody(full_trajectory.center[i], full_trajectory.orientation[i]) for i in range(0, n_steps, save_every)]
+    # trajectory = full_trajectory[::save_every] # trajectory to save
+
+    """
     for i in tqdm(range(n_steps), colour="blue"):
         state = step_fn(state, heights=heights, centers=centers, widths=widths)
 
         if i % stride == 0:
-            
-            """
+
             # 1D case
-            iter_cv = n_bp_fn(state.position)
-            iter_bias = md_utils.sum_of_gaussians(heights, centers, widths, iter_cv)
-            num_gauss = i // stride
-            # widths = widths.at[num_guass].set(width_0)
-            heights = heights.at[num_gauss].set(height_fn(iter_bias))
-            centers = centers.at[num_gauss].set(iter_cv)
-            """
+            # iter_cv = n_bp_fn(state.position)
+            # iter_bias = md_utils.sum_of_gaussians(heights, centers, widths, iter_cv)
+            # num_gauss = i // stride
+            # # widths = widths.at[num_guass].set(width_0)
+            # heights = heights.at[num_gauss].set(height_fn(iter_bias))
+            # centers = centers.at[num_gauss].set(iter_cv)
 
             iter_cv1 = n_bp_fn(state.position)
             # iter_cv1 = theta_fn(state.position)
@@ -237,10 +284,10 @@ def run_single_metad(top_path, conf_path, cv1_bps, cv2_bps,
 
             plot_2d(repulsive_wall_fn, heights, centers, widths,
                     show_fig=True, save_fig=False, fpath=None)
+    """
 
 
-
-    final_traj = TrajectoryInfo(top_info ,states=trajectory, box_size=config_info.box_size)
+    final_traj = TrajectoryInfo(top_info, states=trajectory, box_size=config_info.box_size)
     if save_output:
         print(bcolors.OKBLUE + f"Writing trajectory to file..." + bcolors.ENDC)
         final_traj.write(run_dir / "output.dat", reverse=True, write_topology=False)
@@ -264,6 +311,8 @@ def run_single_metad(top_path, conf_path, cv1_bps, cv2_bps,
         # plot_1d(heights, centers, widths,
         #         show_fig=False, save_fig=True, fpath=run_dir / "metapotential.png")
 
+    end = time.time()
+    print(f"Analysis took: {onp.round(end - start, 2)} seconds")
     pdb.set_trace()
     return final_traj, energies
 
@@ -273,7 +322,7 @@ if __name__ == "__main__":
     # conf_path = "data/simple-helix/unbound.conf"
     key = random.PRNGKey(0)
 
-    n_steps = int(1e5)
+    n_steps = int(1e3)
     # stride = 100
     stride = 250
     n_gaussians = n_steps // stride
@@ -306,16 +355,17 @@ if __name__ == "__main__":
     # width_0 = 0.25
     # width_cv1 = 0.035 # radians
     width_cv1 = 0.2
-    width_cv2 = 0.03 # interstrand distance
+    # width_cv2 = 0.03 # interstrand distance
+    width_cv2 = 0.05 # interstrand distance
 
-    d_critical = 4.0
+    d_critical = 15.0
     wall_strength = 1000
 
     run_single_metad(top_path, conf_path, cv1_bps, cv2_bps,
                      n_steps, stride, n_gaussians, key,
                      height_0, width_cv1, width_cv2,
                      d_critical, wall_strength,
-                     save_every=1000, save_output=True,
+                     save_every=10, save_output=True,
                      # plot_every=10000,
                      dt=5e-3
     )
