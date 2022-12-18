@@ -21,10 +21,19 @@ SIGMA = 0.34 # FIXME: oxDNA length unit
 # SIGMA = 8
 DM = DM_COEFF * SIGMA
 
+"""
 def cv(d):
     num = A*(1 - (d/DM)**6)
     denom = 1 - (d/DM)**12 # FIXME: the paper has |d| instead of d, but won't this always be true?
     return num/denom - B
+"""
+
+cv_alpha = 20.0
+# hb_distance = 1.27
+hb_distance = 0.25
+hb_distance_eps = hb_distance + 0.40 # where it will be 0.5
+cv = lambda d: 1 - 1 / (1 + jnp.exp(-cv_alpha * (d - hb_distance_eps)))
+
 
 # Returns a function that, given a RigidBody, returns the number of base pairs
 # Takes a list of pairs of indices, representing paired nucleotides
@@ -55,9 +64,12 @@ def plot_cv():
     c_intended = cv(1.27*SIGMA)
     print(f"c(d) at d = 1.27*SIGMA: {c_intended}")
 
-    ds = onp.linspace(-3*SIGMA, 3*SIGMA, 20)
+    # ds = onp.linspace(-3*SIGMA, 3*SIGMA, 20)
+    ds = onp.linspace(-1, 4, 100)
     cvs = cv(ds)
-    plt.axvline(1.27*SIGMA)
+    # plt.axvline(1.27*SIGMA)
+    plt.axvline(1.27)
+    plt.axvline(0.4)
     plt.plot(ds, cvs)
     plt.show()
 
@@ -169,7 +181,7 @@ if __name__ == "__main__":
         [7, 8]
     ])
 
-    n_bp_fn = get_n_bp_fn2(bps, displacement_fn)
+    n_bp_fn = get_n_bp_fn_custom(bps, displacement_fn)
     n_bp = n_bp_fn(body)
     print(f"# Base Pairs: {n_bp}")
 
