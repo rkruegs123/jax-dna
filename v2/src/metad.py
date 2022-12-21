@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as onp
 import pickle
 import time
+import argparse
 
 from jax.config import config; config.update("jax_enable_x64", True)
 import jax.numpy as jnp
@@ -84,19 +85,41 @@ def plot_2d(repulsive_wall_fn, heights, centers, widths,
 
 f64 = util.f64
 
-def run_single_metad(top_path, conf_path, cv1_bps, cv2_bps,
-                     n_steps, stride, n_gaussians, key,
-                     height_0, width_cv1, width_cv2,
-                     d_critical, wall_strength,
-                     T=DEFAULT_TEMP, dt=5e-3, save_every=10, plot_every=None,
-                     output_basedir="v2/data/output/", save_output=False):
+def run_single_metad(args, cv1_bps, cv2_bps, key,
+                     output_basedir="v2/data/output/"):
+
+    top_path = args['top_path']
+    conf_path = args['conf_path']
+
+    n_steps = args['n_steps']
+    stride = args['stride']
+    n_gaussians = n_steps // stride
+
+    T = args['temp']
+    dt = args['dt']
+
+    height_0 = args['init_height']
+    width_cv1 = args['width_cv1']
+    width_cv2 = args['width_cv2']
+    cv1_method = args['cv1_method']
+
+    d_critical = args['d_critical']
+    wall_strength = args['wall_strength']
+
+    save_every = args['save_every']
+    save_output = args['save_output']
+    plot_every = args['plot_every']
+    if plot_every < 0:
+        plot_every = None
+
+    well_tempered = args['well_tempered']
+    delta_T = args['delta_T']
 
     if not Path(top_path).exists():
         raise RuntimeError(f"Topology file does not exist at location: {top_path}")
 
     if not Path(conf_path).exists():
         raise RuntimeError(f"Configuration file does not exist at location: {conf_path}")
-
 
     if save_output:
         output_basedir = Path(output_basedir)
@@ -108,10 +131,11 @@ def run_single_metad(top_path, conf_path, cv1_bps, cv2_bps,
         run_dir.mkdir(parents=False, exist_ok=False)
         shutil.copy(top_path, run_dir)
         shutil.copy(conf_path, run_dir)
-        params_str = f"topology file: {top_path}\nconfiguration file: {conf_path}\n"
-        params_str += f"n_steps: {n_steps}\nkey: {key}\ntemperature: {T}\ndt: {dt}\nsave_every: {save_every}\n"
-        params_str += f"height_0: {height_0}\nwidth_cv1: {width_cv1}\nwidth_cv2: {width_cv2}\n"
-        params_str += f"d_critical: {d_critical}\nwall_strength: {wall_strength}"
+
+        params_str = ""
+        for k, v in args.items():
+            params_str += f"{k}: {v}\n"
+
         with open(run_dir / "params.txt", "w+") as f:
             f.write(params_str)
         print(bcolors.WARNING + f"Created directory and copied simulation information at location: {run_dir}" + bcolors.ENDC)
@@ -151,10 +175,12 @@ def run_single_metad(top_path, conf_path, cv1_bps, cv2_bps,
     """
 
 
-    height_fn = md_utils.get_height_fn(height_0, well_tempered=False)
+    height_fn = md_utils.get_height_fn(height_0, well_tempered=well_tempered,
+                                       kt=kT, delta_T=delta_T)
+    # height_fn = md_utils.get_height_fn(height_0, well_tempered=False)
     # height_fn = md_utils.get_height_fn(height_0, well_tempered=True, kt=kT, delta_T=20.0)
     # n_bp_fn = cv.get_n_bp_fn_original(cv1_bps, displacement_fn) # cv1
-    n_bp_fn = cv.get_n_bp_fn_custom(cv1_bps, displacement_fn)
+    n_bp_fn = cv.get_n_bp_fn_custom(cv1_bps, displacement_fn, cv1_method)
 
     str0_3p_idx = cv1_bps[:, 0][0] # may have mixed up 3p and 5p but it doesn't matter
     str0_5p_idx = cv1_bps[:, 0][-1]
@@ -203,7 +229,7 @@ def run_single_metad(top_path, conf_path, cv1_bps, cv2_bps,
     subterms = [compute_subterms(state.position)]
     print(bcolors.OKBLUE + f"Starting simulation..." + bcolors.ENDC)
 
-
+    """
     def update_heights(i, heights, iter_bias):
         num_gauss = i // stride
         heights = heights.at[num_gauss].set(height_fn(iter_bias))
@@ -247,8 +273,9 @@ def run_single_metad(top_path, conf_path, cv1_bps, cv2_bps,
     # Subtle: full_trajectory is a stacked RigidBody
     trajectory = [RigidBody(full_trajectory.center[i], full_trajectory.orientation[i]) for i in range(0, n_steps, save_every)]
     # trajectory = full_trajectory[::save_every] # trajectory to save
-
     """
+
+    start = time.time()
     for i in tqdm(range(n_steps), colour="blue"):
         state = step_fn(state, heights=heights, centers=centers, widths=widths)
 
@@ -284,9 +311,12 @@ def run_single_metad(top_path, conf_path, cv1_bps, cv2_bps,
 
             plot_2d(repulsive_wall_fn, heights, centers, widths,
                     show_fig=True, save_fig=False, fpath=None)
-    """
 
+    end = time.time()
+    sim_time = onp.round(end - start, 2)
+    print(f"Simulation took: {sim_time} seconds")
 
+    start = time.time()
     final_traj = TrajectoryInfo(top_info, states=trajectory, box_size=config_info.box_size)
     if save_output:
         print(bcolors.OKBLUE + f"Writing trajectory to file..." + bcolors.ENDC)
@@ -312,20 +342,65 @@ def run_single_metad(top_path, conf_path, cv1_bps, cv2_bps,
         #         show_fig=False, save_fig=True, fpath=run_dir / "metapotential.png")
 
     end = time.time()
-    print(f"Analysis took: {onp.round(end - start, 2)} seconds")
-    pdb.set_trace()
+    analysis_time = onp.round(end - start, 2)
+    print(f"Analysis took: {analysis_time} seconds")
+
+    times_str = f"Simulation: {sim_time} seconds\nAnalysis: {analysis_time} seconds\n"
+    with open(run_dir / "times.txt", "w+") as f:
+        f.write(times_str)
+
     return final_traj, energies
 
+
+def build_argparse():
+    parser = argparse.ArgumentParser(description="Metadynamics simulation for an 8bp helix")
+    parser.add_argument('--s', dest="stride", type=int, default=500, help="Stride for MetaD")
+    parser.add_argument('--n-steps', type=int, default=1e7, help="Num. of steps for MetaD")
+    parser.add_argument('--init-height', type=float, default=0.25, help="Height of gaussian deposited")
+    parser.add_argument('--width-cv1', type=float, default=0.20, help="Width of Gaussian @ # of bps")
+    parser.add_argument('--width-cv2', type=float, default=0.05, help="Width of Gaussian @ interstrand distance")
+    parser.add_argument('--d-critical', type=float, default=15.0, help="Where to put the wall for interstrand distance")
+    parser.add_argument('--wall-strength', type=float, default=1000.0, help="Strength of the wall for interstrand distance")
+    parser.add_argument('--dt', type=float, default=5e-3, help="Time step for integration")
+    parser.add_argument('--temp', type=float, default=DEFAULT_TEMP, help="Temperature for simulation (K)")
+
+    parser.add_argument('-t', '--top-path', type=str,
+                        default="data/simple-helix/generated.top",
+                        help='Path to topology file')
+    parser.add_argument('-c', '--conf-path', type=str,
+                        default="data/simple-helix/start.conf", # could also be unbound.conf
+                        help='Path to input configuration')
+
+    parser.add_argument('--save-every', type=int, default=int(1e4), help="Interval for saving trajectory")
+    parser.add_argument('--plot-every', type=int, default=-1, help="Interval for plotting. -1 means no plotting.")
+    parser.add_argument("--save-output", default=True, action="store_false",
+                        help="Whether or not to save output")
+
+    parser.add_argument("--well-tempered", default=False, action="store_true",
+                        help="Whether or not to use well-tempered MetaD")
+    parser.add_argument('--delta-T', type=float, default=20.0,
+                        help="Hyperparameter for well-tempered MetaD")
+
+    parser.add_argument('--cv1-method', type=str,
+                        default="sigmoid", # could also be unbound.conf
+                        choices=["sigmoid", "review"],
+                        help='The method for computing the distance between base sites')
+
+    return parser
+
 if __name__ == "__main__":
-    top_path = "data/simple-helix/generated.top"
-    conf_path = "data/simple-helix/start.conf"
+    parser = build_argparse()
+    args = vars(parser.parse_args())
+
+    # top_path = "data/simple-helix/generated.top"
+    # conf_path = "data/simple-helix/start.conf"
     # conf_path = "data/simple-helix/unbound.conf"
     key = random.PRNGKey(0)
 
-    n_steps = int(1e3)
+    # n_steps = int(1e3)
     # stride = 100
-    stride = 250
-    n_gaussians = n_steps // stride
+    # stride = 250
+    # n_gaussians = n_steps // stride
 
     cv1_bps = jnp.array([
         [0, 15],
@@ -351,21 +426,14 @@ if __name__ == "__main__":
 
     # height_0 = 1.0
     # height_0 = 0.05 # from chicago group
-    height_0 = 0.25
+    # height_0 = 0.25
     # width_0 = 0.25
     # width_cv1 = 0.035 # radians
-    width_cv1 = 0.2
+    # width_cv1 = 0.2
     # width_cv2 = 0.03 # interstrand distance
-    width_cv2 = 0.05 # interstrand distance
+    # width_cv2 = 0.05 # interstrand distance
 
-    d_critical = 15.0
-    wall_strength = 1000
+    # d_critical = 15.0
+    # wall_strength = 1000
 
-    run_single_metad(top_path, conf_path, cv1_bps, cv2_bps,
-                     n_steps, stride, n_gaussians, key,
-                     height_0, width_cv1, width_cv2,
-                     d_critical, wall_strength,
-                     save_every=10, save_output=True,
-                     # plot_every=10000,
-                     dt=5e-3
-    )
+    run_single_metad(args, cv1_bps, cv2_bps, key)
