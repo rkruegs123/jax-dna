@@ -355,7 +355,7 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
 def build_argparse():
     parser = argparse.ArgumentParser(description="Metadynamics simulation for an 8bp helix")
     parser.add_argument('--s', dest="stride", type=int, default=500, help="Stride for MetaD")
-    parser.add_argument('--n-steps', type=int, default=1e7, help="Num. of steps for MetaD")
+    parser.add_argument('--n-steps', type=int, default=1000000, help="Num. of steps for MetaD")
     parser.add_argument('--init-height', type=float, default=0.25, help="Height of gaussian deposited")
     parser.add_argument('--width-cv1', type=float, default=0.20, help="Width of Gaussian @ # of bps")
     parser.add_argument('--width-cv2', type=float, default=0.05, help="Width of Gaussian @ interstrand distance")
@@ -371,7 +371,7 @@ def build_argparse():
                         default="data/simple-helix/start.conf", # could also be unbound.conf
                         help='Path to input configuration')
 
-    parser.add_argument('--save-every', type=int, default=int(1e4), help="Interval for saving trajectory")
+    parser.add_argument('--save-every', type=int, default=10000, help="Interval for saving trajectory")
     parser.add_argument('--plot-every', type=int, default=-1, help="Interval for plotting. -1 means no plotting.")
     parser.add_argument("--save-output", default=True, action="store_false",
                         help="Whether or not to save output")

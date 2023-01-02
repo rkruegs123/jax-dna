@@ -54,6 +54,7 @@ def get_height_fn(height_0, well_tempered=False, delta_T=1.0, kt=None):
 
         def height_fn(curr_bias):
             return height_0 * jnp.exp(-curr_bias / (kt*delta_T))
+            # return jnp.exp(-curr_bias / (kt*delta_T))
         return height_fn
 
     else:
