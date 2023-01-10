@@ -101,6 +101,7 @@ if __name__ == "__main__":
 
     pdb.set_trace()
 
+    """
     averaging_fn = get_averaging_fn2(repulsive_wall_fn, heights, centers, widths)
     t_max = heights.shape[0] - 100000
     t_fill = t_max - 50000
@@ -112,6 +113,7 @@ if __name__ == "__main__":
     # b_cv1_cv2 = 1/(ts.shape[0]) * onp.sum(cv1_cv2_bs)
 
     pdb.set_trace()
+    """
 
 
     n_bp_lo = -1
@@ -149,6 +151,34 @@ if __name__ == "__main__":
     r_a = a.max()
     l_b = b.min()
     r_b = b.max()
+
+
+
+    pdb.set_trace()
+    # project onto number of base pairs
+    max_dist = 10.0
+    d_distance = (distances_hi - distances_lo) / (num_distances_samples-1)
+    d_n_bp = (n_bp_hi - n_bp_lo) / (num_n_bp_samples-1)
+    wall_idx = int(jnp.ceil((max_dist - distances_lo) / d_distance))
+    vals_for_getting_bp_probs = vals[:wall_idx, :]
+    n_bp_dgs = jnp.trapz(
+        vals_for_getting_bp_probs,
+        dx=d_distance,
+        # dx=1.0,
+        axis=0
+    )
+    kt = 0.1
+    beta = 1/kt
+    # n_bp_probs = jnp.exp(beta*n_bp_dgs)
+    # plt.plot(n_bp_probs)
+    plt.plot(n_bp_dgs)
+    plt.xticks(list(range(len(sample_n_bps)))[::10], list(onp.round(sample_n_bps, 2))[::10])
+    plt.ylabel("bias potential")
+    plt.xlabel("# bp")
+    plt.show()
+
+    pdb.set_trace()
+
 
 
     bound_threshold = 0.05

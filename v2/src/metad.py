@@ -52,10 +52,12 @@ def plot_1d(heights, centers, widths,
 
 def plot_2d(repulsive_wall_fn, heights, centers, widths,
             show_fig=True, save_fig=False, fpath=None):
-    sample_n_bps = onp.linspace(-1, 8, 100)
+    # sample_n_bps = onp.linspace(-1, 8, 100)
+    sample_thetas = onp.linspace(0, 3.14, 100)
     # sample_distances = onp.linspace(0, 3, 30)
     sample_distances = onp.linspace(0, 13, 200)
-    b, a = onp.meshgrid(sample_n_bps, sample_distances)
+    # b, a = onp.meshgrid(sample_n_bps, sample_distances)
+    b, a = onp.meshgrid(sample_thetas, sample_distances)
     vals = onp.empty((b.shape))
     for i in range(b.shape[0]):
         for j in range(b.shape[1]):
@@ -72,7 +74,8 @@ def plot_2d(repulsive_wall_fn, heights, centers, widths,
     axes.axis([l_a, r_a, l_b, r_b])
     figure.colorbar(c)
     plt.xlabel("Interstrand Distance")
-    plt.ylabel("# Base Pairs")
+    # plt.ylabel("# Base Pairs")
+    plt.ylabel("Theta")
     if show_fig:
         plt.show()
     if save_fig:
@@ -209,8 +212,8 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
 
     # md_energy_fn = md_energy.factory(base_energy_fn, n_bp_fn)
     md_energy_fn = md_energy.factory_2d(base_energy_fn,
-                                        n_bp_fn, interstrand_dist_fn,
-                                        # theta_fn, interstrand_dist_fn,
+                                        # n_bp_fn, interstrand_dist_fn,
+                                        theta_fn, interstrand_dist_fn,
                                         repulsive_wall_fn)
     md_energy_fn = jit(md_energy_fn)
 
@@ -229,51 +232,6 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
     subterms = [compute_subterms(state.position)]
     print(bcolors.OKBLUE + f"Starting simulation..." + bcolors.ENDC)
 
-    """
-    def update_heights(i, heights, iter_bias):
-        num_gauss = i // stride
-        heights = heights.at[num_gauss].set(height_fn(iter_bias))
-        return heights
-    update_heights = jit(update_heights)
-
-    def update_centers(i, centers, iter_cv1, iter_cv2):
-        num_gauss = i // stride
-        centers = centers.at[num_gauss, 0].set(iter_cv1)
-        centers = centers.at[num_gauss, 1].set(iter_cv2)
-        return centers
-    update_centers = jit(update_centers)
-
-    def scan_fn(carry, i):
-        state, heights, centers, widths = carry
-        state = step_fn(state, heights=heights, centers=centers, widths=widths)
-
-        iter_cv1 = n_bp_fn(state.position)
-        # iter_cv1 = theta_fn(state.position)
-        iter_cv2 = interstrand_dist_fn(state.position)
-        iter_bias = repulsive_wall_fn(heights, centers, widths, iter_cv1, iter_cv2)
-
-        new_heights = jnp.where(i % stride == 0,
-                                update_heights(i, heights, iter_bias),
-                                heights)
-
-        new_centers = jnp.where(i % stride == 0,
-                                update_centers(i, centers, iter_cv1, iter_cv2),
-                                centers)
-
-        return (state, new_heights, new_centers, widths), state.position
-    scan_fn = jit(scan_fn)
-
-    start = time.time()
-    (final_state, heights, centers, widths), full_trajectory = jax.lax.scan(scan_fn, (state, heights, centers, widths), jnp.arange(n_steps))
-    end = time.time()
-
-    print(f"Simulation took: {onp.round(end - start, 2)} seconds")
-
-    start = time.time()
-    # Subtle: full_trajectory is a stacked RigidBody
-    trajectory = [RigidBody(full_trajectory.center[i], full_trajectory.orientation[i]) for i in range(0, n_steps, save_every)]
-    # trajectory = full_trajectory[::save_every] # trajectory to save
-    """
 
     start = time.time()
     for i in tqdm(range(n_steps), colour="blue"):
@@ -289,8 +247,8 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
             # heights = heights.at[num_gauss].set(height_fn(iter_bias))
             # centers = centers.at[num_gauss].set(iter_cv)
 
-            iter_cv1 = n_bp_fn(state.position)
-            # iter_cv1 = theta_fn(state.position)
+            # iter_cv1 = n_bp_fn(state.position)
+            iter_cv1 = theta_fn(state.position)
             iter_cv2 = interstrand_dist_fn(state.position)
             iter_bias = repulsive_wall_fn(heights, centers, widths, iter_cv1, iter_cv2)
             num_gauss = i // stride
