@@ -55,7 +55,11 @@ if __name__ == "__main__":
     # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2022-12-16_21-41-38")
     # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2022-12-18_01-31-31")
     # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2022-12-20_06-31-49")
-    bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2022-12-21_01-27-02")
+    
+    # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2022-12-21_01-27-02")
+    bpath = Path("/n/brenner_lab/User/rkrueger/metad_2022-12-21_01-27-02")
+
+
     centers = pickle.load(open(bpath / "centers.pkl", "rb"))
     widths = pickle.load(open(bpath / "widths.pkl", "rb"))
     heights = pickle.load(open(bpath / "heights.pkl", "rb"))
@@ -98,9 +102,9 @@ if __name__ == "__main__":
     pdb.set_trace()
 
     averaging_fn = get_averaging_fn2(repulsive_wall_fn, heights, centers, widths)
-    t_max = heights.shape[0]
-    t_fill = t_max - 10000
-    stride = 2
+    t_max = heights.shape[0] - 100000
+    t_fill = t_max - 50000
+    stride = 10
     ts = onp.arange(t_fill, t_max, stride)
     cv1_cv2_bs = averaging_fn(jnp.array(ts), 3.0, 2.0)
     b_cv1_cv2 = onp.mean(cv1_cv2_bs)
@@ -137,7 +141,10 @@ if __name__ == "__main__":
     vals = onp.empty((b.shape))
     for i in tqdm(range(b.shape[0])):
         for j in range(b.shape[1]):
-            vals[i, j] = repulsive_wall_fn(heights, centers, widths, b[i, j], a[i, j]) # FIXME: maybe swap a and b?
+            cv1_cv2_bs = averaging_fn(jnp.array(ts), b[i, j], a[i, j])
+            ij_val = onp.mean(cv1_cv2_bs)
+            # ij_val = repulsive_wall_fn(heights, centers, widths, b[i, j], a[i, j]) # FIXME: maybe swap a and b?
+            vals[i, j] = ij_val
     l_a = a.min()
     r_a = a.max()
     l_b = b.min()
@@ -197,7 +204,8 @@ if __name__ == "__main__":
 
     plt.plot(corrected_unbound_free_energies_at_distance)
     plt.xticks(list(range(len(sample_distances)))[::40], list(onp.round(sample_distances, 2))[::40])
-    plt.show()
+    pdb.set_trace()
+    # plt.show()
 
     # convert this back to probabilities
     corrected_unbound_probs_at_distance = jnp.exp(-beta*corrected_unbound_free_energies_at_distance)
@@ -223,7 +231,7 @@ if __name__ == "__main__":
 
 
 
-
+    """
     pdb.set_trace()
 
     # l_val, r_val = onp.abs(vals).min(), onp.abs(vals).max()
@@ -239,8 +247,7 @@ if __name__ == "__main__":
 
     plt.show()
 
-
-
     pdb.set_trace()
+    """
 
     print("done")

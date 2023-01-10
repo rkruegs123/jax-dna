@@ -53,8 +53,9 @@ def get_height_fn(height_0, well_tempered=False, delta_T=1.0, kt=None):
             raise RuntimeError(f"Value of kT required for well-tempered metadynamics")
 
         def height_fn(curr_bias):
-            return height_0 * jnp.exp(-curr_bias / (kt*delta_T))
+            # return height_0 * jnp.exp(-curr_bias / (kt*delta_T))
             # return jnp.exp(-curr_bias / (kt*delta_T))
+            return jnp.exp(-curr_bias / (delta_T))
         return height_fn
 
     else:
