@@ -374,14 +374,14 @@ if __name__ == "__main__":
     ])
 
     cv2_bps = jnp.array([
-        # [0, 15],
+        [0, 15],
         [1, 14],
         [2, 13],
         [3, 12],
         [4, 11],
         [5, 10],
         [6, 9],
-        # [7, 8]
+        [7, 8]
     ])
 
     # height_0 = 1.0
@@ -396,22 +396,7 @@ if __name__ == "__main__":
     # d_critical = 15.0
     # wall_strength = 1000
 
-    # run_single_metad(args, cv1_bps, cv2_bps, key)
+    run_single_metad(args, cv1_bps, cv2_bps, key)
 
 
-    bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2023-01-10_02-40-11")
-
-    centers = pickle.load(open(bpath / "centers.pkl", "rb"))
-    heights = jnp.full(centers.shape[0], 0.05, dtype=f64)
-    # heights = pickle.load(open(bpath / "heights.pkl", "rb"))
-    # widths = pickle.load(open(bpath / "widths.pkl", "rb"))
-    widths = jnp.full((centers.shape[0], 2), jnp.array([0.035, 0.05]), dtype=f64)
-
-
-    pdb.set_trace()
-
-
-    repulsive_wall_fn = md_utils.get_repulsive_wall_fn(d_critical=15.0, wall_strength=1000.0)
-    repulsive_wall_fn = jit(repulsive_wall_fn)
-
-    plot_2d(repulsive_wall_fn, heights, centers, widths)
+ 

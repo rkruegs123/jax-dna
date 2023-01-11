@@ -98,7 +98,7 @@ def get_interstrand_dist_fn(bps, displacement_fn):
     return interstrand_dist_fn
 
 
-def get_min_dist_fn(bps, displacement_fn, k=40):
+def get_min_dist_fn(bps, displacement_fn, k=100):
     from utils import smooth_min
 
     d = space.map_bond(partial(displacement_fn))
@@ -113,8 +113,8 @@ def get_min_dist_fn(bps, displacement_fn, k=40):
         back_base_vectors = Q_to_back_base(Q)
         base_sites = body.center + com_to_hb * back_base_vectors
         dr_base = d(base_sites[bp_i], base_sites[bp_j])
-        r_back = jnp.linalg.norm(dr_back, axis=1)
-        cv = smooth_min(r_back, k=k)
+        r_base = jnp.linalg.norm(dr_base, axis=1)
+        cv = smooth_min(r_base, k=k)
         return cv
 
     return min_dist_fn
