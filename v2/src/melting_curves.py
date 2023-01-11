@@ -55,9 +55,10 @@ if __name__ == "__main__":
     # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2022-12-16_21-41-38")
     # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2022-12-18_01-31-31")
     # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2022-12-20_06-31-49")
-    
+
     # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2022-12-21_01-27-02")
     bpath = Path("/n/brenner_lab/User/rkrueger/metad_2022-12-21_01-27-02")
+    # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2023-01-10_02-40-11")
 
 
     centers = pickle.load(open(bpath / "centers.pkl", "rb"))

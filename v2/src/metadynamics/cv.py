@@ -98,6 +98,28 @@ def get_interstrand_dist_fn(bps, displacement_fn):
     return interstrand_dist_fn
 
 
+def get_min_dist_fn(bps, displacement_fn, k=40):
+    from utils import smooth_min
+
+    d = space.map_bond(partial(displacement_fn))
+
+    bp_i = bps[:, 0]
+    bp_j = bps[:, 1]
+
+    n = bps.shape[0]
+
+    def min_dist_fn(body):
+        Q = body.orientation
+        back_base_vectors = Q_to_back_base(Q)
+        base_sites = body.center + com_to_hb * back_base_vectors
+        dr_base = d(base_sites[bp_i], base_sites[bp_j])
+        r_back = jnp.linalg.norm(dr_back, axis=1)
+        cv = smooth_min(r_back, k=k)
+        return cv
+
+    return min_dist_fn
+
+
 def get_theta_fn(a_3p_idx, a_5p_idx, b_3p_idx, b_5p_idx):
     def theta_fn(body):
         a_vec = body.center[a_3p_idx] - body.center[a_5p_idx]

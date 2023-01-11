@@ -50,14 +50,14 @@ def plot_1d(heights, centers, widths,
     plt.clf()
 
 
-def plot_2d(repulsive_wall_fn, heights, centers, widths,
+def plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
             show_fig=True, save_fig=False, fpath=None):
-    # sample_n_bps = onp.linspace(-1, 8, 100)
-    sample_thetas = onp.linspace(0, 3.14, 100)
+    sample_n_bps = onp.linspace(-1, 8, 100)
+    # sample_thetas = onp.linspace(0, 3.14, 100)
     # sample_distances = onp.linspace(0, 3, 30)
-    sample_distances = onp.linspace(0, 13, 200)
-    # b, a = onp.meshgrid(sample_n_bps, sample_distances)
-    b, a = onp.meshgrid(sample_thetas, sample_distances)
+    sample_distances = onp.linspace(0, d_critical - 2, 200)
+    b, a = onp.meshgrid(sample_n_bps, sample_distances)
+    # b, a = onp.meshgrid(sample_thetas, sample_distances)
     vals = onp.empty((b.shape))
     for i in range(b.shape[0]):
         for j in range(b.shape[1]):
@@ -192,7 +192,9 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
     theta_fn = cv.get_theta_fn(str0_3p_idx, str0_5p_idx, str1_3p_idx, str1_5p_idx)
     theta_fn = jit(theta_fn)
 
-    interstrand_dist_fn = cv.get_interstrand_dist_fn(cv2_bps, displacement_fn)
+    # interstrand_dist_fn = cv.get_interstrand_dist_fn(cv2_bps, displacement_fn)
+    # interstrand_dist_fn = jit(interstrand_dist_fn)
+    interstrand_dist_fn = cv.get_min_dist_fn(cv2_bps, displacement_fn)
     interstrand_dist_fn = jit(interstrand_dist_fn)
     repulsive_wall_fn = md_utils.get_repulsive_wall_fn(d_critical, wall_strength)
     repulsive_wall_fn = jit(repulsive_wall_fn)
@@ -212,8 +214,8 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
 
     # md_energy_fn = md_energy.factory(base_energy_fn, n_bp_fn)
     md_energy_fn = md_energy.factory_2d(base_energy_fn,
-                                        # n_bp_fn, interstrand_dist_fn,
-                                        theta_fn, interstrand_dist_fn,
+                                        n_bp_fn, interstrand_dist_fn,
+                                        # theta_fn, interstrand_dist_fn,
                                         repulsive_wall_fn)
     md_energy_fn = jit(md_energy_fn)
 
@@ -247,8 +249,8 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
             # heights = heights.at[num_gauss].set(height_fn(iter_bias))
             # centers = centers.at[num_gauss].set(iter_cv)
 
-            # iter_cv1 = n_bp_fn(state.position)
-            iter_cv1 = theta_fn(state.position)
+            iter_cv1 = n_bp_fn(state.position)
+            # iter_cv1 = theta_fn(state.position)
             iter_cv2 = interstrand_dist_fn(state.position)
             iter_bias = repulsive_wall_fn(heights, centers, widths, iter_cv1, iter_cv2)
             num_gauss = i // stride
@@ -267,7 +269,7 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
             # Plot the metapotential
             # plot_1d(heights, centers, widths)
 
-            plot_2d(repulsive_wall_fn, heights, centers, widths,
+            plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
                     show_fig=True, save_fig=False, fpath=None)
 
     end = time.time()
@@ -394,4 +396,22 @@ if __name__ == "__main__":
     # d_critical = 15.0
     # wall_strength = 1000
 
-    run_single_metad(args, cv1_bps, cv2_bps, key)
+    # run_single_metad(args, cv1_bps, cv2_bps, key)
+
+
+    bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2023-01-10_02-40-11")
+
+    centers = pickle.load(open(bpath / "centers.pkl", "rb"))
+    heights = jnp.full(centers.shape[0], 0.05, dtype=f64)
+    # heights = pickle.load(open(bpath / "heights.pkl", "rb"))
+    # widths = pickle.load(open(bpath / "widths.pkl", "rb"))
+    widths = jnp.full((centers.shape[0], 2), jnp.array([0.035, 0.05]), dtype=f64)
+
+
+    pdb.set_trace()
+
+
+    repulsive_wall_fn = md_utils.get_repulsive_wall_fn(d_critical=15.0, wall_strength=1000.0)
+    repulsive_wall_fn = jit(repulsive_wall_fn)
+
+    plot_2d(repulsive_wall_fn, heights, centers, widths)

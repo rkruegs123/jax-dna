@@ -164,6 +164,11 @@ def q_to_cross_prod(q):
     ])
 Q_to_cross_prod = vmap(q_to_cross_prod)
 
+def smooth_max(xs, k=1):
+    return jnp.log(jnp.sum(jnp.exp(k*xs))) / k
+# min(x, y) = -max(-x, -y)
+def smooth_min(xs, k=1):
+    return -smooth_max(-xs, k)
 
 class bcolors:
     HEADER = '\033[95m'
