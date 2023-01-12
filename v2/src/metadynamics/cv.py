@@ -1,5 +1,6 @@
 import pdb
 from functools import partial
+from pathlib import Path
 import sys
 sys.path.insert(0, 'src/')
 
@@ -147,8 +148,8 @@ def get_n_bp_fn_custom(bps, displacement_fn, method):
     gauss_fn = lambda x: height * jnp.exp(-(x-center)**2/(2*width**2)) # FIXME: should really just use partial(gaussian) correctly
     gauss_fn = vmap(gauss_fn)
 
-    assert(method in ["sigmoid", "review"])
-    cv_fn = cv_sigmoid if method == "sigmoid" else cv_review
+    assert(method in ["nbp-sigmoid", "nbp-review"])
+    cv_fn = cv_sigmoid if method == "nbp-sigmoid" else cv_review
 
     def get_n_bp(body):
         Q = body.orientation
@@ -180,9 +181,9 @@ def get_q_fn(reference_body, bps, displacement_fn, lam, gamma, threshold):
     ref_base_sites = reference_body.center + com_to_hb * ref_back_base_vectors
 
     ref_dr_base = d(ref_base_sites[bp_i], ref_base_sites[bp_j])
-    ref_r_base = jnp.linalg.norm(ref_dr_base, axis=1)
+    ref_r_base = jnp.linalg.norm(ref_dr_base, axis=2).flatten()
 
-    mask = jnp.where(ref_r_base < threshold)
+    mask = jnp.where(ref_r_base < threshold, 1, 0)
     n_nb = jnp.sum(mask)
 
     # NOTE/FIXME: we are currently not masking out only those native contacts given some threshold. Should just have a mask for this.
@@ -193,9 +194,9 @@ def get_q_fn(reference_body, bps, displacement_fn, lam, gamma, threshold):
         base_sites = body.center + com_to_hb * back_base_vectors
 
         dr_base = d(base_sites[bp_i], base_sites[bp_j])
-        r_base = jnp.linalg.norm(dr_base, axis=1)
+        r_base = jnp.linalg.norm(dr_base, axis=2).flatten()
 
-        # FIXME: expression between ref_r_base and r_base
+        # expression between ref_r_base and r_base
         diffs = r_base - lam*ref_r_base
         exps = jnp.exp(gamma * diffs)
         terms = 1 / (1 + exps)
@@ -207,27 +208,27 @@ def get_q_fn(reference_body, bps, displacement_fn, lam, gamma, threshold):
 
 # FIXME: can test by simulating a helix with unbound frays and passing various states in here
 if __name__ == "__main__":
-    plot_cv()
+    # plot_cv()
 
-    pdb.set_trace()
+    # pdb.set_trace()
 
-
-    # import sys
-    # sys.path.append('src/')
     from loader.trajectory import TrajectoryInfo
     from loader.topology import TopologyInfo
 
-    top_path = "data/test-data/simple-helix/generated.top"
-    conf_path = "data/test-data/simple-helix/start.conf"
-    traj_path = "data/test-data/simple-helix/output.dat"
+    ref_bpath = Path("data/test-data/simple-helix/")
+    ref_top_path = ref_bpath / "generated.top"
+    ref_conf_path = ref_bpath / "start.conf"
+    ref_top_info = TopologyInfo(ref_top_path, reverse_direction=True)
+    ref_config_info = TrajectoryInfo(ref_top_info, traj_path=ref_conf_path, reverse_direction=True)
+    ref_body = ref_config_info.states[0]
 
-    # top_path = "../../tmp-oxdna/metad_2022-12-16_21-41-38/generated.top"
-    # conf_path = "../../tmp-oxdna/metad_2022-12-16_21-41-38/start.conf"
-    # traj_path = "../../tmp-oxdna/metad_2022-12-16_21-41-38/output.dat"
+    # bpath = Path("data/test-data/simple-helix/")
+    bpath = Path("../../tmp-oxdna/metad_2022-12-16_21-41-38")
+    # bpath = Path("data/test-data/unbound-strands-overlap/")
 
-    # top_path = "data/test-data/unbound-strands-overlap/generated.top"
-    # conf_path = "data/test-data/unbound-strands-overlap/start.conf"
-    # traj_path = "data/test-data/unbound-strands-overlap/output.dat"
+    top_path = bpath / "generated.top"
+    conf_path = bpath / "start.conf"
+    traj_path = bpath / "output.dat"
 
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
@@ -235,7 +236,7 @@ if __name__ == "__main__":
 
     # body = config_info.states[0]
     # body = traj_info.states[-1]
-    body = traj_info.states[2]
+    body = traj_info.states[100]
 
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
     bps = jnp.array([
@@ -249,13 +250,19 @@ if __name__ == "__main__":
         [7, 8]
     ])
 
-    n_bp_fn = get_n_bp_fn_custom(bps, displacement_fn)
+    n_bp_fn = get_n_bp_fn_custom(bps, displacement_fn, method="nbp-sigmoid")
     n_bp = n_bp_fn(body)
     print(f"# Base Pairs: {n_bp}")
-
     pdb.set_trace()
+
     interstrand_dist_fn = get_interstrand_dist_fn(bps, displacement_fn)
     interstrand_dist = interstrand_dist_fn(body)
     print(f"Interstrand Distance: {interstrand_dist}")
+    pdb.set_trace()
 
+    q_fn = get_q_fn(ref_body, bps, displacement_fn,
+                    lam=1.5, gamma=60,
+                    threshold=0.5)
+    q = q_fn(body)
+    print(f"Ratio of Native Contacts: {q}")
     pdb.set_trace()

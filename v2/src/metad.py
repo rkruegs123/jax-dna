@@ -33,7 +33,7 @@ from utils import nucleotide_mass, get_kt, moment_of_inertia, get_one_hot, DEFAU
 from utils import base_site, stack_site, back_site
 
 
-
+f64 = util.f64
 
 def plot_1d(heights, centers, widths,
             show_fig=True, save_fig=False, fpath=None):
@@ -51,17 +51,28 @@ def plot_1d(heights, centers, widths,
 
 
 def plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
+            cv1_method, cv2_method,
             show_fig=True, save_fig=False, fpath=None):
-    sample_n_bps = onp.linspace(-1, 8, 100)
-    # sample_thetas = onp.linspace(0, 3.14, 100)
+
+    if show_fig and save_fig:
+        raise RuntimeError(f"Can only save or show fig.")
+
+    if cv1_method in ["nbp-sigmoid", "nbp-review"]:
+        sample_cv1s = onp.linspace(-1, 8, 100)
+        ylabel = "# Base Pairs"
+    elif cv1_method == "theta":
+      sample_cv1s = onp.linspace(0, 3.14, 100)
+      ylabel = "Theta"
+    else:
+        raise RuntimeError(f"Invalid CV1 method: {cv1_method}")
+
     # sample_distances = onp.linspace(0, 3, 30)
     sample_distances = onp.linspace(0, d_critical - 2, 200)
-    b, a = onp.meshgrid(sample_n_bps, sample_distances)
-    # b, a = onp.meshgrid(sample_thetas, sample_distances)
+    b, a = onp.meshgrid(sample_cv1s, sample_distances)
     vals = onp.empty((b.shape))
     for i in range(b.shape[0]):
         for j in range(b.shape[1]):
-            vals[i, j] = repulsive_wall_fn(heights, centers, widths, b[i, j], a[i, j]) # FIXME: maybe swap a and b?
+            vals[i, j] = repulsive_wall_fn(heights, centers, widths, b[i, j], a[i, j])
     l_a = a.min()
     r_a = a.max()
     l_b = b.min()
@@ -74,8 +85,7 @@ def plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
     axes.axis([l_a, r_a, l_b, r_b])
     figure.colorbar(c)
     plt.xlabel("Interstrand Distance")
-    plt.ylabel("# Base Pairs")
-    # plt.ylabel("Theta")
+    plt.ylabel(ylabel)
     if show_fig:
         plt.show()
     if save_fig:
@@ -85,8 +95,6 @@ def plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
     plt.clf()
 
 
-
-f64 = util.f64
 
 def run_single_metad(args, cv1_bps, cv2_bps, key,
                      output_basedir="v2/data/output/"):
@@ -105,6 +113,7 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
     width_cv1 = args['width_cv1']
     width_cv2 = args['width_cv2']
     cv1_method = args['cv1_method']
+    cv2_method = args['cv2_method']
 
     d_critical = args['d_critical']
     wall_strength = args['wall_strength']
@@ -117,6 +126,8 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
 
     well_tempered = args['well_tempered']
     delta_T = args['delta_T']
+
+    smooth_min_k = args['smooth_min_k']
 
     if not Path(top_path).exists():
         raise RuntimeError(f"Topology file does not exist at location: {top_path}")
@@ -180,27 +191,32 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
 
     height_fn = md_utils.get_height_fn(height_0, well_tempered=well_tempered,
                                        kt=kT, delta_T=delta_T)
-    # height_fn = md_utils.get_height_fn(height_0, well_tempered=False)
-    # height_fn = md_utils.get_height_fn(height_0, well_tempered=True, kt=kT, delta_T=20.0)
-    # n_bp_fn = cv.get_n_bp_fn_original(cv1_bps, displacement_fn) # cv1
-    n_bp_fn = cv.get_n_bp_fn_custom(cv1_bps, displacement_fn, cv1_method)
+    height_fn = jit(height_fn)
 
-    str0_3p_idx = cv1_bps[:, 0][0] # may have mixed up 3p and 5p but it doesn't matter
-    str0_5p_idx = cv1_bps[:, 0][-1]
-    str1_3p_idx = cv1_bps[:, 1][-1]
-    str1_5p_idx = cv1_bps[:, 1][0]
-    theta_fn = cv.get_theta_fn(str0_3p_idx, str0_5p_idx, str1_3p_idx, str1_5p_idx)
-    theta_fn = jit(theta_fn)
+    if cv1_method in ['nbp-review', 'nbp-sigmoid']:
+        cv1_fn = cv.get_n_bp_fn_custom(cv1_bps, displacement_fn, cv1_method)
+    elif cv1_method == "theta":
+        str0_3p_idx = cv1_bps[:, 0][0] # may have mixed up 3p and 5p but it doesn't matter
+        str0_5p_idx = cv1_bps[:, 0][-1]
+        str1_3p_idx = cv1_bps[:, 1][-1]
+        str1_5p_idx = cv1_bps[:, 1][0]
+        cv1_fn = cv.get_theta_fn(str0_3p_idx, str0_5p_idx, str1_3p_idx, str1_5p_idx)
+    else:
+        raise RuntimeError(f"Invalid CV1 method: {cv1_method}")
+    cv1_fn = jit(cv1_fn)
 
-    # interstrand_dist_fn = cv.get_interstrand_dist_fn(cv2_bps, displacement_fn)
-    # interstrand_dist_fn = jit(interstrand_dist_fn)
-    interstrand_dist_fn = cv.get_min_dist_fn(cv2_bps, displacement_fn)
-    interstrand_dist_fn = jit(interstrand_dist_fn)
+
+
+    if cv2_method == "com-dist":
+        cv2_fn = cv.get_interstrand_dist_fn(cv2_bps, displacement_fn)
+    elif cv2_method == "min-dist":
+        cv2_fn = cv.get_min_dist_fn(cv2_bps, displacement_fn, k=smooth_min_k)
+    else:
+        raise RuntimeError(f"Invalid CV2 method: {cv2_method}")
+    cv2_fn = jit(cv2_fn)
+
     repulsive_wall_fn = md_utils.get_repulsive_wall_fn(d_critical, wall_strength)
     repulsive_wall_fn = jit(repulsive_wall_fn)
-
-    height_fn = jit(height_fn)
-    n_bp_fn = jit(n_bp_fn)
 
 
     # Wrap the energy function
@@ -210,12 +226,11 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
         top_info.bonded_nbrs, top_info.unbonded_nbrs)
     compute_subterms = jit(Partial(compute_subterms, seq=seq, params=params))
     base_energy_fn = Partial(base_energy_fn, seq=seq, params=params)
-    # energy_fn = jit(Partial(energy_fn, seq=seq, params=params))
+    base_energy_fn = jit(base_energy_fn)
 
-    # md_energy_fn = md_energy.factory(base_energy_fn, n_bp_fn)
+    # md_energy_fn = md_energy.factory(base_energy_fn, cv1_fn)
     md_energy_fn = md_energy.factory_2d(base_energy_fn,
-                                        n_bp_fn, interstrand_dist_fn,
-                                        # theta_fn, interstrand_dist_fn,
+                                        cv1_fn, cv2_fn,
                                         repulsive_wall_fn)
     md_energy_fn = jit(md_energy_fn)
 
@@ -242,16 +257,15 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
         if i % stride == 0:
 
             # 1D case
-            # iter_cv = n_bp_fn(state.position)
+            # iter_cv = cv1_fn(state.position)
             # iter_bias = md_utils.sum_of_gaussians(heights, centers, widths, iter_cv)
             # num_gauss = i // stride
             # # widths = widths.at[num_guass].set(width_0)
             # heights = heights.at[num_gauss].set(height_fn(iter_bias))
             # centers = centers.at[num_gauss].set(iter_cv)
 
-            iter_cv1 = n_bp_fn(state.position)
-            # iter_cv1 = theta_fn(state.position)
-            iter_cv2 = interstrand_dist_fn(state.position)
+            iter_cv1 = cv1_fn(state.position)
+            iter_cv2 = cv2_fn(state.position)
             iter_bias = repulsive_wall_fn(heights, centers, widths, iter_cv1, iter_cv2)
             num_gauss = i // stride
             heights = heights.at[num_gauss].set(height_fn(iter_bias))
@@ -270,6 +284,7 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
             # plot_1d(heights, centers, widths)
 
             plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
+                    cv1_method, cv2_method,
                     show_fig=True, save_fig=False, fpath=None)
 
     end = time.time()
@@ -297,6 +312,7 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
         plt.clf()
 
         plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
+                cv1_method, cv2_method,
                 show_fig=False, save_fig=True, fpath=run_dir / "heatmap.png")
         # plot_1d(heights, centers, widths,
         #         show_fig=False, save_fig=True, fpath=run_dir / "metapotential.png")
@@ -316,8 +332,8 @@ def build_argparse():
     parser = argparse.ArgumentParser(description="Metadynamics simulation for an 8bp helix")
     parser.add_argument('--s', dest="stride", type=int, default=500, help="Stride for MetaD")
     parser.add_argument('--n-steps', type=int, default=1000000, help="Num. of steps for MetaD")
-    parser.add_argument('--init-height', type=float, default=0.25, help="Height of gaussian deposited")
-    parser.add_argument('--width-cv1', type=float, default=0.20, help="Width of Gaussian @ # of bps")
+    parser.add_argument('--init-height', type=float, default=0.25, help="Height of gaussian deposited") # note: de Pablo group used 0.05
+    parser.add_argument('--width-cv1', type=float, default=0.20, help="Width of Gaussian @ # of bps") # note: de Pablo used `width_cv1 = 0.035` for theta
     parser.add_argument('--width-cv2', type=float, default=0.05, help="Width of Gaussian @ interstrand distance")
     parser.add_argument('--d-critical', type=float, default=15.0, help="Where to put the wall for interstrand distance")
     parser.add_argument('--wall-strength', type=float, default=1000.0, help="Strength of the wall for interstrand distance")
@@ -328,7 +344,8 @@ def build_argparse():
                         default="data/simple-helix/generated.top",
                         help='Path to topology file')
     parser.add_argument('-c', '--conf-path', type=str,
-                        default="data/simple-helix/start.conf", # could also be unbound.conf
+                        default="data/simple-helix/start.conf",
+                        # default="data/simple-helix/unbound.conf", # unbound
                         help='Path to input configuration')
 
     parser.add_argument('--save-every', type=int, default=10000, help="Interval for saving trajectory")
@@ -340,11 +357,17 @@ def build_argparse():
                         help="Whether or not to use well-tempered MetaD")
     parser.add_argument('--delta-T', type=float, default=20.0,
                         help="Hyperparameter for well-tempered MetaD")
+    parser.add_argument('--smooth-min-k', type=float, default=100.0,
+                        help="K-value for our smooth minimum function")
 
     parser.add_argument('--cv1-method', type=str,
-                        default="sigmoid", # could also be unbound.conf
-                        choices=["sigmoid", "review"],
-                        help='The method for computing the distance between base sites')
+                        default="nbp-sigmoid",
+                        choices=["nbp-sigmoid", "nbp-review", "theta"],
+                        help='The first collective variable')
+    parser.add_argument('--cv2-method', type=str,
+                        default="com-dist",
+                        choices=["com-dist", "min-dist"],
+                        help="The second collective variable (a distance)")
 
     return parser
 
@@ -352,15 +375,7 @@ if __name__ == "__main__":
     parser = build_argparse()
     args = vars(parser.parse_args())
 
-    # top_path = "data/simple-helix/generated.top"
-    # conf_path = "data/simple-helix/start.conf"
-    # conf_path = "data/simple-helix/unbound.conf"
     key = random.PRNGKey(0)
-
-    # n_steps = int(1e3)
-    # stride = 100
-    # stride = 250
-    # n_gaussians = n_steps // stride
 
     cv1_bps = jnp.array([
         [0, 15],
@@ -384,23 +399,12 @@ if __name__ == "__main__":
         [7, 8]
     ])
 
-    # height_0 = 1.0
-    # height_0 = 0.05 # from chicago group
-    # height_0 = 0.25
-    # width_0 = 0.25
-    # width_cv1 = 0.035 # radians
-    # width_cv1 = 0.2
-    # width_cv2 = 0.03 # interstrand distance
-    # width_cv2 = 0.05 # interstrand distance
 
-    # d_critical = 15.0
-    # wall_strength = 1000
-
-    # run_single_metad(args, cv1_bps, cv2_bps, key)
+    run_single_metad(args, cv1_bps, cv2_bps, key)
 
 
+    """
     bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2023-01-11_01-02-24")
-
 
 
     d_critical = 4.0
@@ -424,6 +428,7 @@ if __name__ == "__main__":
 
     repulsive_wall_fn = md_utils.get_repulsive_wall_fn(d_critical=d_critical, wall_strength=1000.0)
     repulsive_wall_fn = jit(repulsive_wall_fn)
+    """
 
 
     """
@@ -436,7 +441,9 @@ if __name__ == "__main__":
         pickle.dump(heights, hf)
     """
 
+    """
     plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
             show_fig=False, save_fig=True, fpath=bpath / "heatmap.png")
 
     pdb.set_trace()
+    """
