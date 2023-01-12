@@ -57,12 +57,16 @@ def plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
     if show_fig and save_fig:
         raise RuntimeError(f"Can only save or show fig.")
 
+    n_cv1_samples = 100
     if cv1_method in ["nbp-sigmoid", "nbp-review"]:
-        sample_cv1s = onp.linspace(-1, 8, 100)
+        sample_cv1s = onp.linspace(-1, 8, n_cv1_samples)
         ylabel = "# Base Pairs"
     elif cv1_method == "theta":
-      sample_cv1s = onp.linspace(0, 3.14, 100)
+      sample_cv1s = onp.linspace(0, 3.14, n_cv1_samples)
       ylabel = "Theta"
+    elif cv1_method == "ratio-contacts":
+        sample_cv1s = onp.linspace(0, 1, n_cv1_samples)
+        ylabel = "Ratio of Native Contacts"
     else:
         raise RuntimeError(f"Invalid CV1 method: {cv1_method}")
 
@@ -201,6 +205,19 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
         str1_3p_idx = cv1_bps[:, 1][-1]
         str1_5p_idx = cv1_bps[:, 1][0]
         cv1_fn = cv.get_theta_fn(str0_3p_idx, str0_5p_idx, str1_3p_idx, str1_5p_idx)
+    elif cv1_method == "ratio-contacts":
+        ref_top_path = args['ref_top_path']
+        ref_conf_path = args['ref_conf_path']
+        q_lambda = args['q_lambda']
+        q_gamma = args['q_gamma']
+        q_threshold = args['q_threshold']
+
+        ref_top_info = TopologyInfo(ref_top_path, reverse_direction=True)
+        ref_config_info = TrajectoryInfo(ref_top_info, traj_path=ref_conf_path, reverse_direction=True)
+        reference_body = ref_config_info.states[0]
+
+        cv1_fn = cv.get_q_fn(reference_body, cv1_bps, displacement_fn,
+                             q_lambda, q_gamma, q_threshold)
     else:
         raise RuntimeError(f"Invalid CV1 method: {cv1_method}")
     cv1_fn = jit(cv1_fn)
@@ -362,12 +379,27 @@ def build_argparse():
 
     parser.add_argument('--cv1-method', type=str,
                         default="nbp-sigmoid",
-                        choices=["nbp-sigmoid", "nbp-review", "theta"],
+                        choices=["nbp-sigmoid", "nbp-review",
+                                 "theta", "ratio-contacts"],
                         help='The first collective variable')
     parser.add_argument('--cv2-method', type=str,
                         default="com-dist",
                         choices=["com-dist", "min-dist"],
                         help="The second collective variable (a distance)")
+
+    # Arguments for "ratio-contacts" option for cv1
+    parser.add_argument('--ref-top-path', type=str,
+                        default="data/simple-helix/generated.top",
+                        help='Path to *reference* topology file')
+    parser.add_argument('--ref-conf-path', type=str,
+                        default="data/simple-helix/start.conf",
+                        help='Path to *reference* input configuration')
+    parser.add_argument('--q-lambda', type=float, default=1.5,
+                        help="Lambda value for computing the ratio of native contacts")
+    parser.add_argument('--q-gamma', type=float, default=1.5,
+                        help="Gamma value for computing the ratio of native contacts")
+    parser.add_argument('--q-threshold', type=float, default=0.45,
+                        help="Distance threshold to determine which pairs to include when computing the ratio of native contacts")
 
     return parser
 
