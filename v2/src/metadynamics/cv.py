@@ -60,12 +60,15 @@ def plot_cv():
     import numpy as onp
     import matplotlib.pyplot as plt
 
-    c_intended = cv_review(1.27*SIGMA)
+    # cv_fn = cv_review
+    cv_fn = cv_sigmoid
+
+    c_intended = cv_fn(1.27*SIGMA)
     print(f"c(d) at d = 1.27*SIGMA: {c_intended}")
 
     # ds = onp.linspace(-3*SIGMA, 3*SIGMA, 20)
     ds = onp.linspace(-1, 4, 100)
-    cvs = cv_review(ds)
+    cvs = cv_fn(ds)
     # plt.axvline(1.27*SIGMA)
     plt.axvline(1.27)
     plt.axvline(0.4)
@@ -166,11 +169,47 @@ def get_n_bp_fn_custom(bps, displacement_fn, method):
     return get_n_bp
 
 
+def get_q_fn(reference_body, bps, displacement_fn, lam, gamma, threshold):
+    d = space.map_product(partial(displacement_fn))
+
+    bp_i = bps[:, 0]
+    bp_j = bps[:, 1]
+
+    Q_reference = reference_body.orientation
+    ref_back_base_vectors = Q_to_back_base(Q_reference)
+    ref_base_sites = reference_body.center + com_to_hb * ref_back_base_vectors
+
+    ref_dr_base = d(ref_base_sites[bp_i], ref_base_sites[bp_j])
+    ref_r_base = jnp.linalg.norm(ref_dr_base, axis=1)
+
+    mask = jnp.where(ref_r_base < threshold)
+    n_nb = jnp.sum(mask)
+
+    # NOTE/FIXME: we are currently not masking out only those native contacts given some threshold. Should just have a mask for this.
+
+    def q_fn(body):
+        Q = body.orientation
+        back_base_vectors = Q_to_back_base(Q)
+        base_sites = body.center + com_to_hb * back_base_vectors
+
+        dr_base = d(base_sites[bp_i], base_sites[bp_j])
+        r_base = jnp.linalg.norm(dr_base, axis=1)
+
+        # FIXME: expression between ref_r_base and r_base
+        diffs = r_base - lam*ref_r_base
+        exps = jnp.exp(gamma * diffs)
+        terms = 1 / (1 + exps)
+        masked_terms = mask * terms
+        q = 1/n_nb * jnp.sum(masked_terms)
+
+        return q
+    return q_fn
+
 # FIXME: can test by simulating a helix with unbound frays and passing various states in here
 if __name__ == "__main__":
-    # plot_cv()
+    plot_cv()
 
-    # pdb.set_trace()
+    pdb.set_trace()
 
 
     # import sys

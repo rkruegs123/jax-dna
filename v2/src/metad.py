@@ -74,8 +74,8 @@ def plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
     axes.axis([l_a, r_a, l_b, r_b])
     figure.colorbar(c)
     plt.xlabel("Interstrand Distance")
-    # plt.ylabel("# Base Pairs")
-    plt.ylabel("Theta")
+    plt.ylabel("# Base Pairs")
+    # plt.ylabel("Theta")
     if show_fig:
         plt.show()
     if save_fig:
@@ -296,7 +296,7 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
         plt.savefig(run_dir / "centers.png")
         plt.clf()
 
-        plot_2d(repulsive_wall_fn, heights, centers, widths,
+        plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
                 show_fig=False, save_fig=True, fpath=run_dir / "heatmap.png")
         # plot_1d(heights, centers, widths,
         #         show_fig=False, save_fig=True, fpath=run_dir / "metapotential.png")
@@ -396,7 +396,47 @@ if __name__ == "__main__":
     # d_critical = 15.0
     # wall_strength = 1000
 
-    run_single_metad(args, cv1_bps, cv2_bps, key)
+    # run_single_metad(args, cv1_bps, cv2_bps, key)
 
 
- 
+    bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2023-01-11_01-02-24")
+
+
+
+    d_critical = 4.0
+    width_cv1 = 0.05
+    width_cv2 = 0.025
+    height0 = 0.05
+
+    centers = pickle.load(open(bpath / "centers.pkl", "rb"))
+    widths = pickle.load(open(bpath / "widths.pkl", "rb"))
+    heights = pickle.load(open(bpath / "heights.pkl", "rb"))
+
+    plt.plot(list(range(len(centers))), centers)
+    plt.title("Centers")
+    plt.xlabel("# Gaussian")
+    plt.ylabel("Center (i.e. CV)")
+    plt.savefig(bpath / "centers.png")
+    plt.clf()
+
+    pdb.set_trace()
+
+
+    repulsive_wall_fn = md_utils.get_repulsive_wall_fn(d_critical=d_critical, wall_strength=1000.0)
+    repulsive_wall_fn = jit(repulsive_wall_fn)
+
+
+    """
+    widths = jnp.full((centers.shape[0], 2), jnp.array([width_cv1, width_cv2]), dtype=f64)
+    heights = jnp.full(centers.shape[0], height0, dtype=f64)
+
+    with open(bpath / "widths.pkl", "wb") as wf:
+        pickle.dump(widths, wf)
+    with open(bpath / "heights.pkl", "wb") as hf:
+        pickle.dump(heights, hf)
+    """
+
+    plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
+            show_fig=False, save_fig=True, fpath=bpath / "heatmap.png")
+
+    pdb.set_trace()
