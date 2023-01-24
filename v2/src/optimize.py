@@ -288,7 +288,7 @@ if __name__ == "__main__":
 
     start = time.time()
     run(top_path=top_path, conf_path=conf_path,
-        sim_length=1000, batch_size=20, opt_steps=200,
+        sim_length=10000, batch_size=20, opt_steps=200,
         init_params=init_params, key=key)
     end = time.time()
     total_time = end - start

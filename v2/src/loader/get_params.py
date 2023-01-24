@@ -51,9 +51,6 @@ def add_smoothing(params):
     stacking = params['stacking']
 
     ## f1(dr_stack)
-    b_backbone, dr_c_backbone = get_f3_smoothing_params(exc_vol['dr_star_backbone'],
-                                                        exc_vol['eps_exc'],
-                                                        exc_vol['sigma_backbone'])
     b_low_stack, dr_c_low_stack, b_high_stack, dr_c_high_stack = get_f1_smoothing_params(
         stacking['eps_stack'], stacking['dr0_stack'], stacking['a_stack'], stacking['dr_c_stack'],
         stacking['dr_low_stack'], stacking['dr_high_stack'])
