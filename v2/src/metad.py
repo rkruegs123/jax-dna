@@ -347,7 +347,7 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
 
 def build_argparse():
     parser = argparse.ArgumentParser(description="Metadynamics simulation for an 8bp helix")
-    parser.add_argument('--s', dest="stride", type=int, default=500, help="Stride for MetaD")
+    parser.add_argument('-s', '--stride', dest="stride", type=int, default=500, help="Stride for MetaD")
     parser.add_argument('--n-steps', type=int, default=1000000, help="Num. of steps for MetaD")
     parser.add_argument('--init-height', type=float, default=0.25, help="Height of gaussian deposited") # note: de Pablo group used 0.05
     parser.add_argument('--width-cv1', type=float, default=0.20, help="Width of Gaussian @ # of bps") # note: de Pablo used `width_cv1 = 0.035` for theta
@@ -396,7 +396,7 @@ def build_argparse():
                         help='Path to *reference* input configuration')
     parser.add_argument('--q-lambda', type=float, default=1.5,
                         help="Lambda value for computing the ratio of native contacts")
-    parser.add_argument('--q-gamma', type=float, default=1.5,
+    parser.add_argument('--q-gamma', type=float, default=60,
                         help="Gamma value for computing the ratio of native contacts")
     parser.add_argument('--q-threshold', type=float, default=0.45,
                         help="Distance threshold to determine which pairs to include when computing the ratio of native contacts")
