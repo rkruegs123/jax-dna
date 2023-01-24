@@ -11,6 +11,9 @@ from jax_md import util
 from jax_md import rigid_body
 from jax_md.rigid_body import RigidBody, Quaternion
 
+# import sys
+# sys.path.append("/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/v2/src")
+# pdb.set_trace()
 from utils import DEFAULT_TEMP
 from utils import back_site, stack_site, base_site
 from utils import get_one_hot
@@ -34,6 +37,10 @@ DTYPE = [f32]
 if FLAGS.jax_enable_x64:
     DTYPE += [f64]
 
+
+# DNA Structure and Function, R. Sinden, 1st ed
+# Table 1.3, Pg 27
+TARGET_AVG_PITCH = 10.5
 
 # the pitch is defined as the angle between the projections of two base-base vectors in a plane perpendicular to the helical axis for two contiguous base pairs
 def compute_single_pitch(quartet, system: RigidBody, base_sites: Array):#TODO: don't need 'system' as input here
@@ -63,10 +70,22 @@ def get_pitches(system: RigidBody, base_quartets: Array):
     all_pitches = get_all_pitches(base_quartets, system, base_sites)
     return all_pitches
 
+def get_pitch_distance_loss(base_quartets, target_avg_pitch=TARGET_AVG_PITCH):
+    n_quartets = base_quartets.shape[0]
+    def pitch_loss_fn(body):
+        pitches = get_pitches(body, base_quartets)
+        num_turns = jnp.sum(pitches) / (2*jnp.pi)
+        avg_pitch = (n_quartets+1) / num_turns
+
+        return (target_avg_pitch - avg_pitch)**2
+    return pitch_loss_fn
+
+
 
 if __name__ == "__main__":
     # import matplotlib.pyplot as plt
     from tqdm import tqdm
+
 
     # traj_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/test.dat"
     # top_path = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/data/polyA_10bp/generated.top"
@@ -83,12 +102,21 @@ if __name__ == "__main__":
     body = config_info.states[0]
 
     pdb.set_trace()
-    quartets = jnp.array([[0, 15, 1, 14], [1, 14, 2, 13], [2, 13, 3, 12], [3, 12, 4, 11],
-                          [4, 11, 5, 10], [5, 10, 6, 9], [6, 9, 7, 8]])
-    base_sites = body.center + rigid_body.quaternion_rotate(body.orientation, base_site)
+    quartets = jnp.array([
+        [0, 15, 1, 14],
+        [1, 14, 2, 13],
+        [2, 13, 3, 12],
+        [3, 12, 4, 11],
+        [4, 11, 5, 10],
+        [5, 10, 6, 9],
+        [6, 9, 7, 8]
+    ])
+    loss_fn = get_pitch_distance_loss(quartets)
+    # base_sites = body.center + rigid_body.quaternion_rotate(body.orientation, base_site)
     # pitch_test = compute_single_pitch(quartet, body, base_sites)
-    pitches = get_pitches(body, quartets)
-    num_turns = jnp.sum(pitches) / (2*jnp.pi)
-    av_pitch = (len(quartets)+1) / (jnp.sum(pitches) / (2*jnp.pi))
+    # pitches = get_pitches(body, quartets)
+    # num_turns = jnp.sum(pitches) / (2*jnp.pi)
+    # av_pitch = (len(quartets)+1) / (jnp.sum(pitches) / (2*jnp.pi))
+    curr_loss = loss_fn(body)
     pdb.set_trace()
     print("done")

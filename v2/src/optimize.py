@@ -29,6 +29,7 @@ from energy import factory
 # import langevin
 from checkpoint import checkpoint_scan
 from loss import geometry
+from loss import structural
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -145,7 +146,24 @@ def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=
     init_fn = Partial(init_fn, R=body, mass=mass)
     init_fn = jit(init_fn)
 
-    loss_fn = geometry.get_backbone_distance_loss(top_info.bonded_nbrs, displacement_fn)
+    # loss_fn = geometry.get_backbone_distance_loss(top_info.bonded_nbrs, displacement_fn)
+    # loss_fn = jit(loss_fn)
+    backbone_dist_pairs = top_info.bonded_nbrs
+    pitch_quartets = jnp.array([
+        [0, 15, 1, 14],
+        [1, 14, 2, 13],
+        [2, 13, 3, 12],
+        [3, 12, 4, 11],
+        [4, 11, 5, 10],
+        [5, 10, 6, 9],
+        [6, 9, 7, 8]
+    ])
+    propeller_base_pairs = jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
+    loss_fn = structural.get_structural_loss_fn(
+        backbone_dist_pairs,
+        displacement_fn,
+        pitch_quartets,
+        propeller_base_pairs)
     loss_fn = jit(loss_fn)
 
     run_single_simulation = Partial(run_simulation, steps=steps, init_fn=init_fn, step_fn=step_fn, loss_fn=loss_fn)

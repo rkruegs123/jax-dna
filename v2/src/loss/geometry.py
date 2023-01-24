@@ -4,13 +4,29 @@ from functools import partial
 import jax.numpy as jnp
 from jax_md import space
 
+# import sys
+# sys.path.append("/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/v2/src")
+# pdb.set_trace()
 from utils import Q_to_back_base
 from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import angstroms_to_oxdna_length
 
+from loader.trajectory import TrajectoryInfo
+from loader.topology import TopologyInfo
+
+
+
+# DNA Structure and Function, R. Sinden, 1st ed
+# Table 1.3, Pg 27
+TARGET_PHOS_PHOS_DIST = angstroms_to_oxdna_length(7.0)
+
+# DNA Structure and Function, R. Sinden, 1st ed
+# Table 1.3, Pg 27
+TARGET_HELICAL_DIAMETER = angstroms_to_oxdna_length(20.0)
+
 
 def get_backbone_distance_loss(pairs, displacement_fn,
-                               target_distance=angstroms_to_oxdna_length(6.5)):
+                               target_distance=TARGET_PHOS_PHOS_DIST):
 
     d = space.map_bond(partial(displacement_fn))
     nbrs_i = pairs[:, 0]
@@ -25,6 +41,7 @@ def get_backbone_distance_loss(pairs, displacement_fn,
         r_back = jnp.linalg.norm(dr_back, axis=1)
 
         return jnp.sum(((r_back - target_distance))**2)
+        # return jnp.mean(((r_back - target_distance))**2)
         # return r_back, jnp.sum((100*(r_back - target_distance))**2)
         # avg_r_back = jnp.mean(r_back)
         # return (avg_r_back - target_distance)**2
@@ -33,8 +50,6 @@ def get_backbone_distance_loss(pairs, displacement_fn,
 
 if __name__ == "__main__":
 
-    from topology import TopologyInfo
-    from trajectory import TrajectoryInfo
 
     top_path = "data/simple-helix/generated.top"
     # traj_path = "data/simple-helix/output.dat"
@@ -47,7 +62,9 @@ if __name__ == "__main__":
 
     displacement_fn, _ = space.periodic(config_info.box_size)
 
-    pairs = top_info.bonded_nbrs[2:4]
+    # pairs = top_info.bonded_nbrs[2:4]
+    pairs = top_info.bonded_nbrs
     loss_fn = get_backbone_distance_loss(pairs, displacement_fn)
-    loss_fn(body)
+    curr_loss = loss_fn(body)
     pdb.set_trace()
+    print("done")
