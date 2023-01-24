@@ -84,6 +84,7 @@ def plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
     # l_val, r_val = -onp.abs(vals).max(), onp.abs(vals).max()
     l_val, r_val = onp.abs(vals).min(), onp.abs(vals).max()
 
+    pdb.set_trace()
     figure, axes = plt.subplots()
     c = axes.pcolormesh(a, b, vals, cmap='cool', vmin=l_val, vmax=r_val)
     axes.axis([l_a, r_a, l_b, r_b])
@@ -432,27 +433,35 @@ if __name__ == "__main__":
     ])
 
 
-    run_single_metad(args, cv1_bps, cv2_bps, key)
+    # run_single_metad(args, cv1_bps, cv2_bps, key)
 
 
-    """
-    bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2023-01-11_01-02-24")
+
+    # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2023-01-11_01-02-24")
+    # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2023-01-11_23-40-40")
+    # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2023-01-16_17-11-40")
+    # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2023-01-16_17-11-30")
+    bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2023-01-19_13-04-07")
 
 
-    d_critical = 4.0
-    width_cv1 = 0.05
-    width_cv2 = 0.025
-    height0 = 0.05
+    d_critical = 10.0
+    width_cv1 = 0.018
+    width_cv2 = 0.013
+    height0 = 0.17
 
     centers = pickle.load(open(bpath / "centers.pkl", "rb"))
     widths = pickle.load(open(bpath / "widths.pkl", "rb"))
     heights = pickle.load(open(bpath / "heights.pkl", "rb"))
 
-    plt.plot(list(range(len(centers))), centers)
+    pdb.set_trace()
+
+    plt.plot(list(range(len(centers))), centers[:, 0])
     plt.title("Centers")
     plt.xlabel("# Gaussian")
     plt.ylabel("Center (i.e. CV)")
-    plt.savefig(bpath / "centers.png")
+    # plt.savefig(bpath / "centers.png")
+    # plt.clf()
+    plt.show()
     plt.clf()
 
     pdb.set_trace()
@@ -460,7 +469,7 @@ if __name__ == "__main__":
 
     repulsive_wall_fn = md_utils.get_repulsive_wall_fn(d_critical=d_critical, wall_strength=1000.0)
     repulsive_wall_fn = jit(repulsive_wall_fn)
-    """
+
 
 
     """
@@ -473,9 +482,9 @@ if __name__ == "__main__":
         pickle.dump(heights, hf)
     """
 
-    """
+
     plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
-            show_fig=False, save_fig=True, fpath=bpath / "heatmap.png")
+            cv1_method="ratio-contacts", cv2_method="com-dist",
+            show_fig=True, save_fig=False, fpath=None)
 
     pdb.set_trace()
-    """
