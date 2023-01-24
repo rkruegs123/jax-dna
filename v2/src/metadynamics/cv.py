@@ -185,10 +185,12 @@ def get_q_fn(reference_body, bps, displacement_fn, lam, gamma, threshold):
 
     mask = jnp.where(ref_r_base < threshold, 1, 0)
     n_nb = jnp.sum(mask)
+    pdb.set_trace()
 
     # NOTE/FIXME: we are currently not masking out only those native contacts given some threshold. Should just have a mask for this.
 
     def q_fn(body):
+        pdb.set_trace()
         Q = body.orientation
         back_base_vectors = Q_to_back_base(Q)
         base_sites = body.center + com_to_hb * back_base_vectors
@@ -223,8 +225,10 @@ if __name__ == "__main__":
     ref_body = ref_config_info.states[0]
 
     # bpath = Path("data/test-data/simple-helix/")
-    bpath = Path("../../tmp-oxdna/metad_2022-12-16_21-41-38")
+    # bpath = Path("../../tmp-oxdna/metad_2022-12-16_21-41-38")
     # bpath = Path("data/test-data/unbound-strands-overlap/")
+    bpath = Path("../../tmp-oxdna/metad_2023-01-11_23-40-40")
+    # bpath = Path("../../tmp-oxdna/metad_2023-01-16_17-11-30")
 
     top_path = bpath / "generated.top"
     conf_path = bpath / "start.conf"
@@ -236,7 +240,7 @@ if __name__ == "__main__":
 
     # body = config_info.states[0]
     # body = traj_info.states[-1]
-    body = traj_info.states[100]
+    body = traj_info.states[140]
 
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
     bps = jnp.array([
@@ -262,7 +266,7 @@ if __name__ == "__main__":
 
     q_fn = get_q_fn(ref_body, bps, displacement_fn,
                     lam=1.5, gamma=60,
-                    threshold=0.5)
+                    threshold=0.45)
     q = q_fn(body)
     print(f"Ratio of Native Contacts: {q}")
     pdb.set_trace()
