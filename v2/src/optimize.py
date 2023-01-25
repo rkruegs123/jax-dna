@@ -203,7 +203,7 @@ def estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_in
 
 def run(top_path, conf_path,
         sim_length, batch_size, opt_steps, init_params, key,
-        T=DEFAULT_TEMP, dt=5e-3,
+        T=DEFAULT_TEMP, dt=5e-3, lr=0.001,
         output_basedir="v2/data/output"):
 
     if not Path(top_path).exists():
@@ -222,6 +222,7 @@ def run(top_path, conf_path,
     params_str = f"topology file: {top_path}\nconfiguration file: {conf_path}\n"
     params_str += f"sim_length: {sim_length}\nbatch_size: {batch_size}\nopt_steps: {opt_steps}\n"
     params_str += f"init_params: {init_params}\nkey: {key}\ntemperature: {T}\ndt: {dt}\n"
+    params_str += f"lr: {lr}\n"
     with open(run_dir / "params.txt", "w+") as f:
         f.write(params_str)
     print(bcolors.WARNING + f"Created directory and copied optimization information at location: {run_dir}" + bcolors.ENDC)
@@ -238,7 +239,8 @@ def run(top_path, conf_path,
                                  sim_length, dt=dt, T=T)
 
     # Initialize values relevant for the optimization loop
-    lr = jopt.exponential_decay(0.1, opt_steps, 0.01)
+    # lr = jopt.exponential_decay(0.1, opt_steps, 0.01)
+    # lr = 0.001
     optimizer = jopt.adam(lr)
     opt_state = optimizer.init_fn(init_params)
 
@@ -283,13 +285,41 @@ def run(top_path, conf_path,
 if __name__ == "__main__":
     top_path = "data/simple-helix/generated.top"
     conf_path = "data/simple-helix/start.conf"
-    init_params = jnp.array([0.60, 0.75, 1.1]) # my own hard-coded random FENE parameters
+
+
+    init_fene_params = [0.60, 0.75, 1.1]
+    init_stacking_params = [
+        0.25, 0.7, 2.0, 0.4, 1.2, 1.3, 0.2, # f1(dr_stack)
+        0.5, 0.35, 0.6, # f4(theta_4)
+        1.5, 1.1, 0.3, # f4(theta_5p)
+        2.0, 0.2, 0.75, # f4(theta_6p)
+        0.7, 2.0, # f5(-cos(phi1))
+        1.3, 0.8 # f5(-cos(phi2))
+    ]
+
+    # starting with the correct parameters
+    """
+    init_fene_params = [2.0, 0.25, 0.7525]
+    init_stacking_params = [
+        1.3448, 2.6568, 6.0, 0.4, 0.9, 0.32, 0.75, # f1(dr_stack)
+        1.30, 0.0, 0.8, # f4(theta_4)
+        0.90, 0.0, 0.95, # f4(theta_5p)
+        0.90, 0.0, 0.95, # f4(theta_6p)
+        2.0, -0.65, # f5(-cos(phi1))
+        2.0, -0.65 # f5(-cos(phi2))
+    ]
+    """
+
+    init_params = jnp.array(init_fene_params + init_stacking_params)
+    # init_params = jnp.array(init_fene_params) # my own hard-coded random FENE parameters
+
+
     key = random.PRNGKey(0)
 
     start = time.time()
     run(top_path=top_path, conf_path=conf_path,
         sim_length=10000, batch_size=20, opt_steps=200,
-        init_params=init_params, key=key)
+        init_params=init_params, key=key, lr=0.0001)
     end = time.time()
     total_time = end - start
     print(f"Execution took: {total_time}")

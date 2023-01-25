@@ -189,3 +189,8 @@ TODO:
 - benchmark speeds. How much slower is the Jax-MD version for XXX steps, how does it scale with sim. length and sim. size compared to oxDNA C++ scaling?
 - smooth the FENE potential
 - multiplicative isotropic cut-offs
+
+
+#### January 25, 2022
+- run with helical distance loss
+- run at true room temperature -- 296.15

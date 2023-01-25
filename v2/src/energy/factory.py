@@ -9,12 +9,12 @@ from copy import deepcopy
 from jax_md.rigid_body import RigidBody
 from jax_md import util, space
 
-from loader import get_params
+from loader import get_params, smoothing
 from energy.interactions import v_fene, exc_vol_bonded, stacking, \
     hydrogen_bonding, exc_vol_unbonded, cross_stacking, coaxial_stacking
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 from utils import com_to_backbone, com_to_stacking, com_to_hb
-from utils import clamp
+from utils import clamp, get_kt
 
 
 # Kron: AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT
@@ -26,13 +26,119 @@ HB_WEIGHTS = jnp.array([
 ])
 get_hb_probs = vmap(lambda seq, i, j: jnp.kron(seq[i], seq[j]), in_axes=(None, 0, 0), out_axes=0)
 
+
+# FIXME: Duplicate logic from when we actually read in the parameters...
+def process_stacking_params(unprocessed_params, kt):
+    a_stack = unprocessed_params['a_stack']
+    dr0_stack = unprocessed_params['dr0_stack']
+    dr_c_stack = unprocessed_params['dr_c_stack']
+    dr_low_stack = unprocessed_params['dr_low_stack']
+    dr_high_stack = unprocessed_params['dr_high_stack']
+    eps_stack_base = unprocessed_params['eps_stack_base']
+    eps_stack_kt_coeff = unprocessed_params['eps_stack_kt_coeff']
+    eps_stack = eps_stack_base + eps_stack_kt_coeff * kt
+
+    b_low_stack, dr_c_low_stack, b_high_stack, dr_c_high_stack = smoothing.get_f1_smoothing_params(
+        eps_stack, dr0_stack, a_stack, dr_c_stack,
+        dr_low_stack, dr_high_stack)
+
+    a_stack_4 = unprocessed_params['a_stack_4']
+    theta0_stack_4 = unprocessed_params['theta0_stack_4']
+    delta_theta_star_stack_4 = unprocessed_params['delta_theta_star_stack_4']
+    b_stack_4, delta_theta_stack_4_c = smoothing.get_f4_smoothing_params(
+        a_stack_4,
+        theta0_stack_4,
+        delta_theta_star_stack_4)
+
+    a_stack_5 = unprocessed_params['a_stack_5']
+    theta0_stack_5 = unprocessed_params['theta0_stack_5']
+    delta_theta_star_stack_5 = unprocessed_params['delta_theta_star_stack_5']
+    b_stack_5, delta_theta_stack_5_c = smoothing.get_f4_smoothing_params(
+        a_stack_5,
+        theta0_stack_5,
+        delta_theta_star_stack_5)
+
+    a_stack_6 = unprocessed_params['a_stack_6']
+    theta0_stack_6 = unprocessed_params['theta0_stack_6']
+    delta_theta_star_stack_6 = unprocessed_params['delta_theta_star_stack_6']
+    b_stack_6, delta_theta_stack_6_c = smoothing.get_f4_smoothing_params(
+        a_stack_6,
+        theta0_stack_6,
+        delta_theta_star_stack_6)
+
+    a_stack_1 = unprocessed_params['a_stack_1']
+    neg_cos_phi1_star_stack = unprocessed_params['neg_cos_phi1_star_stack']
+    b_neg_cos_phi1_stack, neg_cos_phi1_c_stack = smoothing.get_f5_smoothing_params(
+        a_stack_1,
+        neg_cos_phi1_star_stack)
+
+    a_stack_2 = unprocessed_params['a_stack_2']
+    neg_cos_phi2_star_stack = unprocessed_params['neg_cos_phi2_star_stack']
+    b_neg_cos_phi2_stack, neg_cos_phi2_c_stack = smoothing.get_f5_smoothing_params(
+        a_stack_2,
+        neg_cos_phi2_star_stack)
+
+    processed_params = {
+        # f1(dr_stack)
+        "eps_stack": eps_stack,
+        "dr0_stack": dr0_stack,
+        "a_stack": a_stack,
+        "dr_c_stack": dr_c_stack,
+        "dr_low_stack": dr_low_stack,
+        "dr_high_stack": dr_high_stack,
+        "b_low_stack": b_low_stack, 
+        "dr_c_low_stack": dr_c_low_stack, 
+        "b_high_stack": b_high_stack, 
+        "dr_c_high_stack": dr_c_high_stack,
+
+        # f4(theta_4)
+        "a_stack_4": a_stack_4,
+        "theta0_stack_4": theta0_stack_4,
+        "delta_theta_star_stack_4": delta_theta_star_stack_4,
+        "b_stack_4": b_stack_4,
+        "delta_theta_stack_4_c": delta_theta_stack_4_c,
+
+        # f4(theta_5p)
+        "a_stack_5": a_stack_5,
+        "theta0_stack_5": theta0_stack_5,
+        "delta_theta_star_stack_5": delta_theta_star_stack_5,
+        "b_stack_5": b_stack_5,
+        "delta_theta_stack_5_c": delta_theta_stack_5_c,
+
+        # f4(theta_6p)
+        "a_stack_6": a_stack_6,
+        "theta0_stack_6": theta0_stack_6,
+        "delta_theta_star_stack_6": delta_theta_star_stack_6,
+        "b_stack_6": b_stack_6,
+        "delta_theta_stack_6_c": delta_theta_stack_6_c,
+
+        ## f5(-cos(phi1))
+        "a_stack_1": a_stack_1,
+        "neg_cos_phi1_star_stack": neg_cos_phi1_star_stack,
+        "b_neg_cos_phi1_stack": b_neg_cos_phi1_stack,
+        "neg_cos_phi1_c_stack": neg_cos_phi1_c_stack,
+
+        ## f5(-cos(phi2))
+        "a_stack_2": a_stack_2,
+        "neg_cos_phi2_star_stack": neg_cos_phi2_star_stack,
+        "b_neg_cos_phi2_stack": b_neg_cos_phi2_stack,
+        "neg_cos_phi2_c_stack": neg_cos_phi2_c_stack
+
+    }
+    return processed_params
+
+    
+
 def energy_fn_factory(displacement_fn,
                       back_site, stack_site, base_site,
-                      bonded_neighbors, unbonded_neighbors):
-    params = get_params.get_default_params(t=300, no_smoothing=False) # FIXME: hardcoded temperature for now
+                      bonded_neighbors, unbonded_neighbors,
+                      temp=300):
+    
+    kt = get_kt(temp) # For use when optimizing over stacking parameters
+    params = get_params.get_default_params(t=temp, no_smoothing=False) # FIXME: hardcoded temperature for now
 
     # Define which functions we will *not* be optimizing over
-    stacking_fn = Partial(stacking, **params["stacking"])
+    # stacking_fn = Partial(stacking, **params["stacking"])
     hb_fn = Partial(hydrogen_bonding, **params["hydrogen_bonding"])
     exc_vol_unbonded_params = params["excluded_volume"]
     exc_vol_bonded_params = deepcopy(exc_vol_unbonded_params)
@@ -61,6 +167,44 @@ def energy_fn_factory(displacement_fn,
         fene_params = dict(zip(["eps_backbone", "delta_backbone", "r0_backbone"], params[:3]))
         # fene_params = params["fene"]
         fene_fn = Partial(v_fene, **fene_params)
+
+        stacking_param_names = [
+            # f1(dr_stack)
+            "eps_stack_base",
+            "eps_stack_kt_coeff",
+            "a_stack",
+            "dr0_stack",
+            "dr_c_stack",
+            "dr_low_stack",
+            "dr_high_stack",
+
+            # f4(theta_4)
+            "a_stack_4",
+            "theta0_stack_4",
+            "delta_theta_star_stack_4",
+
+            # f4(theta_5p)
+            "a_stack_5",
+            "theta0_stack_5",
+            "delta_theta_star_stack_5",
+
+            # f4(theta_6p)
+            "a_stack_6",
+            "theta0_stack_6",
+            "delta_theta_star_stack_6",
+
+            # f5(-cos(phi1))
+            "a_stack_1",
+            "neg_cos_phi1_star_stack",
+
+            # f5(-cos(phi2))
+            "a_stack_2",
+            "neg_cos_phi2_star_stack"
+        ]
+        unprocessed_stacking_params = dict(zip(stacking_param_names, params[3:23]))
+        stacking_params = process_stacking_params(unprocessed_stacking_params, kt)
+        stacking_fn = Partial(stacking, **stacking_params)
+        
 
         # Compute relevant variables for our potential
         # Note: `_op` corresponds to "other pairs"
