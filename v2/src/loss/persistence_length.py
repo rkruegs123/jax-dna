@@ -72,15 +72,15 @@ def get_correlation_curve(system: RigidBody, base_quartets: Array):
     return autocorr, jnp.mean(l0_vals)
 
 def persistence_length_fit(autocorr, l0_av):
-        y = jnp.log(autocorr)
-        x = jnp.linspace(0, autocorr.shape[0], 1)
-        x = jnp.stack([jno.ones_like(x),x],axis=1)
-        ### fit line:fit_ =	jax.numpy.linalg.lstsq(x, y)
-        fit_ =jax.numpy.linalg.lstsq(x, y)
-	### extract slope = -l0_av/Lp ---> Lp = -l0_av/slope
-        slope = fit_[0][1]
-        Lp = -l0_av/slope
-        return Lp
+    y = jnp.log(autocorr)
+    x = jnp.linspace(0, autocorr.shape[0], 1)
+    x = jnp.stack([jno.ones_like(x),x],axis=1)
+    ### fit line:fit_ =	jax.numpy.linalg.lstsq(x, y)
+    fit_ =jax.numpy.linalg.lstsq(x, y)
+    ### extract slope = -l0_av/Lp ---> Lp = -l0_av/slope
+    slope = fit_[0][1]
+    Lp = -l0_av/slope
+    return Lp
 
 def get_persistence_length_loss(base_quartets, target_avg_pitch=TARGET_PERSISTENCE_LENGTH_DSDNA):
     n_quartets = base_quartets.shape[0]
