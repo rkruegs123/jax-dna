@@ -57,7 +57,20 @@ def run_single_langevin(top_path, conf_path,
     # params = get_params.get_default_params(t=T, no_smoothing=False)
 
     # params = [0.10450547, 0.5336675 , 1.2209406]
-    params = [2.0, 0.25, 0.7525]
+    # params = [2.0, 0.25, 0.7525]
+
+
+    init_fene_params = [0.60, 0.75, 1.1]
+    init_stacking_params = [
+        0.25, 0.7, 2.0, 0.4, 1.2, 1.3, 0.2, # f1(dr_stack)
+        0.5, 0.35, 0.6, # f4(theta_4)
+        1.5, 1.1, 0.3, # f4(theta_5p)
+        2.0, 0.2, 0.75, # f4(theta_6p)
+        0.7, 2.0, # f5(-cos(phi1))
+        1.3, 0.8 # f5(-cos(phi2))
+    ]
+    params = init_fene_params + init_stacking_params
+
 
 
     top_info = TopologyInfo(top_path, reverse_direction=True)
@@ -102,7 +115,6 @@ def run_single_langevin(top_path, conf_path,
             subterms.append(compute_subterms(state.position))
             # bb_distances.append(loss_fn(state.position)[0])
 
-    pdb.set_trace()
     final_traj = TrajectoryInfo(top_info ,states=trajectory, box_size=config_info.box_size)
     if save_output:
         print(bcolors.OKBLUE + f"Writing trajectory to file..." + bcolors.ENDC)
@@ -121,8 +133,8 @@ if __name__ == "__main__":
     key = random.PRNGKey(0)
 
     start = time.time()
-    traj, energies = run_single_langevin(top_path, conf_path, n_steps=1000,
-                                         key=key, save_output=True, save_every=10)
+    traj, energies = run_single_langevin(top_path, conf_path, n_steps=1000000,
+                                         key=key, save_output=True, save_every=10000)
     end = time.time()
     total_time = end - start
     print(bcolors.OKGREEN + f"Finished simulation in {np.round(total_time, 2)} seconds" + bcolors.ENDC)

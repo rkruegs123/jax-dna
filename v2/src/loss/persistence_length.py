@@ -11,8 +11,8 @@ from jax_md import util
 from jax_md import rigid_body
 from jax_md.rigid_body import RigidBody, Quaternion
 
-import sys
-sys.path.append("/n/home05/mengel/PROJECTS/JAXDNA/jaxmd-oxdna/v2/src/")
+# import sys
+# sys.path.append("/n/home05/mengel/PROJECTS/JAXDNA/jaxmd-oxdna/v2/src/")
 # pdb.set_trace()
 from utils import DEFAULT_TEMP
 from utils import back_site, stack_site, base_site
@@ -49,7 +49,7 @@ def vector_autocorrelate(arr):
   return acorr
 
 # Tom's thesis: 130-150 base pairs
-TARGET_PERSISTENCE_LENGTH_DSDNA = 140 
+TARGET_PERSISTENCE_LENGTH_DSDNA = 140
 
 def compute_l_vector(quartet, system: RigidBody, base_sites: Array):
     # base pair #1 is comprised of nucs a1 and b1. Base pair #2 is a2, b2. i.e. a1 is H-bonded to b1, a2 is h-bonded to b2/
@@ -62,22 +62,22 @@ def compute_l_vector(quartet, system: RigidBody, base_sites: Array):
     l0 = jnp.linalg.norm(l)
     return l, l0
 
-#vector autocorrelate from https://stackoverflow.com/questions/48844295/computing-autocorrelation-of-vectors-with-numpy
+# vector autocorrelate from https://stackoverflow.com/questions/48844295/computing-autocorrelation-of-vectors-with-numpy
 
 def get_correlation_curve(system: RigidBody, base_quartets: Array):
     base_sites = system.center + rigid_body.quaternion_rotate(system.orientation, base_site)
     get_all_l_vectors = vmap(compute_l_vector, in_axes = [0, None, None])
     all_l_vectors, l0_vals = get_all_l_vectors(base_quartets, system, base_sites)
-    autocorr = vector_autocorrelate(all_l_vectors)   
+    autocorr = vector_autocorrelate(all_l_vectors)
     return autocorr, jnp.mean(l0_vals)
 
 def persistence_length_fit(autocorr, l0_av):
         y = jnp.log(autocorr)
         x = jnp.linspace(0, autocorr.shape[0], 1)
         x = jnp.stack([jno.ones_like(x),x],axis=1)
-        ###fit line:fit_ =	jax.numpy.linalg.lstsq(x, y)
+        ### fit line:fit_ =	jax.numpy.linalg.lstsq(x, y)
         fit_ =jax.numpy.linalg.lstsq(x, y)
-	###extract slope = -l0_av/Lp ---> Lp = -l0_av/slope
+	### extract slope = -l0_av/Lp ---> Lp = -l0_av/slope
         slope = fit_[0][1]
         Lp = -l0_av/slope
         return Lp
@@ -87,7 +87,7 @@ def get_persistence_length_loss(base_quartets, target_avg_pitch=TARGET_PERSISTEN
     def Lp_loss_fn(body):
         correlation_curve, l0_avg = get_correlation_curve(body, base_quartets)
         return correlation_curve, persistence_length_fit(correlation_curve, l0_avg)
-        #return (target_avg_pitch - avg_pitch)**2
+        # return (target_avg_pitch - avg_pitch)**2
     return Lp_loss_fn
 
 
