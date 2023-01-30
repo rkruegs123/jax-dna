@@ -201,10 +201,18 @@ def estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_in
     return _estimate_gradient
 
 
-def run(top_path, conf_path,
-        sim_length, batch_size, opt_steps, init_params, key,
-        T=DEFAULT_TEMP, dt=5e-3, lr=0.001,
+def run(args, init_params,
+        T=DEFAULT_TEMP, dt=5e-3,
         output_basedir="v2/data/output"):
+
+    top_path = args['top_path']
+    conf_path = args['conf_path']
+    sim_length = args['n_steps']
+    batch_size = args['batch_size']
+    opt_steps = args['opt_steps']
+    lr = args['lr']
+    key = random.PRNGKey(args['key'])
+    save_every = args['save_every']
 
     if not Path(top_path).exists():
         raise RuntimeError(f"Topology file does not exist at location: {top_path}")
@@ -214,15 +222,16 @@ def run(top_path, conf_path,
 
     output_basedir = Path(output_basedir)
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    run_name = f"optimize_{timestamp}"
+    run_name = f"optimize_{timestamp}_b{batch_size}_lr{lr}_n{sim_length}"
     run_dir = output_basedir / run_name
     run_dir.mkdir(parents=False, exist_ok=False)
     shutil.copy(top_path, run_dir)
     shutil.copy(conf_path, run_dir)
-    params_str = f"topology file: {top_path}\nconfiguration file: {conf_path}\n"
-    params_str += f"sim_length: {sim_length}\nbatch_size: {batch_size}\nopt_steps: {opt_steps}\n"
-    params_str += f"init_params: {init_params}\nkey: {key}\ntemperature: {T}\ndt: {dt}\n"
-    params_str += f"lr: {lr}\n"
+
+    params_str = ""
+    for k, v in args.items():
+        params_str += f"{k}: {v}\n"
+
     with open(run_dir / "params.txt", "w+") as f:
         f.write(params_str)
     print(bcolors.WARNING + f"Created directory and copied optimization information at location: {run_dir}" + bcolors.ENDC)
@@ -248,7 +257,6 @@ def run(top_path, conf_path,
     params_ = list()
     losses = list()
     grads = list()
-    save_every = 1
     # params_.append((0,) + (optimizer.params_fn(opt_state),))
 
     # Do the optimization
@@ -262,19 +270,25 @@ def run(top_path, conf_path,
         opt_state = optimizer.update_fn(i, grad, opt_state)
 
         end = time.time()
-        step_times.append(end - start)
-        # print(optimizer.params_fn(opt_state))
-        # if i % save_every == 0 | i == (opt_steps-1):
-            # coeffs_.append(((i+1),) + (optimizer.params_fn(opt_state),))
 
-        grads.append(grad)
-        params_.append(optimizer.params_fn(opt_state))
-        losses.append(avg_loss)
+        if i % save_every == 0:
+            step_times.append(end - start)
+            # print(optimizer.params_fn(opt_state))
+            # if i % save_every == 0 | i == (opt_steps-1):
+                # coeffs_.append(((i+1),) + (optimizer.params_fn(opt_state),))
 
-    with open(run_dir / "params.pkl", "wb") as f:
-        pickle.dump(params_, f)
+            grads.append(grad)
+            params_.append(optimizer.params_fn(opt_state))
+            losses.append(avg_loss)
+
+    with open(run_dir / "final_params.pkl", "wb") as f:
+        pickle.dump(optimizer.params_fn(opt_state), f)
+    with open(run_dir / "final_loss.pkl", "wb") as f:
+        pickle.dump(avg_loss, f)
     with open(run_dir / "losses.pkl", "wb") as f:
         pickle.dump(losses, f)
+    with open(run_dir / "params.pkl", "wb") as f:
+        pickle.dump(params_, f)
     with open(run_dir / "grads.pkl", "wb") as f:
         pickle.dump(grads, f)
     with open(run_dir / "step_times.pkl", "wb") as f:
@@ -283,43 +297,72 @@ def run(top_path, conf_path,
 
 
 if __name__ == "__main__":
-    top_path = "data/simple-helix/generated.top"
-    conf_path = "data/simple-helix/start.conf"
+    import argparse
 
+    parser = argparse.ArgumentParser(description="Optimizing over oxDNA parameters")
+    parser.add_argument('-b', '--batch-size', type=int, default=10, 
+                        help="Num. batches for each round of gradient descent")
+    parser.add_argument('--save-every', type=int, default=1, 
+                        help="Frequency of saving data from optimization")
+    parser.add_argument('--opt-steps', type=int, default=1, 
+                        help="Num. iterations of gradient descent")
+    parser.add_argument('-n', '--n-steps', type=int, default=10000, 
+                        help="Num. steps per simulation")
+    parser.add_argument('-k', '--key', type=int, default=0, 
+                        help="Random key")
+    parser.add_argument('--lr', type=float, default=0.01, 
+                        help="Learning rate for optimization")
+    parser.add_argument('--top-path', type=str,
+                        default="data/simple-helix/generated.top",
+                        help='Path to topology file')
+    parser.add_argument('--conf-path', type=str,
+                        default="data/simple-helix/start.conf",
+                        help='Path to configuration file')
+    parser.add_argument('--params', type=str,
+                        default="random",
+                        choices=["random", "oxdna"],
+                        help='Method for initializing parameters')
+    args = vars(parser.parse_args())
 
-    init_fene_params = [0.60, 0.75, 1.1]
-    init_stacking_params = [
-        0.25, 0.7, 2.0, 0.4, 1.2, 1.3, 0.2, # f1(dr_stack)
-        0.5, 0.35, 0.6, # f4(theta_4)
-        1.5, 1.1, 0.3, # f4(theta_5p)
-        2.0, 0.2, 0.75, # f4(theta_6p)
-        0.7, 2.0, # f5(-cos(phi1))
-        1.3, 0.8 # f5(-cos(phi2))
-    ]
+    # top_path = "data/simple-helix/generated.top"
+    # conf_path = "data/simple-helix/start.conf"
 
-    # starting with the correct parameters
-    """
-    init_fene_params = [2.0, 0.25, 0.7525]
-    init_stacking_params = [
-        1.3448, 2.6568, 6.0, 0.4, 0.9, 0.32, 0.75, # f1(dr_stack)
-        1.30, 0.0, 0.8, # f4(theta_4)
-        0.90, 0.0, 0.95, # f4(theta_5p)
-        0.90, 0.0, 0.95, # f4(theta_6p)
-        2.0, -0.65, # f5(-cos(phi1))
-        2.0, -0.65 # f5(-cos(phi2))
-    ]
-    """
+    init_method = args['params']
+    if init_method == "random":
+
+        init_fene_params = [0.60, 0.75, 1.1]
+        init_stacking_params = [
+            0.25, 0.7, 2.0, 0.4, 1.2, 1.3, 0.2, # f1(dr_stack)
+            0.5, 0.35, 0.6, # f4(theta_4)
+            1.5, 1.1, 0.3, # f4(theta_5p)
+            2.0, 0.2, 0.75, # f4(theta_6p)
+            0.7, 2.0, # f5(-cos(phi1))
+            1.3, 0.8 # f5(-cos(phi2))
+        ]
+    elif init_method == "oxdna":
+
+        # starting with the correct parameters
+        init_fene_params = [2.0, 0.25, 0.7525]
+        init_stacking_params = [
+            1.3448, 2.6568, 6.0, 0.4, 0.9, 0.32, 0.75, # f1(dr_stack)
+            1.30, 0.0, 0.8, # f4(theta_4)
+            0.90, 0.0, 0.95, # f4(theta_5p)
+            0.90, 0.0, 0.95, # f4(theta_6p)
+            2.0, -0.65, # f5(-cos(phi1))
+            2.0, -0.65 # f5(-cos(phi2))
+        ]
+    else:
+        raise RuntimeError(f"Invalid parameter initialization method: {init_method}")
+
 
     init_params = jnp.array(init_fene_params + init_stacking_params)
     # init_params = jnp.array(init_fene_params) # my own hard-coded random FENE parameters
 
 
-    key = random.PRNGKey(0)
+    # key = random.PRNGKey(0)
 
     start = time.time()
-    run(top_path=top_path, conf_path=conf_path,
-        sim_length=10000, batch_size=20, opt_steps=200,
-        init_params=init_params, key=key, lr=0.0001)
+    run(args, init_params=init_params)
     end = time.time()
     total_time = end - start
     print(f"Execution took: {total_time}")
