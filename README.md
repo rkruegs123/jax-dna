@@ -191,6 +191,19 @@ TODO:
 - multiplicative isotropic cut-offs
 
 
-#### January 25, 2022
+#### January 25, 2023
 - run with helical distance loss
 - run at true room temperature -- 296.15
+
+#### Jan 27, 2023
+- TODO:
+- implement persistence length loss
+- add ability for external forcing
+- implement torsional modulus fitting
+- implement Worm-like chain fitting on force-extension curves
+- continue tinkering with metaD calcs
+- try longer sim lengths/larger batches for starting from random initial parameters... i.e. look into why the random params aren't working
+- implement dummy bias-exchange with well-tempered metaD
+- experiment with implicit differentiation for mechanical and structural gradients 
+- restructure metaD code to enable easy 1D or 2D or ND metaD
+ 
