@@ -6,6 +6,9 @@ from jax import debug
 import jax.numpy as jnp
 from copy import deepcopy
 
+# import sys
+# sys.path.append('v2/src/')
+
 from jax_md.rigid_body import RigidBody
 from jax_md import util, space
 
@@ -15,6 +18,8 @@ from energy.interactions import v_fene, exc_vol_bonded, stacking, \
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 from utils import com_to_backbone, com_to_stacking, com_to_hb
 from utils import clamp, get_kt
+
+f64 = util.f64
 
 
 # Kron: AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT
@@ -86,9 +91,9 @@ def process_stacking_params(unprocessed_params, kt):
         "dr_c_stack": dr_c_stack,
         "dr_low_stack": dr_low_stack,
         "dr_high_stack": dr_high_stack,
-        "b_low_stack": b_low_stack, 
-        "dr_c_low_stack": dr_c_low_stack, 
-        "b_high_stack": b_high_stack, 
+        "b_low_stack": b_low_stack,
+        "dr_c_low_stack": dr_c_low_stack,
+        "b_high_stack": b_high_stack,
         "dr_c_high_stack": dr_c_high_stack,
 
         # f4(theta_4)
@@ -127,13 +132,13 @@ def process_stacking_params(unprocessed_params, kt):
     }
     return processed_params
 
-    
+
 
 def energy_fn_factory(displacement_fn,
                       back_site, stack_site, base_site,
                       bonded_neighbors, unbonded_neighbors,
                       temp=300):
-    
+
     kt = get_kt(temp) # For use when optimizing over stacking parameters
     params = get_params.get_default_params(t=temp, no_smoothing=False) # FIXME: hardcoded temperature for now
 
@@ -204,7 +209,7 @@ def energy_fn_factory(displacement_fn,
         unprocessed_stacking_params = dict(zip(stacking_param_names, params[3:23]))
         stacking_params = process_stacking_params(unprocessed_stacking_params, kt)
         stacking_fn = Partial(stacking, **stacking_params)
-        
+
 
         # Compute relevant variables for our potential
         # Note: `_op` corresponds to "other pairs"
@@ -294,3 +299,46 @@ def energy_fn_factory(displacement_fn,
         return fene_dg + b_exc_dg + stack_dg + n_exc_dg + hb_dg + cr_stack + cx_stack
 
     return energy_fn, _compute_subterms
+
+
+
+if __name__ == "__main__":
+
+    from loader.trajectory import TrajectoryInfo
+    from loader.topology import TopologyInfo
+    from utils import base_site, stack_site, back_site, get_one_hot
+
+    top_path = "data/persistence-length/init.top"
+    # conf_path = "data/persistence-length/init.conf"
+    conf_path = "data/persistence-length/relaxed.dat"
+
+    top_info = TopologyInfo(top_path, reverse_direction=True)
+    config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
+
+    body = config_info.states[0]
+
+    displacement_fn, _ = space.periodic(config_info.box_size)
+    pairs = top_info.bonded_nbrs
+
+    energy_fn, compute_subterms =  energy_fn_factory(
+        displacement_fn,
+        back_site, stack_site, base_site,
+        top_info.bonded_nbrs, top_info.unbonded_nbrs)
+
+    seq = jnp.array(get_one_hot(top_info.seq), dtype=f64)
+
+    # starting with the correct parameters
+    init_fene_params = [2.0, 0.25, 0.7525]
+    init_stacking_params = [
+        1.3448, 2.6568, 6.0, 0.4, 0.9, 0.32, 0.75, # f1(dr_stack)
+        1.30, 0.0, 0.8, # f4(theta_4)
+        0.90, 0.0, 0.95, # f4(theta_5p)
+        0.90, 0.0, 0.95, # f4(theta_6p)
+        2.0, -0.65, # f5(-cos(phi1))
+        2.0, -0.65 # f5(-cos(phi2))
+    ]
+    params = init_fene_params + init_stacking_params
+
+    hi = compute_subterms(body, seq, params)
+
+    pdb.set_trace()
