@@ -52,8 +52,7 @@ def run_single_langevin(top_path, conf_path,
     print(bcolors.OKBLUE + f"Setting up simulation..." + bcolors.ENDC)
     mass = RigidBody(center=jnp.array([nucleotide_mass]),
                      orientation=jnp.array([moment_of_inertia]))
-    gamma = RigidBody(center=jnp.array([DEFAULT_TEMP/2.5]),
-                      orientation=jnp.array([DEFAULT_TEMP/7.5]))
+
     # params = get_params.get_default_params(t=T, no_smoothing=False)
 
     # params = [0.10450547, 0.5336675 , 1.2209406]
@@ -89,8 +88,8 @@ def run_single_langevin(top_path, conf_path,
 
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
-    displacement_fn, shift_fn = space.periodic(config_info.box_size)
-    # displacement_fn, shift_fn = space.free()
+    # displacement_fn, shift_fn = space.periodic(config_info.box_size)
+    displacement_fn, shift_fn = space.free()
 
     loss_fn = geometry.get_backbone_distance_loss(top_info.bonded_nbrs, displacement_fn)
     loss_fn = jit(loss_fn)
@@ -98,6 +97,11 @@ def run_single_langevin(top_path, conf_path,
     body = config_info.states[0]
     seq = jnp.array(get_one_hot(top_info.seq), dtype=f64)
     kT = get_kt(t=T) # 300 Kelvin = 0.1 kT
+
+    # gamma = RigidBody(center=jnp.array([DEFAULT_TEMP/2.5]),
+                      # orientation=jnp.array([DEFAULT_TEMP/7.5]))
+    gamma = RigidBody(center=jnp.array([kT/2.5]),
+                      orientation=jnp.array([kT/7.5]))
 
     energy_fn, compute_subterms = factory.energy_fn_factory(displacement_fn,
                                                             back_site, stack_site, base_site,
@@ -147,14 +151,14 @@ if __name__ == "__main__":
     # conf_path = "data/simple-helix/start.conf"
 
     top_path = "data/persistence-length/init.top"
-    conf_path = "data/persistence-length/init.conf"
-    # conf_path = "data/persistence-length/relaxed.dat"
+    # conf_path = "data/persistence-length/init.conf"
+    conf_path = "data/persistence-length/relaxed.dat"
 
     key = random.PRNGKey(0)
 
     start = time.time()
-    traj, energies = run_single_langevin(top_path, conf_path, n_steps=10000,
-                                         key=key, save_output=True, save_every=1)
+    traj, energies = run_single_langevin(top_path, conf_path, n_steps=100000,
+                                         key=key, save_output=True, save_every=1000)
     end = time.time()
     total_time = end - start
     print(bcolors.OKGREEN + f"Finished simulation in {np.round(total_time, 2)} seconds" + bcolors.ENDC)

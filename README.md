@@ -207,3 +207,22 @@ TODO:
 - experiment with implicit differentiation for mechanical and structural gradients 
 - restructure metaD code to enable easy 1D or 2D or ND metaD
  
+
+#### Jan 31, 2023
+
+
+FIXME: change gamma in optimize.py
+
+continuous output...
+
+change directory names to include parametesr so we dont get conflicts and so we dont' have to output the parameter files every time to check
+
+neighbor lists
+
+check on those simulations and metad stuff with correct(?) friction coefficient
+
+maybe ask chrisy about extneral forces with remi
+
+we'll talk baout vmmc stuff but not today
+
+experiment with implicit differentiation for mechanical and structural gradients 

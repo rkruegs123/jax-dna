@@ -165,9 +165,6 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
     mass = RigidBody(center=jnp.array([nucleotide_mass]),
                      orientation=jnp.array([moment_of_inertia]))
 
-    gamma = RigidBody(center=jnp.array([DEFAULT_TEMP/2.5]),
-                      orientation=jnp.array([DEFAULT_TEMP/7.5]))
-
 
 
     init_fene_params = [2.0, 0.25, 0.7525]
@@ -188,6 +185,9 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
     body = config_info.states[0]
     seq = jnp.array(get_one_hot(top_info.seq), dtype=f64)
     kT = get_kt(t=T) # 300 Kelvin = 0.1 kT
+
+    gamma = RigidBody(center=jnp.array([kT/2.5]),
+                      orientation=jnp.array([kT/7.5]))
 
 
     # Metapotential information
