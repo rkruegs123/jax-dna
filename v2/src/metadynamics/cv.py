@@ -185,12 +185,10 @@ def get_q_fn(reference_body, bps, displacement_fn, lam, gamma, threshold):
 
     mask = jnp.where(ref_r_base < threshold, 1, 0)
     n_nb = jnp.sum(mask)
-    pdb.set_trace()
 
     # NOTE/FIXME: we are currently not masking out only those native contacts given some threshold. Should just have a mask for this.
 
     def q_fn(body):
-        pdb.set_trace()
         Q = body.orientation
         back_base_vectors = Q_to_back_base(Q)
         base_sites = body.center + com_to_hb * back_base_vectors
