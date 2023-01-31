@@ -153,7 +153,7 @@ if __name__ == "__main__":
     key = random.PRNGKey(0)
 
     start = time.time()
-    traj, energies = run_single_langevin(top_path, conf_path, n_steps=25,
+    traj, energies = run_single_langevin(top_path, conf_path, n_steps=10000,
                                          key=key, save_output=True, save_every=1)
     end = time.time()
     total_time = end - start

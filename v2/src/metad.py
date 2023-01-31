@@ -168,7 +168,18 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
     gamma = RigidBody(center=jnp.array([DEFAULT_TEMP/2.5]),
                       orientation=jnp.array([DEFAULT_TEMP/7.5]))
 
-    params = [2.0, 0.25, 0.7525]
+
+
+    init_fene_params = [2.0, 0.25, 0.7525]
+    init_stacking_params = [
+        1.3448, 2.6568, 6.0, 0.4, 0.9, 0.32, 0.75, # f1(dr_stack)
+        1.30, 0.0, 0.8, # f4(theta_4)
+        0.90, 0.0, 0.95, # f4(theta_5p)
+        0.90, 0.0, 0.95, # f4(theta_6p)
+        2.0, -0.65, # f5(-cos(phi1))
+        2.0, -0.65 # f5(-cos(phi2))
+    ]
+    params = init_fene_params + init_stacking_params
 
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
@@ -433,10 +444,10 @@ if __name__ == "__main__":
     ])
 
 
-    # run_single_metad(args, cv1_bps, cv2_bps, key)
+    run_single_metad(args, cv1_bps, cv2_bps, key)
 
 
-
+    """
     # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2023-01-11_01-02-24")
     # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2023-01-11_23-40-40")
     # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/metad_2023-01-16_17-11-40")
@@ -469,6 +480,7 @@ if __name__ == "__main__":
 
     repulsive_wall_fn = md_utils.get_repulsive_wall_fn(d_critical=d_critical, wall_strength=1000.0)
     repulsive_wall_fn = jit(repulsive_wall_fn)
+    """
 
 
 
@@ -482,9 +494,10 @@ if __name__ == "__main__":
         pickle.dump(heights, hf)
     """
 
-
+    """
     plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
             cv1_method="ratio-contacts", cv2_method="com-dist",
             show_fig=True, save_fig=False, fpath=None)
 
     pdb.set_trace()
+    """
