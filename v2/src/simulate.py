@@ -59,23 +59,38 @@ def run_single_langevin(top_path, conf_path,
     # params = [0.10450547, 0.5336675 , 1.2209406]
     # params = [2.0, 0.25, 0.7525]
 
+    init_method = "oxdna"
+    if init_method == "random":
+        init_fene_params = [0.60, 0.75, 1.1]
+        init_stacking_params = [
+            0.25, 0.7, 2.0, 0.4, 1.2, 1.3, 0.2, # f1(dr_stack)
+            0.5, 0.35, 0.6, # f4(theta_4)
+            1.5, 1.1, 0.3, # f4(theta_5p)
+            2.0, 0.2, 0.75, # f4(theta_6p)
+            0.7, 2.0, # f5(-cos(phi1))
+            1.3, 0.8 # f5(-cos(phi2))
+        ]
+    elif init_method == "oxdna":
 
-    init_fene_params = [0.60, 0.75, 1.1]
-    init_stacking_params = [
-        0.25, 0.7, 2.0, 0.4, 1.2, 1.3, 0.2, # f1(dr_stack)
-        0.5, 0.35, 0.6, # f4(theta_4)
-        1.5, 1.1, 0.3, # f4(theta_5p)
-        2.0, 0.2, 0.75, # f4(theta_6p)
-        0.7, 2.0, # f5(-cos(phi1))
-        1.3, 0.8 # f5(-cos(phi2))
-    ]
+        # starting with the correct parameters
+        init_fene_params = [2.0, 0.25, 0.7525]
+        init_stacking_params = [
+            1.3448, 2.6568, 6.0, 0.4, 0.9, 0.32, 0.75, # f1(dr_stack)
+            1.30, 0.0, 0.8, # f4(theta_4)
+            0.90, 0.0, 0.95, # f4(theta_5p)
+            0.90, 0.0, 0.95, # f4(theta_6p)
+            2.0, -0.65, # f5(-cos(phi1))
+            2.0, -0.65 # f5(-cos(phi2))
+        ]
+    else:
+        raise RuntimeError(f"Invalid parameter initialization method: {init_method}")
     params = init_fene_params + init_stacking_params
-
 
 
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
     displacement_fn, shift_fn = space.periodic(config_info.box_size)
+    # displacement_fn, shift_fn = space.free()
 
     loss_fn = geometry.get_backbone_distance_loss(top_info.bonded_nbrs, displacement_fn)
     loss_fn = jit(loss_fn)
@@ -115,7 +130,7 @@ def run_single_langevin(top_path, conf_path,
             subterms.append(compute_subterms(state.position))
             # bb_distances.append(loss_fn(state.position)[0])
 
-    final_traj = TrajectoryInfo(top_info ,states=trajectory, box_size=config_info.box_size)
+    final_traj = TrajectoryInfo(top_info, states=trajectory, box_size=config_info.box_size)
     if save_output:
         print(bcolors.OKBLUE + f"Writing trajectory to file..." + bcolors.ENDC)
         final_traj.write(run_dir / "output.dat", reverse=True, write_topology=False)
@@ -128,13 +143,18 @@ if __name__ == "__main__":
     import numpy as np
     from loss import geometry
 
-    top_path = "data/simple-helix/generated.top"
-    conf_path = "data/simple-helix/start.conf"
+    # top_path = "data/simple-helix/generated.top"
+    # conf_path = "data/simple-helix/start.conf"
+
+    top_path = "data/persistence-length/init.top"
+    conf_path = "data/persistence-length/init.conf"
+    # conf_path = "data/persistence-length/relaxed.dat"
+
     key = random.PRNGKey(0)
 
     start = time.time()
-    traj, energies = run_single_langevin(top_path, conf_path, n_steps=1000000,
-                                         key=key, save_output=True, save_every=10000)
+    traj, energies = run_single_langevin(top_path, conf_path, n_steps=25,
+                                         key=key, save_output=True, save_every=1)
     end = time.time()
     total_time = end - start
     print(bcolors.OKGREEN + f"Finished simulation in {np.round(total_time, 2)} seconds" + bcolors.ENDC)
