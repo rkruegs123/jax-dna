@@ -142,7 +142,6 @@ def _read_traj_info(traj_lines, n):
         t_lines = [[t] + state_info.strip().split() for state_info in state_lines[3:]]
         df_lines += t_lines
 
-
     ts = np.array(ts, dtype=np.float64)
     bs = np.array(bs, dtype=np.float64)
     Es = np.array(Es, dtype=np.float64)
@@ -161,9 +160,10 @@ def _read_traj_info(traj_lines, n):
 # Note: https://stackoverflow.com/questions/61355655/pandas-how-to-sort-rows-of-a-column-using-a-dictionary-with-indexes
 def get_rev_traj_df(traj_df, rev_orientation_mapper):
     rev_traj_df = traj_df.copy(deep=True)
+    n = len(rev_orientation_mapper)
     for t in rev_traj_df['t'].unique():
         t_df = rev_traj_df[rev_traj_df.t == t]
-        t_df_resorted = t_df.iloc[t_df.index.map(rev_orientation_mapper).argsort()].reset_index(drop=True)
+        t_df_resorted = t_df.iloc[(t_df.index % n).map(rev_orientation_mapper).argsort()].reset_index(drop=True)
         rev_traj_df.loc[rev_traj_df.t == t] = t_df_resorted.values
 
     # Then, flip all base normals by 180 by taking their negative
