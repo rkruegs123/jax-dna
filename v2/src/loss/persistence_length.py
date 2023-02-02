@@ -11,8 +11,8 @@ from jax_md import util
 from jax_md import rigid_body
 from jax_md.rigid_body import RigidBody, Quaternion
 
-# import sys
-# sys.path.append("v2/src/")
+import sys
+sys.path.append("v2/src/")
 # pdb.set_trace()
 
 from utils import DEFAULT_TEMP
@@ -73,12 +73,12 @@ def get_correlation_curve(system: RigidBody, base_quartets: Array):
     return autocorr, jnp.mean(l0_vals)
 
 def persistence_length_fit(autocorr, l0_av):
+
     y = jnp.log(autocorr)
     # x = jnp.linspace(0, autocorr.shape[0], 1)
     x = jnp.arange(autocorr.shape[0])
     x = jnp.stack([jnp.ones_like(x), x], axis=1)
     ### fit line:fit_ =	jax.numpy.linalg.lstsq(x, y)
-    pdb.set_trace()
     fit_ = jnp.linalg.lstsq(x, y)
     ### extract slope = -l0_av/Lp ---> Lp = -l0_av/slope
     slope = fit_[0][1]
@@ -97,11 +97,18 @@ def get_persistence_length_loss(base_quartets, target_avg_pitch=TARGET_PERSISTEN
 
 if __name__ == "__main__":
     from tqdm import tqdm
+    import matplotlib.pyplot as plt
+    from pathlib import Path
 
     # top_path = "data/simple-helix/generated.top"
     # config_path = "data/simple-helix/start.conf"
-    top_path = "data/persistence-length/init.top"
-    config_path = "data/persistence-length/relaxed.dat"
+    # top_path = "data/persistence-length/init.top"
+    # config_path = "data/persistence-length/relaxed.dat"
+
+    bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/langevin_2023-01-31_16-23-04")
+    # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/langevin_2023-01-31_16-38-50")
+    top_path = bpath / "init.top"
+    config_path = bpath / "output.dat"
 
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=config_path, reverse_direction=True)
@@ -110,8 +117,6 @@ if __name__ == "__main__":
     seq_oh = jnp.array(get_one_hot(config_info.top_info.seq), dtype=f64)
 
     body = config_info.states[0]
-
-    pdb.set_trace()
 
     def get_all_quartets(n_nucs_per_strand):
         s1_nucs = list(range(n_nucs_per_strand))
@@ -125,12 +130,17 @@ if __name__ == "__main__":
             bp1 = bps[i]
             bp2 = bps[i+1]
             all_quartets.append(bp1 + bp2)
-        return all_quartets
+        return jnp.array(all_quartets, dtype=jnp.int32)
 
     quartets = get_all_quartets(n_nucs_per_strand=body.center.shape[0] // 2)
 
+    # chop off the ends
+    quartets = quartets[25:]
+    quartets = quartets[:-25]
+
     pdb.set_trace()
 
+    """
     quartets = jnp.array([
         [0, 15, 1, 14],
         [1, 14, 2, 13],
@@ -140,10 +150,32 @@ if __name__ == "__main__":
         [5, 10, 6, 9],
         [6, 9, 7, 8]
     ])
+    """
 
+    all_curves = list()
+    all_l0_avg = list()
+    for b_idx in tqdm(range(0, len(config_info.states), 10)):
+        body = config_info.states[b_idx]
+        correlation_curve, l0_avg = get_correlation_curve(body, quartets)
+        Lp = persistence_length_fit(correlation_curve, l0_avg)
 
-    correlation_curve, l0_avg = get_correlation_curve(body, quartets)
-    Lp = persistence_length_fit(correlation_curve, l0_avg)
+        # plt.plot(range(len(correlation_curve)), correlation_curve)
+        # plt.show()
+        # plt.clf()
+
+        all_curves.append(correlation_curve)
+        all_l0_avg.append(l0_avg)
+
+    all_curves = jnp.array(all_curves)
+    all_l0_avg = jnp.array(all_l0_avg)
+    mean_correlation_curve = jnp.mean(all_curves, axis=0)
+    mean_l0_avg = jnp.mean(all_l0_avg)
+
+    plt.plot(range(len(mean_correlation_curve)), mean_correlation_curve)
+    plt.show()
+    plt.clf()
+
+    Lp = persistence_length_fit(mean_correlation_curve, mean_l0_avg)
 
 
     # loss_fn = get_persistence_length_loss(quartets)
