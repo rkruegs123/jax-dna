@@ -9,7 +9,10 @@ import pickle
 import time
 import argparse
 
-from jax.config import config; config.update("jax_enable_x64", True)
+from jax.config import config; 
+config.update("jax_enable_x64", True)
+config.update("jax_debug_nans", True)
+
 import jax.numpy as jnp
 from jax import random
 from jax import jit
@@ -84,7 +87,6 @@ def plot_2d(repulsive_wall_fn, heights, centers, widths, d_critical,
     # l_val, r_val = -onp.abs(vals).max(), onp.abs(vals).max()
     l_val, r_val = onp.abs(vals).min(), onp.abs(vals).max()
 
-    pdb.set_trace()
     figure, axes = plt.subplots()
     c = axes.pcolormesh(a, b, vals, cmap='cool', vmin=l_val, vmax=r_val)
     axes.axis([l_a, r_a, l_b, r_b])
@@ -122,6 +124,7 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
 
     d_critical = args['d_critical']
     wall_strength = args['wall_strength']
+    box_type = args['box_type']
 
     save_every = args['save_every']
     save_output = args['save_output']
@@ -145,7 +148,7 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
         if not output_basedir.exists():
             raise RuntimeError(f"Output base directory does not exist at location: {output_basedir}")
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        run_name = f"metad_{timestamp}"
+        run_name = f"metad_{timestamp}_{cv1_method}_{cv2_method}_{box_type}"
         run_dir = output_basedir / run_name
         run_dir.mkdir(parents=False, exist_ok=False)
         shutil.copy(top_path, run_dir)
@@ -180,7 +183,13 @@ def run_single_metad(args, cv1_bps, cv2_bps, key,
 
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
-    displacement_fn, shift_fn = space.periodic(config_info.box_size)
+
+    if box_type == "periodic":
+        displacement_fn, shift_fn = space.periodic(config_info.box_size)
+    elif box_type == "free":
+        displacement_fn, shift_fn = space.free()
+    else:
+        raise RuntimeError(f"Invalid box type: {box_type}")
 
     body = config_info.states[0]
     seq = jnp.array(get_one_hot(top_info.seq), dtype=f64)
@@ -399,6 +408,11 @@ def build_argparse():
                         choices=["com-dist", "min-dist"],
                         help="The second collective variable (a distance)")
 
+    parser.add_argument('--box-type', type=str,
+                        default="periodic",
+                        choices=["periodic", "free"],
+                        help="The type of boxed used for simulation")
+
     # Arguments for "ratio-contacts" option for cv1
     parser.add_argument('--ref-top-path', type=str,
                         default="data/simple-helix/generated.top",
@@ -433,14 +447,14 @@ if __name__ == "__main__":
     ])
 
     cv2_bps = jnp.array([
-        [0, 15],
-        [1, 14],
+        # [0, 15],
+        # [1, 14],
         [2, 13],
         [3, 12],
         [4, 11],
         [5, 10],
-        [6, 9],
-        [7, 8]
+        # [6, 9],
+        # [7, 8]
     ])
 
 

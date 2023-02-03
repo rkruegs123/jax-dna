@@ -20,14 +20,18 @@ Array = util.Array
 
 
 def get_structural_loss_fn(
-        backbone_dist_pairs, displacement_fn,
+        displacement_fn,
+        backbone_dist_pairs, 
+        helical_pairs,
         pitch_base_quartets,
         propeller_base_pairs: Array):
     propeller_loss_fn = propeller.get_propeller_loss_fn(propeller_base_pairs)
     pitch_loss_fn = pitch.get_pitch_distance_loss(pitch_base_quartets)
-    geometry_loss_fn = geometry.get_backbone_distance_loss(backbone_dist_pairs, displacement_fn)
+    bb_dist_loss_fn = geometry.get_backbone_distance_loss(backbone_dist_pairs, displacement_fn)
+    helical_diameter_loss_fn = geometry.get_helical_diameter_loss(helical_pairs, displacement_fn)
     def structural_loss_fn(body):
-        return geometry_loss_fn(body) + pitch_loss_fn(body) + propeller_loss_fn(body)
+        return bb_dist_loss_fn(body) + pitch_loss_fn(body) + propeller_loss_fn(body) \
+            + helical_diameter_loss_fn(body)
 
     return structural_loss_fn
 
@@ -46,6 +50,7 @@ if __name__ == "__main__":
 
     displacement_fn, _ = space.periodic(config_info.box_size)
     backbone_dist_pairs = top_info.bonded_nbrs
+    helical_pairs = top_info.bonded_nbrs
     pitch_quartets = jnp.array([
         [0, 15, 1, 14],
         [1, 14, 2, 13],
@@ -59,8 +64,9 @@ if __name__ == "__main__":
 
 
     loss_fn = get_structural_loss_fn(
-        backbone_dist_pairs,
         displacement_fn,
+        backbone_dist_pairs,
+        helical_pairs,
         pitch_quartets,
         propeller_base_pairs
     )

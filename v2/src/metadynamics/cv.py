@@ -202,6 +202,8 @@ def get_q_fn(reference_body, bps, displacement_fn, lam, gamma, threshold):
         terms = 1 / (1 + exps)
         masked_terms = mask * terms
         q = 1/n_nb * jnp.sum(masked_terms)
+        
+        q = jnp.where(q < 1e-2, 1e-2, q) # To avoid numerical errors
 
         return q
     return q_fn

@@ -39,7 +39,7 @@ def run_single_langevin(top_path, conf_path,
         if not output_basedir.exists():
             raise RuntimeError(f"Output base directory does not exist at location: {output_basedir}")
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        run_name = f"langevin_{timestamp}"
+        run_name = f"langevin_{timestamp}_n{n_steps}"
         run_dir = output_basedir / run_name
         run_dir.mkdir(parents=False, exist_ok=False)
         shutil.copy(top_path, run_dir)
@@ -157,8 +157,8 @@ if __name__ == "__main__":
     key = random.PRNGKey(0)
 
     start = time.time()
-    traj, energies = run_single_langevin(top_path, conf_path, n_steps=100000,
-                                         key=key, save_output=True, save_every=1000)
+    traj, energies = run_single_langevin(top_path, conf_path, n_steps=10000000,
+                                         key=key, save_output=True, save_every=100000)
     end = time.time()
     total_time = end - start
     print(bcolors.OKGREEN + f"Finished simulation in {np.round(total_time, 2)} seconds" + bcolors.ENDC)

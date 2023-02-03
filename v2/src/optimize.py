@@ -39,7 +39,6 @@ config.update("jax_enable_x64", True)
 f64 = util.f64
 
 mass = RigidBody(center=jnp.array([nucleotide_mass]), orientation=jnp.array([moment_of_inertia]))
-gamma = RigidBody(center=jnp.array([DEFAULT_TEMP/2.5]), orientation=jnp.array([DEFAULT_TEMP/7.5]))
 base_site = jnp.array(
     [com_to_hb, 0.0, 0.0], dtype=f64
 )
@@ -128,10 +127,12 @@ def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=
     body = config_info.states[0]
     seq = jnp.array(get_one_hot(top_info.seq), dtype=f64)
     kT = get_kt(t=T) # 300 Kelvin = 0.1 kT
+    # gamma = RigidBody(center=jnp.array([DEFAULT_TEMP/2.5]), orientation=jnp.array([DEFAULT_TEMP/7.5]))
+    gamma = RigidBody(center=jnp.array([kT/2.5]), orientation=jnp.array([kT/7.5]))
 
     energy_fn, _ = factory.energy_fn_factory(displacement_fn,
-                                         back_site, stack_site, base_site,
-                                         top_info.bonded_nbrs, top_info.unbonded_nbrs)
+                                             back_site, stack_site, base_site,
+                                             top_info.bonded_nbrs, top_info.unbonded_nbrs)
     energy_fn = Partial(energy_fn, seq=seq)
 
     # Langevin
@@ -149,6 +150,7 @@ def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=
     # loss_fn = geometry.get_backbone_distance_loss(top_info.bonded_nbrs, displacement_fn)
     # loss_fn = jit(loss_fn)
     backbone_dist_pairs = top_info.bonded_nbrs
+    helical_pairs = top_info.bonded_nbrs
     pitch_quartets = jnp.array([
         [0, 15, 1, 14],
         [1, 14, 2, 13],
@@ -160,8 +162,9 @@ def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=
     ])
     propeller_base_pairs = jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
     loss_fn = structural.get_structural_loss_fn(
-        backbone_dist_pairs,
         displacement_fn,
+        backbone_dist_pairs,
+        helical_pairs,
         pitch_quartets,
         propeller_base_pairs)
     loss_fn = jit(loss_fn)
@@ -242,7 +245,8 @@ def run(args, init_params,
     # Note: in the future, we will have multiple of these
     top_info = TopologyInfo(top_path, reverse_direction=True)
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
-    displacement_fn, shift_fn = space.periodic(config_info.box_size)
+    # displacement_fn, shift_fn = space.periodic(config_info.box_size)
+    displacement_fn, shift_fn = space.free()
     # Note how we get one `grad_fxn` per "test case." The gradient has to be estimated *per* test case
     grad_fxn = estimate_gradient(batch_size, displacement_fn, shift_fn, top_info, config_info,
                                  sim_length, dt=dt, T=T)
