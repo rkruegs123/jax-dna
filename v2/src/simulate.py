@@ -16,7 +16,7 @@ from utils import nucleotide_mass, get_kt, moment_of_inertia, get_one_hot, DEFAU
 from utils import base_site, stack_site, back_site
 from utils import bcolors
 # import langevin
-from energy import factory
+from energy import factory, ext_force
 from loader import get_params
 from loader.trajectory import TrajectoryInfo
 from loader.topology import TopologyInfo
@@ -109,8 +109,21 @@ def run_single_langevin(top_path, conf_path,
     energy_fn = jit(Partial(energy_fn, seq=seq, params=params))
     compute_subterms = jit(Partial(compute_subterms, seq=seq, params=params))
 
+    _, force_fn = ext_force.get_force_fn(energy_fn, top_info.n, displacement_fn,
+                                         [0, 15],
+                                         # [201, 202],
+                                         # [0],
+                                         [0, 0, 0.0], [0, 0, 0, 0])
+    _, force_fn = ext_force.get_force_fn(force_fn, top_info.n, displacement_fn,
+                                         [7, 8],
+                                         # [0, 403],
+                                         # [7],
+                                         [0, 0, -0.0], [0, 0, 0, 0])
+    force_fn = jit(force_fn)
+
     # init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
-    init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+    # init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+    init_fn, step_fn = simulate.nvt_langevin(force_fn, shift_fn, dt, kT, gamma)
     step_fn = jit(step_fn)
 
 
@@ -120,7 +133,7 @@ def run_single_langevin(top_path, conf_path,
     energies = [energy_fn(state.position)]
     # losses = [loss_fn(state.position)[1]]
     losses = [loss_fn(state.position)]
-    subterms = [compute_subterms(state.position)]
+    # subterms = [compute_subterms(state.position)]
     # bb_distances = [loss_fn(state.position)[0]]
     print(bcolors.OKBLUE + f"Starting simulation..." + bcolors.ENDC)
     for i in tqdm(range(n_steps), colour="red"): # note: colour can be one of [hex (#00ff00), BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE]
@@ -131,7 +144,7 @@ def run_single_langevin(top_path, conf_path,
             trajectory.append(state.position)
             # losses.append(loss_fn(state.position)[1])
             losses.append(loss_fn(state.position))
-            subterms.append(compute_subterms(state.position))
+            # subterms.append(compute_subterms(state.position))
             # bb_distances.append(loss_fn(state.position)[0])
 
     final_traj = TrajectoryInfo(top_info, states=trajectory, box_size=config_info.box_size)
@@ -147,18 +160,22 @@ if __name__ == "__main__":
     import numpy as np
     from loss import geometry
 
-    # top_path = "data/simple-helix/generated.top"
-    # conf_path = "data/simple-helix/start.conf"
+    top_path = "data/simple-helix/generated.top"
+    conf_path = "data/simple-helix/start.conf"
 
-    top_path = "data/persistence-length/init.top"
+    # top_path = "data/persistence-length/init.top"
     # conf_path = "data/persistence-length/init.conf"
-    conf_path = "data/persistence-length/relaxed.dat"
+    # conf_path = "data/persistence-length/relaxed.dat"
+
+    # top_path = "data/single-strand/generated.top"
+    # conf_path = "data/single-strand/start.conf"
 
     key = random.PRNGKey(0)
 
     start = time.time()
-    traj, energies = run_single_langevin(top_path, conf_path, n_steps=10000000,
-                                         key=key, save_output=True, save_every=100000)
+
+    traj, energies = run_single_langevin(top_path, conf_path, n_steps=10000,
+                                         key=key, save_output=True, save_every=100)
     end = time.time()
     total_time = end - start
     print(bcolors.OKGREEN + f"Finished simulation in {np.round(total_time, 2)} seconds" + bcolors.ENDC)

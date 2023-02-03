@@ -105,8 +105,9 @@ if __name__ == "__main__":
     # top_path = "data/persistence-length/init.top"
     # config_path = "data/persistence-length/relaxed.dat"
 
-    bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/langevin_2023-01-31_16-23-04")
+    # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/langevin_2023-01-31_16-23-04")
     # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/langevin_2023-01-31_16-38-50")
+    bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/langevin_2023-01-31_01-20-52")
     top_path = bpath / "init.top"
     config_path = bpath / "output.dat"
 
@@ -154,7 +155,9 @@ if __name__ == "__main__":
 
     all_curves = list()
     all_l0_avg = list()
-    for b_idx in tqdm(range(0, len(config_info.states), 10)):
+
+    # for b_idx in tqdm(range(0, len(config_info.states), 10)):
+    for b_idx in tqdm(range(0, len(config_info.states), 1)):
         body = config_info.states[b_idx]
         correlation_curve, l0_avg = get_correlation_curve(body, quartets)
         Lp = persistence_length_fit(correlation_curve, l0_avg)
