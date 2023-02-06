@@ -24,9 +24,31 @@ from loader.topology import TopologyInfo
 
 f64 = util.f64
 
-def run_single_langevin(top_path, conf_path,
-                        n_steps, key, T=DEFAULT_TEMP, dt=5e-3, save_every=10,
+def run_single_langevin(args,
+                        T=DEFAULT_TEMP, dt=5e-3,
                         output_basedir="v2/data/output/", save_output=False):
+
+    top_path = args['top_path']
+    conf_path = args['conf_path']
+    n_steps = args['n_steps']
+    key = random.PRNGKey(args['key'])
+    init_method = args['params']
+    save_every = args['save_every']
+
+    use_ext_force = args['use_ext_force']
+    ext_force_magnitude = args['ext_force_magnitude']
+    ext_force_bps1 = args['ext_force_bps1']
+    ext_force_bps2 = args['ext_force_bps2']
+
+    if use_ext_force and (not ext_force_magnitude or not ext_force_bps1 or not ext_force_bps2):
+        raise RuntimeError(f"Must provide external force parameters if using an external force")
+
+    if use_ext_force:
+        for nuc_id in ext_force_bps1 + ext_force_bps2:
+            if not nuc_id.isdigit():
+                raise RuntimeError(f"External force nucleotide IDs must be integers")
+        ext_force_bps1 = [int(nuc_id) for nuc_id in ext_force_bps1]
+        ext_force_bps2 = [int(nuc_id) for nuc_id in ext_force_bps2]
 
     if not Path(top_path).exists():
         raise RuntimeError(f"Topology file does not exist at location: {top_path}")
@@ -44,7 +66,10 @@ def run_single_langevin(top_path, conf_path,
         run_dir.mkdir(parents=False, exist_ok=False)
         shutil.copy(top_path, run_dir)
         shutil.copy(conf_path, run_dir)
-        params_str = f"topology file: {top_path}\nconfiguration file: {conf_path}\nn_steps: {n_steps}\nkey: {key}\ntemperature: {T}\ndt: {dt}\nsave_every: {save_every}\n"
+
+        params_str = ""
+        for k, v in args.items():
+            params_str += f"{k}: {v}\n"
         with open(run_dir / "params.txt", "w+") as f:
             f.write(params_str)
         print(bcolors.WARNING + f"Created directory and copied simulation information at location: {run_dir}" + bcolors.ENDC)
@@ -58,7 +83,6 @@ def run_single_langevin(top_path, conf_path,
     # params = [0.10450547, 0.5336675 , 1.2209406]
     # params = [2.0, 0.25, 0.7525]
 
-    init_method = "oxdna"
     if init_method == "random":
         init_fene_params = [0.60, 0.75, 1.1]
         init_stacking_params = [
@@ -109,23 +133,30 @@ def run_single_langevin(top_path, conf_path,
     energy_fn = jit(Partial(energy_fn, seq=seq, params=params))
     compute_subterms = jit(Partial(compute_subterms, seq=seq, params=params))
 
-    _, force_fn = ext_force.get_force_fn(energy_fn, top_info.n, displacement_fn,
-                                         [0, 15],
-                                         # [201, 202],
-                                         # [0],
-                                         [0, 0, 0.0], [0, 0, 0, 0])
-    _, force_fn = ext_force.get_force_fn(force_fn, top_info.n, displacement_fn,
-                                         [7, 8],
-                                         # [0, 403],
-                                         # [7],
-                                         [0, 0, -0.0], [0, 0, 0, 0])
-    force_fn = jit(force_fn)
+    if use_ext_force:
+        _, force_fn = ext_force.get_force_fn(energy_fn, top_info.n, displacement_fn,
+                                             # [0, 15],
+                                             # [201, 202],
+                                             # [0],
+                                             # [0, 219],
+                                             # [109, 110], # (108, 111), (106, 113), (104, 115), (100, 119)
+                                             ext_force_bps1,
+                                             [0, 0, ext_force_magnitude], [0, 0, 0, 0])
+        _, force_fn = ext_force.get_force_fn(force_fn, top_info.n, displacement_fn,
+                                             # [7, 8],
+                                             # [0, 403],
+                                             # [7],
+                                             # [109, 110],
+                                             # [0, 219], # (1, 218), (3, 216), (5, 214), (7, 212), (9, 210)
+                                             ext_force_bps2,
+                                             [0, 0, -ext_force_magnitude], [0, 0, 0, 0])
+        force_fn = jit(force_fn)
+        init_fn, step_fn = simulate.nvt_langevin(force_fn, shift_fn, dt, kT, gamma)
+    else:
+        # init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+        init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
 
-    # init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
-    # init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
-    init_fn, step_fn = simulate.nvt_langevin(force_fn, shift_fn, dt, kT, gamma)
     step_fn = jit(step_fn)
-
 
     state = init_fn(key, body, mass=mass, seq=seq, params=params)
 
@@ -159,9 +190,38 @@ if __name__ == "__main__":
     import time
     import numpy as np
     from loss import geometry
+    import argparse
 
-    top_path = "data/simple-helix/generated.top"
-    conf_path = "data/simple-helix/start.conf"
+    parser = argparse.ArgumentParser(description="Conduct an oxDNA simulation")
+    parser.add_argument('--top-path', type=str,
+                        default="data/simple-helix/generated.top",
+                        help='Path to topology file')
+    parser.add_argument('--conf-path', type=str,
+                        default="data/simple-helix/start.conf",
+                        help='Path to configuration file')
+    parser.add_argument('-n', '--n-steps', type=int, default=1000,
+                        help="Num. steps per simulation")
+    parser.add_argument('--save-every', type=int, default=10,
+                        help="Frequency of saving data from optimization")
+    parser.add_argument('-k', '--key', type=int, default=0,
+                        help="Random key")
+    parser.add_argument('--params', type=str,
+                        default="oxdna",
+                        choices=["random", "oxdna"],
+                        help='Method for initializing parameters')
+
+    # External force
+    # note: https://stackoverflow.com/questions/15753701/how-can-i-pass-a-list-as-a-command-line-argument-with-argparse
+    parser.add_argument('--ext-force-bps1', nargs='+', help='First list of bases for external force', required=False)
+    parser.add_argument('--ext-force-bps2', nargs='+', help='Second list of bases for external force', required=False)
+    parser.add_argument('--use-ext-force', action='store_true')
+    parser.add_argument('--ext-force-magnitude', type=float, default=1.0,
+                        help="Magnitude of the external force in the z-direction")
+
+    args = vars(parser.parse_args())
+
+    # top_path = "data/simple-helix/generated.top"
+    # conf_path = "data/simple-helix/start.conf"
 
     # top_path = "data/persistence-length/init.top"
     # conf_path = "data/persistence-length/init.conf"
@@ -170,12 +230,14 @@ if __name__ == "__main__":
     # top_path = "data/single-strand/generated.top"
     # conf_path = "data/single-strand/start.conf"
 
-    key = random.PRNGKey(0)
+    # top_path = "data/elastic-mod/generated.top"
+    # conf_path = "data/elastic-mod/generated.dat"
+
+    # key = random.PRNGKey(0)
 
     start = time.time()
 
-    traj, energies = run_single_langevin(top_path, conf_path, n_steps=10000,
-                                         key=key, save_output=True, save_every=100)
+    traj, energies = run_single_langevin(args, save_output=True)
     end = time.time()
     total_time = end - start
     print(bcolors.OKGREEN + f"Finished simulation in {np.round(total_time, 2)} seconds" + bcolors.ENDC)

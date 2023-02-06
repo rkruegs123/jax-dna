@@ -304,17 +304,17 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Optimizing over oxDNA parameters")
-    parser.add_argument('-b', '--batch-size', type=int, default=10, 
+    parser.add_argument('-b', '--batch-size', type=int, default=10,
                         help="Num. batches for each round of gradient descent")
-    parser.add_argument('--save-every', type=int, default=1, 
+    parser.add_argument('--save-every', type=int, default=1,
                         help="Frequency of saving data from optimization")
-    parser.add_argument('--opt-steps', type=int, default=1, 
+    parser.add_argument('--opt-steps', type=int, default=1,
                         help="Num. iterations of gradient descent")
-    parser.add_argument('-n', '--n-steps', type=int, default=10000, 
+    parser.add_argument('-n', '--n-steps', type=int, default=10000,
                         help="Num. steps per simulation")
-    parser.add_argument('-k', '--key', type=int, default=0, 
+    parser.add_argument('-k', '--key', type=int, default=0,
                         help="Random key")
-    parser.add_argument('--lr', type=float, default=0.01, 
+    parser.add_argument('--lr', type=float, default=0.01,
                         help="Learning rate for optimization")
     parser.add_argument('--top-path', type=str,
                         default="data/simple-helix/generated.top",
@@ -323,7 +323,7 @@ if __name__ == "__main__":
                         default="data/simple-helix/start.conf",
                         help='Path to configuration file')
     parser.add_argument('--params', type=str,
-                        default="random",
+                        default="oxdna",
                         choices=["random", "oxdna"],
                         help='Method for initializing parameters')
     args = vars(parser.parse_args())

@@ -14,7 +14,8 @@ config.update("jax_enable_x64", True)
 
 
 
-DEFAULT_TEMP = 300
+# DEFAULT_TEMP = 300
+DEFAULT_TEMP = 296.15
 
 def clamp(x, lo=-1.0, hi=1.0):
     """
