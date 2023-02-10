@@ -169,10 +169,11 @@ def energy_fn_factory(displacement_fn,
         # Use our the parameters to construct the relevant energy functions
         # Note: for each, there are two options -- corresponding to whether we are optimizing over arrays or dicts
         ## FENE
-        fene_params = dict(zip(["eps_backbone", "delta_backbone", "r0_backbone"], params[:3]))
-        # fene_params = params["fene"]
+        # fene_params = dict(zip(["eps_backbone", "delta_backbone", "r0_backbone"], params[:3]))
+        fene_params = params["fene"]
         fene_fn = Partial(v_fene, **fene_params)
 
+        """
         stacking_param_names = [
             # f1(dr_stack)
             "eps_stack_base",
@@ -208,6 +209,8 @@ def energy_fn_factory(displacement_fn,
         ]
         unprocessed_stacking_params = dict(zip(stacking_param_names, params[3:23]))
         stacking_params = process_stacking_params(unprocessed_stacking_params, kt)
+        """
+        stacking_params = get_params.process_stacking(params['stacking'], kt)
         stacking_fn = Partial(stacking, **stacking_params)
 
 

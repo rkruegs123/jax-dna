@@ -7,6 +7,70 @@ from loader.smoothing import get_f1_smoothing_params, get_f2_smoothing_params, \
 from utils import get_kt, DEFAULT_TEMP
 
 
+def process_stacking(stacking_params, kt, no_smoothing=False):
+    stacking_params['eps_stack'] = stacking_params['eps_stack_base'] \
+                                      + stacking_params['eps_stack_kt_coeff'] * kt
+    del stacking_params['eps_stack_kt_coeff']
+    del stacking_params['eps_stack_base']
+
+    if no_smoothing:
+        return stacking_params
+
+    ## f1(dr_stack)
+    b_low_stack, dr_c_low_stack, b_high_stack, dr_c_high_stack = get_f1_smoothing_params(
+        stacking_params['eps_stack'],
+        stacking_params['dr0_stack'],
+        stacking_params['a_stack'],
+        stacking_params['dr_c_stack'],
+        stacking_params['dr_low_stack'],
+        stacking_params['dr_high_stack'])
+    stacking_params['b_low_stack'] = b_low_stack
+    stacking_params['dr_c_low_stack'] = dr_c_low_stack
+    stacking_params['b_high_stack'] = b_high_stack
+    stacking_params['dr_c_high_stack'] = dr_c_high_stack
+
+    ## f4(theta_4)
+    b_stack_4, delta_theta_stack_4_c = get_f4_smoothing_params(
+        stacking_params['a_stack_4'],
+        stacking_params['theta0_stack_4'],
+        stacking_params['delta_theta_star_stack_4'])
+    stacking_params['b_stack_4'] = b_stack_4
+    stacking_params['delta_theta_stack_4_c'] = delta_theta_stack_4_c
+
+    ## f4(theta_5p)
+    b_stack_5, delta_theta_stack_5_c = get_f4_smoothing_params(
+        stacking_params['a_stack_5'],
+        stacking_params['theta0_stack_5'],
+        stacking_params['delta_theta_star_stack_5'])
+    stacking_params['b_stack_5'] = b_stack_5
+    stacking_params['delta_theta_stack_5_c'] = delta_theta_stack_5_c
+
+    ## f4(theta_6p)
+    b_stack_6, delta_theta_stack_6_c = get_f4_smoothing_params(
+        stacking_params['a_stack_6'],
+        stacking_params['theta0_stack_6'],
+        stacking_params['delta_theta_star_stack_6'])
+    stacking_params['b_stack_6'] = b_stack_6
+    stacking_params['delta_theta_stack_6_c'] = delta_theta_stack_6_c
+
+    ## f5(-cos(phi1))
+    b_neg_cos_phi1_stack, neg_cos_phi1_c_stack = get_f5_smoothing_params(
+        stacking_params['a_stack_1'],
+        stacking_params['neg_cos_phi1_star_stack'])
+    stacking_params['b_neg_cos_phi1_stack'] = b_neg_cos_phi1_stack
+    stacking_params['neg_cos_phi1_c_stack'] = neg_cos_phi1_c_stack
+
+    ## f5(-cos(phi2))
+    b_neg_cos_phi2_stack, neg_cos_phi2_c_stack = get_f5_smoothing_params(
+        stacking_params['a_stack_2'],
+        stacking_params['neg_cos_phi2_star_stack'])
+    stacking_params['b_neg_cos_phi2_stack'] = b_neg_cos_phi2_stack
+    stacking_params['neg_cos_phi2_c_stack'] = neg_cos_phi2_c_stack
+
+    return stacking_params
+
+
+
 def add_misc(params, t):
     kt = get_kt(t)
     params['stacking']['eps_stack'] = params['stacking']['eps_stack_base'] \
