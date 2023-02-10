@@ -359,45 +359,8 @@ if __name__ == "__main__":
         raise RuntimeError(f"Invalid parameter initialization method: {init_method}")
 
 
-    # init_params = jnp.array(init_fene_params + init_stacking_params)
+    init_params = jnp.array(init_fene_params + init_stacking_params)
     # init_params = jnp.array(init_fene_params) # my own hard-coded random FENE parameters
-    init_params = dict()
-    init_params['fene'] = dict(zip(["eps_backbone", "delta_backbone", "r0_backbone"], init_fene_params))
-
-    stacking_param_names = [
-        # f1(dr_stack)
-        "eps_stack_base",
-        "eps_stack_kt_coeff",
-        "a_stack",
-        "dr0_stack",
-        "dr_c_stack",
-        "dr_low_stack",
-        "dr_high_stack",
-
-        # f4(theta_4)
-        "a_stack_4",
-        "theta0_stack_4",
-        "delta_theta_star_stack_4",
-
-        # f4(theta_5p)
-        "a_stack_5",
-        "theta0_stack_5",
-        "delta_theta_star_stack_5",
-
-        # f4(theta_6p)
-        "a_stack_6",
-        "theta0_stack_6",
-        "delta_theta_star_stack_6",
-
-        # f5(-cos(phi1))
-        "a_stack_1",
-        "neg_cos_phi1_star_stack",
-
-        # f5(-cos(phi2))
-        "a_stack_2",
-        "neg_cos_phi2_star_stack"
-    ]
-    init_params['stacking'] = dict(zip(stacking_param_names, init_stacking_params))
 
 
     # key = random.PRNGKey(0)
