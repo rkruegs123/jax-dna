@@ -176,7 +176,8 @@ def get_rev_traj_df(traj_df, rev_orientation_mapper):
 # Takes in a list of box_sizes (i.e. one array of shape (3,) for each simulation step) and returns a single scalar value
 def bs_to_box_size(bs):
     if not np.all(bs == bs[0]):
-            raise RuntimeError(f"Currently only supports trajectories with a fixed box size")
+        pdb.set_trace()
+        raise RuntimeError(f"Currently only supports trajectories with a fixed box size")
     box_dims = bs[0]
     if not np.all(box_dims == box_dims[0]):
         raise RuntimeError(f"Currently only support cubic simulation boxes (i.e. all dimensions are the same)")
