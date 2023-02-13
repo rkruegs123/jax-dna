@@ -1,5 +1,6 @@
 import pdb
 from tqdm import tqdm
+from pathlib import Path
 
 from jax.config import config as jax_config
 import jax.numpy as jnp
@@ -41,30 +42,126 @@ if FLAGS.jax_enable_x64:
     DTYPE += [f64]
 
 
+def coth(x):
+    # return 1 / jnp.tanh(x)
+    return (jnp.exp(2*x) + 1) / (jnp.exp(2*x) - 1)
+
+def compute_dist(state, end1, end2, force_axis):
+    end1_com = (state.center[end1[0]] + state.center[end1[1]]) / 2
+    end2_com = (state.center[end2[0]] + state.center[end2[1]]) / 2
+
+    midp_disp = end1_com - end2_com
+    projected_dist = jnp.dot(midp_disp, force_axis)
+    return jnp.linalg.norm(projected_dist) # Note: incase it's negative
+
+def calculate_x(force, l0, lps, k, kT):
+    y = ((force * l0**2)/(lps*kT))**(1/2)
+    x = l0 * (1 + force/k - kT/(2*force*l0) * (1 + y*coth(y)))
+    return x
+
+# Used for fitting via non-linear lsq
+def WLC(coeffs, x_data, force_data, kT):
+    # coeffs = [L0, Lp, K]
+    l0 = coeffs[0]
+    lps = coeffs[1]
+    k = coeffs[2]
+
+    x_calc = calculate_x(force_data, l0, lps, k, kT)
+    residual = x_data - x_calc
+    # y = ((force_data * coeffs[0]**2)/(coeffs[1]*kT))**(1/2)
+    # residual = x_data - coeffs[0] * (1 + force_data/coeffs[2] - kT/(2*force_data*coeffs[0]) * (1 + y*coth(y)))
+    return residual
+
+
+
+def read_oxdna_long_data():
+    basedir = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/ext-mod-oxdna")
+    top_path = basedir / "generated.top"
+    dir_end2 = (104, 115)
+    dir_end1 = (5, 214)
+    dir_force_axis=jnp.array([0, 0, 1])
+
+    force_fnames = {
+        0.05: "traj_F0.05.dat",
+        # 0.1: "traj_F0.1.dat",
+        # 0.2: "traj_F0.2.dat",
+        # 0.3: "traj_F0.3.dat",
+        # 0.4: "traj_F0.4.dat",
+        # 0.5: "traj_F0.5.dat",
+        # 0.6: "traj_F0.6.dat",
+        # 0.75: "traj_F0.75.dat",
+        # 0.8: "traj_F0.8.dat"
+    }
+
+    force_to_pdists = dict()
+    for k, v in tqdm(force_fnames.items()):
+        traj_path = basedir / v
+
+        top_info = TopologyInfo(top_path, reverse_direction=True)
+        traj_info = TrajectoryInfo(top_info, traj_path=traj_path, reverse_direction=True)
+
+        all_projected_dists = list()
+        for s in tqdm(traj_info.states): # note: can vmap over this. Also, note we ignore the first two for equilibrium
+            p_dist = compute_dist(s, end1=dir_end1, end2=dir_end2, force_axis=dir_force_axis)
+            all_projected_dists.append(p_dist)
+        force_to_pdists[k] = all_projected_dists
+    pdb.set_trace()
+    return force_to_pdists
+
+
+
 if __name__ == "__main__":
-    from tqdm import tqdm
     import matplotlib.pyplot as plt
-    from pathlib import Path
 
-
-    from jaxopt import GaussNewton
+    from jaxopt import GaussNewton, LevenbergMarquardt
     from utils import get_kt, DEFAULT_TEMP
+
+    read_oxdna_long_data()
+
+    pdb.set_trace()
 
     kT = get_kt(t=DEFAULT_TEMP)
 
-    forces = jnp.array([0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4])
-    lens = jnp.array([33.47837202, 34.63343703, 35.13880103, 35.48323747,
-                      35.73831831, 35.95160141, 36.12325301, 36.27638711])
+    forces = jnp.array([
+        0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3,
+        # 0.35,
+        0.375,
+        # 0.4
+    ]) * 2
+    # lens = jnp.array([33.47837202, 34.63343703, 35.13880103, 35.48323747,
+    #                   35.73831831, 35.95160141, 36.12325301, 36.27638711])
+    lens = jnp.array([35.25930400991341, 36.71562944132667,  37.79990723786074,
+                      38.34555511086673,  38.68266174743726,
+                      38.941749288990714,  39.1546694320399,
+                      # 39.33738895751,
+                      39.40541037118505,
+                      # 39.492305574343014
+    ])
+
+    forces = jnp.array([0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.375]) * 2
+    lens = jnp.array([35.2236991090926, 36.63971120822037, 37.76098514351735, 38.28013817558361, 38.685128174964454, 38.93867142307843, 39.154639682794254, 39.42241780082958])
+
+    # plt.plot(forces, lens)
+    # plt.show()
 
 
-    def coth(x):
-        return 1 / jnp.tanh(x)
+    pdb.set_trace()
 
-    def WLC(coeffs, x_data, force_data, kT):
-        # coeffs = [L0, Lp, K]
-        y = ((force_data * coeffs[0]**2)/(coeffs[1]*kT))**(1/2)
-        residual = x_data - coeffs[0] * (1 + force_data/coeffs[2] - kT/(2*force_data) * (1 + y*coth(y)))
-        return residual
+
+    # plot the WLC
+
+    """
+    kT_si = 4.088 # in pN*nm
+    forces = onp.linspace(2.5, 40, 100) # in pN
+    computed_extensions = [calculate_x(force, 339.6 / 10, 431.0 / 10, 2166, kT_si) for force in forces] # in nm
+    plt.plot(computed_extensions, forces)
+    plt.xlabel("Extension (nm)")
+    plt.ylabel("Force (pN)")
+    plt.show()
+
+    pdb.set_trace()
+    """
+
 
 
     """
@@ -81,14 +178,45 @@ if __name__ == "__main__":
     # x_init = jnp.array([45.0, 55.0, 40.0]) # initialize to close-to-true values
 
     gn = GaussNewton(residual_fun=WLC)
+    # gn = LevenbergMarquardt(residual_fun=WLC)
     gn_sol = gn.run(x_init, x_data=lens, force_data=forces, kT=kT).params
 
+    x_init_si = jnp.array([339.6 / 10.0, 431.0 / 10.0, 2166.0])
+    forces_si = forces * 48.63 # pN
+    lens_si = lens * 0.8518 # nm
+    kT_si = 4.08846006711 # in pN*nm
+    gn_si = GaussNewton(residual_fun=WLC)
+    gn_sol_si = gn_si.run(x_init_si, x_data=lens_si, force_data=forces_si, kT=kT_si).params
 
 
     pdb.set_trace()
 
 
+    # Check the fit
 
+    test_forces = onp.linspace(0.05, 0.8, 10) # in simulation units
+    computed_extensions = [calculate_x(force, gn_sol[0], gn_sol[1], gn_sol[2], kT) for force in test_forces] # in nm
+    plt.plot(computed_extensions, test_forces, label="fit")
+    plt.plot(lens, forces, label="ours")
+    plt.xlabel("Extension")
+    plt.ylabel("Force")
+    plt.legend()
+    plt.show()
+
+    test_forces = onp.linspace(2.5, 40, 100) # in pN
+    computed_extensions = [calculate_x(force, gn_sol_si[0], gn_sol_si[1], gn_sol_si[2], kT_si) for force in test_forces] # in nm
+    tom_extensions = [calculate_x(force, x_init_si[0], x_init_si[1], x_init_si[2], kT_si) for force in test_forces] # in nm
+    plt.plot(computed_extensions, test_forces, label="fit")
+    plt.plot(tom_extensions, test_forces, label="tom fit")
+    plt.scatter(lens_si, forces_si, label="ours")
+    plt.xlabel("Extension (nm)")
+    plt.ylabel("Force (pN)")
+    plt.legend()
+    plt.show()
+
+
+
+    pdb.set_trace()
 
 
     """
@@ -108,12 +236,14 @@ if __name__ == "__main__":
     }
     """
 
+    """
     dir_end1 = (104, 115)
     dir_end2 = (5, 214)
     dir_force_axis=jnp.array([0, 0, 1])
 
     basedir = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/elastic-mod-sims-2-6/")
     force_to_dir = {
+        0.025: "langevin_2023-02-08_12-47-49_n5000000", # FIXME: only 5e6 steps
         0.05: "langevin_2023-02-06_22-46-27_n10000000",
         0.10: "langevin_2023-02-06_22-46-50_n10000000",
         0.15: "langevin_2023-02-06_22-47-15_n10000000",
@@ -121,22 +251,33 @@ if __name__ == "__main__":
         0.25: "langevin_2023-02-06_22-48-34_n10000000",
         0.30: "langevin_2023-02-06_22-48-47_n10000000",
         0.35: "langevin_2023-02-06_22-48-49_n10000000",
+        0.375: "langevin_2023-02-08_12-46-35_n5000000", # FIXME: only 5e6 steps
         0.40: "langevin_2023-02-06_22-50-07_n10000000"
     }
+    """
 
+    dir_end2 = (104, 115)
+    dir_end1 = (5, 214)
+    dir_force_axis=jnp.array([0, 0, 1])
 
-    def compute_dist(state, end1, end2, force_axis):
-        end1_com = (state.center[end1[0]] + state.center[end1[1]]) / 2
-        end2_com = (state.center[end2[0]] + state.center[end2[1]]) / 2
+    basedir = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/ext-mod-sims-2-10/")
+    force_to_dir = {
+        0.025: "langevin_2023-02-10_00-58-38_n3000000",
+        0.05: "langevin_2023-02-10_00-58-52_n3000000",
+        0.10: "langevin_2023-02-10_00-59-28_n3000000",
+        0.15: "langevin_2023-02-10_00-59-22_n3000000",
+        0.20: "langevin_2023-02-10_00-59-02_n3000000",
+        0.25: "langevin_2023-02-10_00-59-32_n3000000",
+        0.30: "langevin_2023-02-10_00-59-57_n3000000",
+        0.375: "langevin_2023-02-10_01-00-05_n3000000"
+    }
 
-        midp_disp = end1_com - end2_com
-        projected_dist = jnp.dot(midp_disp, force_axis)
-        return jnp.linalg.norm(projected_dist) # Note: incase it's negative
 
 
 
     force_to_pdist = dict()
     force_to_pdists = dict()
+    mean_start_idx = 20
     for k, v in tqdm(force_to_dir.items()):
         bpath = basedir / v
 
@@ -147,11 +288,11 @@ if __name__ == "__main__":
         traj_info = TrajectoryInfo(top_info, traj_path=traj_path, reverse_direction=True)
 
         all_projected_dists = list()
-        for s in tqdm(traj_info.states[3:]): # note: can vmap over this. Also, note we ignore the first two for equilibrium
+        for s in tqdm(traj_info.states): # note: can vmap over this. Also, note we ignore the first two for equilibrium
             p_dist = compute_dist(s, end1=dir_end1, end2=dir_end2, force_axis=dir_force_axis)
             all_projected_dists.append(p_dist)
         force_to_pdists[k] = all_projected_dists
-        force_to_pdist[k] = jnp.mean(jnp.array(all_projected_dists))
+        force_to_pdist[k] = jnp.mean(jnp.array(all_projected_dists[mean_start_idx:]))
 
     xs = list(force_to_pdist.keys())
     ys = list(force_to_pdist.values())
@@ -160,5 +301,9 @@ if __name__ == "__main__":
     # plt.show()
 
     pdb.set_trace()
+
+    # Sample code
+    # start_idx = 25
+    # means = [onp.mean(force_to_pdists[0.025][start_idx:end_idx]) * 0.8518 for end_idx in jnp.arange(len(force_to_pdists[0.025]))]
 
     print("done")
