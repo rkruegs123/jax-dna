@@ -69,7 +69,7 @@ def run_simulation(params, key, steps, init_fn, step_fn):
     return trajectory
 
 
-def run(args, init_params=init_params,
+def run(args, init_params,
         T=DEFAULT_TEMP, dt=5e-3,
         output_basedir="v2/data/output"):
 
