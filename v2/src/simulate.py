@@ -61,7 +61,7 @@ def run_single_langevin(args,
         if not output_basedir.exists():
             raise RuntimeError(f"Output base directory does not exist at location: {output_basedir}")
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        run_name = f"langevin_{timestamp}_n{n_steps}"
+        run_name = f"langevin_{timestamp}_n{n_steps}_k{args['key']}"
         run_dir = output_basedir / run_name
         run_dir.mkdir(parents=False, exist_ok=False)
         shutil.copy(top_path, run_dir)

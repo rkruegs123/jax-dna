@@ -30,7 +30,7 @@ from loader.get_params import get_default_params
 from jax.config import config
 config.update("jax_enable_x64", True)
 
-Array=util.Array
+Array = util.Array
 FLAGS = jax_config.FLAGS
 DYNAMICS_STEPS = 100
 
@@ -75,22 +75,59 @@ def WLC(coeffs, x_data, force_data, kT):
 
 
 def read_oxdna_long_data():
-    basedir = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/ext-mod-oxdna")
+    import pickle
+
+    # basedir = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/ext-mod-oxdna")
+    # basedir = Path("/n/brenner_lab/Lab/JAXDNA/box_200/1e9steps")
+    # basedir = Path("/n/brenner_lab/Lab/JAXDNA/box_200/dt_5e-3/samp_rate_5000")
+    basedir = Path("/n/brenner_lab/Lab/JAXDNA/box_200/dt_5e-3/jax-dna-samp_rate_1k_2e7_steps")
+    # basedir = Path("/n/brenner_lab/User/rkrueger/jaxmd-oxdna/v2/data/output/langevin_2023-02-21_17-45-32_n50000")
     top_path = basedir / "generated.top"
     dir_end2 = (104, 115)
     dir_end1 = (5, 214)
-    dir_force_axis=jnp.array([0, 0, 1])
+    dir_force_axis = jnp.array([0, 0, 1])
 
     force_fnames = {
-        0.05: "traj_F0.05.dat",
+        # 0: "traj_F0_1e9.dat",
+
+        # 0.05: "output.dat"
+
+        # For jax-dna-samp_rate_1k_2e7_steps
+        # 0.05: "traj_0.05.dat",
+        # 0.055: "traj_0.055.dat",
+        # 0.06: "traj_0.06.dat",
+        # 0.065: "traj_0.065.dat",
+        # 0.07: "traj_0.07.dat",
+        # 0.075: "traj_0.075.dat",
+        # 0.08: "traj_0.08.dat",
+        # 0.09: "traj_0.09.dat",
+        # 0.095: "traj_0.095.dat",
+        # 0.1: "traj_0.1.dat",
+        # 0.15: "traj_0.15.dat",
+        # 0.2: "traj_0.2.dat",
+        0.3: "traj_0.3.dat",
+        0.4: "traj_0.4.dat",
+        0.5: "traj_0.5.dat",
+        0.6: "traj_0.6.dat",
+        0.7: "traj_0.7.dat",
+        0.75: "traj_0.75.dat"
+
         # 0.1: "traj_F0.1.dat",
+        # 0.15: "traj_F0.15.dat",
         # 0.2: "traj_F0.2.dat",
+        # 0.25: "traj_F0.25.dat",
         # 0.3: "traj_F0.3.dat",
+        # 0.35: "traj_F0.35.dat",
         # 0.4: "traj_F0.4.dat",
+        # 0.45: "traj_F0.45.dat",
         # 0.5: "traj_F0.5.dat",
+        # 0.55: "traj_F0.55.dat",
         # 0.6: "traj_F0.6.dat",
+        # 0.65: "traj_F0.65.dat",
+        # 0.7: "traj_F0.7.dat",
         # 0.75: "traj_F0.75.dat",
-        # 0.8: "traj_F0.8.dat"
+        # 0.8: "traj_F0.8.dat",
+        # 0.85: "traj_F0.85.dat"
     }
 
     force_to_pdists = dict()
@@ -105,7 +142,10 @@ def read_oxdna_long_data():
             p_dist = compute_dist(s, end1=dir_end1, end2=dir_end2, force_axis=dir_force_axis)
             all_projected_dists.append(p_dist)
         force_to_pdists[k] = all_projected_dists
-    pdb.set_trace()
+        pickle.dump(all_projected_dists, open(f"pdists_{k}.pkl", "wb"))
+        # pickle.dump(all_projected_dists, open(f"pdists_autocorrelate_{k}.pkl", "wb"))
+    
+    # pickle.dump(force_to_pdists, open(f"pdists_{k}.pkl", "wb"))
     return force_to_pdists
 
 
