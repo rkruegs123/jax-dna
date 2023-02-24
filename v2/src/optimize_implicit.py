@@ -94,7 +94,7 @@ def run(args, init_params=init_params,
 
     output_basedir = Path(output_basedir)
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    run_name = f"optimize_basic_{timestamp}_b{batch_size}_lr{lr}_n{sim_length}"
+    run_name = f"optimize_implicit_{timestamp}_b{batch_size}_lr{lr}_n{sim_length}"
     run_dir = output_basedir / run_name
     run_dir.mkdir(parents=False, exist_ok=False)
     shutil.copy(top_path, run_dir)
