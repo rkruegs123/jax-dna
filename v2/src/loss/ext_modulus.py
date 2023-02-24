@@ -109,6 +109,113 @@ def read_oxdna_long_data():
     return force_to_pdists
 
 
+def analyze_oxdna():
+    import pickle
+
+    # basedir = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/ext-mod-oxdna/box97")
+    # basedir = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/ext-mod-oxdna/box200")
+    # basedir = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/ext-mod-2-21/dt_8e-3")
+    basedir = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/jax-dna-samp_rate_1k_2e7_steps")
+    # basedir = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/ext-mod-oxdna/box200/samp_rate_5000")
+
+    top_path = basedir / "generated.top"
+    dir_end2 = (104, 115)
+    dir_end1 = (5, 214)
+    dir_force_axis=jnp.array([0, 0, 1])
+
+    """
+    forces = [
+        "0.1",
+        "0.2", "0.3", "0.4",
+        "0.5",
+        # "0.6",
+        "0.75", "0.8"]
+    """
+    forces = [
+        "0.05",
+        # "0.055",
+        # "0.06",
+        # "0.065",
+        # "0.07",
+        # "0.075",
+        # "0.08",
+        # "0.09",
+        # "0.095",
+        "0.1",
+        # "0.15",
+        "0.2",
+        # "0.25",
+        "0.3",
+        # "0.35",
+        "0.4",
+        # "0.45",
+        "0.5",
+        # "0.55",
+        "0.6",
+        # "0.65",
+        # "0.7",
+        "0.75",
+        # "0.8",
+        # "0.85"
+    ]
+
+
+    all_pdists = dict()
+    for f in tqdm(forces, desc="Loading"):
+        bpath = basedir / f"pdists_{f}.pkl"
+        pdists = pickle.load(open(bpath, "rb"))
+        # all_pdists[f] = pdists[eval(f)]
+        # all_pdists[f] = pdists
+        all_pdists[f] = pdists[::40]
+
+    pdb.set_trace()
+    start_idx = 100
+
+    kT = get_kt(t=DEFAULT_TEMP)
+    force_vals = jnp.array([eval(f) for f in forces])
+    all_l0s = list()
+    all_lps = list()
+    all_ks = list()
+    n = len(all_pdists["0.2"])
+    all_f_lens = {f: list() for f in forces}
+    stride = 50
+    for up_to in tqdm(range(start_idx+stride, n, stride)):
+        x_init = jnp.array([39.87, 50.60, 44.54]) # initialize to the true values
+
+        lens = list()
+        for f in forces:
+            f_pdists = all_pdists[f]
+            f_len = onp.mean(f_pdists[start_idx:up_to]) # running average
+            # f_len = onp.mean(f_pdists[up_to-stride:up_to]) # sliding window
+            # if f == "0.05":
+                # f_len = 34.96
+                # f_len = 34.86
+            all_f_lens[f].append(f_len)
+            lens.append(f_len)
+        lens = jnp.array(lens)
+
+        gn = GaussNewton(residual_fun=WLC)
+        gn_sol = gn.run(x_init, x_data=lens, force_data=force_vals, kT=kT).params
+
+        all_l0s.append(gn_sol[0])
+        all_lps.append(gn_sol[1])
+        all_ks.append(gn_sol[2])
+
+    for f, f_lens in all_f_lens.items():
+        plt.plot(f_lens, label=f)
+    plt.legend()
+    plt.show()
+
+    pdb.set_trace()
+
+    plt.plot(all_l0s, label="l0")
+    plt.plot(all_lps, label="lp")
+    plt.plot(all_ks, label="k")
+    plt.legend()
+    plt.show()
+
+    pdb.set_trace()
+    return
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
@@ -116,9 +223,12 @@ if __name__ == "__main__":
     from jaxopt import GaussNewton, LevenbergMarquardt
     from utils import get_kt, DEFAULT_TEMP
 
-    read_oxdna_long_data()
-
+    analyze_oxdna()
     pdb.set_trace()
+
+    # read_oxdna_long_data()
+
+    # pdb.set_trace()
 
     kT = get_kt(t=DEFAULT_TEMP)
 
@@ -138,8 +248,8 @@ if __name__ == "__main__":
                       # 39.492305574343014
     ])
 
-    forces = jnp.array([0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.375]) * 2
-    lens = jnp.array([35.2236991090926, 36.63971120822037, 37.76098514351735, 38.28013817558361, 38.685128174964454, 38.93867142307843, 39.154639682794254, 39.42241780082958])
+    # forces = jnp.array([0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.375]) * 2
+    # lens = jnp.array([35.2236991090926, 36.63971120822037, 37.76098514351735, 38.28013817558361, 38.685128174964454, 38.93867142307843, 39.154639682794254, 39.42241780082958])
 
     # plt.plot(forces, lens)
     # plt.show()

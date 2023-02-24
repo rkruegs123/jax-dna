@@ -40,14 +40,14 @@ if FLAGS.jax_enable_x64:
     DTYPE += [f64]
 
 def vector_autocorrelate(arr):
-  n_vectors = arr.shape[0]
-  # correlate each component indipendently
-  acorr = jnp.array([jnp.correlate(arr[:,i],arr[:,i],'full') for i in jnp.arange(3)])[:,n_vectors-1:] #we should  really vmap over this, but for simplicity, we unroll a for loop for now
-  # sum the correlations for each component
-  acorr = jnp.sum(acorr, axis = 0)
-  # divide by the number of values actually measured and return
-  acorr /= (n_vectors - jnp.arange(n_vectors))
-  return acorr
+    n_vectors = arr.shape[0]
+    # correlate each component indipendently
+    acorr = jnp.array([jnp.correlate(arr[:,i],arr[:,i],'full') for i in jnp.arange(3)])[:,n_vectors-1:] #we should  really vmap over this, but for simplicity, we unroll a for loop for now
+    # sum the correlations for each component
+    acorr = jnp.sum(acorr, axis = 0)
+    # divide by the number of values actually measured and return
+    acorr /= (n_vectors - jnp.arange(n_vectors))
+    return acorr
 
 # Tom's thesis: 130-150 base pairs
 TARGET_PERSISTENCE_LENGTH_DSDNA = 140
@@ -107,7 +107,8 @@ if __name__ == "__main__":
 
     # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/langevin_2023-01-31_16-23-04")
     # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/langevin_2023-01-31_16-38-50")
-    bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/langevin_2023-01-31_01-20-52")
+    # bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/langevin_2023-01-31_01-20-52")
+    bpath = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/big-persistence-length/langevin_2023-02-02_12-41-58_n10000000")
     top_path = bpath / "init.top"
     config_path = bpath / "output.dat"
 
@@ -157,6 +158,10 @@ if __name__ == "__main__":
     all_l0_avg = list()
 
     # for b_idx in tqdm(range(0, len(config_info.states), 10)):
+
+    compute_every = 10
+    intermediate_lps = dict()
+
     for b_idx in tqdm(range(0, len(config_info.states), 1)):
         body = config_info.states[b_idx]
         correlation_curve, l0_avg = get_correlation_curve(body, quartets)
@@ -168,6 +173,17 @@ if __name__ == "__main__":
 
         all_curves.append(correlation_curve)
         all_l0_avg.append(l0_avg)
+
+        if b_idx % compute_every == 0 and b_idx and b_idx >= 50:
+            mean_correlation_curve = jnp.mean(jnp.array(all_curves), axis=0)
+            mean_Lp = persistence_length_fit(mean_correlation_curve, jnp.mean(jnp.array(all_l0_avg)))
+            intermediate_lps[b_idx] = mean_Lp
+
+
+    plt.plot(intermediate_lps.keys(), onp.array([v for v in intermediate_lps.values()]) * 8.518 / 3.4)
+    plt.ylabel("# Base Pairs")
+    plt.show()
+    plt.clf()
 
     all_curves = jnp.array(all_curves)
     all_l0_avg = jnp.array(all_l0_avg)
