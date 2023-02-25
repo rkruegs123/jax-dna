@@ -174,6 +174,7 @@ def run(args, init_params,
     params_ = list()
     all_losses = list()
     all_grads = list()
+    loss_path = run_dir / "loss.txt"
 
     # Do the optimization
     step_times = list()
@@ -196,6 +197,9 @@ def run(args, init_params,
             all_grads.append(grads)
             params_.append(optimizer.params_fn(opt_state))
             all_losses.append(losses)
+
+            with open(loss_path, "a") as f:
+                f.write(f"{losses}\n")
 
     with open(run_dir / "final_params.pkl", "wb") as f:
         pickle.dump(optimizer.params_fn(opt_state), f)
