@@ -13,9 +13,30 @@ def autocorr(x):
     return result[result.size // 2:]
 
 if __name__ == "__main__":
-
     import pandas as pd
     from tqdm import tqdm
+
+
+    basedir = Path("/home/ryan/Documents/Harvard/research/brenner/tmp-oxdna/all-50k-autocorr")
+    start_idx = 5000
+    all_autocorrs = list()
+    all_ks = list(range(1, 6)) + list(range(11, 16)) + list(range(20, 41))
+    for k in tqdm(all_ks):
+        fname = basedir / f"pdists_k{k}.pkl"
+        k_dists = pickle.load(open(fname, "rb"))
+        k_dists = np.array([float(v) for v in k_dists])
+        k_dists = k_dists[start_idx:]
+        k_dists -= np.mean(k_dists)
+        k_dists_autocorr = autocorr(k_dists)
+        all_autocorrs.append(k_dists_autocorr)
+    mean_autocorr = np.mean(all_autocorrs, axis=0)
+    plt.plot(mean_autocorr)
+    plt.show()
+
+    pdb.set_trace()
+
+
+
     bpath = Path("/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/")
     df = pd.read_csv(bpath / "distances_autocorr.txt", header=None, delim_whitespace=True)
     distances = df[2][400000:900000].values
