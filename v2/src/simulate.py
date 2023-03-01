@@ -21,11 +21,14 @@ from loader import get_params
 from loader.trajectory import TrajectoryInfo
 from loader.topology import TopologyInfo
 
+from jax.config import config
+config.update("jax_enable_x64", True)
+
 
 f64 = util.f64
 
 def run_single_langevin(args,
-                        T=DEFAULT_TEMP, dt=5e-3,
+                        T=DEFAULT_TEMP,
                         output_basedir="v2/data/output/", save_output=False):
 
     top_path = args['top_path']
@@ -34,6 +37,7 @@ def run_single_langevin(args,
     key = random.PRNGKey(args['key'])
     init_method = args['params']
     save_every = args['save_every']
+    dt = args['dt']
 
     use_ext_force = args['use_ext_force']
     ext_force_magnitude = args['ext_force_magnitude']
@@ -61,7 +65,7 @@ def run_single_langevin(args,
         if not output_basedir.exists():
             raise RuntimeError(f"Output base directory does not exist at location: {output_basedir}")
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        run_name = f"langevin_{timestamp}_n{n_steps}_k{args['key']}"
+        run_name = f"langevin_{timestamp}_n{n_steps}_dt{dt}_k{args['key']}"
         run_dir = output_basedir / run_name
         run_dir.mkdir(parents=False, exist_ok=False)
         shutil.copy(top_path, run_dir)
@@ -75,8 +79,8 @@ def run_single_langevin(args,
         print(bcolors.WARNING + f"Created directory and copied simulation information at location: {run_dir}" + bcolors.ENDC)
 
     print(bcolors.OKBLUE + f"Setting up simulation..." + bcolors.ENDC)
-    mass = RigidBody(center=jnp.array([nucleotide_mass]),
-                     orientation=jnp.array([moment_of_inertia]))
+    mass = RigidBody(center=jnp.array([nucleotide_mass], dtype=f64),
+                     orientation=jnp.array([moment_of_inertia], dtype=f64))
 
     # params = get_params.get_default_params(t=T, no_smoothing=False)
 
@@ -124,8 +128,8 @@ def run_single_langevin(args,
 
     # gamma = RigidBody(center=jnp.array([DEFAULT_TEMP/2.5]),
                       # orientation=jnp.array([DEFAULT_TEMP/7.5]))
-    gamma = RigidBody(center=jnp.array([kT/2.5]),
-                      orientation=jnp.array([kT/7.5]))
+    gamma = RigidBody(center=jnp.array([kT/2.5], dtype=f64),
+                      orientation=jnp.array([kT/7.5], dtype=f64))
 
     energy_fn, compute_subterms = factory.energy_fn_factory(displacement_fn,
                                                             back_site, stack_site, base_site,
@@ -205,6 +209,8 @@ if __name__ == "__main__":
                         help="Frequency of saving data from optimization")
     parser.add_argument('-k', '--key', type=int, default=0,
                         help="Random key")
+    parser.add_argument('--dt', type=float, default=5e-3,
+                        help="Time step")
     parser.add_argument('--params', type=str,
                         default="oxdna",
                         choices=["random", "oxdna"],
