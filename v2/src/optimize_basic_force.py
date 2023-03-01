@@ -14,7 +14,7 @@ import jax.numpy as jnp
 from jax.example_libraries import optimizers as jopt # FIXME: change to optax
 from pprint import pprint
 
-from jax_md import space, util, simulate
+from jax_md import space, util, simulate, quantity
 from jax_md.rigid_body import RigidBody, Quaternion
 from jax.tree_util import Partial
 
@@ -124,8 +124,10 @@ def run(args, init_params,
                                              back_site, stack_site, base_site,
                                              top_info.bonded_nbrs, top_info.unbonded_nbrs)
     energy_fn = Partial(energy_fn, seq=seq)
+    force_fn = quantity.canonicalize_force(energy_fn)
+    force_fn = jit(force_fn)
 
-    init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+    init_fn, step_fn = simulate.nvt_langevin(force_fn, shift_fn, dt, kT, gamma)
     step_fn = jit(step_fn)
     init_fn = Partial(init_fn, R=body, mass=mass)
     init_fn = jit(init_fn)

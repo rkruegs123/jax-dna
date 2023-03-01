@@ -6,15 +6,17 @@ import pickle
 from pathlib import Path
 import datetime
 import shutil
+from functools import partial
 
 import jax
-from jax import jit, vmap, lax, random
+import jax.debug
+from jax import jit, vmap, lax, random, value_and_grad
 from jax.config import config as jax_config
 import jax.numpy as jnp
 from jax.example_libraries import optimizers as jopt # FIXME: change to optax
 from pprint import pprint
 
-from jax_md import space, util, simulate
+from jax_md import space, util, simulate, quantity
 from jax_md.rigid_body import RigidBody, Quaternion
 from jax.tree_util import Partial
 
@@ -72,7 +74,7 @@ def run_simulation(params, key, steps, init_fn, step_fn):
     return trajectory
 
 
-def run(args, init_params=init_params,
+def run(args, init_params,
         T=DEFAULT_TEMP, dt=5e-3,
         output_basedir="v2/data/output"):
 
@@ -128,12 +130,12 @@ def run(args, init_params=init_params,
                                              top_info.bonded_nbrs, top_info.unbonded_nbrs)
     energy_fn = Partial(energy_fn, seq=seq)
     force_fn = quantity.canonicalize_force(energy_fn)
-    force_fn = jit(force_fn)
 
-    init_fn, step_fn = simulate.nvt_langevin(force_fn, shift_fn, dt, kT, gamma)
+    init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
     step_fn = jit(step_fn)
     init_fn = Partial(init_fn, R=body, mass=mass)
     init_fn = jit(init_fn)
+    
 
     backbone_dist_pairs = top_info.bonded_nbrs
     helical_pairs = top_info.bonded_nbrs
@@ -153,33 +155,106 @@ def run(args, init_params=init_params,
         helical_pairs,
         pitch_quartets,
         propeller_base_pairs)
-    body_loss_fn = jit(loss_fn)
+    body_loss_fn = jit(body_loss_fn)
     mapped_body_loss_fn = jit(vmap(body_loss_fn))
 
+    run_single_simulation = Partial(run_simulation, steps=sim_length, init_fn=init_fn, step_fn=step_fn)
 
-    run_single_simulation = Partial(run_simulation, steps=steps, init_fn=init_fn, step_fn=step_fn)
 
+    def p_force_fn(state, params):
+        return force_fn(state, params=params)
+    batched_p_force_fn = vmap(p_force_fn, (0, None))
+
+    def mean_force_fn_helper(states, params):
+        # params_force_fn = Partial(force_fn, params=params)
+        # batch_forces = vmap(params_force_fn)(states)
+        batch_forces = batched_p_force_fn(states, params)
+        mean_center_force = jnp.mean(batch_forces.center, axis=0)
+        mean_orientation_force = jnp.mean(batch_forces.orientation.vec, axis=0)
+        return mean_center_force, mean_orientation_force
+        
     @jit
     def mean_force_fn(states, params):
-        batch_forces = vmap(force_fn)(states, params=params)
-        return jnp.mean(batch_forces)
-
+        n_states = states.center.shape[0]
+        mean_center_force, mean_orientation_force = mean_force_fn_helper(states, params)
+        mean_center_force_copied = jnp.tile(mean_center_force, (n_states, 1, 1))
+        mean_orientation_force_copied = jnp.tile(mean_orientation_force, (n_states, 1, 1))
+        zeros = RigidBody(center=mean_center_force_copied,
+                          orientation=Quaternion(mean_orientation_force_copied))
+        return zeros
+    
     @jit
-    def get_states_to_eval(params, key):
+    def get_states_to_eval(key, params):
         trajectory = run_single_simulation(params, key)
-        states_to_eval = trajectory[-3000:][::100]
+        states_to_eval = trajectory[-10000:][::100]
         return states_to_eval
     get_states_to_eval = custom_root(mean_force_fn)(get_states_to_eval)
 
     @jit
     def eval_params(params, key):
-        states_to_eval = get_states_to_eval(params, key)
+        states_to_eval = get_states_to_eval(key, params)
         body_losses = mapped_body_loss_fn(states_to_eval)
-        return jnp.mean(body_losses)
+        return jnp.mean(body_losses), states_to_eval
+
+    
+    """
+    @jit
+    def dummy_rel(tmp_state, params):
+        return tmp_state # same shape as input!
+
+    @jit
+    def get_fin_state(key, params):
+    # def get_fin_state(params):
+        key = random.PRNGKey(0)
+        trajectory = run_single_simulation(params, key)
+        fin_state = trajectory[-1]
+        return fin_state
+    get_fin_state = custom_root(dummy_rel)(get_fin_state)
+
+    def dummy_loss(tmp_fin_center):
+        return tmp_fin_center.sum()
+    
+    @jit
+    def eval_params(params, key):
+        # fin_state = get_fin_state(key, params)
+        fin_state = get_fin_state(params)
+        return dummy_loss(fin_state.center)
+    """
+
+
+
+    """
+    @jit
+    def dummy_rel(tmp_state, params):
+        # FIXME: Ok. I *think* the return value of this relaiton has to be the same shape as th einput (e.g. tmp_tate). This is a problem if our relation is to be an average. Do we have to copy that average batch_size times? Should work through the math and see if this all makes sense and would work. Then, try it out.
+        return tmp_state
+
+
+    def dummy_loss(tmp_fin_center):
+        return tmp_fin_center.sum()
+    
+    @jit
+    def eval_params(params, key):
+        # fin_state = get_fin_state(key, params)
+
+
+        @jit
+        def get_fin_state(params, key):
+            key = random.PRNGKey(0)
+            trajectory = run_single_simulation(params, key)
+            fin_state = trajectory[-1]
+            return fin_state
+        get_fin_state = custom_root(dummy_rel)(get_fin_state)
+
+        
+        fin_state = get_fin_state(params, key)
+        return dummy_loss(fin_state.center)
+    """
+
 
 
     # Get our gradients ready
-    grad_fn = value_and_grad(eval_params)
+    grad_fn = value_and_grad(eval_params, has_aux=True)
     batched_grad_fn = vmap(grad_fn, (None, 0))
 
     optimizer = jopt.adam(lr)
@@ -195,12 +270,18 @@ def run(args, init_params=init_params,
     step_times = list()
     for i in tqdm.trange(opt_steps, position=0):
         start = time.time()
-        key, split = random.split(key)
+        key, iter_key = random.split(key)
+        seeds = jax.random.split(iter_key, batch_size)
 
         # Get the grad for our single test case (would have to average for multiple)
-        losses, grads = batched_grad_fn(optimizer.params_fn(opt_state), split)
+        curr_params = optimizer.params_fn(opt_state)
+        (losses, all_states_to_eval), grads = batched_grad_fn(curr_params, seeds)
         avg_loss = jnp.mean(losses)
         avg_grad = jnp.mean(grads, axis=0)
+        # curr_params = optimizer.params_fn(opt_state)
+        # loss_, grad_ = grad_fn(curr_params, iter_key)
+        # avg_loss = loss_
+        # avg_grad = grad_
         opt_state = optimizer.update_fn(i, avg_grad, opt_state)
 
         end = time.time()
@@ -208,6 +289,12 @@ def run(args, init_params=init_params,
         if i % save_every == 0:
             step_times.append(end - start)
             # print(optimizer.params_fn(opt_state))
+
+            pdb.set_trace()
+            hello = mean_force_fn_helper(all_states_to_eval[0], curr_params)
+            pdb.set_trace()
+            
+            print(f"Iteration {i} loss: {avg_loss}")
 
             all_grads.append(grads)
             params_.append(optimizer.params_fn(opt_state))
@@ -276,3 +363,7 @@ if __name__ == "__main__":
     end = time.time()
     total_time = end - start
     print(f"Execution took: {total_time}")
+
+
+
+    # OKAY: the mean force orientation is not 0 for the current thing. Probably need more samples. Maybe shouldn't do for structural stuff. Also, probably explains the noisy gradients. Who knows if the structural stuff is 0 as well.
