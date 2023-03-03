@@ -7,6 +7,7 @@ from pathlib import Path
 import datetime
 import shutil
 from functools import partial
+import numpy as onp
 
 import jax
 import jax.debug
@@ -28,7 +29,7 @@ from utils import get_one_hot, bcolors
 
 from loader.trajectory import TrajectoryInfo
 from loader.topology import TopologyInfo
-from energy import factory
+from energy import factory, ext_force
 from checkpoint import checkpoint_scan
 from loss import geometry
 from loss import structural
@@ -127,7 +128,8 @@ def run(args, init_params,
     energy_fn, _ = factory.energy_fn_factory(displacement_fn,
                                              back_site, stack_site, base_site,
                                              top_info.bonded_nbrs, top_info.unbonded_nbrs)
-    ext_force_magnitude = 0.025
+    energy_fn = Partial(energy_fn, seq=seq)
+    ext_force_magnitude = 0.1
     ext_force_bps1 = [5, 214]
     ext_force_bps2 = [104, 115]
 
@@ -135,8 +137,8 @@ def run(args, init_params,
                                          ext_force_bps1,
                                          [0, 0, ext_force_magnitude], [0, 0, 0, 0])
     _, force_fn = ext_force.get_force_fn(force_fn, top_info.n, displacement_fn,
-                                             ext_force_bps2,
-                                             [0, 0, -ext_force_magnitude], [0, 0, 0, 0])
+                                         ext_force_bps2,
+                                         [0, 0, -ext_force_magnitude], [0, 0, 0, 0])
     force_fn = jit(force_fn)
 
     def adj_force_fn(body, params):
@@ -194,7 +196,7 @@ def run(args, init_params,
 
         @jit
         def scan_fn(sample_start_state, n_sample):
-            sample_init_fn = Partial(init_fn, R=sample_start_state_state.position, mass=mass)
+            sample_init_fn = Partial(init_fn, R=sample_start_state.position, mass=mass)
             end_state = run_simulation(params, key, sample_every, sample_init_fn, step_fn)
             return end_state, end_state.position # We accumulate the end states and also use the the current end state as the next start state
 
@@ -210,20 +212,49 @@ def run(args, init_params,
         # For now, just target a particular length for a single force. If we can do this, then we can pmap
         p_dists = mapped_compute_dist(states_to_eval)
         avg_pdist = jnp.mean(p_dists)
-        return (avg_pdist - target_pdist)**2
+        return (avg_pdist - target_pdist)**2, states_to_eval
 
-    grad_fn = value_and_grad(eval_params)
+    grad_fn = value_and_grad(eval_params, has_aux=True)
+    grad_fn = jit(grad_fn)
 
     optimizer = jopt.adam(lr)
     opt_state = optimizer.init_fn(init_params)
 
+    output_path = run_dir / "output.txt"
     for i in tqdm.trange(opt_steps, position=0):
+        start = time.time()
         key, iter_key = random.split(key)
         curr_params = optimizer.params_fn(opt_state)
-        loss, grad = grad_fn(curr_params, iter_key)
+        (loss, iter_states_to_eval), grad = grad_fn(curr_params, iter_key)
+        end = time.time()
         opt_state = optimizer.update_fn(i, grad, opt_state)
 
-        print(f"Iteration {i}: {loss}")
+        iter_traj_states = [iter_states_to_eval[s_idx] for s_idx in range(iter_states_to_eval.center.shape[0])]
+        iter_traj = TrajectoryInfo(top_info, states=iter_traj_states, box_size=config_info.box_size)
+        iter_traj.write(run_dir / f"output_i{i}.dat", reverse=True, write_topology=False)
+
+        info_str = ""
+        info_str += f"Iteration {i}:\n"
+        info_str += f"- Time: {onp.round(end - start, 2)}\n"
+        info_str += f"- Loss: {loss}\n"
+
+        # Some analysis
+        p_dists = mapped_compute_dist(iter_states_to_eval)
+        avg_pdist = jnp.mean(p_dists)
+        info_str += f"- Avg. Dist: {onp.round(avg_pdist, 2)} (s.d. {onp.round(jnp.std(p_dists), 2)}, min {onp.round(jnp.min(p_dists), 2)}, max {onp.round(jnp.max(p_dists), 2)})\n"
+
+        mean_force_center, mean_force_orientation = mean_force_fn_helper(iter_states_to_eval, curr_params)
+        info_str += f"- Mean Trans. Force: min {mean_force_center.min()}, max {mean_force_center.max()}, mean {mean_force_center.mean()}, mean abs {jnp.abs(mean_force_center).mean()}\n"
+        info_str += f"- Mean Torque: min {mean_force_orientation.min()}, max {mean_force_orientation.max()}, mean {mean_force_orientation.mean()}, mean abs {jnp.abs(mean_force_orientation).mean()}\n"
+
+        info_str += f"- Parameters: {curr_params}\n"
+
+        info_str += "\n"
+        print(info_str)
+
+        with open(output_path, "a") as f:
+            f.write(info_str)
+        
     fin_params = optimizer.params_fn(opt_state)
     return fin_params
 
