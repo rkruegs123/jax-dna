@@ -190,21 +190,33 @@ def run(args, init_params,
                                        force_axis=dir_force_axis))
     mapped_compute_dist = jit(mapped_compute_dist)
 
-    @jit
+    
     def get_states_to_eval(key, params):
         eq_state = run_equilibration(params, key)
 
+        """
+        # The below is wrong -- we don't want to reinitialize everytime. E.g. the momenta will be randomized
         @jit
-        def scan_fn(sample_start_state, n_sample):
+        def sample_fn(sample_start_state, n_sample):
             sample_init_fn = Partial(init_fn, R=sample_start_state.position, mass=mass)
             end_state = run_simulation(params, key, sample_every, sample_init_fn, step_fn)
             return end_state, end_state.position # We accumulate the end states and also use the the current end state as the next start state
+        """
 
-        _, all_samples = scan(scan_fn, eq_state, jnp.arange(n_sample_runs))
+        def sample_sim_step_fn(state, step):
+            state = step_fn(state, params=params)
+            return state, None
+
+        def sample_fn(sample_start_state, n_sample):
+            end_state, _ = scan(sample_sim_step_fn, sample_start_state, jnp.arange(sample_every))
+            return end_state, end_state.position
+
+        _, all_samples = scan(sample_fn, eq_state, jnp.arange(n_sample_runs))
         return all_samples # a RigidBody
     get_states_to_eval = custom_root(mean_force_fn)(get_states_to_eval)
+    get_states_to_eval = jit(get_states_to_eval)
 
-    target_pdist = 25.0
+    target_pdist = 34.0
     @jit
     def eval_params(params, key):
         states_to_eval = get_states_to_eval(key, params)
