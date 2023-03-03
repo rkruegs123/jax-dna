@@ -135,7 +135,7 @@ def run(args, init_params,
     step_fn = jit(step_fn)
     init_fn = Partial(init_fn, R=body, mass=mass)
     init_fn = jit(init_fn)
-    
+
 
     backbone_dist_pairs = top_info.bonded_nbrs
     helical_pairs = top_info.bonded_nbrs
@@ -172,7 +172,7 @@ def run(args, init_params,
         mean_center_force = jnp.mean(batch_forces.center, axis=0)
         mean_orientation_force = jnp.mean(batch_forces.orientation.vec, axis=0)
         return mean_center_force, mean_orientation_force
-        
+
     @jit
     def mean_force_fn(states, params):
         n_states = states.center.shape[0]
@@ -182,7 +182,7 @@ def run(args, init_params,
         zeros = RigidBody(center=mean_center_force_copied,
                           orientation=Quaternion(mean_orientation_force_copied))
         return zeros
-    
+
     @jit
     def get_states_to_eval(key, params):
         trajectory = run_single_simulation(params, key)
@@ -196,7 +196,7 @@ def run(args, init_params,
         body_losses = mapped_body_loss_fn(states_to_eval)
         return jnp.mean(body_losses), states_to_eval
 
-    
+
     """
     @jit
     def dummy_rel(tmp_state, params):
@@ -213,7 +213,7 @@ def run(args, init_params,
 
     def dummy_loss(tmp_fin_center):
         return tmp_fin_center.sum()
-    
+
     @jit
     def eval_params(params, key):
         # fin_state = get_fin_state(key, params)
@@ -232,7 +232,7 @@ def run(args, init_params,
 
     def dummy_loss(tmp_fin_center):
         return tmp_fin_center.sum()
-    
+
     @jit
     def eval_params(params, key):
         # fin_state = get_fin_state(key, params)
@@ -246,7 +246,7 @@ def run(args, init_params,
             return fin_state
         get_fin_state = custom_root(dummy_rel)(get_fin_state)
 
-        
+
         fin_state = get_fin_state(params, key)
         return dummy_loss(fin_state.center)
     """
@@ -293,7 +293,7 @@ def run(args, init_params,
             pdb.set_trace()
             hello = mean_force_fn_helper(all_states_to_eval[0], curr_params)
             pdb.set_trace()
-            
+
             print(f"Iteration {i} loss: {avg_loss}")
 
             all_grads.append(grads)
@@ -363,7 +363,3 @@ if __name__ == "__main__":
     end = time.time()
     total_time = end - start
     print(f"Execution took: {total_time}")
-
-
-
-    # OKAY: the mean force orientation is not 0 for the current thing. Probably need more samples. Maybe shouldn't do for structural stuff. Also, probably explains the noisy gradients. Who knows if the structural stuff is 0 as well.
