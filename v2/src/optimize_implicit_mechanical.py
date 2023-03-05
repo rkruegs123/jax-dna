@@ -90,6 +90,14 @@ def run(args, init_params,
     sample_every = args['sample_every']
     n_eq_steps = args['n_eq_steps']
 
+    target_pdist = args['target_dist']
+    ext_force_magnitude = args['force']
+
+    if args['avg_nuc_force']:
+        mean_force_method = "avg-nuc"
+    else:
+        mean_force_method = "per-nuc"
+
     assert(n_steps_per_force % sample_every == 0)
 
     if not Path(top_path).exists():
@@ -100,7 +108,7 @@ def run(args, init_params,
 
     output_basedir = Path(output_basedir)
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    run_name = f"optimize_implicit_mech_{timestamp}_lr{lr}_n{n_steps_per_force}_s{sample_every}_e{n_eq_steps}"
+    run_name = f"optimize_implicit_mech_{timestamp}_lr{lr}_n{n_steps_per_force}_s{sample_every}_e{n_eq_steps}_d{target_pdist}_f{ext_force_magnitude}_{mean_force_method}_k{args['key']}"
     run_dir = output_basedir / run_name
     run_dir.mkdir(parents=False, exist_ok=False)
     shutil.copy(top_path, run_dir)
@@ -129,7 +137,7 @@ def run(args, init_params,
                                              back_site, stack_site, base_site,
                                              top_info.bonded_nbrs, top_info.unbonded_nbrs)
     energy_fn = Partial(energy_fn, seq=seq)
-    ext_force_magnitude = 0.1
+    # ext_force_magnitude = 0.1
     ext_force_bps1 = [5, 214]
     ext_force_bps2 = [104, 115]
 
@@ -165,6 +173,13 @@ def run(args, init_params,
     def mean_force_fn(bodies, params):
         n_states = bodies.center.shape[0]
         mean_center_force, mean_orientation_force = mean_force_fn_helper(bodies, params)
+        if mean_force_method == "avg-nuc":
+            mean_nuc_force = jnp.mean(mean_center_force, axis=0)
+            mean_nuc_torque = jnp.mean(mean_orientation_force, axis=0)
+
+            mean_center_force = jnp.tile(mean_nuc_force, (mean_center_force.shape[0], 1))
+            mean_orientation_force = jnp.tile(mean_nuc_torque, (mean_center_force.shape[0], 1))
+
         mean_center_force_copied = jnp.tile(mean_center_force, (n_states, 1, 1))
         mean_orientation_force_copied = jnp.tile(mean_orientation_force, (n_states, 1, 1))
         zeros = RigidBody(center=mean_center_force_copied,
@@ -190,7 +205,7 @@ def run(args, init_params,
                                        force_axis=dir_force_axis))
     mapped_compute_dist = jit(mapped_compute_dist)
 
-    
+
     def get_states_to_eval(key, params):
         eq_state = run_equilibration(params, key)
 
@@ -216,7 +231,7 @@ def run(args, init_params,
     get_states_to_eval = custom_root(mean_force_fn)(get_states_to_eval)
     get_states_to_eval = jit(get_states_to_eval)
 
-    target_pdist = 34.0
+    # target_pdist = 34.0
     @jit
     def eval_params(params, key):
         states_to_eval = get_states_to_eval(key, params)
@@ -256,8 +271,10 @@ def run(args, init_params,
         info_str += f"- Avg. Dist: {onp.round(avg_pdist, 2)} (s.d. {onp.round(jnp.std(p_dists), 2)}, min {onp.round(jnp.min(p_dists), 2)}, max {onp.round(jnp.max(p_dists), 2)})\n"
 
         mean_force_center, mean_force_orientation = mean_force_fn_helper(iter_states_to_eval, curr_params)
-        info_str += f"- Mean Trans. Force: min {mean_force_center.min()}, max {mean_force_center.max()}, mean {mean_force_center.mean()}, mean abs {jnp.abs(mean_force_center).mean()}\n"
-        info_str += f"- Mean Torque: min {mean_force_orientation.min()}, max {mean_force_orientation.max()}, mean {mean_force_orientation.mean()}, mean abs {jnp.abs(mean_force_orientation).mean()}\n"
+        info_str += f"- Mean Trans. Force (components): min {mean_force_center.min()}, max {mean_force_center.max()}, mean {mean_force_center.mean()}, mean abs {jnp.abs(mean_force_center).mean()}\n"
+        info_str += f"- Mean Trans. Force (vec): {jnp.mean(mean_force_center, axis=0)}\n"
+        info_str += f"- Mean Torque (components): min {mean_force_orientation.min()}, max {mean_force_orientation.max()}, mean {mean_force_orientation.mean()}, mean abs {jnp.abs(mean_force_orientation).mean()}\n"
+        info_str += f"- Mean Torque (vec): {jnp.mean(mean_force_orientation, axis=0)}\n"
 
         info_str += f"- Parameters: {curr_params}\n"
 
@@ -266,7 +283,7 @@ def run(args, init_params,
 
         with open(output_path, "a") as f:
             f.write(info_str)
-        
+
     fin_params = optimizer.params_fn(opt_state)
     return fin_params
 
@@ -287,13 +304,21 @@ if __name__ == "__main__":
                         help="Random key")
     parser.add_argument('--lr', type=float, default=0.01,
                         help="Learning rate for optimization")
+    parser.add_argument('--target-dist', type=float, default=35.0,
+                        help="Target equilibrium distance")
+    parser.add_argument('--force', type=float, default=0.1,
+                        help="External force magnitude (applied to each end)")
     parser.add_argument('--top-path', type=str,
                         default="data/elastic-mod/generated.top",
                         help='Path to topology file')
     parser.add_argument('--conf-path', type=str,
                         default="data/elastic-mod/generated.dat",
                         help='Path to configuration file')
+    parser.add_argument('--avg-nuc-force', action='store_true',
+                        help="Use the average force across all nucleotides rather than the average force per nucleotide")
     args = vars(parser.parse_args())
+
+    pdb.set_trace()
 
 
     # starting with the correct parameters
@@ -315,3 +340,5 @@ if __name__ == "__main__":
     end = time.time()
     total_time = end - start
     print(f"Execution took: {total_time}")
+
+    # Note: for true parameters, I think you just use loss.ext_modulus.calculate_x(0.75, 39.5, 52.8, 25.7, get_kt(DEFAULT_TEMP))
