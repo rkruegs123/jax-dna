@@ -318,8 +318,6 @@ if __name__ == "__main__":
                         help="Use the average force across all nucleotides rather than the average force per nucleotide")
     args = vars(parser.parse_args())
 
-    pdb.set_trace()
-
 
     # starting with the correct parameters
     init_fene_params = [2.0, 0.25, 0.7525]
