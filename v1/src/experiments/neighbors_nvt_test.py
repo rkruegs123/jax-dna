@@ -91,6 +91,7 @@ if __name__ == "__main__":
       state = step_fn(state, neighbor=nbrs)
       # nbrs = jit(neighbor_fn.update)(state.position, nbrs)
       nbrs = neighbor_fn.update(state.position, nbrs)
+      pdb.set_trace()
       # trajectory.append(state.position)
     E_final = simulate.nvt_nose_hoover_invariant(energy_fn, state, kT, neighbor=nbrs)
 

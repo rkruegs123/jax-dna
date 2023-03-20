@@ -183,6 +183,51 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
+# Kron: AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT
+HB_WEIGHTS = jnp.array([
+    0.0, 0.0, 0.0, 1.0, # AX
+    0.0, 0.0, 1.0, 0.0, # CX
+    0.0, 1.0, 0.0, 0.0, # GX
+    1.0, 0.0, 0.0, 0.0  # TX
+])
+get_hb_probs = vmap(lambda seq, i, j: jnp.kron(seq[i], seq[j]), in_axes=(None, 0, 0), out_axes=0)
+
+
+stacking_param_names = [
+    # f1(dr_stack)
+    "eps_stack_base",
+    "eps_stack_kt_coeff",
+    "a_stack",
+    "dr0_stack",
+    "dr_c_stack",
+    "dr_low_stack",
+    "dr_high_stack",
+
+    # f4(theta_4)
+    "a_stack_4",
+    "theta0_stack_4",
+    "delta_theta_star_stack_4",
+
+    # f4(theta_5p)
+    "a_stack_5",
+    "theta0_stack_5",
+    "delta_theta_star_stack_5",
+
+    # f4(theta_6p)
+    "a_stack_6",
+    "theta0_stack_6",
+    "delta_theta_star_stack_6",
+
+    # f5(-cos(phi1))
+    "a_stack_1",
+    "neg_cos_phi1_star_stack",
+
+    # f5(-cos(phi2))
+    "a_stack_2",
+    "neg_cos_phi2_star_stack"
+]
+
+
 if __name__ == "__main__":
 
     top_path = "data/simple-helix/generated.top"

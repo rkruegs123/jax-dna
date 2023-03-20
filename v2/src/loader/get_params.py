@@ -310,5 +310,109 @@ def get_init_optimize_params(method="oxdna"):
         raise RuntimeError(f"Invalid method: {method}")
     return init_fene_params + init_stacking_params
 
+
+
+# FIXME: Used for processing arrays in energy function, but really duplicate logic from when we actually read in the parameters...
+def process_stacking_params(unprocessed_params, kt):
+    a_stack = unprocessed_params['a_stack']
+    dr0_stack = unprocessed_params['dr0_stack']
+    dr_c_stack = unprocessed_params['dr_c_stack']
+    dr_low_stack = unprocessed_params['dr_low_stack']
+    dr_high_stack = unprocessed_params['dr_high_stack']
+    eps_stack_base = unprocessed_params['eps_stack_base']
+    eps_stack_kt_coeff = unprocessed_params['eps_stack_kt_coeff']
+    eps_stack = eps_stack_base + eps_stack_kt_coeff * kt
+
+    b_low_stack, dr_c_low_stack, b_high_stack, dr_c_high_stack = smoothing.get_f1_smoothing_params(
+        eps_stack, dr0_stack, a_stack, dr_c_stack,
+        dr_low_stack, dr_high_stack)
+
+    a_stack_4 = unprocessed_params['a_stack_4']
+    theta0_stack_4 = unprocessed_params['theta0_stack_4']
+    delta_theta_star_stack_4 = unprocessed_params['delta_theta_star_stack_4']
+    b_stack_4, delta_theta_stack_4_c = smoothing.get_f4_smoothing_params(
+        a_stack_4,
+        theta0_stack_4,
+        delta_theta_star_stack_4)
+
+    a_stack_5 = unprocessed_params['a_stack_5']
+    theta0_stack_5 = unprocessed_params['theta0_stack_5']
+    delta_theta_star_stack_5 = unprocessed_params['delta_theta_star_stack_5']
+    b_stack_5, delta_theta_stack_5_c = smoothing.get_f4_smoothing_params(
+        a_stack_5,
+        theta0_stack_5,
+        delta_theta_star_stack_5)
+
+    a_stack_6 = unprocessed_params['a_stack_6']
+    theta0_stack_6 = unprocessed_params['theta0_stack_6']
+    delta_theta_star_stack_6 = unprocessed_params['delta_theta_star_stack_6']
+    b_stack_6, delta_theta_stack_6_c = smoothing.get_f4_smoothing_params(
+        a_stack_6,
+        theta0_stack_6,
+        delta_theta_star_stack_6)
+
+    a_stack_1 = unprocessed_params['a_stack_1']
+    neg_cos_phi1_star_stack = unprocessed_params['neg_cos_phi1_star_stack']
+    b_neg_cos_phi1_stack, neg_cos_phi1_c_stack = smoothing.get_f5_smoothing_params(
+        a_stack_1,
+        neg_cos_phi1_star_stack)
+
+    a_stack_2 = unprocessed_params['a_stack_2']
+    neg_cos_phi2_star_stack = unprocessed_params['neg_cos_phi2_star_stack']
+    b_neg_cos_phi2_stack, neg_cos_phi2_c_stack = smoothing.get_f5_smoothing_params(
+        a_stack_2,
+        neg_cos_phi2_star_stack)
+
+    processed_params = {
+        # f1(dr_stack)
+        "eps_stack": eps_stack,
+        "dr0_stack": dr0_stack,
+        "a_stack": a_stack,
+        "dr_c_stack": dr_c_stack,
+        "dr_low_stack": dr_low_stack,
+        "dr_high_stack": dr_high_stack,
+        "b_low_stack": b_low_stack,
+        "dr_c_low_stack": dr_c_low_stack,
+        "b_high_stack": b_high_stack,
+        "dr_c_high_stack": dr_c_high_stack,
+
+        # f4(theta_4)
+        "a_stack_4": a_stack_4,
+        "theta0_stack_4": theta0_stack_4,
+        "delta_theta_star_stack_4": delta_theta_star_stack_4,
+        "b_stack_4": b_stack_4,
+        "delta_theta_stack_4_c": delta_theta_stack_4_c,
+
+        # f4(theta_5p)
+        "a_stack_5": a_stack_5,
+        "theta0_stack_5": theta0_stack_5,
+        "delta_theta_star_stack_5": delta_theta_star_stack_5,
+        "b_stack_5": b_stack_5,
+        "delta_theta_stack_5_c": delta_theta_stack_5_c,
+
+        # f4(theta_6p)
+        "a_stack_6": a_stack_6,
+        "theta0_stack_6": theta0_stack_6,
+        "delta_theta_star_stack_6": delta_theta_star_stack_6,
+        "b_stack_6": b_stack_6,
+        "delta_theta_stack_6_c": delta_theta_stack_6_c,
+
+        ## f5(-cos(phi1))
+        "a_stack_1": a_stack_1,
+        "neg_cos_phi1_star_stack": neg_cos_phi1_star_stack,
+        "b_neg_cos_phi1_stack": b_neg_cos_phi1_stack,
+        "neg_cos_phi1_c_stack": neg_cos_phi1_c_stack,
+
+        ## f5(-cos(phi2))
+        "a_stack_2": a_stack_2,
+        "neg_cos_phi2_star_stack": neg_cos_phi2_star_stack,
+        "b_neg_cos_phi2_stack": b_neg_cos_phi2_stack,
+        "neg_cos_phi2_c_stack": neg_cos_phi2_c_stack
+
+    }
+    return processed_params
+
+
+
 if __name__ == "__main__":
     get_default_params()

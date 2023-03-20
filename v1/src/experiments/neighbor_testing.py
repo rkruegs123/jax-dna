@@ -76,19 +76,18 @@ def test_custom_mask_function():
     mask_val = n_particles
 
 
-    to_mask = jnp.array([(0, 1), (0, 2), (0, 3)], dtype=jnp.int32)
+    to_mask = jnp.array([(0, 1), (0, 2), (0, 3), (1, 0), (2, 0), (3, 0)], dtype=jnp.int32)
     # custom_mask_function = sparse_mask_to_dense_mask(get_rkk_sparse_custom(to_mask, mask_val=mask_val))
     custom_mask_function = get_rkk_dense_custom(to_mask, mask_val=mask_val)
 
     neighbor_list_fn = partition.neighbor_list(
       displacement_fn,
-      box_size=box_size,
+      box=box_size,
       r_cutoff=r_cutoff,
       dr_threshold=dr_threshold,
       custom_mask_function=custom_mask_function,
       # format=NeighborListFormat.Sparse
       format=NeighborListFormat.Sparse
-
     )
 
     neighbors = neighbor_list_fn.allocate(R)
