@@ -73,7 +73,8 @@ def run_simulation(params, key, steps, init_fn, step_fn, loss_fn):
         return state, (state.position, log_probs, loss)
     final_state, (trajectory, log_probs, losses) = scan(scan_fn, init_state, jnp.arange(steps))
 
-    avg_loss = jnp.mean(losses[-100:]) # note how much repeat ocmputation we do given that we only wnat some of them
+    # avg_loss = jnp.mean(losses[-100:]) # note how much repeat ocmputation we do given that we only wnat some of them
+    avg_loss = jnp.mean(losses[-25000:][::100]) # note how much repeat ocmputation we do given that we only wnat some of them
     return trajectory, log_probs, avg_loss
 
 """
@@ -150,15 +151,15 @@ def single_estimate(displacement_fn, shift_fn, top_info, config_info, steps, dt=
     # loss_fn = geometry.get_backbone_distance_loss(top_info.bonded_nbrs, displacement_fn)
     # loss_fn = jit(loss_fn)
     backbone_dist_pairs = top_info.bonded_nbrs
-    helical_pairs = top_info.bonded_nbrs
+    helical_pairs = top_info.bonded_nbrs[1:-1]
     pitch_quartets = jnp.array([
-        [0, 15, 1, 14],
+        # [0, 15, 1, 14],
         [1, 14, 2, 13],
         [2, 13, 3, 12],
         [3, 12, 4, 11],
         [4, 11, 5, 10],
         [5, 10, 6, 9],
-        [6, 9, 7, 8]
+        # [6, 9, 7, 8]
     ])
     propeller_base_pairs = jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
     loss_fn = structural.get_structural_loss_fn(
