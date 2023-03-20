@@ -131,15 +131,15 @@ def run(args, init_params,
     init_fn = jit(init_fn)
 
     backbone_dist_pairs = top_info.bonded_nbrs
-    helical_pairs = top_info.bonded_nbrs
+    helical_pairs = top_info.bonded_nbrs[1:-1]
     pitch_quartets = jnp.array([
-        [0, 15, 1, 14],
+        # [0, 15, 1, 14],
         [1, 14, 2, 13],
         [2, 13, 3, 12],
         [3, 12, 4, 11],
         [4, 11, 5, 10],
         [5, 10, 6, 9],
-        [6, 9, 7, 8]
+        # [6, 9, 7, 8]
     ])
     propeller_base_pairs = jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
     body_loss_fn = structural.get_structural_loss_fn(
@@ -151,21 +151,83 @@ def run(args, init_params,
     body_loss_fn = jit(body_loss_fn)
     mapped_body_loss_fn = jit(vmap(body_loss_fn))
 
+
+    # Start: added quickly for march meeting
+    d = space.map_bond(functools.partial(displacement_fn))
+    bb_nbrs_i = backbone_dist_pairs[:, 0]
+    bb_nbrs_j = backbone_dist_pairs[:, 1]
+    from utils import Q_to_back_base
+    @jit
+    def bb_dist_fn(body):
+        Q = body.orientation
+        back_base_vectors = Q_to_back_base(Q)
+        back_sites = body.center + com_to_backbone * back_base_vectors
+        dr_back = d(back_sites[bb_nbrs_i], back_sites[bb_nbrs_j])
+        r_back = jnp.linalg.norm(dr_back, axis=1)
+        return r_back
+    mapped_bb_dist_fn = jit(vmap(bb_dist_fn))
+
+    hel_bp_i = helical_pairs[:, 0]
+    hel_bp_j = helical_pairs[:, 1]
+    backbone_radius = 0.675
+    @jit
+    def helical_dist_fn(body):
+        Q = body.orientation
+        back_base_vectors = Q_to_back_base(Q)
+        back_sites = body.center + com_to_backbone * back_base_vectors
+        dr_back = d(back_sites[hel_bp_i], back_sites[hel_bp_j])
+        r_back = jnp.linalg.norm(dr_back, axis=1)
+        r_back += 2*backbone_radius
+        return r_back
+    mapped_helical_dist_fn = jit(vmap(helical_dist_fn))
+
+    from loss import pitch
+    n_quartets = pitch_quartets.shape[0]
+    @jit
+    def pitch_fn(body):
+        pitches = pitch.get_pitches(body, pitch_quartets)
+        num_turns = jnp.sum(pitches) / (2*jnp.pi)
+        avg_pitch = (n_quartets+1) / num_turns
+        return avg_pitch
+    mapped_pitch_fn = jit(vmap(pitch_fn))
+
+    from loss import propeller
+    @jit
+    def propeller_fn(body):
+        avg_p_twist = propeller.get_avg_propeller_twist(body, propeller_base_pairs)
+        avg_p_twist_deg = 180.0 - (avg_p_twist * 180.0 / jnp.pi)
+        return avg_p_twist_deg
+    mapped_propeller_fn = jit(vmap(propeller_fn))
+
+    # End: added quickly for march meeting
+
+    @jit
     def trajectory_loss_fn(trajectory):
-        states_to_eval = trajectory[-3000:][::100]
+        # states_to_eval = trajectory[-3000:][::100]
+        states_to_eval = trajectory[-25000:][::100]
         body_losses = mapped_body_loss_fn(states_to_eval)
-        return jnp.mean(body_losses)
+
+        avg_bb_dist = jnp.mean(mapped_bb_dist_fn(states_to_eval))
+        avg_helical_dist = jnp.mean(mapped_helical_dist_fn(states_to_eval))
+        avg_pitch = jnp.mean(mapped_pitch_fn(states_to_eval))
+        avg_propeller_twist = jnp.mean(mapped_propeller_fn(states_to_eval))
+        
+        return jnp.mean(body_losses), (avg_bb_dist, avg_helical_dist, avg_pitch, avg_propeller_twist)
 
     run_single_simulation = Partial(run_simulation, steps=sim_length, init_fn=init_fn, step_fn=step_fn)
 
+    @jit
     def sim_loss_fn(params, key):
         trajectory = run_single_simulation(params, key)
-        return trajectory_loss_fn(trajectory)
+        loss, (avg_bb_dist, avg_helical_dist, avg_pitch, avg_propeller_twist) = trajectory_loss_fn(trajectory)
+        # return trajectory_loss_fn(trajectory)
+        return loss, (avg_bb_dist, avg_helical_dist, avg_pitch, avg_propeller_twist)
 
 
     # Get our gradients ready
-    grad_fn = value_and_grad(sim_loss_fn)
+    grad_fn = value_and_grad(sim_loss_fn, has_aux=True)
     batched_grad_fn = vmap(grad_fn, (None, 0))
+    batched_grad_fn = jit(batched_grad_fn)
 
     optimizer = jopt.adam(lr)
     opt_state = optimizer.init_fn(init_params)
@@ -175,6 +237,10 @@ def run(args, init_params,
     all_losses = list()
     all_grads = list()
     loss_path = run_dir / "loss.txt"
+    bb_dist_path = run_dir / "bb_dists.txt"
+    helical_dist_path = run_dir / "helical_dists.txt"
+    pitches_path = run_dir / "pitches.txt"
+    propeller_twists_path = run_dir / "propeller_twists.txt"
 
     # Do the optimization
     step_times = list()
@@ -184,7 +250,7 @@ def run(args, init_params,
         seeds = jax.random.split(iter_key, batch_size)
 
         # Get the grad for our single test case (would have to average for multiple)
-        losses, grads = batched_grad_fn(optimizer.params_fn(opt_state), seeds)
+        (losses, (bb_dists, helical_dists, pitches, propeller_twists)), grads = batched_grad_fn(optimizer.params_fn(opt_state), seeds)
         avg_loss = jnp.mean(losses)
         avg_grad = jnp.mean(grads, axis=0)
         opt_state = optimizer.update_fn(i, avg_grad, opt_state)
@@ -201,6 +267,14 @@ def run(args, init_params,
 
             with open(loss_path, "a") as f:
                 f.write(f"{losses}\n")
+            with open(bb_dist_path, "a") as f:
+                f.write(f"{bb_dists}\nAvg: {jnp.mean(bb_dists)}\n")
+            with open(helical_dist_path, "a") as f:
+                f.write(f"{helical_dists}\nAvg: {jnp.mean(helical_dists)}\n")
+            with open(pitches_path, "a") as f:
+                f.write(f"{pitches}\nAvg: {jnp.mean(pitches)}\n")
+            with open(propeller_twists_path, "a") as f:
+                f.write(f"{propeller_twists}\nAvg: {jnp.mean(propeller_twists)}\n")
 
     with open(run_dir / "final_params.pkl", "wb") as f:
         pickle.dump(optimizer.params_fn(opt_state), f)
