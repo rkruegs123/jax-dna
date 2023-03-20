@@ -1,4 +1,4 @@
-from math import radians
+from math import radians, degrees
 import pdb
 
 from jax.config import config as jax_config
@@ -34,7 +34,9 @@ if FLAGS.jax_enable_x64:
 # Tom's these, botrtom page 57. Potentially averaged from ref 162.
 # Note: there seem to be conflicting values on this. Some other citations/values are the following:
 # - https://people.bu.edu/mfk/restricted566/dnastructure.pdf -- 12.6 (Table 1)
-TARGET_TWIST = radians(21.7)
+# TARGET_TWIST = radians(21.7)
+# TARGET_TWIST = 21.7
+TARGET_TWIST = 15.0
 
 # the propeller twist is defined as the angle between the normal vectors of stacked bases
 def compute_single_propeller_twist(basepair, base_normals: Array):
@@ -51,7 +53,10 @@ def get_avg_propeller_twist(system: RigidBody, base_pairs: Array):
 
 def get_propeller_loss_fn(base_pairs: Array, target_propeller_twist=TARGET_TWIST):
     def propeller_loss_fn(body: RigidBody):
-        return (get_avg_propeller_twist(body, base_pairs) - target_propeller_twist)**2
+        avg_p_twist = get_avg_propeller_twist(body, base_pairs)
+        # avg_p_twist_deg = 180.0 - degrees(avg_p_twist)
+        avg_p_twist_deg = 180.0 - (avg_p_twist * 180.0 / jnp.pi)
+        return (avg_p_twist_deg - target_propeller_twist)**2
     return propeller_loss_fn
 
 

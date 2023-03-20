@@ -32,6 +32,7 @@ def get_structural_loss_fn(
     def structural_loss_fn(body):
         return bb_dist_loss_fn(body) + pitch_loss_fn(body) + propeller_loss_fn(body) \
             + helical_diameter_loss_fn(body)
+        # return bb_dist_loss_fn(body) + pitch_loss_fn(body) + helical_diameter_loss_fn(body)
 
     return structural_loss_fn
 
