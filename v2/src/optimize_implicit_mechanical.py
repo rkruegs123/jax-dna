@@ -93,10 +93,7 @@ def run(args, init_params,
     target_pdist = args['target_dist']
     ext_force_magnitude = args['force']
 
-    if args['avg_nuc_force']:
-        mean_force_method = "avg-nuc"
-    else:
-        mean_force_method = "per-nuc"
+    rel_method = args['rel_method']
 
     assert(n_steps_per_force % sample_every == 0)
 
@@ -108,7 +105,7 @@ def run(args, init_params,
 
     output_basedir = Path(output_basedir)
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    run_name = f"optimize_implicit_mech_{timestamp}_lr{lr}_n{n_steps_per_force}_s{sample_every}_e{n_eq_steps}_d{target_pdist}_f{ext_force_magnitude}_{mean_force_method}_k{args['key']}"
+    run_name = f"optimize_implicit_mech_{timestamp}_lr{lr}_n{n_steps_per_force}_s{sample_every}_e{n_eq_steps}_d{target_pdist}_f{ext_force_magnitude}_{rel_method}_k{args['key']}"
     run_dir = output_basedir / run_name
     run_dir.mkdir(parents=False, exist_ok=False)
     shutil.copy(top_path, run_dir)
@@ -172,8 +169,25 @@ def run(args, init_params,
     @jit
     def mean_force_fn(bodies, params):
         n_states = bodies.center.shape[0]
+
+        """
+        if rel_method == "zeros":
+            zeros_center = jnp.zeros(bodies.center.shape)
+            zeros_orientation_vec = jnp.zeros(bodies.orientation.vec.shape)
+            return RigidBody(center=zeros_center, orientation=Quaternion(zeros_orientation_vec))
+
+        if rel_method == "identity":
+            return bodies
+
+        if rel_method == "no-avg":
+            batch_force = batched_adj_force_fn(bodies, params)
+            batch_center_norm = batch_force.center / n_states
+            batch_orientation_norm = batch_force.orientation.vec / n_states
+            return RigidBody(center=batch_center_norm, orientation=Quaternion(batch_orientation_norm))
+        """
+
         mean_center_force, mean_orientation_force = mean_force_fn_helper(bodies, params)
-        if mean_force_method == "avg-nuc":
+        if rel_method == "avg-nuc":
             mean_nuc_force = jnp.mean(mean_center_force, axis=0)
             mean_nuc_torque = jnp.mean(mean_orientation_force, axis=0)
 
@@ -311,6 +325,11 @@ if __name__ == "__main__":
     parser.add_argument('--top-path', type=str,
                         default="data/elastic-mod/generated.top",
                         help='Path to topology file')
+    parser.add_argument('--rel-method', type=str,
+                        default="avg-nuc",
+                        # choices=["avg-nuc", "per-nuc", "no-avg", "identity", "zeros"],
+                        choices=["avg-nuc", "per-nuc"],
+                        help='Relation used for implicit diff.')
     parser.add_argument('--conf-path', type=str,
                         default="data/elastic-mod/generated.dat",
                         help='Path to configuration file')
