@@ -284,5 +284,31 @@ def get_default_params(params_path="v2/params/tom.toml", t=DEFAULT_TEMP, no_smoo
     return get_params(params, t=t, no_smoothing=no_smoothing)
 
 
+def get_init_optimize_params(method="oxdna"):
+    if method == "oxdna":
+        # starting with the correct parameters
+        init_fene_params = [2.0, 0.25, 0.7525]
+        init_stacking_params = [
+            1.3448, 2.6568, 6.0, 0.4, 0.9, 0.32, 0.75, # f1(dr_stack)
+            1.30, 0.0, 0.8, # f4(theta_4)
+            0.90, 0.0, 0.95, # f4(theta_5p)
+            0.90, 0.0, 0.95, # f4(theta_6p)
+            2.0, -0.65, # f5(-cos(phi1))
+            2.0, -0.65 # f5(-cos(phi2))
+        ]
+    elif method == "random":
+        init_fene_params = [0.60, 0.75, 1.1]
+        init_stacking_params = [
+            0.25, 0.7, 2.0, 0.4, 1.2, 1.3, 0.2, # f1(dr_stack)
+            0.5, 0.35, 0.6, # f4(theta_4)
+            1.5, 1.1, 0.3, # f4(theta_5p)
+            2.0, 0.2, 0.75, # f4(theta_6p)
+            0.7, 2.0, # f5(-cos(phi1))
+            1.3, 0.8 # f5(-cos(phi2))
+        ]
+    else:
+        raise RuntimeError(f"Invalid method: {method}")
+    return init_fene_params + init_stacking_params
+
 if __name__ == "__main__":
     get_default_params()

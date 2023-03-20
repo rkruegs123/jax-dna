@@ -25,6 +25,7 @@ from utils import get_one_hot, bcolors
 
 from loader.trajectory import TrajectoryInfo
 from loader.topology import TopologyInfo
+from loader import get_params
 from energy import factory
 # import langevin
 from checkpoint import checkpoint_scan
@@ -333,38 +334,9 @@ if __name__ == "__main__":
     # conf_path = "data/simple-helix/start.conf"
 
     init_method = args['params']
-    if init_method == "random":
 
-        init_fene_params = [0.60, 0.75, 1.1]
-        init_stacking_params = [
-            0.25, 0.7, 2.0, 0.4, 1.2, 1.3, 0.2, # f1(dr_stack)
-            0.5, 0.35, 0.6, # f4(theta_4)
-            1.5, 1.1, 0.3, # f4(theta_5p)
-            2.0, 0.2, 0.75, # f4(theta_6p)
-            0.7, 2.0, # f5(-cos(phi1))
-            1.3, 0.8 # f5(-cos(phi2))
-        ]
-    elif init_method == "oxdna":
-
-        # starting with the correct parameters
-        init_fene_params = [2.0, 0.25, 0.7525]
-        init_stacking_params = [
-            1.3448, 2.6568, 6.0, 0.4, 0.9, 0.32, 0.75, # f1(dr_stack)
-            1.30, 0.0, 0.8, # f4(theta_4)
-            0.90, 0.0, 0.95, # f4(theta_5p)
-            0.90, 0.0, 0.95, # f4(theta_6p)
-            2.0, -0.65, # f5(-cos(phi1))
-            2.0, -0.65 # f5(-cos(phi2))
-        ]
-    else:
-        raise RuntimeError(f"Invalid parameter initialization method: {init_method}")
-
-
-    init_params = jnp.array(init_fene_params + init_stacking_params)
-    # init_params = jnp.array(init_fene_params) # my own hard-coded random FENE parameters
-
-
-    # key = random.PRNGKey(0)
+    init_params = get_params.get_init_optimize_params(init_method)
+    init_params = jnp.array(init_params)
 
     start = time.time()
     run(args, init_params=init_params)

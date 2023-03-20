@@ -211,7 +211,7 @@ def run(args, init_params,
         avg_helical_dist = jnp.mean(mapped_helical_dist_fn(states_to_eval))
         avg_pitch = jnp.mean(mapped_pitch_fn(states_to_eval))
         avg_propeller_twist = jnp.mean(mapped_propeller_fn(states_to_eval))
-        
+
         return jnp.mean(body_losses), (avg_bb_dist, avg_helical_dist, avg_pitch, avg_propeller_twist)
 
     run_single_simulation = Partial(run_simulation, steps=sim_length, init_fn=init_fn, step_fn=step_fn)
@@ -294,6 +294,9 @@ def run(args, init_params,
 if __name__ == "__main__":
     import argparse
 
+    from loader import get_params
+
+
     parser = argparse.ArgumentParser(description="Optimizing over oxDNA parameters")
     parser.add_argument('-b', '--batch-size', type=int, default=10,
                         help="Num. batches for each round of gradient descent")
@@ -317,18 +320,8 @@ if __name__ == "__main__":
 
 
     # starting with the correct parameters
-    init_fene_params = [2.0, 0.25, 0.7525]
-    init_stacking_params = [
-        1.3448, 2.6568, 6.0, 0.4, 0.9, 0.32, 0.75, # f1(dr_stack)
-        1.30, 0.0, 0.8, # f4(theta_4)
-        0.90, 0.0, 0.95, # f4(theta_5p)
-        0.90, 0.0, 0.95, # f4(theta_6p)
-        2.0, -0.65, # f5(-cos(phi1))
-        2.0, -0.65 # f5(-cos(phi2))
-    ]
-
-    init_params = jnp.array(init_fene_params + init_stacking_params)
-    # init_params = jnp.array(init_fene_params)
+    init_params = get_params.get_init_optimize_params("oxdna")
+    init_params = jnp.array(init_params)
 
 
     start = time.time()

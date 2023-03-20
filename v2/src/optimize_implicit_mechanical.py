@@ -305,6 +305,9 @@ def run(args, init_params,
 if __name__ == "__main__":
     import argparse
 
+    from loader import get_params
+
+
     parser = argparse.ArgumentParser(description="Optimizing over oxDNA parameters")
     parser.add_argument('--opt-steps', type=int, default=1,
                         help="Num. iterations of gradient descent")
@@ -339,18 +342,8 @@ if __name__ == "__main__":
 
 
     # starting with the correct parameters
-    init_fene_params = [2.0, 0.25, 0.7525]
-    init_stacking_params = [
-        1.3448, 2.6568, 6.0, 0.4, 0.9, 0.32, 0.75, # f1(dr_stack)
-        1.30, 0.0, 0.8, # f4(theta_4)
-        0.90, 0.0, 0.95, # f4(theta_5p)
-        0.90, 0.0, 0.95, # f4(theta_6p)
-        2.0, -0.65, # f5(-cos(phi1))
-        2.0, -0.65 # f5(-cos(phi2))
-    ]
-
-    init_params = jnp.array(init_fene_params + init_stacking_params)
-    # init_params = jnp.array(init_fene_params)
+    init_params = get_params.get_init_optimize_params("oxdna")
+    init_params = jnp.array(init_params)
 
     start = time.time()
     run(args, init_params=init_params)
