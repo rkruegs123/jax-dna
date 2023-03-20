@@ -103,13 +103,13 @@ if __name__ == "__main__":
 
     pdb.set_trace()
     quartets = jnp.array([
-        [0, 15, 1, 14],
+        # [0, 15, 1, 14],
         [1, 14, 2, 13],
         [2, 13, 3, 12],
         [3, 12, 4, 11],
         [4, 11, 5, 10],
         [5, 10, 6, 9],
-        [6, 9, 7, 8]
+        # [6, 9, 7, 8]
     ])
     loss_fn = get_pitch_distance_loss(quartets)
     # base_sites = body.center + rigid_body.quaternion_rotate(body.orientation, base_site)
@@ -120,3 +120,23 @@ if __name__ == "__main__":
     curr_loss = loss_fn(body)
     pdb.set_trace()
     print("done")
+
+
+
+
+
+
+    # traj_path = "v2/data/output/langevin_2023-03-06_17-50-46_n50000_dt0.005_k0/output.dat" # optimized parameters
+    # traj_path = "v2/data/output/langevin_2023-03-07_17-50-38_n100000_dt0.005_k0/output.dat" # optimized parameters
+    traj_path = "v2/data/output/langevin_2023-03-07_17-59-15_n100000_dt0.005_k0/output.dat" # original oxdna parameters
+    # traj_path = "v2/data/output/langevin_2023-03-06_17-49-04_n50000_dt0.005_k0/output.dat" # the original oxdna parameters
+    traj_info = TrajectoryInfo(top_info, traj_path=traj_path, reverse_direction=True)
+    all_pitches = list()
+    n_quartets = quartets.shape[0]
+    for body in tqdm(traj_info.states[20:]):
+        pitches = get_pitches(body, quartets)
+        num_turns = jnp.sum(pitches) / (2*jnp.pi)
+        avg_pitch = (n_quartets+1) / num_turns
+        all_pitches.append(avg_pitch)
+
+    print(onp.mean(all_pitches))

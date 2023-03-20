@@ -61,6 +61,9 @@ def get_propeller_loss_fn(base_pairs: Array, target_propeller_twist=TARGET_TWIST
 
 
 if __name__ == "__main__":
+    from tqdm import tqdm
+    import numpy as onp
+
     base_pairs = jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
     # base_pairs = jnp.array([[0, 15], [1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9], [7, 8]])
 
@@ -76,3 +79,22 @@ if __name__ == "__main__":
     curr_loss = loss_fn(body)
     pdb.set_trace()
     print("done")
+
+
+
+
+    top_path = "v2/data/output/langevin_2023-03-06_17-50-46_n50000_dt0.005_k0/generated.top"
+    top_info = TopologyInfo(top_path, reverse_direction=True)
+    traj_path = "v2/data/output/langevin_2023-03-07_17-50-38_n100000_dt0.005_k0/output.dat" # optimized parameters
+    # traj_path = "v2/data/output/langevin_2023-03-07_17-59-15_n100000_dt0.005_k0/output.dat" # original oxdna parameters
+    # traj_path = "v2/data/output/langevin_2023-03-06_17-49-04_n50000_dt0.005_k0/output.dat" # the original oxdna parameters
+    traj_info = TrajectoryInfo(top_info, traj_path=traj_path, reverse_direction=True)
+    all_prop_twists = list()
+    all_prop_twists_deg = list()
+    for body in tqdm(traj_info.states[20:]):
+        p_twist = get_avg_propeller_twist(body, base_pairs)
+        p_twist_deg = 180.0 - (p_twist * 180.0 / jnp.pi)
+        all_prop_twists.append(p_twist)
+        all_prop_twists_deg.append(p_twist_deg)
+    print(onp.mean(all_prop_twists))
+    print(onp.mean(all_prop_twists_deg))
