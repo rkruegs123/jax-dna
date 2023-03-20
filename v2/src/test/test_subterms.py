@@ -32,7 +32,8 @@ def compute_subterms(top_path, traj_path, T=DEFAULT_TEMP):
     seq = jnp.array(get_one_hot(top_info.seq), dtype=f64)
 
     displacement_fn, shift_fn = space.periodic(traj_info.box_size)
-    params = get_params.get_default_params(t=T, no_smoothing=False)
+    # params = get_params.get_default_params(t=T, no_smoothing=False)
+    params = get_params.get_init_optimize_params(method="oxdna")
 
     _, _compute_subterms = factory.energy_fn_factory(displacement_fn,
                                                      back_site, stack_site, base_site,
