@@ -323,14 +323,14 @@ def process_stacking_params(unprocessed_params, kt):
     eps_stack_kt_coeff = unprocessed_params['eps_stack_kt_coeff']
     eps_stack = eps_stack_base + eps_stack_kt_coeff * kt
 
-    b_low_stack, dr_c_low_stack, b_high_stack, dr_c_high_stack = smoothing.get_f1_smoothing_params(
+    b_low_stack, dr_c_low_stack, b_high_stack, dr_c_high_stack = get_f1_smoothing_params(
         eps_stack, dr0_stack, a_stack, dr_c_stack,
         dr_low_stack, dr_high_stack)
 
     a_stack_4 = unprocessed_params['a_stack_4']
     theta0_stack_4 = unprocessed_params['theta0_stack_4']
     delta_theta_star_stack_4 = unprocessed_params['delta_theta_star_stack_4']
-    b_stack_4, delta_theta_stack_4_c = smoothing.get_f4_smoothing_params(
+    b_stack_4, delta_theta_stack_4_c = get_f4_smoothing_params(
         a_stack_4,
         theta0_stack_4,
         delta_theta_star_stack_4)
@@ -338,7 +338,7 @@ def process_stacking_params(unprocessed_params, kt):
     a_stack_5 = unprocessed_params['a_stack_5']
     theta0_stack_5 = unprocessed_params['theta0_stack_5']
     delta_theta_star_stack_5 = unprocessed_params['delta_theta_star_stack_5']
-    b_stack_5, delta_theta_stack_5_c = smoothing.get_f4_smoothing_params(
+    b_stack_5, delta_theta_stack_5_c = get_f4_smoothing_params(
         a_stack_5,
         theta0_stack_5,
         delta_theta_star_stack_5)
@@ -346,20 +346,20 @@ def process_stacking_params(unprocessed_params, kt):
     a_stack_6 = unprocessed_params['a_stack_6']
     theta0_stack_6 = unprocessed_params['theta0_stack_6']
     delta_theta_star_stack_6 = unprocessed_params['delta_theta_star_stack_6']
-    b_stack_6, delta_theta_stack_6_c = smoothing.get_f4_smoothing_params(
+    b_stack_6, delta_theta_stack_6_c = get_f4_smoothing_params(
         a_stack_6,
         theta0_stack_6,
         delta_theta_star_stack_6)
 
     a_stack_1 = unprocessed_params['a_stack_1']
     neg_cos_phi1_star_stack = unprocessed_params['neg_cos_phi1_star_stack']
-    b_neg_cos_phi1_stack, neg_cos_phi1_c_stack = smoothing.get_f5_smoothing_params(
+    b_neg_cos_phi1_stack, neg_cos_phi1_c_stack = get_f5_smoothing_params(
         a_stack_1,
         neg_cos_phi1_star_stack)
 
     a_stack_2 = unprocessed_params['a_stack_2']
     neg_cos_phi2_star_stack = unprocessed_params['neg_cos_phi2_star_stack']
-    b_neg_cos_phi2_stack, neg_cos_phi2_c_stack = smoothing.get_f5_smoothing_params(
+    b_neg_cos_phi2_stack, neg_cos_phi2_c_stack = get_f5_smoothing_params(
         a_stack_2,
         neg_cos_phi2_star_stack)
 

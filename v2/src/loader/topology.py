@@ -5,8 +5,11 @@ from io import StringIO
 from itertools import combinations
 import numpy as np
 
+import jax.numpy as jnp
+
 from utils import DNA_BASES
 
+from jax_md.partition import NeighborList, NeighborListFormat, neighbor_list
 
 
 def get_unbonded_neighbors(n, bonded_neighbors):
@@ -155,6 +158,53 @@ class TopologyInfo:
 
         with open(opath, 'w+') as of:
             of.write('\n'.join(out_lines_top))
+
+    def get_neighbor_list_fn(self, displacement_fn, box_size, r_cutoff, dr_threshold):
+        import jax.debug
+
+        # Construct nx2 mask
+        ## FIXME: does this have to be symmetric? maybe not
+        dense_mask = np.full((self.n, 2), self.n, dtype=np.int32)
+        counter = np.zeros(self.n, dtype=np.int32)
+        for bp1, bp2 in self.bonded_nbrs:
+            dense_mask[bp1, counter[bp1]] = bp2
+            counter[bp1] += 1
+
+            dense_mask[bp2, counter[bp2]] = bp1
+            counter[bp2] += 1
+        dense_mask = jnp.array(dense_mask, dtype=jnp.int32)
+
+        """
+        mask_val = self.n
+        # all_bonded_nbrs = np.concatenate((self.bonded_nbrs, self.bonded_nbrs[:, [1, 0]])) # includes reverse order
+        # mask_pairs = tuple(all_bonded_nbrs.T)
+        to_mask = jnp.array([(0, 1), (0, 2), (0, 3), (1, 0), (2, 0), (3, 0)], dtype=jnp.int32)
+        mask_pairs = tuple(jnp.array(to_mask).T) # will be a tuple of jnp arrays
+        def bonded_nbrs_mask_fn(dense_idx):
+            # return dense_idx.at[self.bonded_nbrs[:, 0], self.bonded_nbrs[:, 1]].set(mask_val)
+            jax.debug.breakpoint()
+            return dense_idx.at[mask_pairs].set(mask_val)
+        """
+
+        def bonded_nbrs_mask_fn(dense_idx):
+            nbr_mask1 = (dense_idx == dense_mask[:, 0].reshape(self.n, 1))
+            dense_idx = jnp.where(nbr_mask1, self.n, dense_idx)
+
+            nbr_mask2 = (dense_idx == dense_mask[:, 1].reshape(self.n, 1))
+            dense_idx = jnp.where(nbr_mask2, self.n, dense_idx)
+            return dense_idx
+
+
+        neighbor_list_fn = neighbor_list(
+            displacement_fn,
+            box=box_size,
+            r_cutoff=r_cutoff,
+            dr_threshold=dr_threshold,
+            custom_mask_function=bonded_nbrs_mask_fn,
+            format=NeighborListFormat.OrderedSparse
+        )
+
+        return neighbor_list_fn
 
 
 if __name__ == "__main__":
