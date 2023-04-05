@@ -17,7 +17,6 @@ def run():
     pdb.set_trace()
     """
 
-
     basedir = Path("v2/data/test-data/simple-coax")
     traj_path = basedir / "output.dat"
     top_path = basedir / "generated.top"

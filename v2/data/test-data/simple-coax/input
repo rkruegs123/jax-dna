@@ -1,12 +1,12 @@
 # Core options
-T = 300K
-steps = 10
+T = 296.15K
+steps = 10000
 conf_file = start.conf
 topology = generated.top # starting topology file
 trajectory_file = output.dat # where the trajectory WILL be outputted
 time_scale = linear
-print_conf_interval = 1
-print_energy_every = 1
+print_conf_interval = 100
+print_energy_every = 100
 interaction_type = DNA
 seed = 0
 lastconf_file = last_conf.dat
@@ -32,7 +32,7 @@ generate_consider_bonded_interactions = true
 # oxDNA observables
 data_output_1 = {
   name = split_energy.dat
-  print_every = 1
+  print_every = 100
   col_1 = {
           type = step
           units = MD
@@ -45,7 +45,7 @@ data_output_1 = {
 }
 data_output_2 = {
   name = potential.dat
-  print_every = 1
+  print_every = 100
   col_1 = {
           type = step
           units = MD
@@ -57,7 +57,7 @@ data_output_2 = {
 }
 data_output_3 = {
   name = pair.dat
-  print_every = 1
+  print_every = 100
   col_1 = {
           type = step
           units = MD

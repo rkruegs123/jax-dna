@@ -17,7 +17,7 @@ from energy.interactions import v_fene, exc_vol_bonded, stacking, \
     hydrogen_bonding, exc_vol_unbonded, cross_stacking, coaxial_stacking
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 from utils import com_to_backbone, com_to_stacking, com_to_hb
-from utils import clamp, get_kt
+from utils import clamp, get_kt, DEFAULT_TEMP
 from utils import HB_WEIGHTS, get_hb_probs, stacking_param_names
 
 f64 = util.f64
@@ -26,7 +26,7 @@ f64 = util.f64
 def energy_fn_factory(displacement_fn,
                       back_site, stack_site, base_site,
                       bonded_neighbors, unbonded_neighbors,
-                      temp=300):
+                      temp=DEFAULT_TEMP):
 
     kt = get_kt(temp) # For use when optimizing over stacking parameters
     params = get_params.get_default_params(t=temp, no_smoothing=False) # FIXME: hardcoded temperature for now

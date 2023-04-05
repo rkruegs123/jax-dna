@@ -18,8 +18,8 @@ def run():
     import matplotlib.pyplot as plt
     from tqdm import tqdm
 
-    top_path = "v2/data/test-data/simple-helix-296.15-K/generated.top"
-    traj_path = "v2/data/test-data/simple-helix-296.15-K/output.dat"
+    top_path = "v2/data/test-data/simple-helix/generated.top"
+    traj_path = "v2/data/test-data/simple-helix/output.dat"
 
     print(f"----Checking propeller twist for trajectory at location: {traj_path}----")
 
