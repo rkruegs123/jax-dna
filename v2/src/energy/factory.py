@@ -33,26 +33,27 @@ def energy_fn_factory(displacement_fn,
 
     # Define which functions we will *not* be optimizing over
     # stacking_fn = Partial(stacking, **params["stacking"])
-    hb_fn = Partial(hydrogen_bonding, **params["hydrogen_bonding"])
+    hb_fn = jit(Partial(hydrogen_bonding, **params["hydrogen_bonding"]))
     exc_vol_unbonded_params = params["excluded_volume"]
     exc_vol_bonded_params = deepcopy(exc_vol_unbonded_params)
     del exc_vol_bonded_params["dr_star_backbone"]
     del exc_vol_bonded_params["sigma_backbone"]
     del exc_vol_bonded_params["b_backbone"]
     del exc_vol_bonded_params["dr_c_backbone"]
-    exc_vol_unbonded_fn = Partial(exc_vol_unbonded, **exc_vol_unbonded_params)
-    exc_vol_bonded_fn = Partial(exc_vol_bonded, **exc_vol_bonded_params)
+    exc_vol_unbonded_fn = jit(Partial(exc_vol_unbonded, **exc_vol_unbonded_params))
+    exc_vol_bonded_fn = jit(Partial(exc_vol_bonded, **exc_vol_bonded_params))
 
-    cross_stacking_fn = Partial(cross_stacking, **params["cross_stacking"])
-    coaxial_stacking_fn = Partial(coaxial_stacking, **params["coaxial_stacking"])
+    cross_stacking_fn = jit(Partial(cross_stacking, **params["cross_stacking"]))
+    coaxial_stacking_fn = jit(Partial(coaxial_stacking, **params["coaxial_stacking"]))
 
     # Extract relevant neighbor information and define our pairwise displacement function
-    d = space.map_bond(partial(displacement_fn))
+    d = jit(space.map_bond(partial(displacement_fn)))
     nn_i = bonded_neighbors[:, 0]
     nn_j = bonded_neighbors[:, 1]
     op_i = unbonded_neighbors[:, 0]
     op_j = unbonded_neighbors[:, 1]
 
+    @jit
     def _compute_subterms(body: RigidBody, seq: util.Array, params):
 
         # Use our the parameters to construct the relevant energy functions
@@ -104,10 +105,10 @@ def energy_fn_factory(displacement_fn,
 
         ## Hydrogen bonding
         r_base_op = jnp.linalg.norm(dr_base_op, axis=1)
-        back_bases = Q_to_back_base(Q) # space frame, normalized
-        theta1_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -back_bases[op_i], back_bases[op_j])))
-        theta2_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -back_bases[op_j], dr_base_op) / r_base_op))
-        theta3_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', back_bases[op_i], dr_base_op) / r_base_op))
+        # back_bases = Q_to_back_base(Q) # space frame, normalized
+        theta1_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -back_base_vectors[op_i], back_base_vectors[op_j])))
+        theta2_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -back_base_vectors[op_j], dr_base_op) / r_base_op))
+        theta3_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', back_base_vectors[op_i], dr_base_op) / r_base_op))
         theta4_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], base_normals[op_j])))
         # Note: are these swapped in Lorenzo's code?
         theta7_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -base_normals[op_j], dr_base_op) / r_base_op))
@@ -122,9 +123,9 @@ def energy_fn_factory(displacement_fn,
         theta5_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], dr_stack_norm_op)))
         theta6_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -base_normals[op_j], dr_stack_norm_op)))
         cosphi3_op = jnp.einsum('ij, ij->i', dr_stack_norm_op,
-                                jnp.cross(dr_backbone_norm_op, back_bases[op_j]))
+                                jnp.cross(dr_backbone_norm_op, back_base_vectors[op_j]))
         cosphi4_op = jnp.einsum('ij, ij->i', dr_stack_norm_op,
-                                jnp.cross(dr_backbone_norm_op, back_bases[op_i]))
+                                jnp.cross(dr_backbone_norm_op, back_base_vectors[op_i]))
 
 
         # Compute the contributions from each interaction
@@ -147,8 +148,10 @@ def energy_fn_factory(displacement_fn,
 
         return (jnp.sum(fene_dg), jnp.sum(exc_vol_bonded_dg), jnp.sum(stack_dg), \
                 jnp.sum(exc_vol_unbonded_dg), hb_dg, jnp.sum(cr_stack_dg),
-                jnp.sum(cx_stack_dg)) # hb_dg is already a scalar
+                jnp.sum(cx_stack_dg)
+        ) # hb_dg is already a scalar
 
+    @jit
     def energy_fn(body: RigidBody, seq: util.Array, params, **kwargs) -> float:
         dgs = _compute_subterms(body, seq, params)
         fene_dg, b_exc_dg, stack_dg, n_exc_dg, hb_dg, cr_stack, cx_stack = dgs

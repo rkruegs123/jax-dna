@@ -28,7 +28,6 @@ config.update("jax_enable_x64", True)
 f64 = util.f64
 
 def run_single_langevin(args,
-                        T=DEFAULT_TEMP,
                         output_basedir="v2/data/output/", save_output=False):
 
     top_path = args['top_path']
@@ -38,6 +37,7 @@ def run_single_langevin(args,
     init_method = args['params']
     save_every = args['save_every']
     dt = args['dt']
+    T = args['temp']
 
     use_ext_force = args['use_ext_force']
     ext_force_magnitude = args['ext_force_magnitude']
@@ -65,7 +65,7 @@ def run_single_langevin(args,
         if not output_basedir.exists():
             raise RuntimeError(f"Output base directory does not exist at location: {output_basedir}")
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        run_name = f"langevin_{timestamp}_n{n_steps}_dt{dt}_k{args['key']}"
+        run_name = f"langevin_{timestamp}_n{n_steps}_dt{dt}_t{T}_k{args['key']}"
         run_dir = output_basedir / run_name
         run_dir.mkdir(parents=False, exist_ok=False)
         shutil.copy(top_path, run_dir)
@@ -186,6 +186,8 @@ if __name__ == "__main__":
                         help="Random key")
     parser.add_argument('--dt', type=float, default=5e-3,
                         help="Time step")
+    parser.add_argument('--temp', type=float, default=DEFAULT_TEMP,
+                        help="Temperature (K)")
     parser.add_argument('--params', type=str,
                         default="oxdna",
                         choices=["random", "oxdna"],
