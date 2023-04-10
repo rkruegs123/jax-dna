@@ -56,27 +56,46 @@ def get_rkk_sparse_custom(pairs, mask_val=5):
 # pairs must be a list of tuples
 # e.g. pairs = [(0, 1), (1, 2)]
 def get_rkk_dense_custom(pairs, mask_val):
+    import jax.debug
     pairs = tuple(jnp.array(pairs).T) # will be a tuple of jnp arrays
+    pdb.set_trace()
     def custom_mask_dense(dense_idx):
+        jax.debug.breakpoint()
         return dense_idx.at[pairs].set(mask_val)
     return custom_mask_dense
 
 
 
+
+
+def get_rand_rigid_body(n, box_size, key):
+    pos_key, quat_key = random.split(key, 2)
+
+    R = box_size * random.uniform(pos_key, (n, 3), dtype=dtype)
+    quat_key = random.split(quat_key, n)
+    quaternion = rand_quat(quat_key, dtype)
+
+    body = rigid_body.RigidBody(R, quaternion)
+    return body
+
 # For testing
 def test_custom_mask_function():
-    displacement_fn, shift_fn = space.free()
+    # displacement_fn, shift_fn = space.free()
+    displacement_fn, shift_fn = space.periodic(1.0)
 
-    box_size = 1.0
-    r_cutoff = 3.0
+    box_size = 5.0
+    r_cutoff = 1.0
     dr_threshold = 0.0
     n_particles = 5
-    R = jnp.broadcast_to(jnp.zeros(3), (n_particles,3))
+    # R = jnp.broadcast_to(jnp.zeros(3), (n_particles,3))
+    pos_key = random.PRNGKey(0)
+    R = box_size * random.uniform(pos_key, (n_particles, 3))
 
     mask_val = n_particles
 
 
     to_mask = jnp.array([(0, 1), (0, 2), (0, 3), (1, 0), (2, 0), (3, 0)], dtype=jnp.int32)
+    # to_mask = jnp.array([(0, 1)], dtype=jnp.int32)
     # custom_mask_function = sparse_mask_to_dense_mask(get_rkk_sparse_custom(to_mask, mask_val=mask_val))
     custom_mask_function = get_rkk_dense_custom(to_mask, mask_val=mask_val)
 
@@ -87,9 +106,10 @@ def test_custom_mask_function():
       dr_threshold=dr_threshold,
       custom_mask_function=custom_mask_function,
       # format=NeighborListFormat.Sparse
-      format=NeighborListFormat.Sparse
+      format=NeighborListFormat.OrderedSparse
     )
 
+    pdb.set_trace()
     neighbors = neighbor_list_fn.allocate(R)
     neighbors = neighbors.update(R)
 

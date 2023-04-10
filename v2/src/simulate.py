@@ -8,6 +8,7 @@ from tqdm import tqdm
 import datetime
 from pathlib import Path
 import shutil
+from functools import partial
 
 from jax_md.rigid_body import RigidBody
 from jax_md import space, util, simulate
@@ -37,12 +38,20 @@ def run_single_langevin(args,
     init_method = args['params']
     save_every = args['save_every']
     dt = args['dt']
+    boundary_conditions = args['boundary_conditions']
     T = args['temp']
+
 
     use_ext_force = args['use_ext_force']
     ext_force_magnitude = args['ext_force_magnitude']
     ext_force_bps1 = args['ext_force_bps1']
     ext_force_bps2 = args['ext_force_bps2']
+
+    use_neighbor_lists = args['use_neighbor_lists']
+    if use_neighbor_lists and boundary_conditions != "periodic":
+        raise RuntimeError(f"Can only use neighbor lists with periodic boundary conditions")
+    r_cutoff = args['r_cutoff']
+    dr_threshold = args['dr_threshold']
 
     if use_ext_force and (not ext_force_magnitude or not ext_force_bps1 or not ext_force_bps2):
         raise RuntimeError(f"Must provide external force parameters if using an external force")
@@ -90,9 +99,14 @@ def run_single_langevin(args,
     params = get_params.get_init_optimize_params(init_method)
 
     top_info = TopologyInfo(top_path, reverse_direction=True)
+
     config_info = TrajectoryInfo(top_info, traj_path=conf_path, reverse_direction=True)
-    # displacement_fn, shift_fn = space.periodic(config_info.box_size)
-    displacement_fn, shift_fn = space.free()
+    if boundary_conditions == "periodic":
+        displacement_fn, shift_fn = space.periodic(config_info.box_size)
+    elif boundary_conditions == "free":
+        displacement_fn, shift_fn = space.free()
+    else:
+        raise RuntimeError(f"Invalid boundary conditions: {boundary_conditions}")
 
     loss_fn = geometry.get_backbone_distance_loss(top_info.bonded_nbrs, displacement_fn)
     loss_fn = jit(loss_fn)
@@ -106,11 +120,24 @@ def run_single_langevin(args,
     gamma = RigidBody(center=jnp.array([kT/2.5], dtype=f64),
                       orientation=jnp.array([kT/7.5], dtype=f64))
 
-    energy_fn, compute_subterms = factory.energy_fn_factory(displacement_fn,
-                                                            back_site, stack_site, base_site,
-                                                            top_info.bonded_nbrs, top_info.unbonded_nbrs)
-    energy_fn = jit(Partial(energy_fn, seq=seq, params=params))
-    compute_subterms = jit(Partial(compute_subterms, seq=seq, params=params))
+
+    energy_fn, compute_subterms = factory.energy_fn_factory(
+        displacement_fn,
+        back_site, stack_site, base_site,
+        top_info.bonded_nbrs, top_info.unbonded_nbrs
+    )
+    if use_neighbor_lists:
+        energy_fn = jit(partial(energy_fn, seq=seq, params=params))
+        compute_subterms = jit(partial(compute_subterms, seq=seq, params=params))
+
+        neighbor_fn = top_info.get_neighbor_list_fn(displacement_fn, config_info.box_size,
+                                                    r_cutoff, dr_threshold)
+        neighbors = neighbor_fn.allocate(body.center) # We use the COMs
+    else:
+        energy_fn = jit(partial(energy_fn, seq=seq, params=params,
+                                op_nbrs_idx=top_info.unbonded_nbrs.T))
+        compute_subterms = jit(partial(compute_subterms, seq=seq, params=params,
+                                       op_nbrs_idx=top_info.unbonded_nbrs.T))
 
     if use_ext_force:
         _, force_fn = ext_force.get_force_fn(energy_fn, top_info.n, displacement_fn,
@@ -135,22 +162,64 @@ def run_single_langevin(args,
         # init_fn, step_fn = langevin.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
         init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
 
+
     step_fn = jit(step_fn)
 
-    state = init_fn(key, body, mass=mass, seq=seq, params=params)
+    if use_neighbor_lists:
+        state = init_fn(key, body, mass=mass, op_nbrs_idx=neighbors.idx) # , seq=seq, params=params) # FIXME: why include seq and params here?
+    else:
+        state = init_fn(key, body, mass=mass)
+
 
     trajectory = [state.position]
-    energies = [energy_fn(state.position)]
+    if use_neighbor_lists:
+        init_energy = energy_fn(state.position, op_nbrs_idx=neighbors.idx)
+    else:
+        init_energy = energy_fn(state.position)
+    energies = [init_energy]
     # losses = [loss_fn(state.position)[1]]
     losses = [loss_fn(state.position)]
     # subterms = [compute_subterms(state.position)]
     # bb_distances = [loss_fn(state.position)[0]]
     print(bcolors.OKBLUE + f"Starting simulation..." + bcolors.ENDC)
+
+    if use_neighbor_lists:
+        def iter_fn(state, neighbors):
+            state = step_fn(state, op_nbrs_idx=neighbors.idx)
+            neighbors = neighbors.update(state.position.center)
+            return state, neighbors
+    else:
+        neighbors = None
+        def iter_fn(state, neighbors):
+            state = step_fn(state)
+            return state, neighbors
+    iter_fn = jit(iter_fn)
+
+    real_neighbors = set(zip(top_info.unbonded_nbrs.T[0], top_info.unbonded_nbrs.T[1]))
     for i in tqdm(range(n_steps), colour="red"): # note: colour can be one of [hex (#00ff00), BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE]
-        state = step_fn(state, seq=seq, params=params)
+        state, neighbors = iter_fn(state, neighbors)
+        # nbrs0 = [int(val) for val in neighbors.idx[0]]
+        # nbrs1 = [int(val) for val in neighbors.idx[1]]
+        # iter_neighbors = set(zip(nbrs0, nbrs1))
+        # print(f"\nIter neighbors: {iter_neighbors}")
+        # print(f"In iter but not in real: {iter_neighbors - real_neighbors}")
+        # print(f"In real but not in iter: {real_neighbors - iter_neighbors}")
+
+
+        """
+        if use_neighbor_lists:
+            state = step_fn(state, op_nbrs_idx=neighbors.idx) # , seq=seq, params=params)
+            neighbors = neighbors.update(state.position.center)
+        else:
+            state = step_fn(state)
+        """
 
         if i % save_every == 0:
-            energies.append(energy_fn(state.position))
+            if use_neighbor_lists:
+                i_energy = energy_fn(state.position, op_nbrs_idx=neighbors.idx)
+            else:
+                i_energy = energy_fn(state.position)
+            energies.append(i_energy)
             trajectory.append(state.position)
             # losses.append(loss_fn(state.position)[1])
             losses.append(loss_fn(state.position))
@@ -192,6 +261,11 @@ if __name__ == "__main__":
                         default="oxdna",
                         choices=["random", "oxdna"],
                         help='Method for initializing parameters')
+    parser.add_argument('--boundary-conditions', type=str,
+                        default="periodic",
+                        choices=["periodic", "free"],
+                        help='Boundary conditions')
+    parser.add_argument('--save-output', action='store_true')
 
     # External force
     # note: https://stackoverflow.com/questions/15753701/how-can-i-pass-a-list-as-a-command-line-argument-with-argparse
@@ -201,7 +275,17 @@ if __name__ == "__main__":
     parser.add_argument('--ext-force-magnitude', type=float, default=1.0,
                         help="Magnitude of the external force in the z-direction")
 
+    # Neighbor lists
+    parser.add_argument('--use-neighbor-lists', action='store_true')
+    parser.add_argument('--r-cutoff', type=float, default=10.0, help="r_cutoff for Verlet lists")
+    parser.add_argument('--dr-threshold', type=float, default=0.2, help="dr_threshold for Verlet lists")
+
     args = vars(parser.parse_args())
+    save_output = args['save_output']
+    if not save_output:
+        print(bcolors.WARNING + "Are you sure you don't want to save the output? Press `c` to continue:" + bcolors.ENDC)
+        pdb.set_trace()
+
 
     # top_path = "data/simple-helix/generated.top"
     # conf_path = "data/simple-helix/start.conf"
@@ -220,7 +304,7 @@ if __name__ == "__main__":
 
     start = time.time()
 
-    traj, energies = run_single_langevin(args, save_output=True)
+    traj, energies = run_single_langevin(args, save_output=save_output)
     end = time.time()
     total_time = end - start
     print(bcolors.OKGREEN + f"Finished simulation in {np.round(total_time, 2)} seconds" + bcolors.ENDC)

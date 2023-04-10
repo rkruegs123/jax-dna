@@ -4,6 +4,8 @@ from jax.tree_util import Partial
 import pandas as pd
 from pathlib import Path
 import numpy as np
+from functools import partial
+from tqdm import tqdm
 
 from jax_md import space
 from jax_md import util
@@ -19,13 +21,15 @@ from oxDNA_analysis_tools.UTILS.RyeReader import describe
 from oxDNA_analysis_tools.output_bonds import output_bonds
 
 from jax.config import config
+from jax import jit
 config.update("jax_enable_x64", True)
 
 
 f64 = util.f64
 
 # `n` is the index into states to compute the subterms
-def compute_subterms(top_path, traj_path, T=DEFAULT_TEMP):
+def compute_subterms(top_path, traj_path, T=DEFAULT_TEMP,
+                     use_neighbors=True, r_cutoff=8.0, dr_threshold=0.2):
     top_info = TopologyInfo(top_path, reverse_direction=False)
     n = top_info.n
     traj_info = TrajectoryInfo(top_info, traj_path=traj_path, reverse_direction=False)
@@ -38,11 +42,28 @@ def compute_subterms(top_path, traj_path, T=DEFAULT_TEMP):
     _, _compute_subterms = factory.energy_fn_factory(displacement_fn,
                                                      back_site, stack_site, base_site,
                                                      top_info.bonded_nbrs, top_info.unbonded_nbrs)
-    _compute_subterms = Partial(_compute_subterms, seq=seq, params=params)
+    if use_neighbors:
+        neighbor_fn = top_info.get_neighbor_list_fn(displacement_fn, traj_info.box_size,
+                                                    r_cutoff, dr_threshold)
+        neighbors = neighbor_fn.allocate(traj_info.states[0].center) # We use the COMs
+        _compute_subterms = partial(_compute_subterms, seq=seq, params=params)
+
+        def get_subterms(s, neighbors):
+            s_subterms = _compute_subterms(s, op_nbrs_idx=neighbors.idx)
+            neighbors = neighbors.update(s.center)
+            return s_subterms, neighbors
+
+    else:
+        _compute_subterms = partial(_compute_subterms, seq=seq, params=params, op_nbrs_idx=top_info.unbonded_nbrs.T)
+        neighbors = None
+        def get_subterms(s, neighbors):
+            s_subterms = _compute_subterms(s)
+            return s_subterms, None
+    get_subterms = jit(get_subterms)
 
     trajectory_subterms = list()
-    for s in traj_info.states:
-        s_subterms = _compute_subterms(s)
+    for s in tqdm(traj_info.states):
+        s_subterms, neighbors = get_subterms(s, neighbors)
         avg_s_subterms = np.array(s_subterms) / n # average per nucleotide
         trajectory_subterms.append(avg_s_subterms)
     return np.array(trajectory_subterms)
@@ -88,5 +109,5 @@ def run(top_path, traj_path, input_path, T=DEFAULT_TEMP):
         else:
             print(bcolors.OKGREEN + "\t\tSuccess!\n" + bcolors.ENDC)
 
-    print(bcolors.WARNING + "WARNING: errors for hydrogen bonding and cross stalking are subject to approximation of pi in parameter file" + bcolors.ENDC)
+    print(bcolors.WARNING + "WARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file" + bcolors.ENDC)
     return

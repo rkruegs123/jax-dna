@@ -17,7 +17,7 @@ from energy.interactions import v_fene, exc_vol_bonded, stacking, \
     hydrogen_bonding, exc_vol_unbonded, cross_stacking, coaxial_stacking
 from utils import Q_to_back_base, Q_to_cross_prod, Q_to_base_normal
 from utils import com_to_backbone, com_to_stacking, com_to_hb
-from utils import clamp, get_kt
+from utils import clamp, get_kt, DEFAULT_TEMP
 from utils import HB_WEIGHTS, get_hb_probs, stacking_param_names
 
 f64 = util.f64
@@ -26,7 +26,7 @@ f64 = util.f64
 def energy_fn_factory(displacement_fn,
                       back_site, stack_site, base_site,
                       bonded_neighbors, unbonded_neighbors,
-                      temp=300):
+                      temp=DEFAULT_TEMP):
 
     kt = get_kt(temp) # For use when optimizing over stacking parameters
     params = get_params.get_default_params(t=temp, no_smoothing=False) # FIXME: hardcoded temperature for now
@@ -50,11 +50,24 @@ def energy_fn_factory(displacement_fn,
     d = jit(space.map_bond(partial(displacement_fn)))
     nn_i = bonded_neighbors[:, 0]
     nn_j = bonded_neighbors[:, 1]
-    op_i = unbonded_neighbors[:, 0]
-    op_j = unbonded_neighbors[:, 1]
 
-    @jit
-    def _compute_subterms(body: RigidBody, seq: util.Array, params):
+    # if not use_ordered_sparse_neighbor_lists:
+    #     op_i = unbonded_neighbors[:, 0]
+    #     op_j = unbonded_neighbors[:, 1]
+    # op_i = unbonded_neighbors[:, 0]
+    # op_j = unbonded_neighbors[:, 1]
+
+    def _compute_subterms(body: RigidBody, seq: util.Array, params, op_nbrs_idx):
+
+        op_i = op_nbrs_idx[0]
+        op_j = op_nbrs_idx[1]
+        mask = jnp.array(op_nbrs_idx[0] < body.center.shape[0], dtype=jnp.int32)
+
+        # if use_ordered_sparse_neighbor_lists:
+        #     op_i1 = nbrs.idx[0]
+        #     op_j1 = nbrs.idx[1]
+        #     mask = nbrs.idx[0] < body.shape[0]
+        #     normalization = 1.0 # Note: assumes we use OrderedSparse
 
         # Use our the parameters to construct the relevant energy functions
         # Note: for each, there are two options -- corresponding to whether we are optimizing over arrays or dicts
@@ -136,6 +149,9 @@ def energy_fn_factory(displacement_fn,
                                                   dr_base_back_op)
         v_hb = hb_fn(dr_base_op, theta1_op, theta2_op, theta3_op, theta4_op,
                      theta7_op, theta8_op)
+        # v_hb = jnp.multiply(v_hb, mask) # Mask for neighbors
+        # v_hb = v_hb * mask # Mask for neighbors
+        v_hb = jnp.where(mask, v_hb, 0.0) # Mask for neighbors
         ## For HB, dot product to only be between appropriate bases
         hb_probs = get_hb_probs(seq, op_i, op_j) # get the probabilities of all possibile hydrogen bonds for all neighbors
         hb_weights = jnp.dot(hb_probs, HB_WEIGHTS)
@@ -146,14 +162,24 @@ def energy_fn_factory(displacement_fn,
         cx_stack_dg = coaxial_stacking_fn(dr_stack_op, theta4_op, theta1_op, theta5_op,
                                           theta6_op, cosphi3_op, cosphi4_op)
 
+        # Mask for neighbors (Note: hb is handled above)
+        # exc_vol_unbonded_dg = jnp.multiply(exc_vol_unbonded_dg, mask)
+        # exc_vol_unbonded_dg = exc_vol_unbonded_dg * mask
+        exc_vol_unbonded_dg = jnp.where(mask, exc_vol_unbonded_dg, 0.0) # Mask for neighbors
+        # cr_stack_dg = jnp.multiply(cr_stack_dg, mask)
+        # cr_stack_dg = cr_stack_dg * mask
+        cr_stack_dg = jnp.where(mask, cr_stack_dg, 0.0) # Mask for neighbors
+        # cx_stack_dg = jnp.multiply(cx_stack_dg, mask)
+        # cx_stack_dg = cx_stack_dg * mask
+        cx_stack_dg = jnp.where(mask, cx_stack_dg, 0.0) # Mask for neighbors
+
         return (jnp.sum(fene_dg), jnp.sum(exc_vol_bonded_dg), jnp.sum(stack_dg), \
                 jnp.sum(exc_vol_unbonded_dg), hb_dg, jnp.sum(cr_stack_dg),
                 jnp.sum(cx_stack_dg)
         ) # hb_dg is already a scalar
 
-    @jit
-    def energy_fn(body: RigidBody, seq: util.Array, params, **kwargs) -> float:
-        dgs = _compute_subterms(body, seq, params)
+    def energy_fn(body: RigidBody, seq: util.Array, params, op_nbrs_idx) -> float:
+        dgs = _compute_subterms(body, seq, params, op_nbrs_idx)
         fene_dg, b_exc_dg, stack_dg, n_exc_dg, hb_dg, cr_stack, cx_stack = dgs
         return fene_dg + b_exc_dg + stack_dg + n_exc_dg + hb_dg + cr_stack + cx_stack
 
