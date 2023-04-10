@@ -29,7 +29,7 @@ f64 = util.f64
 
 # `n` is the index into states to compute the subterms
 def compute_subterms(top_path, traj_path, T=DEFAULT_TEMP,
-                     use_neighbors=True, r_cutoff=6.0, dr_threshold=0.2):
+                     use_neighbors=True, r_cutoff=8.0, dr_threshold=0.2):
     top_info = TopologyInfo(top_path, reverse_direction=False)
     n = top_info.n
     traj_info = TrajectoryInfo(top_info, traj_path=traj_path, reverse_direction=False)
