@@ -17,17 +17,19 @@ def run():
     pdb.set_trace()
     """
 
-    basedir = Path("v2/data/test-data/simple-coax")
-    traj_path = basedir / "output.dat"
-    top_path = basedir / "generated.top"
-    input_path = basedir / "input"
-    test_subterms.run(top_path, traj_path, input_path)
 
-    basedir = Path("v2/data/test-data/simple-helix")
-    traj_path = basedir / "output.dat"
-    top_path = basedir / "generated.top"
-    input_path = basedir / "input"
-    test_subterms.run(top_path, traj_path, input_path)
+    for use_neighbors in [True, False]:
+        basedir = Path("v2/data/test-data/simple-coax")
+        traj_path = basedir / "output.dat"
+        top_path = basedir / "generated.top"
+        input_path = basedir / "input"
+        test_subterms.run(top_path, traj_path, input_path, use_neighbors=use_neighbors)
+
+        basedir = Path("v2/data/test-data/simple-helix")
+        traj_path = basedir / "output.dat"
+        top_path = basedir / "generated.top"
+        input_path = basedir / "input"
+        test_subterms.run(top_path, traj_path, input_path, use_neighbors=use_neighbors)
 
     # Test propeller twist
     test_propeller.run()

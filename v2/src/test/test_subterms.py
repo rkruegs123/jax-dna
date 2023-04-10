@@ -84,10 +84,10 @@ def get_oxpy_subterms(top_path, traj_path, input_path):
 
 
 
-def run(top_path, traj_path, input_path, T=DEFAULT_TEMP):
+def run(top_path, traj_path, input_path, T=DEFAULT_TEMP, use_neighbors=False):
     print(f"----Checking energy breakdown agreement for trajectory at location: {traj_path}----")
 
-    computed_subterms = compute_subterms(top_path, traj_path, T)
+    computed_subterms = compute_subterms(top_path, traj_path, T, use_neighbors=use_neighbors)
     oxpy_subterms = get_oxpy_subterms(top_path, traj_path, input_path)
 
     # observables aren't computed for the initial state, so we drop the first row from split_energy.dat
