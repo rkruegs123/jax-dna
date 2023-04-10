@@ -34,6 +34,7 @@ def get_force_fn(base_energy_or_force_fn, n, displacement_fn, nuc_ids, center_fo
     orientation_ext_force = jnp.array([orientation_force if idx in nuc_ids else zero_orientation_force
                                        for idx in range(n)])
 
+    @jit
     def force_fn(body, **kwargs):
         base_force = base_force_fn(body, **kwargs)
         center = base_force.center + center_ext_force

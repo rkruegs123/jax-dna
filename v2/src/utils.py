@@ -5,7 +5,7 @@ from itertools import combinations
 from io import StringIO
 import pandas as pd
 
-from jax import vmap
+from jax import vmap, jit
 from jax_md.rigid_body import Quaternion, RigidBody
 import jax.numpy as jnp
 
@@ -17,6 +17,7 @@ config.update("jax_enable_x64", True)
 # DEFAULT_TEMP = 300
 DEFAULT_TEMP = 296.15
 
+@jit
 def clamp(x, lo=-1.0, hi=1.0):
     """
     correction = 1e-10
@@ -124,6 +125,7 @@ back_site = jnp.array(
 # Transform quaternions to nucleotide orientations
 
 ## backbone-base orientation
+@jit
 def q_to_back_base(q):
     q0, q1, q2, q3 = q.vec
     return jnp.array([
@@ -131,7 +133,7 @@ def q_to_back_base(q):
         2*(q1*q2 + q0*q3),
         2*(q1*q3 - q0*q2)
     ])
-Q_to_back_base = vmap(q_to_back_base) # Q is system of quaternions, q is an individual quaternion
+Q_to_back_base = jit(vmap(q_to_back_base)) # Q is system of quaternions, q is an individual quaternion
 """
 def Q_to_back_base_direct(q):
     q0 = q.vec[:, 0]
@@ -146,6 +148,7 @@ def Q_to_back_base_direct(q):
 """
 
 ## normal orientation
+@jit
 def q_to_base_normal(q):
     q0, q1, q2, q3 = q.vec
     return jnp.array([
@@ -153,9 +156,10 @@ def q_to_base_normal(q):
         2*(q2*q3 - q0*q1),
         q0**2 - q1**2 - q2**2 + q3**2
     ])
-Q_to_base_normal = vmap(q_to_base_normal)
+Q_to_base_normal = jit(vmap(q_to_base_normal))
 
 ## third axis (n x b)
+@jit
 def q_to_cross_prod(q):
     q0, q1, q2, q3 = q.vec
     return jnp.array([
@@ -163,7 +167,7 @@ def q_to_cross_prod(q):
         q0**2 - q1**2 + q2**2 - q3**2,
         2*(q2*q3 + q0*q1)
     ])
-Q_to_cross_prod = vmap(q_to_cross_prod)
+Q_to_cross_prod = jit(vmap(q_to_cross_prod))
 
 def smooth_max(xs, k=1):
     return jnp.log(jnp.sum(jnp.exp(k*xs))) / k

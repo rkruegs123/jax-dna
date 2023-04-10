@@ -4,6 +4,8 @@ import numpy as np
 from functools import wraps
 from typing import Callable, Tuple
 
+from jax import jit
+
 from jax_md import util
 
 f32 = util.f32
@@ -12,30 +14,36 @@ Array = util.Array
 
 
 # Pairwise potentials
-
+@jit
 def _v_fene(r, eps, r0, delt): # Note: named as helper as we make `v_fene` the name of the parameterized potential
     x = (r - r0)**2 / delt**2
     # Note: if `x` is too big, we will easily try to take the log of negatives, which will yield `nan`
     return -eps / 2.0 * jnp.log(1 - x)
 
+@jit
 def v_morse(r, eps, r0, a):
     x = -(r - r0) * a
     return eps * (1 - jnp.exp(x))**2
 
+@jit
 def v_harmonic(r, k, r0):
     return k / 2 * (r - r0)**2
 
+@jit
 def v_lj(r, eps, sigma):
     x = (sigma / r)**12 - (sigma / r)**6
     return 4 * eps * x
 
+@jit
 def v_mod(theta, a, theta0):
     return 1 - a*(theta - theta0)**2
 
+@jit
 def v_smooth(x, b, x_c):
     return b*(x_c - x)**2
 
 # Functional forms
+@jit
 def f1(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
        eps, a, r0, r_c, # morse parameters
        b_low, b_high, # smoothing parameters
@@ -50,7 +58,7 @@ def f1(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
                      v_morse(r, eps, r0, a) - v_morse(r_c, eps, r0, a),
                      oob)
 
-
+@jit
 def f2(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
        k, r0, r_c, # harmonic parameters
        b_low, b_high # smoothing parameters
@@ -64,7 +72,7 @@ def f2(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
                      v_harmonic(r, k, r0) - v_harmonic(r_c, k, r0),
                      oob)
 
-
+@jit
 def f3(r, r_star, r_c, # thresholding/smoothing parameters
        eps, sigma, # lj parameters
        b # smoothing parameters
@@ -76,6 +84,7 @@ def f3(r, r_star, r_c, # thresholding/smoothing parameters
                      v_lj(r, eps, sigma),
                      oob)
 
+@jit
 def f4(theta, theta0, delta_theta_star, delta_theta_c, # thresholding/smoothing parameters
        a, # mod parameters
        b # smoothing parameters
@@ -91,6 +100,7 @@ def f4(theta, theta0, delta_theta_star, delta_theta_c, # thresholding/smoothing 
 
 
 # Note: for stacking, e.g. x = cos(phi)
+@jit
 def f5(x, x_star, x_c, # thresholding/smoothing parameters
        a, # mod parameters
        b # smoothing parameters
