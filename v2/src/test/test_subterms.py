@@ -29,7 +29,7 @@ f64 = util.f64
 
 # `n` is the index into states to compute the subterms
 def compute_subterms(top_path, traj_path, T=DEFAULT_TEMP,
-                     use_neighbors=True, r_cutoff=8.0, dr_threshold=0.2):
+                     use_neighbors=True, r_cutoff=4.0, dr_threshold=0.2):
     top_info = TopologyInfo(top_path, reverse_direction=False)
     n = top_info.n
     traj_info = TrajectoryInfo(top_info, traj_path=traj_path, reverse_direction=False)
@@ -64,6 +64,11 @@ def compute_subterms(top_path, traj_path, T=DEFAULT_TEMP,
     trajectory_subterms = list()
     for s in tqdm(traj_info.states):
         s_subterms, neighbors = get_subterms(s, neighbors)
+
+        if use_neighbors and neighbors.did_buffer_overflow:
+            pdb.set_trace()
+            print(f"We overflowed")
+
         avg_s_subterms = np.array(s_subterms) / n # average per nucleotide
         trajectory_subterms.append(avg_s_subterms)
     return np.array(trajectory_subterms)

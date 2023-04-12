@@ -18,7 +18,7 @@ def run():
     """
 
 
-    for use_neighbors in [True, False]:
+    for use_neighbors in [False, True]:
         basedir = Path("v2/data/test-data/simple-coax")
         traj_path = basedir / "output.dat"
         top_path = basedir / "generated.top"
