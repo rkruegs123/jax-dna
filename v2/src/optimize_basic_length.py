@@ -196,13 +196,28 @@ def run(args, init_params,
     opt_state = optimizer.init_fn(init_params)
 
     output_path = run_dir / "output.txt"
+    grad_path = run_dir / "grads.txt"
     for i in tqdm.trange(opt_steps, position=0):
         start = time.time()
         key, iter_key = random.split(key)
         curr_params = optimizer.params_fn(opt_state)
         (loss, iter_states_to_eval), grad = grad_fn(curr_params, iter_key)
         end = time.time()
-        opt_state = optimizer.update_fn(i, grad, opt_state)
+        with open(grad_path, "a") as f:
+            f.write("Grads:")
+            f.write(str(grad) + '\n')
+        clipped_grad = jnp.clip(grad, a_min=-1.0, a_max=1.0)
+        grad_norm = jnp.linalg.norm(grad)
+        with open(grad_path, "a") as f:
+            f.write("Grad Norm:")
+            f.write(str(grad_norm) + '\n')
+        # clipped_grad = grad * 5.0 / grad_norm
+        with open(grad_path, "a") as f:
+            f.write("Clipped Grads:")
+            f.write(str(clipped_grad) + '\n')
+        # opt_state = optimizer.update_fn(i, grad, opt_state)
+        opt_state = optimizer.update_fn(i, clipped_grad, opt_state)
+        
 
         iter_traj_states = [iter_states_to_eval[s_idx] for s_idx in range(iter_states_to_eval.center.shape[0])]
         iter_traj = TrajectoryInfo(top_info, states=iter_traj_states, box_size=config_info.box_size)
@@ -210,7 +225,8 @@ def run(args, init_params,
 
         info_str = ""
         info_str += f"Iteration {i}:\n"
-        info_str += f"- Time: {onp.round(end - start, 2)}\n"
+        info_str += f"- Current Time: {datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+        info_str += f"- Iter. Time: {onp.round(end - start, 2)}\n"
         info_str += f"- Loss: {loss}\n"
 
         # Some analysis
