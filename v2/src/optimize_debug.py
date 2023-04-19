@@ -6,6 +6,8 @@ import pickle
 from pathlib import Path
 import datetime
 import shutil
+import numpy as onp
+from functools import partial
 
 import jax
 from jax import jit, vmap, lax, random, value_and_grad
@@ -136,7 +138,7 @@ def run(args, init_params,
     energy_fn, _ = factory.energy_fn_factory(displacement_fn,
                                              back_site, stack_site, base_site,
                                              top_info.bonded_nbrs, top_info.unbonded_nbrs)
-    energy_fn = Partial(energy_fn, seq=seq)
+    energy_fn = partial(energy_fn, seq=seq, op_nbrs_idx=top_info.unbonded_nbrs.T)
 
     init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
     step_fn = jit(step_fn)
@@ -150,12 +152,12 @@ def run(args, init_params,
 
         assert(top_info.n % 2 == 0)
         n_div2 = top_info.n // 2
-        strand1 = np.arange(0, n_div2)
-        strand2 = np.arange(top_info.n-1, n_div2-1, -1)
-        all_pairs = np.array(list(zip(strand1, strand2)))
+        strand1 = onp.arange(0, n_div2)
+        strand2 = onp.arange(top_info.n-1, n_div2-1, -1)
+        all_pairs = onp.array(list(zip(strand1, strand2)))
 
         # propeller_base_pairs = jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
-        propeller_base_pairs = all_pairs[skip_propeller:-skip_propeller]
+        propeller_base_pairs = jnp.array(all_pairs[skip_propeller:-skip_propeller])
 
         """
         pitch_quartets = jnp.array([
@@ -174,8 +176,8 @@ def run(args, init_params,
             bp1, bp2 = all_pairs[i]
             bp3, bp4 = all_pairs[i+1]
             pitch_quartets.append([bp1, bp2, bp3, bp4])
-        pitch_quartets = np.array(pitch_quartets)
-        pitch_quartets = pitch_quartets[skip_pitch_quartets:-skip_pitch_quartets]
+        pitch_quartets = onp.array(pitch_quartets)
+        pitch_quartets = jnp.array(pitch_quartets[skip_pitch_quartets:-skip_pitch_quartets])
 
         body_loss_fn = structural.get_structural_loss_fn(
             displacement_fn,
@@ -188,7 +190,7 @@ def run(args, init_params,
 
         @jit
         def trajectory_loss_fn(trajectory):
-            states_to_eval = trajectory[-num_eq_steps:][::sample_every]
+            states_to_eval = trajectory[-(sim_length-num_eq_steps):][::sample_every]
             body_losses = mapped_body_loss_fn(states_to_eval)
             return jnp.mean(body_losses)
 
@@ -215,8 +217,10 @@ def run(args, init_params,
     all_grads = list()
 
     if save_output:
-        loss_path = run_dir / "loss.txt"
+        losses_path = run_dir / "losses.txt"
+        avg_loss_path = run_dir / "avg_loss.txt"
         grads_path = run_dir / "grads.txt"
+        avg_grad_path = run_dir / "avg_grad.txt"
 
     # Do the optimization
     step_times = list()
@@ -240,10 +244,14 @@ def run(args, init_params,
             params_.append(optimizer.params_fn(opt_state))
             all_losses.append(losses)
 
-            with open(loss_path, "a") as f:
+            with open(losses_path, "a") as f:
                 f.write(f"{losses}\n")
+            with open(avg_loss_path, "a") as f:
+                f.write(f"{avg_loss}\n")
             with open(grads_path, "a") as f:
                 f.write(f"{grads}\n")
+            with open(avg_grad_path, "a") as f:
+                f.write(f"{avg_grad}\n")
 
     if save_output:
         with open(run_dir / "final_params.pkl", "wb") as f:

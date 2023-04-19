@@ -6,6 +6,7 @@ import pickle
 from pathlib import Path
 import datetime
 import shutil
+from functools import partial
 
 import jax
 from jax import jit, vmap, lax, random, value_and_grad
@@ -83,6 +84,12 @@ def run(args, init_params,
     key = random.PRNGKey(args['key'])
     save_every = args['save_every']
 
+    num_eq_steps = args['n_eq'] # Number of equilibration steps
+    sample_every = args['sample_every'] # Number of steps to sample an ensemble state after
+
+    assert(num_eq_steps < sim_length)
+    assert(sim_length - num_eq_steps > sample_every) # at least one sample
+
     if not Path(top_path).exists():
         raise RuntimeError(f"Topology file does not exist at location: {top_path}")
 
@@ -123,7 +130,7 @@ def run(args, init_params,
     energy_fn, _ = factory.energy_fn_factory(displacement_fn,
                                              back_site, stack_site, base_site,
                                              top_info.bonded_nbrs, top_info.unbonded_nbrs)
-    energy_fn = Partial(energy_fn, seq=seq)
+    energy_fn = Partial(energy_fn, seq=seq, op_nbrs_idx=top_info.unbonded_nbrs.T)
 
     init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
     step_fn = jit(step_fn)
@@ -203,8 +210,7 @@ def run(args, init_params,
 
     @jit
     def trajectory_loss_fn(trajectory):
-        # states_to_eval = trajectory[-3000:][::100]
-        states_to_eval = trajectory[-25000:][::100]
+        states_to_eval = trajectory[-(sim_length-num_eq_steps):][::sample_every]
         body_losses = mapped_body_loss_fn(states_to_eval)
 
         avg_bb_dist = jnp.mean(mapped_bb_dist_fn(states_to_eval))
@@ -236,7 +242,11 @@ def run(args, init_params,
     params_ = list()
     all_losses = list()
     all_grads = list()
-    loss_path = run_dir / "loss.txt"
+
+    losses_path = run_dir / "losses.txt"
+    avg_loss_path = run_dir / "avg_loss.txt"
+    grads_path = run_dir / "grads.txt"
+    avg_grad_path = run_dir / "avg_grad.txt"
     bb_dist_path = run_dir / "bb_dists.txt"
     helical_dist_path = run_dir / "helical_dists.txt"
     pitches_path = run_dir / "pitches.txt"
@@ -265,8 +275,14 @@ def run(args, init_params,
             params_.append(optimizer.params_fn(opt_state))
             all_losses.append(losses)
 
-            with open(loss_path, "a") as f:
+            with open(losses_path, "a") as f:
                 f.write(f"{losses}\n")
+            with open(avg_loss_path, "a") as f:
+                f.write(f"{avg_loss}\n")
+            with open(grads_path, "a") as f:
+                f.write(f"{grads}\n")
+            with open(avg_grad_path, "a") as f:
+                f.write(f"{avg_grad}\n")
             with open(bb_dist_path, "a") as f:
                 f.write(f"{bb_dists}\nAvg: {jnp.mean(bb_dists)}\n")
             with open(helical_dist_path, "a") as f:
@@ -316,6 +332,10 @@ if __name__ == "__main__":
     parser.add_argument('--conf-path', type=str,
                         default="data/simple-helix/start.conf",
                         help='Path to configuration file')
+    parser.add_argument('--n-eq', type=int, default=5000,
+                        help="Num. equilibration steps per simulation")
+    parser.add_argument('--sample-every', type=int, default=100,
+                        help="Num. steps per sample (after equilibration)")
     args = vars(parser.parse_args())
 
 

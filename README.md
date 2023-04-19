@@ -6,6 +6,27 @@ To install jax-md rigid body check in locally, do FIXME. Must have this to run c
 
 ## Misc. Notes
 
+April 14, 2023
+
+- 0 forces
+  - with and without explicit conversion to a force function
+- different loss functions
+- optional: different simulation lengths
+- optional: review structural optimizations. review sizes of gradients, and do longer simulations
+- optional: experiment with *not* nested scan for simulation
+- optional: run the current mehcanical setup but with the structural llss functionand no external force. this will tell us if its a structural problem. 
+  - note: if gradients are exploding in this case, could be that gradients explode for large systems
+  - if gradients *dont* explode, could also try for very *low* force, to see if introducing nay external force causes them to explode
+- optional: run the structural loss function with a very large helix, and the mechanica lloss function witha very short helix
+- weekend: read a bunch
+
+
+- next week:
+  - debug in the context of papers
+  - optional: get gradient estimators (ES) going as a backup?
+- note: also investigate why batching into 10 million work?
+
+
 July 19, 2022
 - Renderer not working. Can't debug without it
   - Note that we'll have to appropriately treat body/space frame for rendering properly when adding additional interaction sites
