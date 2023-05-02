@@ -1,0 +1,10 @@
+;; This buffer is for text that is not saved, and for Lisp evaluation.
+;; To create a file, visit it with C-x C-f and enter text in its buffer.
+
+things at some point:
+- run something in oxdna (or ours) pulling a duplex apart
+  - when the energy terms go to 0, that's the critical distance we should use
+  - do determine the critical distance -- or just take the max of all those parameters. pick the biggest minimum
+- also collect histogram for the distance and angles to determine the width of the gaussians for our new collective variale
+- could start to talk about mechanical stuff in the meantime
+- ... unbiasing Metadynamics sims...

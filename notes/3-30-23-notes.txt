@@ -1,0 +1,11 @@
+;; This buffer is for text that is not saved, and for Lisp evaluation.
+;; To create a file, visit it with C-x C-f and enter text in its buffer.
+
+FIXME: now, in simulate, if we want to use the neighbor lists, actually construct the neighbor list and do the simulation with it. Then, also write a test that checks the energies but also with neighbors
+
+
+
+
+ah, ok. allocate will fail when the positions exceed the box size in a dimension. all the more motivation to center the starting positions and understand the jax grid. also, have to bring back the mask in the facotry
+
+should ask people in group about periodic boundarey condtiions requirement for neighbor lists, deifnition of box size, and issues with neighbor lists if initial configuration exceeds box. also, how to center a given configuration...

@@ -1,0 +1,47 @@
+;; This buffer is for text that is not saved, and for Lisp evaluation.
+;; To create a file, visit it with C-x C-f and enter text in its buffer.
+
+1. take last nights simulations starting form the correct orientation. do a bunch of fits where we consider an increasing amount of samples, and plot them against each other. also compare the actual fitted coefficients as we use more smaples. use this to decide how many samples we need for structural stuff
+2. Check persistence length when we convert to Angstroms or nm
+3. Decide/discuss the following with megan
+- talk to megan about disagreements with old extensional modulus fit
+- talk about dictionary issue. propose agreeing to do arrays going forward only for simplicity
+  - still should probably have a unified "update" code for reading in/processing the parameters
+- what is the target exteensional modulus? range of options
+- optimization over structural things
+  - do we *not* optimize over ssDNA structural properties (e.g. 80% helical radius when fully stacked)?
+  - right now we do 8 bps. Do we do different size helices? Anything else?
+  - fix the following:
+    - don't take last 100 for loss. So much correlation
+    - don't hardcode quartet bases and propeller twist stuff. Be careful about including ends. This wlil allow us to easily include other helix lengths
+  - missing any structural things?
+- questions about mechanical optimization
+  - how to get around storing way too much of the trajectory
+  - extensional modulus
+    - only 1 batch?
+    - best way to implementt then? estimate gradient with one batch?
+    - how many time steps needed?
+    - value for loss function? could be big because dealing with large numbers
+    - what range of forces? should we fit to more points than tom? what if we go below or above the range that he does -- would we get a different fit?
+   - talk about just how sensitive the coefficients are to the fit (note: so, we need to be pretty precise)
+- questions about how to optimize over both
+  - only average the gradients? maybe then we don't have to worry about the order of magnitude of each loss function individually, only the terms w/in them?
+  - or, combine into one big loss function?
+
+- worried about memory stuff
+  - i vaugley remember 50 batches being an issue for structural stuff...
+  - could try to memorize-optimize current thing
+  - another idea: ignore log probs for now. then could just try optimizing over a longer trajectory (e.g. for mechanical stuff. simpler structure would allow for easier experimetnation with implicit diff,e tc
+
+
+
+Next steps:
+- We need to understand why we're off of Tom's fit for the ext. modulus. Note that Tom's fit matches his calculated persistence length, which gives confidence to his fit. We can do three things:
+  - Continue calculating our persistence length the other way (don't forget to convert to real units) and compare against that computed from our ext. modulus. If they match, that would indicate there are differences across the integrators.
+  - Simulate all forces for very long (e.g. 1e8) and calculate a graph of the convergence for the fitted parameters when using averages up to n steps
+  - Run identical simulations with oxDNA and do the same as above with those. That would tell us if it is just differences between the integrators.
+    - note: oxDNA doesn't work for larger forces on cluster. Try to compile oxDNA on GCP instance. Megan will share her input files with me and I can run.
+  - Note: it could also be related to how we apply the forces
+- In the background, can do the following things:
+  - set up optimization without log probs
+    - then, experiment with implicit diff. and optimizing over mechanical stuff

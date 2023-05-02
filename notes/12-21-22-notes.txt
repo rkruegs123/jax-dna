@@ -1,0 +1,10 @@
+- comuting those probability things for the 1e8 heatmaps
+  - i can do this and send it to you
+- we should obth read the nature physics review
+  - follow up with michael
+- best practices for computing that epsilon
+  - check PLUMED convergence
+
+
+
+ALSO HAVE TO SEND MAX MEETING INVITE

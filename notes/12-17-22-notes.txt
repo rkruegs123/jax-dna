@@ -1,0 +1,24 @@
+;; This buffer is for text that is not saved, and for Lisp evaluation.
+;; To create a file, visit it with C-x C-f and enter text in its buffer.
+
+- rerun simulation 2e7 with sigmoidal CV
+  - what we want from this:
+    - min # of bps is 0
+    - at large distances, tight band around 0 or exactly at 0
+- then, if its 1D, then just directly add the bias potential
+  - note: will have to think about how to plot if truly 1D
+  - otherwise, think more...
+- then, compute the probability of hybridized and prob of unhybridized by integrating e^(-beta*G)
+  - need to pick some distance threshold. Prob just 1 to start
+  - this will give us two probabilities
+- take ratio of the two probabilities
+- compute tom's correction on this ratio
+  - f_inf -- fraction of bound in the bulk. inf corresponds to bulk solution
+- then, need to do this at 5 different temperatures
+  - e.g. increments of 10?
+  - could also do histogram reweighting
+- plot 1/f_inf to get characteristic melting curve shape
+  - find T at which fraction is 0.5. Note that Tom didn't fit to width
+
+
+TODO: run the 2e7 thing...

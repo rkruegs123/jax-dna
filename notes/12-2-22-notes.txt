@@ -1,0 +1,23 @@
+;; This buffer is for text that is not saved, and for Lisp evaluation.
+;; To create a file, visit it with C-x C-f and enter text in its buffer.
+
+
+could pass around heights/sigmas/centers to the energy function.
+- this will require a large dot product every time. basically computing the sum of gaussians every time...
+
+we would really like to accumulate the bias during a scan
+- but i doubt we can accumulate a function...
+- could we accumulate on a discreteiezd mesh that approximates the function?
+
+next:
+- fix langevin issue with new JAX-MD version -- just use the one in the repo
+  - test with simulate.py
+- test metad.py for bugs without any energy function
+  - really just updating the gaussian stuff
+- make a new energy function that incorporates all of this
+- run the thing, plot the resulting sum of gaussians
+- later: well tempered heights
+
+ok... now do the following:
+- setup infrastructure to accumulate centers/widths/heights appropriately
+- then, and only then, setup infrastructure for new energy function such that we sum all the gaussians every time with a dot product

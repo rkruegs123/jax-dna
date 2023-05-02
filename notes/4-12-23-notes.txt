@@ -1,0 +1,32 @@
+;; This buffer is for text that is not saved, and for Lisp evaluation.
+;; To create a file, visit it with C-x C-f and enter text in its buffer.
+
+general:
+- max stuff
+  - test other parmeters, 256 thing. then move onto coaxial stacking
+- submit baker paper (and run by michael)
+- do all the relevant reading
+- fill out that google doc for nature comms stuff
+- read
+- run
+
+
+oxdna
+- get true neigfhbbor thresholds
+  - DONE: it's 1.6ish (simulation uints), ish becauese you add verlet skin and you take a max, BUT our rcutoff for that low doesn't work because at low cutoffs we bufferoverflow so we aren't actually including all neighbors within that range
+- benchmark neighbor lists
+  - DONE FOR NOW: For elastic modulus system, at least in interactive mode, it's really not faster. Also, note that when we run, we shouldn't return the final trajectory because this takes extra time...
+- profile -- why are we slower than oxDNA CPU?
+  - memory with pprof
+  - compute with tensorboard
+- check clipping results
+- look into clipping strategies
+  - e.g. how much Megan/Jamie clipped for MC stuff, as well as REINFORCE vs REINFORCE + correction
+  - included in this is a conversation about batching with the REINFORCE trick and the degree to which it's necessary for equilibriums tatistics/ path-independent statistics
+  - TODO: Megan is going to prepare an explanation on gradients in the context of hwat she did with Jamie. Then we will all compare...
+- talk big picture, go off and read papers, especially Sams, learn about exploding gradients
+  - note we can also isolate where the problem is coming from (e.g. shorter steps, dummy loss function, dummy energy terms, drop out energy terms)
+
+For later (oxDNA)
+- maybe look into umbrella sampling for ocmputing WLC fit
+- VMMC metadynamics for melting temperatures?

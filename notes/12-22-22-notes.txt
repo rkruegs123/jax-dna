@@ -1,0 +1,9 @@
+ryan todo:
+- define several t fills -- e.g. start at 100k
+- compute the *averaged* bias beyond t fill
+- use those to compute the 1D curve instead
+- give curves for differnet t_fills
+- send to you
+
+both
+- reread that section in the review

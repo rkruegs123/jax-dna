@@ -1,0 +1,11 @@
+- add command line flags for external force
+- generate a centered version of the persistence length start configuration so we can stop dealing with these periodic effects when visualizing
+- write analysis for force extnesion curves:
+  - measure displacement between the two base pairs we are considering projected onto th eaxis of force
+    - dot product of their displacement and the force directoin
+  - sampel every 5000
+- relax the 110 bp duplex and generate some initial force extension curves
+- persistence length
+  - compute avg from my long one
+  - wait on long ones from megan
+  - and compare with the oxdna analysis script
