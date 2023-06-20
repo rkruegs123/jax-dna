@@ -17,7 +17,9 @@ from utils import nucleotide_mass, get_kt, moment_of_inertia, get_one_hot, DEFAU
 from utils import base_site, stack_site, back_site
 from utils import bcolors
 # import langevin
-from energy import factory, ext_force
+# from energy import factory, ext_force
+from energy import ext_force
+from energy import hb_seq_dependent_factory as factory
 from loader import get_params
 from loader.trajectory import TrajectoryInfo
 from loader.topology import TopologyInfo
@@ -91,12 +93,8 @@ def run_single_langevin(args,
     mass = RigidBody(center=jnp.array([nucleotide_mass], dtype=f64),
                      orientation=jnp.array([moment_of_inertia], dtype=f64))
 
-    # params = get_params.get_default_params(t=T, no_smoothing=False)
-
-    # params = [0.10450547, 0.5336675 , 1.2209406]
-    # params = [2.0, 0.25, 0.7525]
-
-    params = get_params.get_init_optimize_params(init_method)
+    params = get_params.get_init_optimize_params_hb_seq_dependent(init_method)
+    params = jnp.array(params)
 
     top_info = TopologyInfo(top_path, reverse_direction=True)
 
@@ -108,19 +106,14 @@ def run_single_langevin(args,
     else:
         raise RuntimeError(f"Invalid boundary conditions: {boundary_conditions}")
 
-    loss_fn = geometry.get_backbone_distance_loss(top_info.bonded_nbrs, displacement_fn)
-    loss_fn = jit(loss_fn)
-
     body = config_info.states[0]
     seq = jnp.array(get_one_hot(top_info.seq), dtype=f64)
     kT = get_kt(t=T) # 300 Kelvin = 0.1 kT
 
     # gamma = RigidBody(center=jnp.array([DEFAULT_TEMP/2.5]),
-    #                   orientation=jnp.array([DEFAULT_TEMP/7.5]))
-    # gamma = RigidBody(center=jnp.array([kT/2.5], dtype=f64),
-    #                   orientation=jnp.array([kT/7.5], dtype=f64))
-    gamma = RigidBody(center=jnp.array([0.001*kT/2.5], dtype=f64),
-                      orientation=jnp.array([0.001*kT/7.5], dtype=f64))
+                      # orientation=jnp.array([DEFAULT_TEMP/7.5]))
+    gamma = RigidBody(center=jnp.array([kT/2.5], dtype=f64),
+                      orientation=jnp.array([kT/7.5], dtype=f64))
 
 
     energy_fn, compute_subterms = factory.energy_fn_factory(
@@ -179,10 +172,6 @@ def run_single_langevin(args,
     else:
         init_energy = energy_fn(state.position)
     energies = [init_energy]
-    # losses = [loss_fn(state.position)[1]]
-    losses = [loss_fn(state.position)]
-    # subterms = [compute_subterms(state.position)]
-    # bb_distances = [loss_fn(state.position)[0]]
     print(bcolors.OKBLUE + f"Starting simulation..." + bcolors.ENDC)
 
     if use_neighbor_lists:
@@ -200,21 +189,6 @@ def run_single_langevin(args,
     real_neighbors = set(zip(top_info.unbonded_nbrs.T[0], top_info.unbonded_nbrs.T[1]))
     for i in tqdm(range(n_steps), colour="red"): # note: colour can be one of [hex (#00ff00), BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE]
         state, neighbors = iter_fn(state, neighbors)
-        # nbrs0 = [int(val) for val in neighbors.idx[0]]
-        # nbrs1 = [int(val) for val in neighbors.idx[1]]
-        # iter_neighbors = set(zip(nbrs0, nbrs1))
-        # print(f"\nIter neighbors: {iter_neighbors}")
-        # print(f"In iter but not in real: {iter_neighbors - real_neighbors}")
-        # print(f"In real but not in iter: {real_neighbors - iter_neighbors}")
-
-
-        """
-        if use_neighbor_lists:
-            state = step_fn(state, op_nbrs_idx=neighbors.idx) # , seq=seq, params=params)
-            neighbors = neighbors.update(state.position.center)
-        else:
-            state = step_fn(state)
-        """
 
         if i % save_every == 0:
             if use_neighbor_lists:
@@ -223,10 +197,6 @@ def run_single_langevin(args,
                 i_energy = energy_fn(state.position)
             energies.append(i_energy)
             trajectory.append(state.position)
-            # losses.append(loss_fn(state.position)[1])
-            losses.append(loss_fn(state.position))
-            # subterms.append(compute_subterms(state.position))
-            # bb_distances.append(loss_fn(state.position)[0])
 
     final_traj = TrajectoryInfo(top_info, states=trajectory, box_size=config_info.box_size)
     if save_output:
@@ -239,7 +209,6 @@ def run_single_langevin(args,
 if __name__ == "__main__":
     import time
     import numpy as np
-    from loss import geometry
     import argparse
 
     parser = argparse.ArgumentParser(description="Conduct an oxDNA simulation")
@@ -288,21 +257,6 @@ if __name__ == "__main__":
         print(bcolors.WARNING + "Are you sure you don't want to save the output? Press `c` to continue:" + bcolors.ENDC)
         pdb.set_trace()
 
-
-    # top_path = "data/simple-helix/generated.top"
-    # conf_path = "data/simple-helix/start.conf"
-
-    # top_path = "data/persistence-length/init.top"
-    # conf_path = "data/persistence-length/init.conf"
-    # conf_path = "data/persistence-length/relaxed.dat"
-
-    # top_path = "data/single-strand/generated.top"
-    # conf_path = "data/single-strand/start.conf"
-
-    # top_path = "data/elastic-mod/generated.top"
-    # conf_path = "data/elastic-mod/generated.dat"
-
-    # key = random.PRNGKey(0)
 
     start = time.time()
 

@@ -196,6 +196,20 @@ HB_WEIGHTS = jnp.array([
 ])
 get_hb_probs = vmap(lambda seq, i, j: jnp.kron(seq[i], seq[j]), in_axes=(None, 0, 0), out_axes=0)
 
+# Used for base-pair specific hydrogen bonding parameters
+GC_CG_WEIGHTS = jnp.array([
+    0.0, 0.0, 0.0, 0.0, # AX
+    0.0, 0.0, 1.0, 0.0, # CX
+    0.0, 1.0, 0.0, 0.0, # GX
+    0.0, 0.0, 0.0, 0.0  # TX
+])
+AT_TA_WEIGHTS = jnp.array([
+    0.0, 0.0, 0.0, 1.0, # AX
+    0.0, 0.0, 0.0, 0.0, # CX
+    0.0, 0.0, 0.0, 0.0, # GX
+    1.0, 0.0, 0.0, 0.0  # TX
+])
+
 
 stacking_param_names = [
     # f1(dr_stack)

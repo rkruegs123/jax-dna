@@ -310,7 +310,13 @@ def get_init_optimize_params(method="oxdna"):
         raise RuntimeError(f"Invalid method: {method}")
     return init_fene_params + init_stacking_params
 
+def get_init_optimize_params_hb_seq_dependent(method="oxdna"):
+    assert(method == "oxdna")
 
+    # starting with the correct parameters
+    init_f4_a_vals = [1.50, 1.50, 1.50, 0.46, 4.0, 4.0]
+
+    return [init_f4_a_vals, init_f4_a_vals]
 
 # FIXME: Used for processing arrays in energy function, but really duplicate logic from when we actually read in the parameters...
 def process_stacking_params(unprocessed_params, kt):
