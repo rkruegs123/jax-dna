@@ -48,7 +48,7 @@ def get_groove_widths(seq):
     gs = GrooveWidths_CS(data.ground_state)
     return gs
 
-def get_marginals(seq, verbose=True):
+def get_marginals(seq, verbose=False):
     # code for the cgNA+ model -- contains both bases and phosphates parameters
     # order is intra--phos--inter--phos--intra--phos--inter--phos-- ... --intra
     # note: each set of six coordinates is 3 rotations (rad/5 ~ 11.5 degrees) and then 3 translations (angstrom)
@@ -59,7 +59,6 @@ def get_marginals(seq, verbose=True):
     # Take the marginal over phosphates to obtain intra- and inter-coordinates
     cov = scipy.sparse.linalg.inv(data.stiff)  # dimension is (24N-18) x (24N-18) -- see thesis for details
     cov = cov.todense()
-    pdb.set_trace()
     cov_diag = np.diag(cov) # essentially the square of std. dev.
     mean = data.ground_state
 
