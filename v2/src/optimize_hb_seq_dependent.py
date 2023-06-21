@@ -271,13 +271,13 @@ if __name__ == "__main__":
 
 
     parser = argparse.ArgumentParser(description="Optimizing over oxDNA parameters")
-    parser.add_argument('-b', '--batch-size', type=int, default=2,
+    parser.add_argument('-b', '--batch-size', type=int, default=5,
                         help="Num. batches for each round of gradient descent")
     parser.add_argument('--save-every', type=int, default=1,
                         help="Frequency of saving data from optimization")
-    parser.add_argument('--opt-steps', type=int, default=3,
+    parser.add_argument('--opt-steps', type=int, default=100,
                         help="Num. iterations of gradient descent")
-    parser.add_argument('-n', '--n-steps', type=int, default=100,
+    parser.add_argument('-n', '--n-steps', type=int, default=50000,
                         help="Num. steps per simulation")
     parser.add_argument('-k', '--key', type=int, default=0,
                         help="Random key")
@@ -289,7 +289,7 @@ if __name__ == "__main__":
     parser.add_argument('--conf-path', type=str,
                         default="data/lb-seqs/seq1/seq.conf",
                         help='Path to configuration file')
-    parser.add_argument('--n-eq', type=int, default=50,
+    parser.add_argument('--n-eq', type=int, default=5000,
                         help="Num. equilibration steps per simulation")
     parser.add_argument('--sample-every', type=int, default=10,
                         help="Num. steps per sample (after equilibration)")

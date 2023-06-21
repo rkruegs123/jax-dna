@@ -22,7 +22,7 @@ plt.rcParams["axes.linewidth"]  = 0.5
 plt.rcParams['axes.facecolor'] = 'white'
 
 # FIXME: don't hardcode
-params_basedir = "/home/ryan/Documents/Harvard/research/brenner/jaxmd-oxdna/v2/src/cgdna/params/"
+params_basedir = "/home/ryan/jaxmd-oxdna/v2/src/cgdna/params/"
 
 def constructSeqParms(sequence,ps_name):
 
