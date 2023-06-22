@@ -212,8 +212,6 @@ def run(args, init_params,
 
     # Setup some logging, some required and some not
     params_ = list()
-    all_losses = list()
-    all_grads = list()
 
     loss_path = run_dir / "losses.txt"
     grad_path = run_dir / "grads.txt"
@@ -238,11 +236,8 @@ def run(args, init_params,
 
         if i % save_every == 0:
             step_times.append(end - start)
-            # print(optimizer.params_fn(opt_state))
 
-            all_grads.append(grad)
             params_.append(optimizer.params_fn(opt_state))
-            all_losses.append(loss)
 
             with open(loss_path, "a") as f:
                 f.write(f"{loss}\n")
@@ -251,14 +246,8 @@ def run(args, init_params,
 
     with open(run_dir / "final_params.pkl", "wb") as f:
         pickle.dump(optimizer.params_fn(opt_state), f)
-    with open(run_dir / "final_loss.pkl", "wb") as f:
-        pickle.dump(loss, f)
-    with open(run_dir / "all_losses.pkl", "wb") as f:
-        pickle.dump(all_losses, f)
     with open(run_dir / "params.pkl", "wb") as f:
         pickle.dump(params_, f)
-    with open(run_dir / "all_grads.pkl", "wb") as f:
-        pickle.dump(all_grads, f)
     with open(run_dir / "step_times.pkl", "wb") as f:
         pickle.dump(step_times, f)
     return
