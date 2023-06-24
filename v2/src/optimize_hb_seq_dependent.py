@@ -166,6 +166,10 @@ def run(args, init_params,
     reference_propeller_twist = 20.0
     propeller_means = reference_propeller_twist + jnp.array(intra_coord_means["propeller"][1:-1]) * 11.5 # convert to degrees
     propeller_vars = reference_propeller_twist + jnp.array(intra_coord_vars["propeller"][1:-1]) * 11.5 # convert to degrees
+    with open(run_dir / "target_means.pkl", "wb") as f:
+        pickle.dump(propeller_means, f)
+    with open(run_dir / "target_vars.pkl", "wb") as f:
+        pickle.dump(propeller_vars, f)
 
     propeller_base_pairs = list(zip(onp.arange(1, 23), onp.arange(46, 24, -1))) # FIXME: don't specialize for 23
     propeller_base_pairs = jnp.array(propeller_base_pairs)
@@ -185,12 +189,16 @@ def run(args, init_params,
         prop_twists_means = jnp.mean(all_prop_twists, axis=0)
         prop_twists_vars = jnp.var(all_prop_twists, axis=0)
         all_kl_divergences = vmap(kl_divergence, (0, 0, 0, 0))(propeller_means, propeller_vars, prop_twists_means, prop_twists_vars)
-        return all_kl_divergences
+        return all_kl_divergences, (prop_twists_means, prop_twists_vars)
 
     @jit
     def compute_trajectory_propeller_twists(trajectory):
         states_to_eval = trajectory[::sample_every]
         all_prop_twists = vmap(compute_all_propeller_twists)(states_to_eval)
+
+        # Convert to degrees
+        all_prop_twists = 180.0 - (all_prop_twists * 180.0 / jnp.pi)
+        
         return all_prop_twists
 
     @jit
@@ -200,12 +208,13 @@ def run(args, init_params,
         all_trajectory_prop_twists = vmap(compute_trajectory_propeller_twists)(trajectories)
         # note: dimension of all_trajectory_prop_twists will be (# trajectories, num_steps, 22)
         combined_trajectory_prop_twists = all_trajectory_prop_twists.reshape(-1, all_trajectory_prop_twists.shape[-1])
-        kl_divergences = compute_kl_divergences(combined_trajectory_prop_twists)
-        return jnp.mean(kl_divergences)
+        kl_divergences, (p_twists_means, p_twists_vars) = compute_kl_divergences(combined_trajectory_prop_twists)
+        return jnp.mean(kl_divergences), (p_twists_means, p_twists_vars)
+        # return jnp.log(jnp.mean(kl_divergences))
 
 
     # Get our gradients ready
-    grad_fn = value_and_grad(loss_fn)
+    grad_fn = value_and_grad(loss_fn, has_aux=True)
 
     optimizer = jopt.adam(lr)
     opt_state = optimizer.init_fn(init_params)
@@ -215,6 +224,9 @@ def run(args, init_params,
 
     loss_path = run_dir / "losses.txt"
     grad_path = run_dir / "grads.txt"
+    params_path = run_dir / "params.txt"
+    means_path = run_dir / "means.txt"
+    vars_path = run_dir / "vars.txt"
 
     # Do the optimization
     step_times = list()
@@ -229,7 +241,7 @@ def run(args, init_params,
 
         # Get the grad for our single test case (would have to average for multiple)
         grad_seeds = jax.random.split(grad_key, batch_size)
-        loss, grad = grad_fn(optimizer.params_fn(opt_state), eq_bodies, grad_seeds)
+        (loss, (iter_means, iter_vars)), grad = grad_fn(optimizer.params_fn(opt_state), eq_bodies, grad_seeds)
         opt_state = optimizer.update_fn(i, grad, opt_state)
 
         end = time.time()
@@ -237,12 +249,19 @@ def run(args, init_params,
         if i % save_every == 0:
             step_times.append(end - start)
 
-            params_.append(optimizer.params_fn(opt_state))
+            curr_params = optimizer.params_fn(opt_state)
+            params_.append(curr_params)
 
             with open(loss_path, "a") as f:
                 f.write(f"{loss}\n")
             with open(grad_path, "a") as f:
                 f.write(f"{grad}\n")
+            with open(params_path, "a") as f:
+                f.write(f"{curr_params}\n")
+            with open(means_path, "a") as f:
+                f.write(f"{iter_means}\n")
+            with open(vars_path, "a") as f:
+                f.write(f"{iter_vars}\n")
 
     with open(run_dir / "final_params.pkl", "wb") as f:
         pickle.dump(optimizer.params_fn(opt_state), f)
