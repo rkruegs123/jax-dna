@@ -318,6 +318,16 @@ def get_init_optimize_params_hb_seq_dependent(method="oxdna"):
 
     return [init_f4_a_vals, init_f4_a_vals]
 
+def get_init_optimize_params_hb_seq_dependent_theta(method="oxdna"):
+    assert(method == "oxdna")
+
+    # starting with the correct parameters
+    init_f4_a_vals = [1.50, 1.50, 1.50, 0.46, 4.0, 4.0]
+    init_f4_theta_vals = [0.0, 0.0, 0.0, 3.141592653589, 1.57079632679, 1.57079632679]
+
+    # return [init_f4_a_vals, init_f4_a_vals]
+    return [[init_f4_a_vals, init_f4_a_vals], [init_f4_theta_vals, init_f4_theta_vals]]
+
 # FIXME: Used for processing arrays in energy function, but really duplicate logic from when we actually read in the parameters...
 def process_stacking_params(unprocessed_params, kt):
     a_stack = unprocessed_params['a_stack']

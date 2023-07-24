@@ -30,11 +30,10 @@ from utils import Q_to_base_normal
 from loader.trajectory import TrajectoryInfo
 from loader.topology import TopologyInfo
 # from energy import factory
-from energy import hb_seq_dependent_factory as factory
+from energy import hb_seq_dependent_theta_factory as factory
 from checkpoint import checkpoint_scan
 from loss import propeller
 from cgdna.utils import lb_dnas, get_marginals
-from cgdna.oxdna_to_cgdna_jaxable import get_reader
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -90,7 +89,7 @@ def run(args, init_params,
 
     output_basedir = Path(output_basedir)
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    run_name = f"optimize_hb_seq_params_{timestamp}_b{batch_size}_lr{lr}_n{sim_length}"
+    run_name = f"optimize_hb_seq_theta_params_{timestamp}_b{batch_size}_lr{lr}_n{sim_length}"
     run_dir = output_basedir / run_name
     run_dir.mkdir(parents=False, exist_ok=False)
     shutil.copy(top_path, run_dir)
@@ -166,19 +165,12 @@ def run(args, init_params,
     # construct loss function
     intra_coord_means, intra_coord_vars = get_marginals(top_info.seq[:24], verbose=False)
     reference_propeller_twist = 20.0
-    # convert to degrees
-    # propeller_means = reference_propeller_twist + jnp.array(intra_coord_means["propeller"][1:-1]) * 11.5  # Option 1
-    propeller_means = jnp.array(intra_coord_means["propeller"][1:-1]) * 11.5 # convert to degrees # Option 2
-
-    # convert to degrees
-    # propeller_vars = reference_propeller_twist + jnp.array(intra_coord_vars["propeller"][1:-1]) * 11.5 # Option 1
-    propeller_vars = jnp.array(intra_coord_vars["propeller"][1:-1]) * 11.5 # convert to degrees # Option 2
-    
+    propeller_means = reference_propeller_twist + jnp.array(intra_coord_means["propeller"][1:-1]) * 11.5 # convert to degrees
+    propeller_vars = reference_propeller_twist + jnp.array(intra_coord_vars["propeller"][1:-1]) * 11.5 # convert to degrees
     with open(run_dir / "target_means.pkl", "wb") as f:
         pickle.dump(propeller_means, f)
     with open(run_dir / "target_vars.pkl", "wb") as f:
         pickle.dump(propeller_vars, f)
-
 
     propeller_base_pairs = list(zip(onp.arange(1, 23), onp.arange(46, 24, -1))) # FIXME: don't specialize for 23
     propeller_base_pairs = jnp.array(propeller_base_pairs)
@@ -210,16 +202,12 @@ def run(args, init_params,
         
         return all_prop_twists
 
-    reader = jit(get_reader(24 * 2, 24, 1, top_info.seq))
     @jit
     def loss_fn(params, eq_bodies, keys):
         trajectories = vmap(run_eval_simulation, (None, 0, 0))(params, keys, eq_bodies)
 
+        all_trajectory_prop_twists = vmap(compute_trajectory_propeller_twists)(trajectories)
         # note: dimension of all_trajectory_prop_twists will be (# trajectories, num_steps, 22)
-        # all_trajectory_prop_twists = vmap(compute_trajectory_propeller_twists)(trajectories) # Option 1
-        all_trajectory_prop_twists = vmap(reader)(trajectories)[:, :, 1:23] # Option 2
-
-        
         combined_trajectory_prop_twists = all_trajectory_prop_twists.reshape(-1, all_trajectory_prop_twists.shape[-1])
         kl_divergences, (p_twists_means, p_twists_vars) = compute_kl_divergences(combined_trajectory_prop_twists)
         # return jnp.mean(kl_divergences), (p_twists_means, p_twists_vars)
@@ -324,7 +312,7 @@ if __name__ == "__main__":
 
 
     # starting with the correct parameters
-    init_params = get_params.get_init_optimize_params_hb_seq_dependent("oxdna")
+    init_params = get_params.get_init_optimize_params_hb_seq_dependent_theta("oxdna")
     init_params = jnp.array(init_params)
 
     start = time.time()

@@ -1,10 +1,13 @@
 import pdb
 
 import jax.numpy as jnp
-from jax.scipy import linalg
+# from jax.scipy import linalg
 from jax import vmap
 
 from utils import Q_to_back_base, Q_to_base_normal
+import denman_beavers
+
+sqrtm3x3 = denman_beavers.get_denman_beavers(3, 25)
 
 
 ###############################
@@ -144,13 +147,14 @@ class base_pair:
         F = F.at[1,1].set(-1.)
         F = F.at[2,2].set(-1.)
         # compute average bp frame
-        p = (b1.frame.pos+b2.frame.pos)*0.5
-        DC = jnp.dot(b2.frame.orientation,F) #flipped Crick frame
-        A2 = jnp.dot(DC.transpose(),b1.frame.orientation)
+        p = (b1.frame.pos + b2.frame.pos)*0.5
+        DC = jnp.dot(b2.frame.orientation, F) #flipped Crick frame
+        A2 = jnp.dot(DC.transpose(), b1.frame.orientation)
         # DC = np.dot(b1.frame.orientation,F)
         # A2 = np.dot(DC.transpose(),b2.frame.orientation)
-        A = linalg.sqrtm(A2)
-        ori = jnp.dot(DC,A)
+        # A = linalg.sqrtm(A2) # note: A2 is always 3x3
+        A = sqrtm3x3(A2)
+        ori = jnp.dot(DC, A)
         self.frame = eframe(p,ori)
 
         # compute intra coordinates
@@ -161,20 +165,21 @@ class base_pair:
 #############################
 # junction class. Stores two base_pairs, a junction frame, and the inter coordinates (inter_coord)
 class junction:
-    def __init__(self,bp1,bp2) :
+    def __init__(self, bp1, bp2) :
         self.base_pair1 = bp1 # bp n
         self.base_pair2 = bp2 # bp n+1
 
         # compute average junction frame
-        p = (bp1.frame.pos+bp2.frame.pos)*0.5
-        A2 = jnp.dot(bp1.frame.orientation.transpose(),bp2.frame.orientation)
-        A = linalg.sqrtm(A2)
-        ori = jnp.dot(bp1.frame.orientation,A)
-        self.frame = eframe(p,ori)
+        p = (bp1.frame.pos + bp2.frame.pos)*0.5
+        A2 = jnp.dot(bp1.frame.orientation.transpose(), bp2.frame.orientation)
+        # A = linalg.sqrtm(A2) # note: A2 is always 3x3
+        A = sqrtm3x3(A2)
+        ori = jnp.dot(bp1.frame.orientation, A)
+        self.frame = eframe(p, ori)
 
         # compute inter coordinates
-        rot = caym1(A2,1)
-        tr = jnp.dot(self.frame.orientation.transpose(),bp2.frame.pos-bp1.frame.pos)
+        rot = caym1(A2, 1)
+        tr = jnp.dot(self.frame.orientation.transpose(), bp2.frame.pos - bp1.frame.pos)
         self.inter_coord = int_coord(tr.real, rot.real)
 
 ##############################
