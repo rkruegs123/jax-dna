@@ -13,7 +13,7 @@ from jax_md.partition import NeighborList, NeighborListFormat, neighbor_list
 
 
 def get_unbonded_neighbors(n, bonded_neighbors):
-     # First, set to all neighbors
+    # First, set to all neighbors
     unbonded_neighbors = set(combinations(range(n), 2))
 
     # Then, remove all bonded neighbors
