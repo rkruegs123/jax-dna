@@ -246,7 +246,7 @@ class TopologyInfo:
 class TestTopology(unittest.TestCase):
     test_data_basedir = Path("data/test-data")
 
-    def test_load(self):
+    def test_init(self):
         top_path = self.test_data_basedir / "simple-helix" / "generated.top"
         top_info = TopologyInfo(top_path, reverse_direction=True)
 
