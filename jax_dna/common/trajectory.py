@@ -205,7 +205,6 @@ class TrajectoryInfo:
         return traj_df, box_size
 
 
-
     def principal_axes_to_euler_angles(self, x, y, z):
         """
         A utility function for converting a set of principal axes
