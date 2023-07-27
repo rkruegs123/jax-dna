@@ -11,5 +11,10 @@ class Dna1Model:
         pass
 
 
+class TestDna1Model(unittest.TestCase):
+
+    def test_init(self):
+        model = Dna1Model()
+
 if __name__ == "__main__":
-    pass
+    unittest.main()

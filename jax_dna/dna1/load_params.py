@@ -2,10 +2,10 @@ import pdb
 import toml
 from pathlib import Path
 
-from jax_rnafold.common.smoothing import get_f1_smoothing_params, \
+from jax_dna.common.smoothing import get_f1_smoothing_params, \
     get_f2_smoothing_params, get_f3_smoothing_params, \
     get_f4_smoothing_params, get_f5_smoothing_params
-from jax_rnafold.common.utils import DEFAULT_TEMP, get_kt
+from jax_dna.common.utils import DEFAULT_TEMP, get_kt
 
 
 def add_misc(params, t_kelvin):
@@ -287,9 +287,11 @@ def process(params, t_kelvin):
 def load(params_path="data/thermo-params/dna1.toml", t_kelvin=DEFAULT_TEMP, process=True):
     if not Path(params_path).exists():
         raise RuntimeError(f"No file at location: {params_path}")
+    params = toml.load(params_path)
     if process:
-        params = process(unprocessed_params, t_kelvin)
+        params = process(params, t_kelvin)
     return params
+
 
 
 if __name__ == "__main__":
