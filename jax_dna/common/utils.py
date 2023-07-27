@@ -7,8 +7,11 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 
 
-DEFAULT_TEMP = 296.15
 DNA_BASES = set("ACGT")
+
+DEFAULT_TEMP = 296.15 # Kelvin
+def get_kt(t_kelvin):
+    return 0.1 * t_kelvin / 300.0
 
 # Transform quaternions to nucleotide orientations
 
