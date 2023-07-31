@@ -266,9 +266,18 @@ def add_smoothing(params):
     return params
 
 
-def remove_keys(params):
-    del params['stacking']['eps_stack_kt_coeff']
-    del params['stacking']['eps_stack_base']
+def clean_stacking_keys(params):
+    keys_to_remove = set(['eps_stack_kt_coeff', 'eps_stack_base'])
+    params['stacking'] = {
+        k: params['stacking'][k] for k in params['stacking'].keys() if k not in keys_to_remove
+    }
+    return params
+
+only_unbonded_params = set(["dr_star_backbone", "sigma_backbone", "b_backbone", "dr_c_backbone"])
+def add_exc_vol_bonded(params):
+    exc_vol_params = params["excluded_volume"]
+    exc_vol_bonded_param_names = [k for k in exc_vol_params.keys() if k not in only_unbonded_params]
+    params["excluded_volume_bonded"] = {k: exc_vol_params[k] for k in exc_vol_bonded_param_names}
     return params
 
 def process(params, t_kelvin):
@@ -279,7 +288,10 @@ def process(params, t_kelvin):
     params = add_smoothing(params)
 
     # Remove keys (note: could maybe just leave irrelevant keys in the dict.)
-    # params = remove_keys(params)
+    params = clean_stacking_keys(params)
+
+    # Separate out exc. vol. bonded from unbonded
+    params = add_exc_vol_bonded(params)
 
     return params
 

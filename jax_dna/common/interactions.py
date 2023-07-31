@@ -3,7 +3,7 @@ import jax.numpy as jnp
 from jax.tree_util import Partial
 from jax import jit
 
-from jax_rnafold.common.base_functions import f1, f2, f3, f4, f5, v_fene
+from jax_dna.common.base_functions import f1, f2, f3, f4, f5, v_fene
 
 
 @jit
@@ -17,7 +17,7 @@ def smooth_abs(x, eps=1e-10):
     return jnp.sqrt(x**2 + eps)
 
 @jit
-def v_fene(r, eps_backbone, r0_backbone, delta_backbone, fmax=500, finf=4.0):
+def v_fene_smooth(r, eps_backbone, r0_backbone, delta_backbone, fmax=500, finf=4.0):
     eps = eps_backbone; r0 = r0_backbone; delt = delta_backbone
 
     diff = smooth_abs(r - r0)
