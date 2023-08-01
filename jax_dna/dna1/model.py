@@ -5,13 +5,14 @@ from pathlib import Path
 from tqdm import tqdm
 from copy import deepcopy
 
-from jax import jit, random
+from jax import jit, random, lax, grad, value_and_grad
 import jax.numpy as jnp
 from jax_md import space, simulate, rigid_body
 
 from jax_dna.common.utils import DEFAULT_TEMP, clamp
 from jax_dna.common.utils import Q_to_back_base, Q_to_base_normal, Q_to_cross_prod
-from jax_dna.common.interactions import v_fene_smooth
+from jax_dna.common.interactions import v_fene_smooth, stacking, exc_vol_bonded, \
+    exc_vol_unbonded, cross_stacking, coaxial_stacking, hydrogen_bonding
 from jax_dna.common import utils, topology, trajectory
 from jax_dna.dna1.load_params import load, process
 
@@ -90,18 +91,67 @@ class EnergyModel:
         cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nn_i], dr_back_nn) / r_back_nn
         cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nn_j], dr_back_nn) / r_back_nn
 
-        ## Exc. vol unbonded variables -- FIXME
+        ## Exc. vol unbonded variables
+        dr_base_op = self.displacement_mapped(base_sites[op_j], base_sites[op_i]) # Note the flip here
+        dr_backbone_op = self.displacement_mapped(back_sites[op_j], back_sites[op_i]) # Note the flip here
+        dr_back_base_op = self.displacement_mapped(back_sites[op_i], base_sites[op_j]) # Note: didn't flip this one (and others) because no need, but should look into at some point
+        dr_base_back_op = self.displacement_mapped(base_sites[op_i], back_sites[op_j])
 
-        ## Hydrogen bonding -- FIXME
+        ## Hydrogen bonding
+        r_base_op = jnp.linalg.norm(dr_base_op, axis=1)
+        theta1_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -back_base_vectors[op_i], back_base_vectors[op_j])))
+        theta2_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -back_base_vectors[op_j], dr_base_op) / r_base_op))
+        theta3_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', back_base_vectors[op_i], dr_base_op) / r_base_op))
+        theta4_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], base_normals[op_j])))
+        # note: are these swapped in Lorenzo's code?
+        theta7_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -base_normals[op_j], dr_base_op) / r_base_op))
+        theta8_op = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], dr_base_op) / r_base_op))
 
-        ## Cross stacking variables -- FIXME
+        ## Cross stacking variables -- all already computed
 
-        ## Coaxial stacking -- FIXME
+        ## Coaxial stacking
+        dr_stack_op = self.displacement_mapped(stack_sites[op_j], stack_sites[op_i]) # note: reversed
+        dr_stack_norm_op = dr_stack_op / jnp.linalg.norm(dr_stack_op, axis=1, keepdims=True)
+        dr_backbone_norm_op = dr_backbone_op / jnp.linalg.norm(dr_backbone_op, axis=1, keepdims=True)
+        theta5_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], dr_stack_norm_op)))
+        theta6_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -base_normals[op_j], dr_stack_norm_op)))
+        cosphi3_op = jnp.einsum('ij, ij->i', dr_stack_norm_op,
+                                jnp.cross(dr_backbone_norm_op, back_base_vectors[op_j]))
+        cosphi4_op = jnp.einsum('ij, ij->i', dr_stack_norm_op,
+                                jnp.cross(dr_backbone_norm_op, back_base_vectors[op_i]))
 
         # Compute the contributions from each interaction
         fene_dg = v_fene_smooth(r_back_nn, **self.params["fene"]).sum()
+        exc_vol_bonded_dg = exc_vol_bonded(dr_base_nn, dr_back_base_nn, dr_base_back_nn,
+                                           **self.params["excluded_volume_bonded"]).sum()
+        stack_dg = stacking(r_stack_nn, theta4, theta5, theta6, cosphi1, cosphi2, **self.params["stacking"]).sum()
 
-        return fene_dg, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+        exc_vol_unbonded_dg = exc_vol_unbonded(
+            dr_base_op, dr_backbone_op, dr_back_base_op, dr_base_back_op,
+            **self.params["excluded_volume"]
+        )
+        exc_vol_unbonded_dg = jnp.where(mask, exc_vol_unbonded_dg, 0.0).sum() # Mask for neighbors
+
+        v_hb = hydrogen_bonding(
+            dr_base_op, theta1_op, theta2_op, theta3_op, theta4_op,
+            theta7_op, theta8_op, **self.params["hydrogen_bonding"])
+        v_hb = jnp.where(mask, v_hb, 0.0) # Mask for neighbors
+        hb_probs = utils.get_hb_probs(seq, op_i, op_j) # get the probabilities of all possibile hydrogen bonds for all neighbors
+        hb_weights = jnp.dot(hb_probs, utils.HB_WEIGHTS)
+        hb_dg = jnp.dot(hb_weights, v_hb)
+
+        cr_stack_dg = cross_stacking(
+            r_base_op, theta1_op, theta2_op, theta3_op,
+            theta4_op, theta7_op, theta8_op, **self.params["cross_stacking"])
+        cr_stack_dg = jnp.where(mask, cr_stack_dg, 0.0).sum() # Mask for neighbors
+
+        cx_stack_dg = coaxial_stacking(
+            dr_stack_op, theta4_op, theta1_op, theta5_op,
+            theta6_op, cosphi3_op, cosphi4_op, **self.params["coaxial_stacking"])
+        cx_stack_dg = jnp.where(mask, cx_stack_dg, 0.0).sum() # Mask for neighbors
+
+        return fene_dg, exc_vol_bonded_dg, stack_dg, \
+            exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg
 
     def energy_fn(self, body, seq, bonded_nbrs, unbonded_nbrs):
         dgs = self.compute_subterms(body, seq, bonded_nbrs, unbonded_nbrs)
@@ -116,8 +166,23 @@ class TestDna1(unittest.TestCase):
         displacement_fn, shift_fn = space.free()
         model = EnergyModel(displacement_fn)
 
-    def test_simulate(self):
+    def _test_grad_dummy(self):
+
         displacement_fn, shift_fn = space.free()
+
+        def loss_fn(param_dict):
+            model = EnergyModel(displacement_fn, param_dict)
+            return model.params["fene"]["eps_backbone"]
+
+        test_param_dict = deepcopy(EMPTY_BASE_PARAMS)
+        test_param_dict["fene"]["eps_backbone"] = 1.5
+
+        test_grad = grad(loss_fn)(test_param_dict)
+
+    def test_simulate(self):
+        box_size = 20.0
+        # displacement_fn, shift_fn = space.free()
+        displacement_fn, shift_fn = space.periodic(box_size)
         dt = 5e-3
         t_kelvin = DEFAULT_TEMP
         kT = utils.get_kt(t_kelvin)
@@ -139,9 +204,8 @@ class TestDna1(unittest.TestCase):
 
         init_body = conf_info.get_states()[0]
 
-        n_steps = 10
+        n_steps = 1000
         key = random.PRNGKey(0)
-
 
         def sim_fn(param_dict):
             model = EnergyModel(displacement_fn, param_dict)
@@ -149,18 +213,41 @@ class TestDna1(unittest.TestCase):
             energy_fn = partial(model.energy_fn, seq=seq_oh,
                                 bonded_nbrs=top_info.bonded_nbrs,
                                 unbonded_nbrs=top_info.unbonded_nbrs.T)
+
             init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+            step_fn = jit(step_fn)
+            init_state = init_fn(key, init_body, mass=mass)
 
-            state = init_fn(key, init_body, mass=mass)
-
-            for i in tqdm(range(n_steps)):
+            @jit
+            def scan_fn(state, step):
                 state = step_fn(state)
-            return state.position.center.sum() # note: dummy loss function
+                return state, state.position
+
+            fin_state, traj = lax.scan(scan_fn, init_state, jnp.arange(n_steps))
+            # return fin_state.position.center.sum(), traj # note: dummy loss function
+            return fin_state.position.center[-1][0], traj # note: dummy loss function
 
         test_param_dict = deepcopy(EMPTY_BASE_PARAMS)
-        test_param_dict["fene"]["eps_backbone"] = 1.5
+        test_param_dict["fene"]["eps_backbone"] = 2.5
+        test_param_dict["stacking"]["eps_stack_base"] = 0.5
+        test_param_dict["excluded_volume"]["eps_exc"] = 5.0
 
-        pos_sum = sim_fn(test_param_dict)
+        pos_sum, traj = sim_fn(test_param_dict)
+        # fin_body = traj[-1]
+        # model = EnergyModel(displacement_fn, test_param_dict)
+        # init_dgs = model.compute_subterms(init_body, seq_oh, top_info.bonded_nbrs, top_info.unbonded_nbrs.T)
+        # fin_dgs = model.compute_subterms(fin_body, seq_oh, top_info.bonded_nbrs, top_info.unbonded_nbrs.T)
+
+        pdb.set_trace()
+        traj_to_write = traj[::100]
+        traj_info = trajectory.TrajectoryInfo(
+            top_info, read_from_states=True, states=traj_to_write, box_size=box_size)
+        # traj_info.write("sanity.conf", reverse=True)
+
+        pdb.set_trace()
+
+        (pos_sum, traj), pos_sum_grad = value_and_grad(sim_fn, has_aux=True)(test_param_dict)
+
         pdb.set_trace()
 
 

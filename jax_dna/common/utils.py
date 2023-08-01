@@ -16,6 +16,14 @@ DNA_MAPPER = {
 }
 DNA_BASES = set("ACGT")
 
+# Kron: AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT
+HB_WEIGHTS = jnp.array([
+    0.0, 0.0, 0.0, 1.0, # AX
+    0.0, 0.0, 1.0, 0.0, # CX
+    0.0, 1.0, 0.0, 0.0, # GX
+    1.0, 0.0, 0.0, 0.0  # TX
+])
+get_hb_probs = vmap(lambda seq, i, j: jnp.kron(seq[i], seq[j]), in_axes=(None, 0, 0), out_axes=0)
 
 def get_one_hot(seq: str):
     seq = seq.upper()
@@ -84,6 +92,7 @@ def clamp(x, lo=-1.0, hi=1.0):
     max_ = jnp.where(min_ <= lo, lo, min_)
     return max_
     # return jnp.clip(x, lo, hi)
+
 
 class bcolors:
     HEADER = '\033[95m'

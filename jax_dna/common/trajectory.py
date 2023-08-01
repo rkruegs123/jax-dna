@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 import pandas as pd
 import numpy as onp
+from tqdm import tqdm
 
 import jax.numpy as jnp
 from jax_md.rigid_body import RigidBody, Quaternion
@@ -183,8 +184,20 @@ class TrajectoryInfo:
 
         traj_df_lines = list()
 
+        if isinstance(states, list):
+            n_states = len(states)
+        elif isinstance(states, RigidBody):
+            assert(len(states.center.shape) == 3)
+            n_states = states.center.shape[0]
+        else:
+            raise RuntimeError(f"States must be a RigidBody or a list of RigidBody's")
+
         # note: for now, we just have `t` increment by 1
-        for t, state in enumerate(states):
+        for t in tqdm(range(n_states)):
+            state = states[t]
+            assert(len(state.center.shape) == 2)
+            assert(state.center.shape[0] == self.n and state.center.shape[1] == 3)
+
             back_base_vs = Q_to_back_base(state.orientation)
             base_normals = Q_to_base_normal(state.orientation)
             coms = state.center
