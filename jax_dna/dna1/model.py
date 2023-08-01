@@ -4,6 +4,8 @@ from functools import partial
 from pathlib import Path
 from tqdm import tqdm
 from copy import deepcopy
+import pandas as pd
+import numpy as onp
 
 from jax import jit, random, lax, grad, value_and_grad
 import jax.numpy as jnp
@@ -166,7 +168,7 @@ class TestDna1(unittest.TestCase):
         displacement_fn, shift_fn = space.free()
         model = EnergyModel(displacement_fn)
 
-    def _test_grad_dummy(self):
+    def test_grad_dummy(self):
 
         displacement_fn, shift_fn = space.free()
 
@@ -179,9 +181,12 @@ class TestDna1(unittest.TestCase):
 
         test_grad = grad(loss_fn)(test_param_dict)
 
-    def test_simulate(self):
+        self.assertNotEqual(test_grad, 0.0)
+
+    @unittest.skip("Disabled by default because compilation isn slow on CPU")
+    def test_simulate_grad(self, write_traj=False):
+        # Setup the system
         box_size = 20.0
-        # displacement_fn, shift_fn = space.free()
         displacement_fn, shift_fn = space.periodic(box_size)
         dt = 5e-3
         t_kelvin = DEFAULT_TEMP
@@ -196,12 +201,10 @@ class TestDna1(unittest.TestCase):
         seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
         conf_path = self.test_data_basedir / "simple-helix" / "start.conf"
-
         conf_info = trajectory.TrajectoryInfo(
             top_info,
             read_from_file=True, traj_path=conf_path, reverse_direction=True
         )
-
         init_body = conf_info.get_states()[0]
 
         n_steps = 1000
@@ -224,34 +227,85 @@ class TestDna1(unittest.TestCase):
                 return state, state.position
 
             fin_state, traj = lax.scan(scan_fn, init_state, jnp.arange(n_steps))
-            # return fin_state.position.center.sum(), traj # note: dummy loss function
+            # return fin_state.position.center.sum(), traj # note: grad w.r.t. this loss is 0.0
             return fin_state.position.center[-1][0], traj # note: dummy loss function
 
+        # Define a dummy set of parameters to override
         test_param_dict = deepcopy(EMPTY_BASE_PARAMS)
         test_param_dict["fene"]["eps_backbone"] = 2.5
         test_param_dict["stacking"]["eps_stack_base"] = 0.5
         test_param_dict["excluded_volume"]["eps_exc"] = 5.0
 
+        # Run a simulation to confirm that this doesn't yield any errors
         pos_sum, traj = sim_fn(test_param_dict)
-        # fin_body = traj[-1]
-        # model = EnergyModel(displacement_fn, test_param_dict)
-        # init_dgs = model.compute_subterms(init_body, seq_oh, top_info.bonded_nbrs, top_info.unbonded_nbrs.T)
-        # fin_dgs = model.compute_subterms(fin_body, seq_oh, top_info.bonded_nbrs, top_info.unbonded_nbrs.T)
 
-        pdb.set_trace()
-        traj_to_write = traj[::100]
-        traj_info = trajectory.TrajectoryInfo(
-            top_info, read_from_states=True, states=traj_to_write, box_size=box_size)
-        # traj_info.write("sanity.conf", reverse=True)
-
-        pdb.set_trace()
+        if write_traj:
+            traj_to_write = traj[::100]
+            traj_info = trajectory.TrajectoryInfo(
+                top_info, read_from_states=True, states=traj_to_write, box_size=box_size)
+            traj_info.write("dna1_sanity.conf", reverse=True)
 
         (pos_sum, traj), pos_sum_grad = jit(value_and_grad(sim_fn, has_aux=True))(test_param_dict)
 
+        self.assertNotEqual(pos_sum_grad, 0.0)
+
+    def check_energy_subterms(self, basedir, top_fname, traj_fname, t_kelvin):
+
+        print(f"---- Checking energy breakdown agreement for base directory: {basedir} ----")
+
+        basedir = Path(basedir)
+        if not basedir.exists():
+            raise RuntimeError(f"No directory exists at location: {basedir}")
+
+        # First, load the oxDNA subterms
+        split_energy_fname = basedir / "split_energy.dat"
+        if not split_energy_fname.exists():
+            raise RuntimeError(f"No energy subterm file exists at location: {split_energy_fname}")
+        split_energy_df = pd.read_csv(
+            split_energy_fname,
+            names=["t", "fene", "b_exc", "stack", "n_exc", "hb",
+               "cr_stack", "cx_stack"],
+            delim_whitespace=True)
+        oxdna_subterms = split_energy_df.iloc[1:, :]
+
+        # Then, compute subterms via our energy model
+        top_path = basedir / top_fname
+        if not top_path.exists():
+            raise RuntimeError(f"No topology file at location: {top_path}")
+        traj_path = basedir / traj_fname
+        if not traj_path.exists():
+            raise RuntimeError(f"No trajectory file at location: {traj_path}")
+
+        ## note: we don't reverse direction to keep ordering the same
+        top_info = topology.TopologyInfo(top_path, reverse_direction=False)
+        seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
+        traj_info = trajectory.TrajectoryInfo(
+            top_info, read_from_file=True, traj_path=traj_path, reverse_direction=False)
+        traj_states = traj_info.get_states()
+
+        displacement_fn, shift_fn = space.periodic(traj_info.box_size)
+        model = EnergyModel(displacement_fn, t_kelvin=t_kelvin)
+
+        trajectory_subterms = list()
+        for state in tqdm(traj_states):
+            dgs = model.compute_subterms(
+                state, seq_oh, top_info.bonded_nbrs, top_info.unbonded_nbrs.T)
+            avg_subterms = onp.array(dgs) / top_info.n # average per nucleotide
+            trajectory_subterms.append(avg_subterms)
+        trajectory_subterms = onp.array(trajectory_subterms)
+
+        # Check for equality
+
+        # FIXME: put oxdna_subterms as a numpy array?
         pdb.set_trace()
 
+    def test_subterms(self):
+        subterm_tests = [
+            (self.test_data_basedir / "simple-helix", "generated.top", "output.dat", 296.15)
+        ]
 
-
+        for basedir, top_fname, traj_fname, t_kelvin in subterm_tests:
+            self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin)
 
 
 if __name__ == "__main__":
