@@ -193,7 +193,7 @@ class TrajectoryInfo:
             raise RuntimeError(f"States must be a RigidBody or a list of RigidBody's")
 
         # note: for now, we just have `t` increment by 1
-        for t in tqdm(range(n_states)):
+        for t in tqdm(range(n_states), desc="Loading trajectory from states"):
             state = states[t]
             assert(len(state.center.shape) == 2)
             assert(state.center.shape[0] == self.n and state.center.shape[1] == 3)

@@ -87,7 +87,7 @@ def get_rev_top_df(top_df, rev_orientation_mapper):
     return rev_top_df
 
 
-def check_valid_top_df(top_df, n_strands, n):
+def check_valid_top_df(top_df, n_strands, n, verbose=False):
     """
     Checks that the given topology DataFrame is valid, irrespective
     of the direction (i.e. 3'->5' or 5'->3')
@@ -110,7 +110,8 @@ def check_valid_top_df(top_df, n_strands, n):
         raise RuntimeError(f"Base identities must be 0-indexed and increase by 1")
 
     # Print a warning for properties we can't check
-    print(f"{bcolors.WARNING}Unchecked requirement: row indices must correspond to base identity in topology file. E.g. base 0 must be on the first line (line 0), and so on{bcolors.ENDC}")
+    if verbose:
+        print(f"{bcolors.WARNING}Unchecked requirement: row indices must correspond to base identity in topology file. E.g. base 0 must be on the first line (line 0), and so on{bcolors.ENDC}")
 
 
 class TopologyInfo:

@@ -249,9 +249,9 @@ class TestDna1(unittest.TestCase):
 
         self.assertNotEqual(pos_sum_grad, 0.0)
 
-    def check_energy_subterms(self, basedir, top_fname, traj_fname, t_kelvin):
+    def check_energy_subterms(self, basedir, top_fname, traj_fname, t_kelvin, tol_places=4, verbose=False):
 
-        print(f"---- Checking energy breakdown agreement for base directory: {basedir} ----")
+        print(f"\n---- Checking energy breakdown agreement for base directory: {basedir} ----")
 
         basedir = Path(basedir)
         if not basedir.exists():
@@ -286,20 +286,37 @@ class TestDna1(unittest.TestCase):
         displacement_fn, shift_fn = space.periodic(traj_info.box_size)
         model = EnergyModel(displacement_fn, t_kelvin=t_kelvin)
 
-        trajectory_subterms = list()
-        for state in tqdm(traj_states):
+        computed_subterms = list()
+        for state in traj_states:
             dgs = model.compute_subterms(
                 state, seq_oh, top_info.bonded_nbrs, top_info.unbonded_nbrs.T)
             avg_subterms = onp.array(dgs) / top_info.n # average per nucleotide
-            trajectory_subterms.append(avg_subterms)
-        trajectory_subterms = onp.array(trajectory_subterms)
+            computed_subterms.append(avg_subterms)
+        computed_subterms = onp.array(computed_subterms)
+
+        round_places = 6
+        if round_places < tol_places:
+            raise RuntimeError(f"We round for printing purposes, but this must be higher precision than the tolerance")
 
         # Check for equality
+        for i, (idx, row) in enumerate(oxdna_subterms.iterrows()): # note: i does not necessarily equal idx
 
-        # FIXME: put oxdna_subterms as a numpy array?
-        pdb.set_trace()
+            ith_oxdna_subterms = row.to_numpy()[1:]
+            ith_computed_subterms = computed_subterms[i]
+            ith_computed_subterms = onp.round(ith_computed_subterms, 6)
+
+            if verbose:
+                print(f"\tState {i}:")
+                print(f"\t\tComputed subterms: {ith_computed_subterms}")
+                print(f"\t\toxDNA subterms: {ith_oxdna_subterms}")
+                print(f"\t\t|Difference|: {onp.abs(ith_computed_subterms - ith_oxdna_subterms)}")
+                print(f"\t\t|HB Difference|: {onp.abs(ith_computed_subterms[4] - ith_oxdna_subterms[4])}")
+            for oxdna_subterm, computed_subterm in zip(ith_oxdna_subterms, ith_computed_subterms):
+                self.assertAlmostEqual(oxdna_subterm, computed_subterm, places=tol_places)
 
     def test_subterms(self):
+        print(utils.bcolors.WARNING + "\nWARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file\n" + utils.bcolors.ENDC)
+
         subterm_tests = [
             (self.test_data_basedir / "simple-helix", "generated.top", "output.dat", 296.15)
         ]
