@@ -246,7 +246,7 @@ class TestDna1(unittest.TestCase):
 
         pdb.set_trace()
 
-        (pos_sum, traj), pos_sum_grad = value_and_grad(sim_fn, has_aux=True)(test_param_dict)
+        (pos_sum, traj), pos_sum_grad = jit(value_and_grad(sim_fn, has_aux=True))(test_param_dict)
 
         pdb.set_trace()
 
