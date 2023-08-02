@@ -7,6 +7,7 @@ import unittest
 from itertools import combinations
 
 import jax.numpy as jnp
+import jax.debug
 from jax_md.partition import NeighborListFormat, neighbor_list
 
 from jax_dna.common.utils import DNA_BASES, bcolors
@@ -214,8 +215,8 @@ class TopologyInfo:
     def get_neighbor_list_fn(self, displacement_fn, box_size, r_cutoff, dr_threshold):
 
         # Construct nx2 mask
-        dense_mask = np.full((self.n, 2), self.n, dtype=np.int32)
-        counter = np.zeros(self.n, dtype=np.int32)
+        dense_mask = onp.full((self.n, 2), self.n, dtype=onp.int32)
+        counter = onp.zeros(self.n, dtype=onp.int32)
         for bp1, bp2 in self.bonded_nbrs:
             dense_mask[bp1, counter[bp1]] = bp2
             counter[bp1] += 1

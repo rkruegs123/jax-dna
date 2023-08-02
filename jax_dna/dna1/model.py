@@ -18,6 +18,9 @@ from jax_dna.common.interactions import v_fene_smooth, stacking, exc_vol_bonded,
 from jax_dna.common import utils, topology, trajectory
 from jax_dna.dna1.load_params import load, process
 
+from jax.config import config
+config.update("jax_enable_x64", True)
+
 
 DEFAULT_BASE_PARAMS = load(process=False) # Note: only processing depends on temperature
 EMPTY_BASE_PARAMS = {
@@ -249,7 +252,9 @@ class TestDna1(unittest.TestCase):
 
         self.assertNotEqual(pos_sum_grad, 0.0)
 
-    def check_energy_subterms(self, basedir, top_fname, traj_fname, t_kelvin, tol_places=4, verbose=False):
+    def check_energy_subterms(self, basedir, top_fname, traj_fname, t_kelvin,
+                              use_neighbors=True, r_cutoff=10.0, dr_threshold=0.2,
+                              tol_places=4, verbose=False):
 
         print(f"\n---- Checking energy breakdown agreement for base directory: {basedir} ----")
 
@@ -286,12 +291,28 @@ class TestDna1(unittest.TestCase):
         displacement_fn, shift_fn = space.periodic(traj_info.box_size)
         model = EnergyModel(displacement_fn, t_kelvin=t_kelvin)
 
+        ## setup neighbors, if necessary
+        if use_neighbors:
+            neighbor_fn = top_info.get_neighbor_list_fn(
+                displacement_fn, traj_info.box_size, r_cutoff, dr_threshold)
+            neighbor_fn = jit(neighbor_fn)
+            neighbors = neighbor_fn.allocate(traj_states[0].center) # We use the COMs
+        else:
+            neighbors_idx = top_info.unbonded_nbrs.T
+
+        compute_subterms_fn = jit(model.compute_subterms)
         computed_subterms = list()
-        for state in traj_states:
-            dgs = model.compute_subterms(
-                state, seq_oh, top_info.bonded_nbrs, top_info.unbonded_nbrs.T)
+        for state in tqdm(traj_states):
+
+            if use_neighbors:
+                neighbors = neighbors.update(state.center)
+                neighbors_idx = neighbors.idx
+
+            dgs = compute_subterms_fn(
+                state, seq_oh, top_info.bonded_nbrs, neighbors_idx)
             avg_subterms = onp.array(dgs) / top_info.n # average per nucleotide
             computed_subterms.append(avg_subterms)
+
         computed_subterms = onp.array(computed_subterms)
 
         round_places = 6
@@ -311,6 +332,7 @@ class TestDna1(unittest.TestCase):
                 print(f"\t\toxDNA subterms: {ith_oxdna_subterms}")
                 print(f"\t\t|Difference|: {onp.abs(ith_computed_subterms - ith_oxdna_subterms)}")
                 print(f"\t\t|HB Difference|: {onp.abs(ith_computed_subterms[4] - ith_oxdna_subterms[4])}")
+
             for oxdna_subterm, computed_subterm in zip(ith_oxdna_subterms, ith_computed_subterms):
                 self.assertAlmostEqual(oxdna_subterm, computed_subterm, places=tol_places)
 
@@ -322,7 +344,9 @@ class TestDna1(unittest.TestCase):
         ]
 
         for basedir, top_fname, traj_fname, t_kelvin in subterm_tests:
-            self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin)
+            for use_neighbors in [False, True]:
+                self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin,
+                                           use_neighbors=use_neighbors)
 
 
 if __name__ == "__main__":
