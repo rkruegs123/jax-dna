@@ -36,7 +36,21 @@ DEFAULT_TEMP = 296.15 # Kelvin
 def get_kt(t_kelvin):
     return 0.1 * t_kelvin / 300.0
 
+# oxDNA unit conversions
 
+## Tom's thesis, page 23, bottom
+ang_per_oxdna_length = 8.518
+def angstroms_to_oxdna_length(ang):
+    return ang / ang_per_oxdna_length
+def oxdna_length_to_angstroms(l):
+    return l * ang_per_oxdna_length
+
+# Tom's thesis, page 24, top
+joules_per_oxdna_energy = 4.142e-20
+def joules_to_oxdna_energy(j):
+    return j / joules_per_oxdna_energy
+def oxdna_energy_to_joules(e):
+    return e * joules_per_oxdna_energy
 
 # nucleotide_mass = 3.1575 # 3.1575 M
 # moment_of_inertia = 0.43512
