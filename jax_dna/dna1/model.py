@@ -340,7 +340,8 @@ class TestDna1(unittest.TestCase):
         print(utils.bcolors.WARNING + "\nWARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file\n" + utils.bcolors.ENDC)
 
         subterm_tests = [
-            (self.test_data_basedir / "simple-helix", "generated.top", "output.dat", 296.15)
+            (self.test_data_basedir / "simple-helix", "generated.top", "output.dat", 296.15),
+            (self.test_data_basedir / "simple-coax", "generated.top", "output.dat", 296.15)
         ]
 
         for basedir, top_fname, traj_fname, t_kelvin in subterm_tests:
