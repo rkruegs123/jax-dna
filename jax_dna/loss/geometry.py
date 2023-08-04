@@ -1,4 +1,5 @@
 import pdb
+from functools import partial
 
 import jax.numpy as jnp
 from jax_md import space
