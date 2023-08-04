@@ -1,18 +1,32 @@
 import pdb
 from pathlib import Path
 from copy import deepcopy
-from functools import partial
+import functools
+import pprint
+from tqdm import tqdm
+import time
 
 import optax
 import jax.numpy as jnp
-from jax import jit, vmap, random, grad, value_and_grad, lax
+from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util
 from jax_md import space, simulate, rigid_body
 
-from jax_dna.common import utils, topology, trajectory
+from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.loss import geometry
 from jax_dna.dna1 import model
 from jax_dna import dna1, loss
 
+from jax.config import config
+config.update("jax_enable_x64", True)
+
+
+
+checkpoint_every = 10
+if checkpoint_every is None:
+    scan = jax.lax.scan
+else:
+    scan = functools.partial(checkpoint.checkpoint_scan,
+                             checkpoint_every=checkpoint_every)
 
 
 def run():
@@ -59,10 +73,10 @@ def run():
                             unbonded_nbrs=top_info.unbonded_nbrs.T)
             return state, state.position
 
-        fin_state, traj = lax.scan(scan_fn, init_state, jnp.arange(n_steps))
+        fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_steps))
         return fin_state.position, traj
 
-    num_eq_steps = 10
+    num_eq_steps = 5000
     eq_fn = lambda params, key: sim_fn(params, init_body, num_eq_steps, key)
     eq_fn = jit(eq_fn)
 
@@ -71,14 +85,14 @@ def run():
         return helical_diam_loss_fn(body)
 
     # note: assumes trajectory begins in equilibrium
-    sample_every = 10
+    sample_every = 500
     @jit
     def traj_loss_fn(traj):
         states_to_eval = traj[::sample_every]
         losses = vmap(body_loss_fn)(states_to_eval)
         return losses.mean()
 
-    num_steps = 100
+    num_steps = 25000
     @jit
     def loss_fn(params, eq_body, key):
         fin_pos, traj = sim_fn(params, eq_body, num_steps, key)
@@ -89,17 +103,24 @@ def run():
 
 
     params = deepcopy(model.EMPTY_BASE_PARAMS)
-    params["stacking"]["eps_stack_base"] = 1.0
-    params["stacking"]["a_stack_4"] = 1.0
+    params["fene"]["eps_backbone"] = model.DEFAULT_BASE_PARAMS["fene"]["eps_backbone"]w
+    params["fene"]["delta_backbone"] = model.DEFAULT_BASE_PARAMS["fene"]["delta_backbone"]w
+    params["fene"]["r0_backbone"] = model.DEFAULT_BASE_PARAMS["fene"]["r0_backbone"]w
+    params["stacking"]["eps_stack_base"] = model.DEFAULT_BASE_PARAMS["stacking"]["eps_stack_base"]
+    params["stacking"]["a_stack_4"] = model.DEFAULT_BASE_PARAMS["stacking"]["a_stack_4"]
     lr = 0.01
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
 
-    n_epochs = 3
-    batch_size = 2
+    n_epochs = 100
+    batch_size = 10
     key = random.PRNGKey(0)
     mapped_eq_fn = jit(vmap(eq_fn, (None, 0)))
-    for _ in range(n_epochs):
+
+    test_output_path = "test_output.txt"
+    test_loss_path = "test_loss.txt"
+    
+    for i in tqdm(range(n_epochs)):
         key, iter_key = random.split(key)
         iter_key, eq_key = random.split(iter_key)
         eq_keys = random.split(eq_key, batch_size)
@@ -107,11 +128,25 @@ def run():
         eq_bodies, _ = mapped_eq_fn(params, eq_keys)
 
         batch_keys = random.split(iter_key, batch_size)
+        start = time.time()
         losses, grads = batched_grad_fn(params, eq_bodies, batch_keys)
-        pdb.set_trace()
+        end = time.time()
+        iter_time = end - start
 
-        # FIXME: average the grads
-        avg_grads = FIXME
+        avg_grads = tree_util.tree_map(jnp.mean, grads)
+
+
+        iter_str = f"----- Iteration {i} -----\n"
+        iter_str += f"- Time: {iter_time}\n"
+        iter_str += f"- Avg. Loss: {jnp.mean(losses)}\n"
+        iter_str += f"- Params: {pprint.pformat(params, indent=4)}\n"
+        iter_str += f"- Avg. Grads: {pprint.pformat(avg_grads, indent=4)}\n\n"
+        with open(test_output_path, "a") as f:
+            f.write(iter_str)
+
+        with open(test_loss_path, "a") as f:
+            f.write(f"{jnp.mean(losses)}\n")
+        
 
         updates, opt_state = optimizer.update(avg_grads, opt_state, params)
         params = optax.apply_updates(params, updates)

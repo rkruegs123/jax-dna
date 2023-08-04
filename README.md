@@ -6,6 +6,14 @@ To install jax-md rigid body check in locally, do FIXME. Must have this to run c
 
 ## Misc. Notes
 
+August 4, 2023
+- Some things to add:
+  - Slower diffusion for stable gradients. Find some middle ground between fast and slow
+  - log avg. helical distance w.r.t. target helical distance
+  - add other loss terms, e.g. bb distance
+  - experiment with gradient norm. can we tree_map jnp.linalg.norm?
+
+
 April 14, 2023
 
 - 0 forces
