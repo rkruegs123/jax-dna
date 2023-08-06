@@ -9,6 +9,7 @@ To install jax-md rigid body check in locally, do FIXME. Must have this to run c
 August 4, 2023
 - Some things to add:
   - Slower diffusion for stable gradients. Find some middle ground between fast and slow
+    - DONE
   - log avg. helical distance w.r.t. target helical distance
   - add other loss terms, e.g. bb distance
   - experiment with gradient norm. can we tree_map jnp.linalg.norm?
@@ -22,7 +23,7 @@ April 14, 2023
 - optional: different simulation lengths
 - optional: review structural optimizations. review sizes of gradients, and do longer simulations
 - optional: experiment with *not* nested scan for simulation
-- optional: run the current mehcanical setup but with the structural llss functionand no external force. this will tell us if its a structural problem. 
+- optional: run the current mehcanical setup but with the structural llss functionand no external force. this will tell us if its a structural problem.
   - note: if gradients are exploding in this case, could be that gradients explode for large systems
   - if gradients *dont* explode, could also try for very *low* force, to see if introducing nay external force causes them to explode
 - optional: run the structural loss function with a very large helix, and the mechanica lloss function witha very short helix
@@ -233,9 +234,9 @@ TODO:
 - continue tinkering with metaD calcs
 - try longer sim lengths/larger batches for starting from random initial parameters... i.e. look into why the random params aren't working
 - implement dummy bias-exchange with well-tempered metaD
-- experiment with implicit differentiation for mechanical and structural gradients 
+- experiment with implicit differentiation for mechanical and structural gradients
 - restructure metaD code to enable easy 1D or 2D or ND metaD
- 
+
 
 #### Jan 31, 2023
 
@@ -254,4 +255,4 @@ maybe ask chrisy about extneral forces with remi
 
 we'll talk baout vmmc stuff but not today
 
-experiment with implicit differentiation for mechanical and structural gradients 
+experiment with implicit differentiation for mechanical and structural gradients
