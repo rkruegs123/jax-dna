@@ -12,7 +12,18 @@ August 4, 2023
     - DONE
   - log avg. helical distance w.r.t. target helical distance
   - add other loss terms, e.g. bb distance
+    - done
   - experiment with gradient norm. can we tree_map jnp.linalg.norm?
+    - holding off for now
+
+- once we do these things, we have a couple of prioriites
+1. Redo an optimization at the correct gamma, check that tihngs are OK
+2. Then, there are three priorities:
+- (i) differentiabl etrajectory reweighting
+- (ii) cgDNA reference frame and loss
+- (iii) oxDNA 1.5 and 2.0
+
+Also note that, as it stands, loss functions kind of assume a linear rigid body nucleotide
 
 
 April 14, 2023
