@@ -50,6 +50,31 @@ def get_helical_diameter_loss_fn(bp_pairs, displacement_fn, com_to_backbone,
     return compute_helical_diameters, loss_fn
 
 
+# DNA Structure and Function, R. Sinden, 1st ed
+# Table 1.3, Pg 27
+TARGET_PHOS_PHOS_DIST = angstroms_to_oxdna_length(7.0)
+
+def get_backbone_distance_loss_fn(bonded_nbrs, displacement_fn, com_to-backbone,
+                                  target_distance=TARGET_PHOS_PHOS_DIST):
+
+    d = space.map_bond(partial(displacement_fn))
+    bonded_nbrs_i = bonded_nbrs[:, 0]
+    bonded_nbrs_j = bonded_nbrs[:, 1]
+
+    def compute_backbone_distances(body):
+        Q = body.orientation
+        back_base_vectors = utils.Q_to_back_base(Q)
+        back_sites = body.center + com_to_backbone * back_base_vectors
+        dr_back = d(back_sites[bonded_nbrs_i], back_sites[bonded_nbrs_j])
+        r_back = jnp.linalg.norm(dr_back, axis=1)
+        return r_back
+
+    def loss_fn(body):
+        backbone_distances = compute_backbone_distances(body)
+        return jnp.sum(((backbone_distances - target_distance))**2)
+
+    return compute_backbone_distances, loss_fn
+
 
 if __name__ == "__main__":
     pass

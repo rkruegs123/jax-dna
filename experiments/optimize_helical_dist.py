@@ -53,8 +53,9 @@ def run():
     dt = 5e-3
     t_kelvin = utils.DEFAULT_TEMP
     kT = utils.get_kt(t_kelvin)
-    gamma = rigid_body.RigidBody(center=jnp.array([kT/2.5], dtype=jnp.float64),
-                                 orientation=jnp.array([kT/7.5], dtype=jnp.float64))
+    gamma_scale = 1000
+    gamma = rigid_body.RigidBody(center=jnp.array([kT/2.5 * gamma_scale], dtype=jnp.float64),
+                                 orientation=jnp.array([kT/7.5 * gamma_scale], dtype=jnp.float64))
     mass = rigid_body.RigidBody(center=jnp.array([utils.nucleotide_mass], dtype=jnp.float64),
                                 orientation=jnp.array([utils.moment_of_inertia], dtype=jnp.float64))
 
@@ -119,7 +120,7 @@ def run():
 
     test_output_path = "test_output.txt"
     test_loss_path = "test_loss.txt"
-    
+
     for i in tqdm(range(n_epochs)):
         key, iter_key = random.split(key)
         iter_key, eq_key = random.split(iter_key)
@@ -135,7 +136,6 @@ def run():
 
         avg_grads = tree_util.tree_map(jnp.mean, grads)
 
-
         iter_str = f"----- Iteration {i} -----\n"
         iter_str += f"- Time: {iter_time}\n"
         iter_str += f"- Avg. Loss: {jnp.mean(losses)}\n"
@@ -146,7 +146,7 @@ def run():
 
         with open(test_loss_path, "a") as f:
             f.write(f"{jnp.mean(losses)}\n")
-        
+
 
         updates, opt_state = optimizer.update(avg_grads, opt_state, params)
         params = optax.apply_updates(params, updates)
