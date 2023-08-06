@@ -54,7 +54,7 @@ def get_helical_diameter_loss_fn(bp_pairs, displacement_fn, com_to_backbone,
 # Table 1.3, Pg 27
 TARGET_PHOS_PHOS_DIST = angstroms_to_oxdna_length(7.0)
 
-def get_backbone_distance_loss_fn(bonded_nbrs, displacement_fn, com_to-backbone,
+def get_backbone_distance_loss_fn(bonded_nbrs, displacement_fn, com_to_backbone,
                                   target_distance=TARGET_PHOS_PHOS_DIST):
 
     d = space.map_bond(partial(displacement_fn))

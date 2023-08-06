@@ -12,7 +12,7 @@ from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util
 from jax_md import space, simulate, rigid_body
 
 from jax_dna.common import utils, topology, trajectory, checkpoint
-from jax_dna.loss import geometry
+from jax_dna.loss import geometry, pitch, propeller
 from jax_dna.dna1 import model
 from jax_dna import dna1, loss
 
@@ -38,9 +38,25 @@ def run():
     top_info = topology.TopologyInfo(top_path, reverse_direction=True)
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
-    # note: we don't include the end base pairs due to fraying
-    _, helical_diam_loss_fn = geometry.get_helical_diameter_loss_fn(
+    # Get the loss function terms
+
+    ## note: we don't include the end base pairs due to fraying
+    compute_helical_diameters, helical_diam_loss_fn = geometry.get_helical_diameter_loss_fn(
         top_info.bonded_nbrs[1:-1], displacement_fn, model.com_to_backbone)
+
+    compute_bb_distances, bb_dist_loss_fn = geometry.get_backbone_distance_loss_fn(
+        top_info.bonded_nbrs, displacement_fn, model.com_to_backbone)
+
+    simple_helix_quartets = jnp.array([
+        [1, 14, 2, 13], [2, 13, 3, 12],
+        [3, 12, 4, 11], [4, 11, 5, 10],
+        [5, 10, 6, 9], [6, 9, 7, 8]])
+    compute_avg_pitch, pitch_loss_fn = pitch.get_pitch_loss_fn(
+        simple_helix_quartets, displacement_fn, model.com_to_hb)
+
+    simple_helix_bps = jnp.array([[1, 14], [2, 13], [3, 12],
+                                  [4, 11], [5, 10], [6, 9]])
+    compute_avg_p_twist, p_twist_loss_fn = propeller.get_propeller_loss_fn(simple_helix_bps)
 
 
     conf_path = sys_basedir / "bound_relaxed.conf"
@@ -81,34 +97,47 @@ def run():
     eq_fn = lambda params, key: sim_fn(params, init_body, num_eq_steps, key)
     eq_fn = jit(eq_fn)
 
+    def body_metadata_fn(body):
+        helical_diams = compute_helical_diameters(body)
+        mean_helical_diam = jnp.mean(helical_diams)
+
+        bb_dists = compute_bb_distances(body)
+        mean_bb_dist = jnp.mean(bb_dists)
+
+        mean_pitch = compute_avg_pitch(body)
+
+        mean_p_twist = compute_avg_p_twist(body)
+
+        return (mean_helical_diam, mean_bb_dist, mean_pitch, mean_p_twist)
+
+
     @jit
     def body_loss_fn(body):
-        return helical_diam_loss_fn(body)
+        loss = helical_diam_loss_fn(body) + bb_dist_loss_fn(body) \
+               + pitch_loss_fn(body) + p_twist_loss_fn(body)
+        return loss, body_metadata_fn(body)
 
     # note: assumes trajectory begins in equilibrium
     sample_every = 500
     @jit
     def traj_loss_fn(traj):
         states_to_eval = traj[::sample_every]
-        losses = vmap(body_loss_fn)(states_to_eval)
-        return losses.mean()
+        losses, all_metadata = vmap(body_loss_fn)(states_to_eval)
+        return losses.mean(), all_metadata
 
     num_steps = 25000
     @jit
     def loss_fn(params, eq_body, key):
         fin_pos, traj = sim_fn(params, eq_body, num_steps, key)
-        loss = traj_loss_fn(traj)
-        return loss
-    grad_fn = value_and_grad(loss_fn)
+        loss, metadata = traj_loss_fn(traj)
+        return loss, metadata
+    grad_fn = value_and_grad(loss_fn, has_aux=True)
     batched_grad_fn = jit(vmap(grad_fn, (None, 0, 0)))
 
 
     params = deepcopy(model.EMPTY_BASE_PARAMS)
-    params["fene"]["eps_backbone"] = model.DEFAULT_BASE_PARAMS["fene"]["eps_backbone"]w
-    params["fene"]["delta_backbone"] = model.DEFAULT_BASE_PARAMS["fene"]["delta_backbone"]w
-    params["fene"]["r0_backbone"] = model.DEFAULT_BASE_PARAMS["fene"]["r0_backbone"]w
-    params["stacking"]["eps_stack_base"] = model.DEFAULT_BASE_PARAMS["stacking"]["eps_stack_base"]
-    params["stacking"]["a_stack_4"] = model.DEFAULT_BASE_PARAMS["stacking"]["a_stack_4"]
+    params["fene"] = model.DEFAULT_BASE_PARAMS["fene"]
+    params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
     lr = 0.01
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
@@ -130,15 +159,24 @@ def run():
 
         batch_keys = random.split(iter_key, batch_size)
         start = time.time()
-        losses, grads = batched_grad_fn(params, eq_bodies, batch_keys)
+        (losses, batched_metadata), grads = batched_grad_fn(params, eq_bodies, batch_keys)
         end = time.time()
         iter_time = end - start
 
         avg_grads = tree_util.tree_map(jnp.mean, grads)
 
+        avg_helical_diam = jnp.mean(batched_metadata[:, 0])
+        avg_bb_dist = jnp.mean(batched_metadata[:, 1])
+        avg_pitch = jnp.mean(batched_metadata[:, 2])
+        avg_p_twist = jnp.mean(batched_metadata[:, 3])
+
         iter_str = f"----- Iteration {i} -----\n"
         iter_str += f"- Time: {iter_time}\n"
         iter_str += f"- Avg. Loss: {jnp.mean(losses)}\n"
+        iter_str += f"- Avg. BB Dist: {avg_bb_dist} (target: geometry.TARGET_PHOS_PHOS_DIST)\n"
+        iter_str += f"- Avg. Helical Diam: {avg_helical_diam} (target: geometry.TARGET_HELICAL_DIAMETER)\n"
+        iter_str += f"- Avg. Pitch: {avg_pitch} (target: pitch.TARGET_AVG_PITCH)\n"
+        iter_str += f"- Avg. Prop. Twist: {avg_p_twist} (target: propeller.TARGET_PROPELLER_TWIST)\n"
         iter_str += f"- Params: {pprint.pformat(params, indent=4)}\n"
         iter_str += f"- Avg. Grads: {pprint.pformat(avg_grads, indent=4)}\n\n"
         with open(test_output_path, "a") as f:

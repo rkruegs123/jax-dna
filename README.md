@@ -18,6 +18,7 @@ August 4, 2023
 
 - once we do these things, we have a couple of prioriites
 1. Redo an optimization at the correct gamma, check that tihngs are OK
+- note that the mean of residuals isn't the same as the residual o fth emean
 2. Then, there are three priorities:
 - (i) differentiabl etrajectory reweighting
 - (ii) cgDNA reference frame and loss
