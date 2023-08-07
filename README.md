@@ -22,6 +22,7 @@ August 4, 2023
 2. Then, there are three priorities:
 - (i) differentiabl etrajectory reweighting
 - (ii) cgDNA reference frame and loss
+  - note: on caym1 for this. Probably don't need the a argument because always a=1
 - (iii) oxDNA 1.5 and 2.0
 
 Also note that, as it stands, loss functions kind of assume a linear rigid body nucleotide

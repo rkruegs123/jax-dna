@@ -94,24 +94,27 @@ class base:
         self.frame = eframe(p, ori) # note: an instance of eframe
 
 
-###########################
-# Inverse (m1 stands for -1) of the Cayley transformation which maps a vector to a rotation (SO(3))
-# a = 1 => variables are in radians
+def caym1(A, a):
+    """
+    Computes the inverse of the Cayley transormation, which maps
+    a vector to an SO(3) rotation. Note that m1 stands for -1.
 
-def caym1(A,a) :
-    c = 2*a/(1+jnp.trace(A))
-    v = jnp.zeros(3,dtype=float)
-    M = A -A.transpose()
+    A value of a=1 indicates that variables are in radians
 
-    # note: v is vect(A-A.transposed())
-    # vect(M), with M skew is defined as v = (M(2,1), M(0,2), M(1,0))
-    # see, e.g., Daiva Petkevičiūtė thesis (Maddocks student)
+    Note that v is vect(A - A.transposed())
+    - vect(M), with M skew is defined as v = (M(2,1), M(0,2), M(1,0))
+    - see Daiva Petkevičiūtė thesis (Maddocks' student)
+    """
+    c = 2 * a / (1+jnp.trace(A))
+    v = jnp.zeros(3, dtype=float)
+    M = A - A.transpose()
 
     v = v.at[0].set(M[2][1].real)
     v = v.at[1].set(M[0][2].real)
     v = v.at[2].set(M[1][0].real)
     t = c*v
     return t
+
 
 #############################
 # base pair class. Stores two bases, a base pair frame (which is a eframe object)
