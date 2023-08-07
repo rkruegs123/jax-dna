@@ -11,18 +11,21 @@ August 4, 2023
   - Slower diffusion for stable gradients. Find some middle ground between fast and slow
     - DONE
   - log avg. helical distance w.r.t. target helical distance
+    - DONE
   - add other loss terms, e.g. bb distance
-    - done
+    - DONE
   - experiment with gradient norm. can we tree_map jnp.linalg.norm?
     - holding off for now
 
 - once we do these things, we have a couple of prioriites
 1. Redo an optimization at the correct gamma, check that tihngs are OK
 - note that the mean of residuals isn't the same as the residual o fth emean
+- TODO: check. Note how different the gradients are b/w rescale factor of 1000 and 2500 (or 3000?). Maybe we really are getting blowup...
 2. Then, there are three priorities:
 - (i) differentiabl etrajectory reweighting
 - (ii) cgDNA reference frame and loss
-  - note: on caym1 for this. Probably don't need the a argument because always a=1
+  - prelim refactor. Can maybe get rid of eframe. Should also add a new experment that optimizes KL divergence...
+  - note that we also haven't made it model agnostic, and we assume  aparticular shapae at th emoment...
 - (iii) oxDNA 1.5 and 2.0
 
 Also note that, as it stands, loss functions kind of assume a linear rigid body nucleotide
