@@ -32,12 +32,14 @@ TZU_C_PU = jnp.array([0, 5.11, 0.0])
 TZU_C_PI = jnp.array([0, 5.11, 0.0])
 
 
-class oxdna_frame:
+# FIXME: is there any place to use a displacement function?
+
+class OxdnaFrame:
     """
     Class for storing oxDNA coordinates.
     """
     def __init__(self, c, bv, n):
-        self.center = c*OX_TO_ANG
+        self.center = c * OX_TO_ANG
         self.base_v = bv
         self.normal = n
         self.base_norv = jnp.cross(n,bv)
@@ -53,7 +55,7 @@ class oxdna_frame:
         hbond = self.center + HB_X[tid] * self.base_v
         return (back_bone, hbond, stack)
 
-class eframe:
+class EFrame:
     """
     Class for representing euler coordinates
     """
@@ -61,7 +63,7 @@ class eframe:
         self.pos = p # note: np array
         self.orientation = ori # note: np matrix
 
-class int_coord:
+class IntCoord:
     """
     Class for representing internal (intra or inter) coordinates
     """
@@ -69,13 +71,13 @@ class int_coord:
         self.tran = tr # np array
         self.rot = rot # np array
 
-class base:
+class Base:
     """
     A class for representing a nucleotide base, i.e.
     one nucleotide and its frames
     """
     def __init__(self, oxc, ty):
-        self.oxframe = oxc # note: an instance of oxdna_frame
+        self.oxframe = oxc # note: an instance of OxdnaFrame
         self.type = ty
 
         y = -oxc.base_v
@@ -91,105 +93,70 @@ class base:
                       oxc.center - jnp.dot(ori, TZU_C_PU),
                       oxc.center - jnp.dot(ori, TZU_C_PI))
 
-        self.frame = eframe(p, ori) # note: an instance of eframe
+        self.frame = EFrame(p, ori) # note: an instance of EFrame
 
 
-def caym1(A, a):
+def caym1(A):
     """
     Computes the inverse of the Cayley transormation, which maps
-    a vector to an SO(3) rotation. Note that m1 stands for -1.
-
-    A value of a=1 indicates that variables are in radians
+    a vector to an SO(3) rotation. Note that m1 stands for -1. This
+    function assumes radians.
 
     Note that v is vect(A - A.transposed())
     - vect(M), with M skew is defined as v = (M(2,1), M(0,2), M(1,0))
     - see Daiva Petkevičiūtė thesis (Maddocks' student)
     """
-    c = 2 * a / (1+jnp.trace(A))
+    c = 2 * 1 / (1+jnp.trace(A))
     v = jnp.zeros(3, dtype=float)
     M = A - A.transpose()
 
     v = v.at[0].set(M[2][1].real)
     v = v.at[1].set(M[0][2].real)
     v = v.at[2].set(M[1][0].real)
+
     t = c*v
     return t
 
 
-#############################
-# base pair class. Stores two bases, a base pair frame (which is a eframe object)
-# and the intra coordinates
-class base_pair:
-    def __init__(self,b1,b2) :
-        self.base_W = b1 #+
-        self.base_C = b2 #-
+class BasePair:
+    """
+    Class for representing a base pair.
+
+    Stores two bases, a base pair frame (an instance of EFrame),
+    and the intra coordinates
+    """
+    def __init__(self, b1, b2):
+        self.base_W = b1 # +
+        self.base_C = b2 # -
 
         # flip the Crick base
-        F = jnp.zeros((3,3), dtype=float)
+        F = jnp.zeros((3, 3), dtype=float)
         F = F.at[0,0].set(1.)
         F = F.at[1,1].set(-1.)
         F = F.at[2,2].set(-1.)
+
         # compute average bp frame
         p = (b1.frame.pos + b2.frame.pos)*0.5
-        DC = jnp.dot(b2.frame.orientation, F) #flipped Crick frame
+        DC = jnp.dot(b2.frame.orientation, F) # flipped Crick frame
         A2 = jnp.dot(DC.transpose(), b1.frame.orientation)
-        # DC = np.dot(b1.frame.orientation,F)
-        # A2 = np.dot(DC.transpose(),b2.frame.orientation)
-        # A = linalg.sqrtm(A2) # note: A2 is always 3x3
         A = sqrtm3x3(A2)
         ori = jnp.dot(DC, A)
-        self.frame = eframe(p,ori)
+        self.frame = EFrame(p,ori)
 
         # compute intra coordinates
-        rot = caym1(A2,1)
-        tr = jnp.dot(self.frame.orientation.transpose(),b1.frame.pos-b2.frame.pos)
-        self.intra_coord = int_coord(tr.real, rot.real)
-
-#############################
-# junction class. Stores two base_pairs, a junction frame, and the inter coordinates (inter_coord)
-class junction:
-    def __init__(self, bp1, bp2) :
-        self.base_pair1 = bp1 # bp n
-        self.base_pair2 = bp2 # bp n+1
-
-        # compute average junction frame
-        p = (bp1.frame.pos + bp2.frame.pos)*0.5
-        A2 = jnp.dot(bp1.frame.orientation.transpose(), bp2.frame.orientation)
-        # A = linalg.sqrtm(A2) # note: A2 is always 3x3
-        A = sqrtm3x3(A2)
-        ori = jnp.dot(bp1.frame.orientation, A)
-        self.frame = eframe(p, ori)
-
-        # compute inter coordinates
-        rot = caym1(A2, 1)
-        tr = jnp.dot(self.frame.orientation.transpose(), bp2.frame.pos - bp1.frame.pos)
-        self.inter_coord = int_coord(tr.real, rot.real)
-
-##############################
-# read oxdna trajectory
-# XXXNOTE: There is no information on base pairs in topology file +
-# bp can potentially change runtime
-# for now I'm assuming standard order: (A)Nbp-1,Nbp-2,...,0(B)0,1,..,Nbp-1 (Nbp = Nb/2 number of base pairs)
-# XXXTODO: memory wise it's better to read AND print one snapshot at a time
-
-class topo:
-    def __init__(self, nid, sid, bty, do, up) :
-        self.id = nid
-        self.strand_id = sid
-        self.base_type = bty
-        self.down_id = do
-        self.up_id = up
+        rot = caym1(A2)
+        tr = jnp.dot(self.frame.orientation.transpose(), b1.frame.pos - b2.frame.pos) # FIXME: use displacement function?
+        self.intra_coord = IntCoord(tr.real, rot.real)
 
 
-
-def get_reader(num_bases, num_base_pairs, num_steps, seq): # FIXME: don't need to know the number of steps
+def get_reader(num_bases, num_base_pairs, seq):
     seq_mapper = {"A": 0, "C": 1, "G": 2, "T": 3}
     seq_ids = jnp.array([seq_mapper[nuc] for nuc in seq])
 
     def compute_bp_prop_twist(i, coms, bvs, normals):
-        b1 = base(oxdna_frame(coms[i], bvs[i], normals[i]), seq_ids[i])
-        b2 = base(oxdna_frame(coms[num_bases-i-1], bvs[num_bases-i-1], normals[num_bases-i-1]), seq_ids[num_bases-i-1])
-        bp = base_pair(b1, b2)
+        b1 = Base(OxdnaFrame(coms[i], bvs[i], normals[i]), seq_ids[i])
+        b2 = Base(OxdnaFrame(coms[num_bases-i-1], bvs[num_bases-i-1], normals[num_bases-i-1]), seq_ids[num_bases-i-1])
+        bp = BasePair(b1, b2)
         prop_twist = bp.intra_coord.rot[1]
         return prop_twist
     compute_all_bp_prop_twists = vmap(compute_bp_prop_twist, (0, None, None, None))
@@ -201,8 +168,8 @@ def get_reader(num_bases, num_base_pairs, num_steps, seq): # FIXME: don't need t
         all_prop_twists = compute_all_bp_prop_twists(jnp.arange(num_base_pairs), coms, bvs, normals)
         return all_prop_twists
 
-    def reader(trajectory): # Trajectory is a RigidBody of length num_steps
+    def reader(trajectory): # trajectory is a RigidBody
         traj_prop_twists = vmap(time_step_fn)(trajectory)
-        return (180/jnp.pi)*traj_prop_twists
-        # return traj_prop_twists
+        traj_prop_twists_deg = (180/jnp.pi)*traj_prop_twists
+        return traj_prop_twists_deg
     return reader
