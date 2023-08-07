@@ -1,16 +1,15 @@
 import pdb
 
 import jax.numpy as jnp
-# from jax.scipy import linalg
 from jax import vmap
 
-from utils import Q_to_back_base, Q_to_base_normal
-import denman_beavers
+from jax_dna.common.utils import Q_to_back_base, Q_to_base_normal
+import jax_dna.cgdna.denman_beavers
+
 
 sqrtm3x3 = denman_beavers.get_denman_beavers(3, 25)
 
-
-OX_TO_ANG = 8.518 # 1 oxdna unit = 8.518 angstrongs
+OX_TO_ANG = utils.ang_per_oxdna_length
 
 # Parameteres to map oxdna coordinates to interaction centers
 # A = 0; C = 1, G = 2, T = 3
@@ -23,8 +22,8 @@ BB_Y = [0.*OX_TO_ANG, 0.*OX_TO_ANG, 0.*OX_TO_ANG, 0.*OX_TO_ANG]
 
 
 
-TZU_HB_PU = jnp.array([0,0.795,0.0])
-TZU_HB_PI = jnp.array([0,2.5885,0.0])
+TZU_HB_PU = jnp.array([0, 0.795, 0.0])
+TZU_HB_PI = jnp.array([0, 2.5885, 0.0])
 
 
 # parameter to map nucleotide centers to Euler translations
@@ -84,9 +83,9 @@ class Base:
         z = -oxc.normal
         x = -oxc.base_norv
 
-        ori = jnp.column_stack((x,y,z))
+        ori = jnp.column_stack((x, y, z))
 
-        p = jnp.zeros(3,dtype=float)
+        p = jnp.zeros(3, dtype=float)
         # mapping to center of mass. Gives same result
 
         p = jnp.where((ty == 0) | (ty == 2),
@@ -114,7 +113,7 @@ def caym1(A):
     v = v.at[1].set(M[0][2].real)
     v = v.at[2].set(M[1][0].real)
 
-    t = c*v
+    t = c * v
     return t
 
 
@@ -131,17 +130,17 @@ class BasePair:
 
         # flip the Crick base
         F = jnp.zeros((3, 3), dtype=float)
-        F = F.at[0,0].set(1.)
-        F = F.at[1,1].set(-1.)
-        F = F.at[2,2].set(-1.)
+        F = F.at[0, 0].set(1.)
+        F = F.at[1, 1].set(-1.)
+        F = F.at[2, 2].set(-1.)
 
         # compute average bp frame
-        p = (b1.frame.pos + b2.frame.pos)*0.5
+        p = (b1.frame.pos + b2.frame.pos) * 0.5
         DC = jnp.dot(b2.frame.orientation, F) # flipped Crick frame
         A2 = jnp.dot(DC.transpose(), b1.frame.orientation)
         A = sqrtm3x3(A2)
         ori = jnp.dot(DC, A)
-        self.frame = EFrame(p,ori)
+        self.frame = EFrame(p, ori)
 
         # compute intra coordinates
         rot = caym1(A2)
@@ -170,6 +169,6 @@ def get_reader(num_bases, num_base_pairs, seq):
 
     def reader(trajectory): # trajectory is a RigidBody
         traj_prop_twists = vmap(time_step_fn)(trajectory)
-        traj_prop_twists_deg = (180/jnp.pi)*traj_prop_twists
+        traj_prop_twists_deg = (180 / jnp.pi) * traj_prop_twists
         return traj_prop_twists_deg
     return reader
