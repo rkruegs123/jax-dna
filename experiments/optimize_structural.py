@@ -50,7 +50,7 @@ def run():
     simple_helix_quartets = jnp.array([
         [1, 14, 2, 13], [2, 13, 3, 12],
         [3, 12, 4, 11], [4, 11, 5, 10],
-        [5, 10, 6, 9], [6, 9, 7, 8]])
+        [5, 10, 6, 9]])
     compute_avg_pitch, pitch_loss_fn = pitch.get_pitch_loss_fn(
         simple_helix_quartets, displacement_fn, model.com_to_hb)
 
@@ -69,7 +69,7 @@ def run():
     dt = 5e-3
     t_kelvin = utils.DEFAULT_TEMP
     kT = utils.get_kt(t_kelvin)
-    gamma_scale = 1000
+    gamma_scale = 2500
     gamma = rigid_body.RigidBody(center=jnp.array([kT/2.5 * gamma_scale], dtype=jnp.float64),
                                  orientation=jnp.array([kT/7.5 * gamma_scale], dtype=jnp.float64))
     mass = rigid_body.RigidBody(center=jnp.array([utils.nucleotide_mass], dtype=jnp.float64),
@@ -93,7 +93,7 @@ def run():
         fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_steps))
         return fin_state.position, traj
 
-    num_eq_steps = 5000
+    num_eq_steps = 10000
     eq_fn = lambda params, key: sim_fn(params, init_body, num_eq_steps, key)
     eq_fn = jit(eq_fn)
 
@@ -118,14 +118,14 @@ def run():
         return loss, body_metadata_fn(body)
 
     # note: assumes trajectory begins in equilibrium
-    sample_every = 500
+    sample_every = 100
     @jit
     def traj_loss_fn(traj):
         states_to_eval = traj[::sample_every]
         losses, all_metadata = vmap(body_loss_fn)(states_to_eval)
         return losses.mean(), all_metadata
 
-    num_steps = 25000
+    num_steps = 50000
     @jit
     def loss_fn(params, eq_body, key):
         fin_pos, traj = sim_fn(params, eq_body, num_steps, key)
@@ -147,8 +147,10 @@ def run():
     key = random.PRNGKey(0)
     mapped_eq_fn = jit(vmap(eq_fn, (None, 0)))
 
-    test_output_path = "test_output.txt"
-    test_loss_path = "test_loss.txt"
+    output_path = "test_output.txt"
+    loss_path = "test_loss.txt"
+    params_path = "test_params.txt"
+    grads_path = "test_grads.txt"
 
     for i in tqdm(range(n_epochs)):
         key, iter_key = random.split(key)
@@ -165,26 +167,29 @@ def run():
 
         avg_grads = tree_util.tree_map(jnp.mean, grads)
 
-        avg_helical_diam = jnp.mean(batched_metadata[:, 0])
-        avg_bb_dist = jnp.mean(batched_metadata[:, 1])
-        avg_pitch = jnp.mean(batched_metadata[:, 2])
-        avg_p_twist = jnp.mean(batched_metadata[:, 3])
+        avg_helical_diam = jnp.mean(batched_metadata[0])
+        avg_bb_dist = jnp.mean(batched_metadata[1])
+        avg_pitch = jnp.mean(batched_metadata[2])
+        avg_p_twist = jnp.mean(batched_metadata[3])
 
         iter_str = f"----- Iteration {i} -----\n"
         iter_str += f"- Time: {iter_time}\n"
         iter_str += f"- Avg. Loss: {jnp.mean(losses)}\n"
-        iter_str += f"- Avg. BB Dist: {avg_bb_dist} (target: geometry.TARGET_PHOS_PHOS_DIST)\n"
-        iter_str += f"- Avg. Helical Diam: {avg_helical_diam} (target: geometry.TARGET_HELICAL_DIAMETER)\n"
-        iter_str += f"- Avg. Pitch: {avg_pitch} (target: pitch.TARGET_AVG_PITCH)\n"
-        iter_str += f"- Avg. Prop. Twist: {avg_p_twist} (target: propeller.TARGET_PROPELLER_TWIST)\n"
-        iter_str += f"- Params: {pprint.pformat(params, indent=4)}\n"
-        iter_str += f"- Avg. Grads: {pprint.pformat(avg_grads, indent=4)}\n\n"
-        with open(test_output_path, "a") as f:
+        iter_str += f"- Avg. BB Dist: {avg_bb_dist} (target: {geometry.TARGET_PHOS_PHOS_DIST})\n"
+        iter_str += f"- Avg. Helical Diam: {avg_helical_diam} (target: {geometry.TARGET_HELICAL_DIAMETER})\n"
+        iter_str += f"- Avg. Pitch: {avg_pitch} (target: {pitch.TARGET_AVG_PITCH})\n"
+        iter_str += f"- Avg. Prop. Twist: {avg_p_twist} (target: {propeller.TARGET_PROPELLER_TWIST})\n\n"
+        with open(output_path, "a") as f:
             f.write(iter_str)
 
-        with open(test_loss_path, "a") as f:
+        with open(loss_path, "a") as f:
             f.write(f"{jnp.mean(losses)}\n")
 
+        with open(grads_path, "a") as f:
+            f.write(f"{pprint.pformat(avg_grads, indent=4)}\n")
+
+        with open(params_path, "a") as f:
+            f.write(f"{pprint.pformat(params, indent=4)}\n")
 
         updates, opt_state = optimizer.update(avg_grads, opt_state, params)
         params = optax.apply_updates(params, updates)

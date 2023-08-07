@@ -52,7 +52,7 @@ def get_helical_diameter_loss_fn(bp_pairs, displacement_fn, com_to_backbone,
 
 # DNA Structure and Function, R. Sinden, 1st ed
 # Table 1.3, Pg 27
-TARGET_PHOS_PHOS_DIST = angstroms_to_oxdna_length(7.0)
+TARGET_PHOS_PHOS_DIST = utils.angstroms_to_oxdna_length(7.0)
 
 def get_backbone_distance_loss_fn(bonded_nbrs, displacement_fn, com_to_backbone,
                                   target_distance=TARGET_PHOS_PHOS_DIST):
