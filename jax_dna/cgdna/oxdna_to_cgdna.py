@@ -4,7 +4,8 @@ import jax.numpy as jnp
 from jax import vmap
 
 from jax_dna.common.utils import Q_to_back_base, Q_to_base_normal
-import jax_dna.cgdna.denman_beavers
+from jax_dna.common import utils
+from jax_dna.cgdna import denman_beavers
 
 
 sqrtm3x3 = denman_beavers.get_denman_beavers(3, 25)
