@@ -69,13 +69,17 @@ def run():
     dt = 5e-3
     t_kelvin = utils.DEFAULT_TEMP
     kT = utils.get_kt(t_kelvin)
+    gamma_eq = rigid_body.RigidBody(
+        center=jnp.array([kT/2.5], dtype=jnp.float64),
+        orientation=jnp.array([kT/7.5], dtype=jnp.float64))
     gamma_scale = 2500
-    gamma = rigid_body.RigidBody(center=jnp.array([kT/2.5 * gamma_scale], dtype=jnp.float64),
-                                 orientation=jnp.array([kT/7.5 * gamma_scale], dtype=jnp.float64))
+    gamma_opt = rigid_body.RigidBody(
+        center=gamma_eq.center * gamma_scale,
+        orientation=gamma_eq.orientation * gamma_scale)
     mass = rigid_body.RigidBody(center=jnp.array([utils.nucleotide_mass], dtype=jnp.float64),
                                 orientation=jnp.array([utils.moment_of_inertia], dtype=jnp.float64))
 
-    def sim_fn(params, body, n_steps, key):
+    def sim_fn(params, body, n_steps, key, gamma):
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
         init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
         init_state = init_fn(key, body, mass=mass, seq=seq_oh,
@@ -94,7 +98,7 @@ def run():
         return fin_state.position, traj
 
     num_eq_steps = 10000
-    eq_fn = lambda params, key: sim_fn(params, init_body, num_eq_steps, key)
+    eq_fn = lambda params, key: sim_fn(params, init_body, num_eq_steps, key, gamma_eq)
     eq_fn = jit(eq_fn)
 
     def body_metadata_fn(body):
@@ -128,7 +132,7 @@ def run():
     num_steps = 50000
     @jit
     def loss_fn(params, eq_body, key):
-        fin_pos, traj = sim_fn(params, eq_body, num_steps, key)
+        fin_pos, traj = sim_fn(params, eq_body, num_steps, key, gamma_opt)
         loss, metadata = traj_loss_fn(traj)
         return loss, metadata
     grad_fn = value_and_grad(loss_fn, has_aux=True)
