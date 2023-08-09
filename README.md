@@ -6,6 +6,12 @@ To install jax-md rigid body check in locally, do FIXME. Must have this to run c
 
 ## Misc. Notes
 
+August 8, 2023
+- why is the reference state generation so slow for DiffTRE? Need to benchmark this a bit, progress bar, the whole thing...
+- then, would be really cool to try it on persistence length
+- but also need to read the rest o fth epaper. "Effective sample size" isn't exactly working as expected... loss doesn't decrease as monotonically as expected...
+- also need to do a lot more logging...
+
 August 4, 2023
 - Some things to add:
   - Slower diffusion for stable gradients. Find some middle ground between fast and slow
@@ -26,6 +32,7 @@ August 4, 2023
 - (ii) cgDNA reference frame and loss
   - prelim refactor. Can maybe get rid of eframe. Should also add a new experment that optimizes KL divergence...
   - note that we also haven't made it model agnostic, and we assume  aparticular shapae at th emoment...
+  - ah, also note that our experiment for cgDNA as it stands still jsut does fene and stacking... not HB. Also, need  to do GC vs. AT for HB. But maybe good enough fo rnow?
 - (iii) oxDNA 1.5 and 2.0
 
 Also note that, as it stands, loss functions kind of assume a linear rigid body nucleotide

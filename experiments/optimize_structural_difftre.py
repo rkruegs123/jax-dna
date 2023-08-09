@@ -20,7 +20,7 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 
 
-checkpoint_every = 10
+checkpoint_every = None
 if checkpoint_every is None:
     scan = jax.lax.scan
 else:
