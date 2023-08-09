@@ -90,9 +90,16 @@ def run():
                                               seq=seq_oh,
                                               bonded_nbrs=top_info.bonded_nbrs,
                                               unbonded_nbrs=top_info.unbonded_nbrs.T)
-        ref_energies = [energy_fn(body) for body in ref_states]
+        energy_fn = jit(energy_fn)
 
-        return ref_states, jnp.array(ref_energies)
+        # ref_energies = [energy_fn(body) for body in ref_states]
+        # return ref_states, jnp.array(ref_energies)
+
+        ref_energies = vmap(energy_fn)(ref_states)
+        return ref_states, ref_energies
+
+
+
 
     # Construct the loss function terms
 
@@ -125,11 +132,12 @@ def run():
                                               seq=seq_oh,
                                               bonded_nbrs=top_info.bonded_nbrs,
                                               unbonded_nbrs=top_info.unbonded_nbrs.T)
+        energy_fn = jit(energy_fn)
         new_energies = vmap(energy_fn)(ref_states)
         diffs = new_energies - ref_energies # element-wise subtraction
         boltzs = jnp.exp(-beta * diffs)
-        denom = jnp.sum(boltz)
-        weights = boltz / denom
+        denom = jnp.sum(boltzs)
+        weights = boltzs / denom
 
         # Compute the observable
         # FIXME: only considering ptwist for now. Have to extend to multiple observables
@@ -143,12 +151,13 @@ def run():
 
         return (expected_ptwist - propeller.TARGET_PROPELLER_TWIST)**2, n_eff
     grad_fn = value_and_grad(loss_fn, has_aux=True)
+    grad_fn = jit(grad_fn)
 
     # Setup the optimization
     params = deepcopy(model.EMPTY_BASE_PARAMS)
     params["fene"] = model.DEFAULT_BASE_PARAMS["fene"]
     params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
-    lr = 0.01
+    lr = 0.001
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
 
