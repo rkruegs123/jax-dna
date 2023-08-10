@@ -5,6 +5,8 @@ import functools
 import pprint
 from tqdm import tqdm
 import time
+import matplotlib.pyplot as plt
+import numpy as onp
 
 import optax
 import jax.numpy as jnp
@@ -101,8 +103,8 @@ def run():
         return traj
 
 
-    n_eq_steps = 10000
-    n_sample_steps = 100000
+    n_eq_steps = 5000
+    n_sample_steps = 50000
     sample_every = 500
     assert(n_sample_steps % sample_every == 0)
     n_ref_states = n_sample_steps // sample_every
@@ -194,21 +196,43 @@ def run():
     init_body = conf_info.get_states()[0]
     print(f"Generating initial reference states and energies...")
     ref_states, ref_energies = get_ref_states(params, init_body, key)
-    pdb.set_trace()
 
-    min_n_eff = int(n_ref_states * 0.9)
+    min_n_eff = int(n_ref_states * 0.95)
+    all_losses = list()
+    all_n_effs = list()
+    all_ref_losses = list()
+    all_ref_times = list()
+    plot_every = 10
     for i in tqdm(range(n_epochs)):
         (loss, n_eff), grads = grad_fn(params, ref_states, ref_energies)
+
+        if i == 0:
+            all_ref_losses.append(loss)
+            all_ref_times.append(i)
+
         if n_eff < min_n_eff:
             print(f"Resampling reference states...")
             key, split = random.split(key)
             ref_states, ref_energies = get_ref_states(params, ref_states[-1], split)
             (loss, n_eff), grads = grad_fn(params, ref_states, ref_energies)
 
+            all_ref_losses.append(loss)
+            all_ref_times.append(i)
+
+
+        all_losses.append(loss)
+        all_n_effs.append(n_eff)
+
+
         print(f"Loss: {loss}")
         print(f"Effective sample size: {n_eff}")
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
+
+        if i % plot_every == 0:
+            plt.plot(onp.arange(i+1), all_losses, linestyle="--")
+            plt.scatter(all_ref_times, all_ref_losses, marker='o')
+            plt.savefig(f"difftre_iter{i}.png")
 
 
 if __name__ == "__main__":
