@@ -35,6 +35,7 @@ August 4, 2023
   - ah, also note that our experiment for cgDNA as it stands still jsut does fene and stacking... not HB. Also, need  to do GC vs. AT for HB. But maybe good enough fo rnow?
 - (iii) oxDNA 1.5 and 2.0
 
+
 Also note that, as it stands, loss functions kind of assume a linear rigid body nucleotide
 
 

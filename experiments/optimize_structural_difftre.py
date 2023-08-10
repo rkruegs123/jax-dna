@@ -8,7 +8,7 @@ import time
 
 import optax
 import jax.numpy as jnp
-from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util
+from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util, lax
 from jax_md import space, simulate, rigid_body
 
 from jax_dna.common import utils, topology, trajectory, checkpoint
@@ -22,11 +22,14 @@ config.update("jax_enable_x64", True)
 
 checkpoint_every = None
 if checkpoint_every is None:
-    scan = jax.lax.scan
+    scan = lax.scan
 else:
     scan = functools.partial(checkpoint.checkpoint_scan,
                              checkpoint_every=checkpoint_every)
 
+
+def tree_stack(trees):
+    return tree_util.tree_map(lambda *v: jnp.stack(v), *trees)
 
 def run():
 
@@ -63,6 +66,7 @@ def run():
                              bonded_nbrs=top_info.bonded_nbrs,
                              unbonded_nbrs=top_info.unbonded_nbrs.T)
 
+
         @jit
         def scan_fn(state, step):
             state = step_fn(state,
@@ -71,8 +75,31 @@ def run():
                             unbonded_nbrs=top_info.unbonded_nbrs.T)
             return state, state.position
 
+        # Option 1: Scan
+        start = time.time()
         fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_steps))
+        end = time.time()
+        print(f"Generating reference states took {end - start} seconds")
+
+        # Option 2: For loop
+        """
+        start = time.time()
+        trajectory = list()
+        state = init_state
+        for i in tqdm(range(n_steps)):
+            state = step_fn(state,
+                            seq=seq_oh,
+                            bonded_nbrs=top_info.bonded_nbrs,
+                            unbonded_nbrs=top_info.unbonded_nbrs.T)
+            trajectory.append(state.position)
+        traj = tree_stack(trajectory)
+        end = time.time()
+        print(f"Generating reference states took {end - start} seconds")
+        """
+
+
         return traj
+
 
     n_eq_steps = 10000
     n_sample_steps = 100000
@@ -167,6 +194,7 @@ def run():
     init_body = conf_info.get_states()[0]
     print(f"Generating initial reference states and energies...")
     ref_states, ref_energies = get_ref_states(params, init_body, key)
+    pdb.set_trace()
 
     min_n_eff = int(n_ref_states * 0.9)
     for i in tqdm(range(n_epochs)):
