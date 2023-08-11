@@ -28,6 +28,8 @@ else:
                              checkpoint_every=checkpoint_every)
 
 
+def tree_stack(trees):
+    return tree_util.tree_map(lambda *v: jnp.stack(v), *trees)
 
 def get_all_quartets(n_nucs_per_strand):
     s1_nucs = list(range(n_nucs_per_strand))
@@ -86,7 +88,19 @@ def run():
                             unbonded_nbrs=top_info.unbonded_nbrs.T)
             return state, state.position
 
-        fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_steps))
+        # Option 1: Scan. Memory-intensive, but required for batching
+        # fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_steps))
+
+        # Option 2: For loop. No batching.
+        trajectory = list()
+        state = init_state
+        for i in tqdm(range(n_steps)):
+            state = step_fn(state,
+                            seq=seq_oh,
+                            bonded_nbrs=top_info.bonded_nbrs,
+                            unbonded_nbrs=top_info.unbonded_nbrs.T)
+            trajectory.append(state.position)
+        traj = tree_stack(trajectory)
 
         return traj
 
@@ -97,9 +111,11 @@ def run():
     # n_sample_steps = int(5e2) # FIXME: testing
     # sample_every = int(1e1) # FIXME: testing
     assert(n_sample_steps % sample_every == 0)
+
+    # Option 1: batch (note: only compatible with Option 1 in sim_fn0
+    """
     batch_size = 2
     n_ref_states = n_sample_steps // sample_every * batch_size
-
     def get_ref_states(params, eq_init_body, key):
         key, eq_key = random.split(key)
 
@@ -140,8 +156,24 @@ def run():
 
         ref_energies = vmap(energy_fn)(ref_states)
         return ref_states, ref_energies
+    """
 
+    # Option 2: no batching (either compatible with Option 1 or Option 2 in sim_fn)
+    n_ref_states = n_sample_steps // sample_every
+    def get_ref_states(params, eq_init_body, key):
+        trajectory = sim_fn(params, eq_init_body, n_eq_steps + n_sample_steps, key)
+        eq_trajectory = trajectory[n_eq_steps:]
+        ref_states = eq_trajectory[::sample_every]
 
+        em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
+        energy_fn = lambda body: em.energy_fn(body,
+                                              seq=seq_oh,
+                                              bonded_nbrs=top_info.bonded_nbrs,
+                                              unbonded_nbrs=top_info.unbonded_nbrs.T)
+        energy_fn = jit(energy_fn)
+
+        ref_energies = vmap(energy_fn)(ref_states)
+        return ref_states, ref_energies
 
 
     # Construct the loss function
