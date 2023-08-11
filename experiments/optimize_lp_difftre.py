@@ -14,12 +14,11 @@ from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util, lax
 from jax_md import space, simulate, rigid_body
 
 from jax_dna.common import utils, topology, trajectory, checkpoint
-from jax_dna.loss import geometry, pitch, propeller
+from jax_dna.loss import persistence_length
 from jax_dna.dna1 import model
 
 from jax.config import config
 config.update("jax_enable_x64", True)
-
 
 checkpoint_every = None
 if checkpoint_every is None:
@@ -29,26 +28,38 @@ else:
                              checkpoint_every=checkpoint_every)
 
 
-def tree_stack(trees):
-    return tree_util.tree_map(lambda *v: jnp.stack(v), *trees)
+
+def get_all_quartets(n_nucs_per_strand):
+    s1_nucs = list(range(n_nucs_per_strand))
+    s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
+    s2_nucs.reverse()
+
+    bps = list(zip(s1_nucs, s2_nucs))
+    n_bps = len(s1_nucs)
+    all_quartets = list()
+    for i in range(n_bps-1):
+        bp1 = bps[i]
+        bp2 = bps[i+1]
+        all_quartets.append(bp1 + bp2)
+    return jnp.array(all_quartets, dtype=jnp.int32)
 
 def run():
 
     # Load the system
-    sys_basedir = Path("data/sys-defs/simple-helix")
-    top_path = sys_basedir / "sys.top"
+    sys_basedir = Path("data/sys-defs/persistence-length")
+    top_path = sys_basedir / "init.top"
     top_info = topology.TopologyInfo(top_path, reverse_direction=True)
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
-    conf_path = sys_basedir / "bound_relaxed.conf"
+    conf_path = sys_basedir / "relaxed.dat"
     conf_info = trajectory.TrajectoryInfo(
         top_info,
         read_from_file=True, traj_path=conf_path, reverse_direction=True
     )
+    init_body = conf_info.get_states()[0]
 
     # Setup utilities for simulation
     displacement_fn, shift_fn = space.free()
-
     dt = 5e-3
     t_kelvin = utils.DEFAULT_TEMP
     kT = utils.get_kt(t_kelvin)
@@ -58,7 +69,6 @@ def run():
         orientation=jnp.array([kT/7.5], dtype=jnp.float64))
     mass = rigid_body.RigidBody(center=jnp.array([utils.nucleotide_mass], dtype=jnp.float64),
                                 orientation=jnp.array([utils.moment_of_inertia], dtype=jnp.float64))
-
 
     def sim_fn(params, body, n_steps, key):
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
@@ -76,43 +86,51 @@ def run():
                             unbonded_nbrs=top_info.unbonded_nbrs.T)
             return state, state.position
 
-        # Option 1: Scan
-        start = time.time()
         fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_steps))
-        end = time.time()
-        print(f"Generating reference states took {end - start} seconds")
-
-        # Option 2: For loop
-        """
-        start = time.time()
-        trajectory = list()
-        state = init_state
-        for i in tqdm(range(n_steps)):
-            state = step_fn(state,
-                            seq=seq_oh,
-                            bonded_nbrs=top_info.bonded_nbrs,
-                            unbonded_nbrs=top_info.unbonded_nbrs.T)
-            trajectory.append(state.position)
-        traj = tree_stack(trajectory)
-        end = time.time()
-        print(f"Generating reference states took {end - start} seconds")
-        """
-
 
         return traj
 
-
-    n_eq_steps = 5000
-    n_sample_steps = 50000
-    sample_every = 500
+    # n_eq_steps = 10000
+    # n_sample_steps = int(5e7)
+    # sample_every = int(1e5)
+    n_eq_steps = 100 # FIXME: testing
+    n_sample_steps = int(5e2) # FIXME: testing
+    sample_every = int(1e1) # FIXME: testing
     assert(n_sample_steps % sample_every == 0)
-    n_ref_states = n_sample_steps // sample_every
+    batch_size = 2
+    n_ref_states = n_sample_steps // sample_every * batch_size
 
-    def get_ref_states(params, init_body, key):
-        trajectory = sim_fn(params, init_body, n_eq_steps + n_sample_steps, key)
-        eq_trajectory = trajectory[n_eq_steps:]
-        ref_states = eq_trajectory[::sample_every]
+    def get_ref_states(params, eq_init_body, key):
+        key, eq_key = random.split(key)
 
+        print("Computing reference states...")
+
+        # Equilibrate
+        print("Equilibrating...")
+        eq_keys = random.split(eq_key, batch_size)
+        eq_fn = lambda k: sim_fn(params, eq_init_body, n_eq_steps, k)
+        eq_trajectories = vmap(eq_fn)(eq_keys) # note: could pmap
+        eq_positions = eq_trajectories[:, -1]
+
+        # Simulate post-equilibration and sample
+
+        ## Simulate
+        print("Simulating...")
+        batch_keys = random.split(key, batch_size)
+        sample_fn = lambda eq_position, k: sim_fn(params, eq_position, n_sample_steps, k)
+        trajectories = vmap(sample_fn, (0, 0))(eq_positions, batch_keys) # note: could pmap
+
+        ## Sample
+        print("Sampling...")
+        ref_states_batched = vmap(lambda traj: traj[::10])(trajectories)
+        ref_states_center = ref_states_batched.center.reshape(-1, top_info.n, 3)
+        ref_states_orientation_vec = ref_states_batched.orientation.vec.reshape(-1, top_info.n, 4)
+        ref_states = rigid_body.RigidBody(
+            center=ref_states_center,
+            orientation=rigid_body.Quaternion(ref_states_orientation_vec))
+
+        # Compute energies
+        print("Computing energies...")
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
         energy_fn = lambda body: em.energy_fn(body,
                                               seq=seq_oh,
@@ -120,39 +138,24 @@ def run():
                                               unbonded_nbrs=top_info.unbonded_nbrs.T)
         energy_fn = jit(energy_fn)
 
-        # ref_energies = [energy_fn(body) for body in ref_states]
-        # return ref_states, jnp.array(ref_energies)
-
         ref_energies = vmap(energy_fn)(ref_states)
         return ref_states, ref_energies
 
 
 
+    pdb.set_trace()
 
-    # Construct the loss function terms
+    # Construct the loss function
 
-    ## note: we don't include the end base pairs due to fraying
-    compute_helical_diameters, helical_diam_loss_fn = geometry.get_helical_diameter_loss_fn(
-        top_info.bonded_nbrs[1:-1], displacement_fn, model.com_to_backbone)
+    quartets = get_all_quartets(n_nucs_per_strand=body.center.shape[0] // 2)
+    quartets = quartets[25:]
+    quartets = quartets[:-25]
+    compute_lp_nm, _ = persistence_length.get_persistence_length_loss_fn(quartets, model.com_to_hb)
 
-    compute_bb_distances, bb_dist_loss_fn = geometry.get_backbone_distance_loss_fn(
-        top_info.bonded_nbrs, displacement_fn, model.com_to_backbone)
-
-    simple_helix_quartets = jnp.array([
-        [1, 14, 2, 13], [2, 13, 3, 12],
-        [3, 12, 4, 11], [4, 11, 5, 10],
-        [5, 10, 6, 9]])
-    compute_avg_pitch, pitch_loss_fn = pitch.get_pitch_loss_fn(
-        simple_helix_quartets, displacement_fn, model.com_to_hb)
-
-    simple_helix_bps = jnp.array([[1, 14], [2, 13], [3, 12],
-                                  [4, 11], [5, 10], [6, 9]])
-    compute_avg_ptwist, ptwist_loss_fn = propeller.get_propeller_loss_fn(simple_helix_bps)
-
+    target_lp_nm = 37.5 # FIXME: some dummy value to optimize to
 
     @jit
-    def loss_fn(params, ref_states: rigid_body.RigidBody, ref_energies):
-
+    def loss_fn(params, ref_states, ref_energies):
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
 
         # Compute the weights
@@ -167,17 +170,14 @@ def run():
         denom = jnp.sum(boltzs)
         weights = boltzs / denom
 
-        # Compute the observable
-        # FIXME: only considering ptwist for now. Have to extend to multiple observables
-        # FIXME: since none of the observables actually depend on theta (maybe they will for melting temperature), we could just precompute them and map over them...
-        unweighted_ptwists = vmap(compute_avg_ptwist)(ref_states) # FIXME: this doesn't depend on params...
-        weighted_ptwists = weights * unweighted_ptwists # element-wise multiplication
-        expected_ptwist = jnp.sum(weighted_ptwists)
+        unweighted_lps = vmap(compute_lp_nm)(ref_states)
+        weighted_lps = weights * unweighted_lps # element-wise multiplication
+        expected_lp = jnp.sum(weighted_lps)
 
         # Compute effective sample size
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
 
-        return (expected_ptwist - propeller.TARGET_PROPELLER_TWIST)**2, n_eff
+        return (expected_lp - target_lp_nm)**2, n_eff
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -196,12 +196,13 @@ def run():
     print(f"Generating initial reference states and energies...")
     ref_states, ref_energies = get_ref_states(params, init_body, key)
 
-    min_n_eff = int(n_ref_states * 0.95)
+    min_n_eff = int(n_ref_states * 0.90)
     all_losses = list()
     all_n_effs = list()
     all_ref_losses = list()
     all_ref_times = list()
-    plot_every = 10
+    plot_every = 2
+
     for i in tqdm(range(n_epochs)):
         (loss, n_eff), grads = grad_fn(params, ref_states, ref_energies)
 
@@ -212,7 +213,10 @@ def run():
         if n_eff < min_n_eff:
             print(f"Resampling reference states...")
             key, split = random.split(key)
+            start = time.time()
             ref_states, ref_energies = get_ref_states(params, ref_states[-1], split)
+            end = time.time()
+            print(f"Took {end - start} seconds")
             (loss, n_eff), grads = grad_fn(params, ref_states, ref_energies)
 
             all_ref_losses.append(loss)

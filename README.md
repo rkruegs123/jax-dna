@@ -6,6 +6,24 @@ To install jax-md rigid body check in locally, do FIXME. Must have this to run c
 
 ## Misc. Notes
 
+August 10, 2023
+
+TODOs
+- let persistence length trajectory finish on cluster
+  - visualize
+- make `persistence_length.py` take RB geometry as input rather than load base_site etc fromutlis and what not
+  - DONE
+- add a test that loads this trajectory and computes its persistence length
+  - note: waiting on this
+- make a DiffTRE script that optimizes w.r.t. persistence legnth
+  - OK. So tom's thesis reports it in nm by accident when it is really A. First, make this change in our Lp code to be consistent with units. Let's just deal in nm.
+  - should also batch the collection of reference states... will have to figure out how to combine things...
+    - DONE
+- pray
+- once that works, implement oxDNA 1.5 and 2.0. Will eventually want to return to elastic modulus and thermodynamic parmaeters, as well as single stranded
+
+note: eventually we may want to have a bsae class that stores COM, back/base/stack sites, etc. So we don't have to keep recomputing them. Could make it a dataclass and pass it around instead of the trajectory...
+
 August 8, 2023
 - why is the reference state generation so slow for DiffTRE? Need to benchmark this a bit, progress bar, the whole thing...
 - then, would be really cool to try it on persistence length

@@ -40,6 +40,7 @@ def get_kt(t_kelvin):
 
 ## Tom's thesis, page 23, bottom
 ang_per_oxdna_length = 8.518
+nm_per_oxdna_length = 0.8518
 def angstroms_to_oxdna_length(ang):
     return ang / ang_per_oxdna_length
 def oxdna_length_to_angstroms(l):

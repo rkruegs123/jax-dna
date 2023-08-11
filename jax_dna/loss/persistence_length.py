@@ -1,16 +1,12 @@
 import pdb
+import numpy as onp
 
 import jax.numpy as jnp
-import numpy as onp
 from jax import vmap
-
-from jax_md import simulate
-from jax_md import space
-from jax_md import util
-from jax_md import rigid_body
+from jax_md import rigid_body, util
 from jax_md.rigid_body import RigidBody, Quaternion
 
-from utils import base_site
+from jax_dna.common import utils
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -18,8 +14,8 @@ config.update("jax_enable_x64", True)
 
 Array = util.Array
 
-# Tom's thesis: 130-150 base pairs
-TARGET_PERSISTENCE_LENGTH_DSDNA = 140
+# Tom's thesis: 130-150 base pairs, 475 A, 47.5 nm (note: there is a typo b/w A and nm)
+TARGET_PERSISTENCE_LENGTH_DSDNA = 47.5 # nm
 
 
 def vector_autocorrelate(arr):
@@ -53,7 +49,7 @@ def compute_l_vector(quartet, system: RigidBody, base_sites: Array):
     return l, l0
 
 # vector autocorrelate: https://stackoverflow.com/questions/48844295/computing-autocorrelation-of-vectors-with-numpy
-def get_correlation_curve(system: RigidBody, base_quartets: Array):
+def get_correlation_curve(system: RigidBody, base_quartets: Array, base_site):
     base_sites = system.center + rigid_body.quaternion_rotate(system.orientation, base_site)
     get_all_l_vectors = vmap(compute_l_vector, in_axes = [0, None, None])
     all_l_vectors, l0_vals = get_all_l_vectors(base_quartets, system, base_sites)
@@ -74,13 +70,19 @@ def persistence_length_fit(autocorr, l0_av):
 
     return Lp
 
-def get_persistence_length_loss_fn(base_quartets, target_lp=TARGET_PERSISTENCE_LENGTH_DSDNA):
+def get_persistence_length_loss_fn(base_quartets, com_to_hb, target_lp=TARGET_PERSISTENCE_LENGTH_DSDNA):
+
+    base_site = jnp.array([com_to_hb, 0.0, 0.0])
 
     def compute_lp(body):
-        correlation_curve, l0_avg = get_correlation_curve(body, base_quartets)
-        lp = persistence_length_fit(correlation_curve, l0_avg)
-        return lp
+        correlation_curve, l0_avg = get_correlation_curve(body, base_quartets, base_site)
+        lp = persistence_length_fit(correlation_curve, l0_avg) # oxDNA units
+
+        lp_nm = lp * utils.nm_per_oxdna_length # nanometers
+        return lp_nm
 
     def loss_fn(body):
-        lp = compute_lp(body)
-        return (lp - target_lp)**2
+        lp_nm = compute_lp(body)
+        return (lp_nm - target_lp)**2
+
+    return compute_lp, loss_fn
