@@ -10,7 +10,7 @@ import numpy as onp
 
 import optax
 import jax.numpy as jnp
-from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util, lax
+from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util
 from jax_md import space, simulate, rigid_body
 
 from jax_dna.common import utils, topology, trajectory, checkpoint

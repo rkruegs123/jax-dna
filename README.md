@@ -11,6 +11,7 @@ August 10, 2023
 TODOs
 - let persistence length trajectory finish on cluster
   - visualize
+  - TODO: talk to Megan about this. Also, why were we getting ~140 rather than ~120?
 - make `persistence_length.py` take RB geometry as input rather than load base_site etc fromutlis and what not
   - DONE
 - add a test that loads this trajectory and computes its persistence length
@@ -19,6 +20,7 @@ TODOs
   - OK. So tom's thesis reports it in nm by accident when it is really A. First, make this change in our Lp code to be consistent with units. Let's just deal in nm.
   - should also batch the collection of reference states... will have to figure out how to combine things...
     - DONE
+  - running into memory issues with this. Need to expeimrent with different simulation methods
 - pray
 - once that works, implement oxDNA 1.5 and 2.0. Will eventually want to return to elastic modulus and thermodynamic parmaeters, as well as single stranded
 
