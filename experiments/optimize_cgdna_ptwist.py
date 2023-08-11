@@ -129,8 +129,9 @@ def run():
 
     # Setup the optimization
     params = deepcopy(model.EMPTY_BASE_PARAMS)
-    params["fene"] = model.DEFAULT_BASE_PARAMS["fene"]
-    params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
+    # params["fene"] = model.DEFAULT_BASE_PARAMS["fene"]
+    # params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
+    params["hydrogen_bonding"] = model.DEFAULT_BASE_PARAMS["hydrogen_bonding"]
     lr = 0.01
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
