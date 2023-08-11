@@ -90,12 +90,12 @@ def run():
 
         return traj
 
-    # n_eq_steps = 10000
-    # n_sample_steps = int(5e7)
-    # sample_every = int(1e5)
-    n_eq_steps = 100 # FIXME: testing
-    n_sample_steps = int(5e2) # FIXME: testing
-    sample_every = int(1e1) # FIXME: testing
+    n_eq_steps = 10000
+    n_sample_steps = int(1e7)
+    sample_every = int(1e4)
+    # n_eq_steps = 100 # FIXME: testing
+    # n_sample_steps = int(5e2) # FIXME: testing
+    # sample_every = int(1e1) # FIXME: testing
     assert(n_sample_steps % sample_every == 0)
     batch_size = 2
     n_ref_states = n_sample_steps // sample_every * batch_size
@@ -143,11 +143,10 @@ def run():
 
 
 
-    pdb.set_trace()
 
     # Construct the loss function
 
-    quartets = get_all_quartets(n_nucs_per_strand=body.center.shape[0] // 2)
+    quartets = get_all_quartets(n_nucs_per_strand=init_body.center.shape[0] // 2)
     quartets = quartets[25:]
     quartets = quartets[:-25]
     compute_lp_nm, _ = persistence_length.get_persistence_length_loss_fn(quartets, model.com_to_hb)
@@ -211,7 +210,7 @@ def run():
             all_ref_times.append(i)
 
         if n_eff < min_n_eff:
-            print(f"Resampling reference states...")
+            print(f"n_eff was {n_eff}... resampling reference states...")
             key, split = random.split(key)
             start = time.time()
             ref_states, ref_energies = get_ref_states(params, ref_states[-1], split)
