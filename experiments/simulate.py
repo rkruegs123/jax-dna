@@ -89,9 +89,12 @@ def sim_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key, save
                                 unbonded_nbrs=top_info.unbonded_nbrs.T)
     step_fn = jit(step_fn)
 
+    fori_step_fn = lambda t, state: step_fn(state)
+    fori_step_fn = jit(fori_step_fn)
+
     @jit
     def scan_fn(state, step):
-        state = lax.fori_loop(0, n_inner_steps, step_fn, state)
+        state = lax.fori_loop(0, n_inner_steps, fori_step_fn, state)
         return state, state.position
 
     fin_state, traj = lax.scan(scan_fn, init_state, jnp.arange(n_outer_steps))
@@ -113,10 +116,13 @@ def sim_nested_for_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key):
                                 unbonded_nbrs=top_info.unbonded_nbrs.T)
     step_fn = jit(step_fn)
 
+    fori_step_fn = lambda t, state: step_fn(state)
+    fori_step_fn = jit(fori_step_fn)
+
     state = deepcopy(init_state)
     trajectory = list()
     for i in tqdm(range(n_outer_steps)):
-        state = lax.fori_loop(0, n_inner_steps, step_fn, state)
+        state = lax.fori_loop(0, n_inner_steps, fori_step_fn, state)
         trajectory.append(state.position)
 
     return trajectory
@@ -162,7 +168,7 @@ if __name__ == "__main__":
     elif method == "scan":
         trajectory = sim_scan(conf_info, top_info, n_steps, key)
     elif method == "nested-scan":
-        trajectory = sim_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key, save_every=sample_every)
+        trajectory = sim_nested_scan(conf_info, top_info, n_inner_steps=sample_every, n_outer_steps=n_points, key=key)
     elif method == "nested-for-scan":
         trajectory = sim_nested_for_scan(conf_info, top_info, n_inner_steps=sample_every, n_outer_steps=n_points, key=key)
     else:
