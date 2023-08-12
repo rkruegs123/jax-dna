@@ -73,8 +73,7 @@ def sim_scan(conf_info, top_info, n_steps, key):
     fin_state, traj = lax.scan(scan_fn, init_state, jnp.arange(n_steps))
     return traj
 
-def sim_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key, save_every=1):
-    n_steps = n_inner_steps, n_outer_steps
+def sim_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key):
 
     init_body = conf_info.get_states()[0]
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
@@ -100,8 +99,8 @@ def sim_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key, save
     fin_state, traj = lax.scan(scan_fn, init_state, jnp.arange(n_outer_steps))
     return traj
 
+
 def sim_nested_for_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key):
-    n_steps = n_inner_steps, n_outer_steps
 
     init_body = conf_info.get_states()[0]
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
@@ -127,6 +126,39 @@ def sim_nested_for_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key):
 
     return trajectory
 
+
+def sim_batched_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key, batch_size):
+
+    init_body = conf_info.get_states()[0]
+    seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
+
+    def batch_fn(batch_key):
+        init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
+        init_state = init_fn(batch_key, init_body, mass=mass, seq=seq_oh,
+                             bonded_nbrs=top_info.bonded_nbrs,
+                             unbonded_nbrs=top_info.unbonded_nbrs.T)
+
+        def fori_step_fn(t, state):
+            return step_fn(state, seq=seq_oh,
+                           bonded_nbrs=top_info.bonded_nbrs,
+                           unbonded_nbrs=top_info.unbonded_nbrs.T)
+        fori_step_fn = jit(fori_step_fn)
+
+        @jit
+        def scan_fn(state, step):
+            state = lax.fori_loop(0, n_inner_steps, fori_step_fn, state)
+            return state, state.position
+
+        fin_state, traj = lax.scan(scan_fn, init_state, jnp.arange(n_outer_steps))
+        return traj
+
+    batch_keys = random.split(key, batch_size)
+    batch_trajs = vmap(batch_fn)(batch_keys)
+
+    # FIXME: combine into one big trajectory
+
+    return batch_trajs
+
 if __name__ == "__main__":
     import argparse
 
@@ -139,10 +171,13 @@ if __name__ == "__main__":
                         help="Number of total steps")
     parser.add_argument('--n-points', type=int,
                         help="Number of total points in the final trajectory")
+    parser.add_argument('--batch-size', type=int, help="Batch size")
+
     args = vars(parser.parse_args())
     method = args['method']
     n_steps = args['n_steps']
     n_points = args['n_points']
+    batch_size = args['batch_size']
 
 
 
@@ -171,6 +206,10 @@ if __name__ == "__main__":
         trajectory = sim_nested_scan(conf_info, top_info, n_inner_steps=sample_every, n_outer_steps=n_points, key=key)
     elif method == "nested-for-scan":
         trajectory = sim_nested_for_scan(conf_info, top_info, n_inner_steps=sample_every, n_outer_steps=n_points, key=key)
+    elif method == "batched-nested-scan":
+        assert(n_points % batch_size == 0)
+        n_points_per_batch = n_points // batch_size
+        batched_trajs = sim_batched_nested_scan(conf_info, top_info, n_inner_steps=sample_every, n_outer_steps=n_points_per_batch, key=key, batch_size=batch_size)
     else:
         raise RuntimeError(f"Invalid method: {method}")
 
