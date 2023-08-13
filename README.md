@@ -6,6 +6,7 @@ To install jax-md rigid body check in locally, do FIXME. Must have this to run c
 
 ## Misc. Notes
 
+
 August 13, 2023
 
 - Have to do the following for Lp optimization:
@@ -15,6 +16,15 @@ August 13, 2023
 August 12, 2023
 
 - We really have to average the correlatoin curves rather than the individual Lps. So, any effort to compute Lp now is useless.
+
+August 11, 2023
+
+- letting those persistence length experiments run. Let's just see what happens there
+- next steps on persistence length optimization:
+  - both of the scanned simulations fit in memory. Nice.
+  - should see if we can make things faster with batching. We can just do vmap, and see if that's faster. We could change it to pmap whenever we want. Note that it took 4.5 hours straight.
+  - regardless of method, in main, we should then compute a running average of the persistence lengthto check convergence
+
 
 August 10, 2023
 
