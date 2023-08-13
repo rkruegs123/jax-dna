@@ -6,6 +6,16 @@ To install jax-md rigid body check in locally, do FIXME. Must have this to run c
 
 ## Misc. Notes
 
+August 13, 2023
+
+- Have to do the following for Lp optimization:
+  - for each iteration, log: (i) the reference states themselves, (ii) the average correlation curve, (iii) average l0_avg, (iv) running average of Lp to check for convergence
+- should really set this up correctly, then move onto oxDNA 1.5 and 2.0, etc. While Megan does umbrella sampling in the background...
+
+August 12, 2023
+
+- We really have to average the correlatoin curves rather than the individual Lps. So, any effort to compute Lp now is useless.
+
 August 10, 2023
 
 TODOs

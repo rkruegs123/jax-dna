@@ -72,109 +72,59 @@ def run():
     mass = rigid_body.RigidBody(center=jnp.array([utils.nucleotide_mass], dtype=jnp.float64),
                                 orientation=jnp.array([utils.moment_of_inertia], dtype=jnp.float64))
 
-    def sim_fn(params, body, n_steps, key):
-        em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
-        init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
-        init_state = init_fn(key, body, mass=mass, seq=seq_oh,
-                             bonded_nbrs=top_info.bonded_nbrs,
-                             unbonded_nbrs=top_info.unbonded_nbrs.T)
-
-
-        @jit
-        def scan_fn(state, step):
-            state = step_fn(state,
-                            seq=seq_oh,
-                            bonded_nbrs=top_info.bonded_nbrs,
-                            unbonded_nbrs=top_info.unbonded_nbrs.T)
-            return state, state.position
-
-        # Option 1: Scan. Memory-intensive, but required for batching
-        # fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_steps))
-
-        # Option 2: For loop. No batching.
-        trajectory = list()
-        state = init_state
-        for i in tqdm(range(n_steps), colour="green"):
-            state = step_fn(state,
-                            seq=seq_oh,
-                            bonded_nbrs=top_info.bonded_nbrs,
-                            unbonded_nbrs=top_info.unbonded_nbrs.T)
-            trajectory.append(state.position)
-        traj = tree_stack(trajectory)
-
-        return traj
 
     n_eq_steps = 10000
+    def eq_fn(params, body, key):
+        em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
+        energy_fn = lambda body: em.energy_fn(body,
+                                              seq=seq_oh,
+                                              bonded_nbrs=top_info.bonded_nbrs,
+                                              unbonded_nbrs=top_info.unbonded_nbrs.T)
+        
+        init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+        init_state = init_fn(key, body, mass=mass)
+
+        fori_step_fn = lambda t, state: step_fn(state)
+        fori_step_fn = jit(fori_step_fn)
+
+        eq_state = lax.fori_loop(0, n_eq_steps, fori_step_fn, init_state)
+        return eq_state.position
+    
+
+
+    # n_sample_steps = int(1e4) # For testing
+    # sample_every = int(1e1) # For testing
+    # n_sample_steps = int(1e7)
+    # sample_every = int(1e4)
     n_sample_steps = int(1e7)
     sample_every = int(1e4)
-    # n_eq_steps = 100 # FIXME: testing
-    # n_sample_steps = int(5e2) # FIXME: testing
-    # sample_every = int(1e1) # FIXME: testing
     assert(n_sample_steps % sample_every == 0)
-
-    # Option 1: batch (note: only compatible with Option 1 in sim_fn0
-    """
-    batch_size = 2
-    n_ref_states = n_sample_steps // sample_every * batch_size
-    def get_ref_states(params, eq_init_body, key):
-        key, eq_key = random.split(key)
-
-        print("Computing reference states...")
-
-        # Equilibrate
-        print("Equilibrating...")
-        eq_keys = random.split(eq_key, batch_size)
-        eq_fn = lambda k: sim_fn(params, eq_init_body, n_eq_steps, k)
-        eq_trajectories = vmap(eq_fn)(eq_keys) # note: could pmap
-        eq_positions = eq_trajectories[:, -1]
-
-        # Simulate post-equilibration and sample
-
-        ## Simulate
-        print("Simulating...")
-        batch_keys = random.split(key, batch_size)
-        sample_fn = lambda eq_position, k: sim_fn(params, eq_position, n_sample_steps, k)
-        trajectories = vmap(sample_fn, (0, 0))(eq_positions, batch_keys) # note: could pmap
-
-        ## Sample
-        print("Sampling...")
-        ref_states_batched = vmap(lambda traj: traj[::10])(trajectories)
-        ref_states_center = ref_states_batched.center.reshape(-1, top_info.n, 3)
-        ref_states_orientation_vec = ref_states_batched.orientation.vec.reshape(-1, top_info.n, 4)
-        ref_states = rigid_body.RigidBody(
-            center=ref_states_center,
-            orientation=rigid_body.Quaternion(ref_states_orientation_vec))
-
-        # Compute energies
-        print("Computing energies...")
-        em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
-        energy_fn = lambda body: em.energy_fn(body,
-                                              seq=seq_oh,
-                                              bonded_nbrs=top_info.bonded_nbrs,
-                                              unbonded_nbrs=top_info.unbonded_nbrs.T)
-        energy_fn = jit(energy_fn)
-
-        ref_energies = vmap(energy_fn)(ref_states)
-        return ref_states, ref_energies
-    """
-
-    # Option 2: no batching (either compatible with Option 1 or Option 2 in sim_fn)
     n_ref_states = n_sample_steps // sample_every
+    
     def get_ref_states(params, eq_init_body, key):
-        print("Simulating...")
-        trajectory = sim_fn(params, eq_init_body, n_eq_steps + n_sample_steps, key)
-        eq_trajectory = trajectory[n_eq_steps:]
-        ref_states = eq_trajectory[::sample_every]
-
-        print("Computing energies...")
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
         energy_fn = lambda body: em.energy_fn(body,
                                               seq=seq_oh,
                                               bonded_nbrs=top_info.bonded_nbrs,
                                               unbonded_nbrs=top_info.unbonded_nbrs.T)
-        energy_fn = jit(energy_fn)
+        
+        init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+        init_state = init_fn(key, eq_init_body, mass=mass)
 
+        step_fn = jit(step_fn)
+
+        fori_step_fn = lambda t, state: step_fn(state)
+        fori_step_fn = jit(fori_step_fn)
+
+        state = deepcopy(init_state)
+        trajectory = list()
+        for i in tqdm(range(n_ref_states)):
+            state = lax.fori_loop(0, sample_every, fori_step_fn, state)
+            trajectory.append(state.position)
+
+        ref_states = tree_stack(trajectory)
         ref_energies = vmap(energy_fn)(ref_states)
+            
         return ref_states, ref_energies
 
 
@@ -183,7 +133,8 @@ def run():
     quartets = get_all_quartets(n_nucs_per_strand=init_body.center.shape[0] // 2)
     quartets = quartets[25:]
     quartets = quartets[:-25]
-    compute_lp_nm, _ = persistence_length.get_persistence_length_loss_fn(quartets, model.com_to_hb)
+    base_site = jnp.array([model.com_to_hb, 0.0, 0.0])
+    compute_all_curves = vmap(persistence_length.get_correlation_curve, (0, None, None))
 
     target_lp_nm = 37.5 # FIXME: some dummy value to optimize to
 
@@ -203,14 +154,19 @@ def run():
         denom = jnp.sum(boltzs)
         weights = boltzs / denom
 
-        unweighted_lps = vmap(compute_lp_nm)(ref_states)
-        weighted_lps = weights * unweighted_lps # element-wise multiplication
-        expected_lp = jnp.sum(weighted_lps)
+
+        unweighted_corr_curves, unweighted_l0_avgs = compute_all_curves(ref_states, quartets, base_site)
+        weighted_corr_curves = vmap(lambda v, w: v * w)(unweighted_corr_curves, weights)
+        weighted_l0_avgs = vmap(lambda l0, w: l0 * w)(unweighted_l0_avgs, weights)
+        expected_corr_curv = jnp.sum(weighted_corr_curves, axis=0)
+        expected_l0_avg = jnp.sum(weighted_l0_avgs)
+        expected_lp = persistence_length.persistence_length_fit(expected_corr_curv, expected_l0_avg)
+
 
         # Compute effective sample size
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
 
-        return (expected_lp - target_lp_nm)**2, n_eff
+        return (expected_lp - target_lp_nm)**2, (n_eff, expected_lp, expected_corr_curv)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -238,7 +194,7 @@ def run():
     plot_every = 2
 
     for i in tqdm(range(n_epochs)):
-        (loss, n_eff), grads = grad_fn(params, ref_states, ref_energies)
+        (loss, (n_eff, curr_lp, expected_corr_curv)), grads = grad_fn(params, ref_states, ref_energies)
 
         if i == 0:
             all_ref_losses.append(loss)
@@ -247,11 +203,19 @@ def run():
         if n_eff < min_n_eff:
             print(f"n_eff was {n_eff}... resampling reference states...")
             key, split = random.split(key)
+
+            eq_key, ref_key = random.split(split)
+
             start = time.time()
-            ref_states, ref_energies = get_ref_states(params, ref_states[-1], split)
+            eq_pos = eq_fn(params, ref_states[-1], eq_key)
             end = time.time()
-            print(f"Took {end - start} seconds")
-            (loss, n_eff), grads = grad_fn(params, ref_states, ref_energies)
+            print(f"Generating equilibrium state took {end - start} seconds")
+            
+            start = time.time()
+            ref_states, ref_energies = get_ref_states(params, eq_pos, ref_key)
+            end = time.time()
+            print(f"Generating reference states took {end - start} seconds")
+            (loss, (n_eff, curr_lp, expected_corr_curv)), grads = grad_fn(params, ref_states, ref_energies)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
@@ -263,13 +227,20 @@ def run():
 
         print(f"Loss: {loss}")
         print(f"Effective sample size: {n_eff}")
+        print(f"Current expected Lp: {curr_lp}")
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
+
+        plt.plot(expected_corr_curv)
+        plt.savefig(f"difftre_iter{i}_1e7v2_corr.png")
+        plt.clf()
+
 
         if i % plot_every == 0:
             plt.plot(onp.arange(i+1), all_losses, linestyle="--")
             plt.scatter(all_ref_times, all_ref_losses, marker='o')
-            plt.savefig(f"difftre_iter{i}.png")
+            plt.savefig(f"difftre_iter{i}_1e7v2.png")
+
 
 
 if __name__ == "__main__":

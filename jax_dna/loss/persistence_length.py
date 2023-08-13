@@ -22,7 +22,7 @@ def vector_autocorrelate(arr):
     n_vectors = arr.shape[0]
 
     # correlate each component indipendently
-    acorr = jnp.array([jnp.correlate(arr[:,i],arr[:,i],'full') for i in jnp.arange(3)])[:,n_vectors-1:] #we should  really vmap over this, but for simplicity, we unroll a for loop for now
+    acorr = jnp.array([jnp.correlate(arr[:,i], arr[:,i], 'full') for i in jnp.arange(3)])[:, n_vectors-1:] # we should  really vmap over this, but for simplicity, we unroll a for loop for now
 
     # sum the correlations for each component
     acorr = jnp.sum(acorr, axis = 0)
