@@ -165,7 +165,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Simulate 202 bp duplex to eval. memory constraints")
     parser.add_argument('--method', type=str,
                         default="for-loop",
-                        choices=["for-loop", "scan", "nested-scan", "nested-for-scan"],
+                        choices=["for-loop", "scan", "nested-scan", "nested-for-scan", "batched-nested-scan"],
                         help='Method for simulating')
     parser.add_argument('--n-steps', type=int,
                         help="Number of total steps")

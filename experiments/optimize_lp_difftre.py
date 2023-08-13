@@ -94,7 +94,7 @@ def run():
         # Option 2: For loop. No batching.
         trajectory = list()
         state = init_state
-        for i in tqdm(range(n_steps)):
+        for i in tqdm(range(n_steps), colour="green"):
             state = step_fn(state,
                             seq=seq_oh,
                             bonded_nbrs=top_info.bonded_nbrs,
@@ -161,10 +161,12 @@ def run():
     # Option 2: no batching (either compatible with Option 1 or Option 2 in sim_fn)
     n_ref_states = n_sample_steps // sample_every
     def get_ref_states(params, eq_init_body, key):
+        print("Simulating...")
         trajectory = sim_fn(params, eq_init_body, n_eq_steps + n_sample_steps, key)
         eq_trajectory = trajectory[n_eq_steps:]
         ref_states = eq_trajectory[::sample_every]
 
+        print("Computing energies...")
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
         energy_fn = lambda body: em.energy_fn(body,
                                               seq=seq_oh,
@@ -226,6 +228,7 @@ def run():
     init_body = conf_info.get_states()[0]
     print(f"Generating initial reference states and energies...")
     ref_states, ref_energies = get_ref_states(params, init_body, key)
+    print(f"Finished generating initial reference states and energies")
 
     min_n_eff = int(n_ref_states * 0.90)
     all_losses = list()
