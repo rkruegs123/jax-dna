@@ -330,4 +330,4 @@ if __name__ == "__main__":
 
     Lp = persistence_length.persistence_length_fit(mean_correlation_curve, mean_l0_avg)
     with open(output_path, "a") as f:
-        f.write(f"\nFinal persistence length: {Lp}\n")
+        f.write(f"\nFinal persistence length: {Lp*utils.nm_per_oxdna_length}\n")

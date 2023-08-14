@@ -80,7 +80,7 @@ def run():
                                               seq=seq_oh,
                                               bonded_nbrs=top_info.bonded_nbrs,
                                               unbonded_nbrs=top_info.unbonded_nbrs.T)
-        
+
         init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
         init_state = init_fn(key, body, mass=mass)
 
@@ -89,7 +89,7 @@ def run():
 
         eq_state = lax.fori_loop(0, n_eq_steps, fori_step_fn, init_state)
         return eq_state.position
-    
+
 
 
     # n_sample_steps = int(1e4) # For testing
@@ -100,14 +100,14 @@ def run():
     sample_every = int(1e4)
     assert(n_sample_steps % sample_every == 0)
     n_ref_states = n_sample_steps // sample_every
-    
+
     def get_ref_states(params, eq_init_body, key):
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
         energy_fn = lambda body: em.energy_fn(body,
                                               seq=seq_oh,
                                               bonded_nbrs=top_info.bonded_nbrs,
                                               unbonded_nbrs=top_info.unbonded_nbrs.T)
-        
+
         init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
         init_state = init_fn(key, eq_init_body, mass=mass)
 
@@ -124,7 +124,7 @@ def run():
 
         ref_states = tree_stack(trajectory)
         ref_energies = vmap(energy_fn)(ref_states)
-            
+
         return ref_states, ref_energies
 
 
@@ -161,6 +161,7 @@ def run():
         expected_corr_curv = jnp.sum(weighted_corr_curves, axis=0)
         expected_l0_avg = jnp.sum(weighted_l0_avgs)
         expected_lp = persistence_length.persistence_length_fit(expected_corr_curv, expected_l0_avg)
+        expected_lp = expected_lp * utils.nm_per_oxdna_length
 
 
         # Compute effective sample size
@@ -210,7 +211,7 @@ def run():
             eq_pos = eq_fn(params, ref_states[-1], eq_key)
             end = time.time()
             print(f"Generating equilibrium state took {end - start} seconds")
-            
+
             start = time.time()
             ref_states, ref_energies = get_ref_states(params, eq_pos, ref_key)
             end = time.time()
