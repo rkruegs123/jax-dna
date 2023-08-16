@@ -178,14 +178,35 @@ def sim_vmap_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key,
     return combined_traj
 
 
-def sim_pmap_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key, batch_size):
+def sim_pmap_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps,
+                         key, batch_size, n_eq_steps):
 
     init_body = conf_info.get_states()[0]
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
-    def batch_fn(batch_key):
+    def eq_fn(eq_key):
         init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
         init_state = init_fn(batch_key, init_body, mass=mass, seq=seq_oh,
+                             bonded_nbrs=top_info.bonded_nbrs,
+                             unbonded_nbrs=top_info.unbonded_nbrs.T)
+        def fori_step_fn(t, state):
+            return step_fn(state, seq=seq_oh,
+                           bonded_nbrs=top_info.bonded_nbrs,
+                           unbonded_nbrs=top_info.unbonded_nbrs.T)
+        fori_step_fn = jit(fori_step_fn)
+
+        eq_state = lax.fori_loop(0, n_eq_steps, fori_step_fn, init_state)
+        return eq_state.position
+
+    key, eq_key = random.split(key)
+    eq_keys = random.split(eq_key, batch_size)
+    eq_bodies = vmap(eq_fn)(eq_keys)
+
+
+
+    def batch_fn(batch_key, eq_body):
+        init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
+        init_state = init_fn(batch_key, eq_body, mass=mass, seq=seq_oh,
                              bonded_nbrs=top_info.bonded_nbrs,
                              unbonded_nbrs=top_info.unbonded_nbrs.T)
 
@@ -204,7 +225,7 @@ def sim_pmap_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key,
         return traj
 
     batch_keys = random.split(key, batch_size)
-    batch_trajs = pmap(batch_fn)(batch_keys)
+    batch_trajs = pmap(batch_fn)(batch_keys, eq_bodies)
 
     num_bases = batch_trajs.center.shape[2]
     assert(batch_trajs.center.shape[3] == 3)
@@ -231,6 +252,8 @@ if __name__ == "__main__":
                         help='Run name')
     parser.add_argument('--n-steps', type=int,
                         help="Number of total steps")
+    parser.add_argument('--n-eq-steps', type=int,
+                        help="Number of equilibration steps")
     parser.add_argument('--n-points', type=int,
                         help="Number of total points in the final trajectory")
     parser.add_argument('--running-avg-interval', type=int,
@@ -247,6 +270,7 @@ if __name__ == "__main__":
     run_name = args['run_name']
     running_avg_interval = args['running_avg_interval']
     min_running_avg_idx = args['min_running_avg_idx']
+    n_eq_steps = args['n_eq_steps']
 
     output_dir = Path("output/")
     run_dir = output_dir / run_name
@@ -296,13 +320,13 @@ if __name__ == "__main__":
         assert(batch_size <= n_devices)
         assert(n_points % batch_size == 0)
         n_points_per_batch = n_points // batch_size
-        traj = sim_pmap_nested_scan(conf_info, top_info, n_inner_steps=sample_every, n_outer_steps=n_points_per_batch, key=key, batch_size=batch_size)
+        traj = sim_pmap_nested_scan(conf_info, top_info, n_inner_steps=sample_every,
+                                    n_outer_steps=n_points_per_batch, key=key,
+                                    batch_size=batch_size, n_eq_steps=n_eq_steps)
     else:
         raise RuntimeError(f"Invalid method: {method}")
 
     end = time.time()
-
-    pdb.set_trace()
 
     with open(output_path, "a") as f:
         f.write(f"Time to generate trajectory: {end - start} seconds\n")
