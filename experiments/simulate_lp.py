@@ -7,8 +7,9 @@ from copy import deepcopy
 import functools
 import matplotlib.pyplot as plt
 
+import jax
 import jax.numpy as jnp
-from jax import jit, vmap, random, lax, tree_util
+from jax import jit, vmap, random, lax, tree_util, pmap
 from jax_md import space, simulate, rigid_body
 
 from jax_dna.common import utils, topology, trajectory
@@ -136,7 +137,7 @@ def sim_nested_for_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key):
     return tree_stack(traj)
 
 
-def sim_batched_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key, batch_size):
+def sim_vmap_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key, batch_size):
 
     init_body = conf_info.get_states()[0]
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
@@ -164,9 +165,58 @@ def sim_batched_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps, k
     batch_keys = random.split(key, batch_size)
     batch_trajs = vmap(batch_fn)(batch_keys)
 
-    # FIXME: combine into one big trajectory
-    # raise NotImplementedError
-    return batch_trajs
+    num_bases = batch_trajs.center.shape[2]
+    assert(batch_trajs.center.shape[3] == 3)
+
+    combined_center = batch_trajs.center.reshape(-1, num_bases, 3)
+    combined_quat_vec = batch_trajs.orientation.vec.reshape(-1, num_bases, 4)
+
+    combined_traj = rigid_body.RigidBody(
+        center=combined_center,
+        orientation=rigid_body.Quaternion(combined_quat_vec))
+
+    return combined_traj
+
+
+def sim_pmap_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps, key, batch_size):
+
+    init_body = conf_info.get_states()[0]
+    seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
+
+    def batch_fn(batch_key):
+        init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
+        init_state = init_fn(batch_key, init_body, mass=mass, seq=seq_oh,
+                             bonded_nbrs=top_info.bonded_nbrs,
+                             unbonded_nbrs=top_info.unbonded_nbrs.T)
+
+        def fori_step_fn(t, state):
+            return step_fn(state, seq=seq_oh,
+                           bonded_nbrs=top_info.bonded_nbrs,
+                           unbonded_nbrs=top_info.unbonded_nbrs.T)
+        fori_step_fn = jit(fori_step_fn)
+
+        @jit
+        def scan_fn(state, step):
+            state = lax.fori_loop(0, n_inner_steps, fori_step_fn, state)
+            return state, state.position
+
+        fin_state, traj = lax.scan(scan_fn, init_state, jnp.arange(n_outer_steps))
+        return traj
+
+    batch_keys = random.split(key, batch_size)
+    batch_trajs = pmap(batch_fn)(batch_keys)
+
+    num_bases = batch_trajs.center.shape[2]
+    assert(batch_trajs.center.shape[3] == 3)
+
+    combined_center = batch_trajs.center.reshape(-1, num_bases, 3)
+    combined_quat_vec = batch_trajs.orientation.vec.reshape(-1, num_bases, 4)
+
+    combined_traj = rigid_body.RigidBody(
+        center=combined_center,
+        orientation=rigid_body.Quaternion(combined_quat_vec))
+
+    return combined_traj
 
 if __name__ == "__main__":
     import argparse
@@ -175,7 +225,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Simulate 202 bp duplex to eval. memory constraints")
     parser.add_argument('--method', type=str,
                         default="for-loop",
-                        choices=["for-loop", "scan", "nested-scan", "nested-for-scan", "batched-nested-scan"],
+                        choices=["for-loop", "scan", "nested-scan", "nested-for-scan", "vmap-batched-nested-scan", "pmap-batched-nested-scan"],
                         help='Method for simulating')
     parser.add_argument('--run-name', type=str,
                         help='Run name')
@@ -237,10 +287,16 @@ if __name__ == "__main__":
         traj = sim_nested_scan(conf_info, top_info, n_inner_steps=sample_every, n_outer_steps=n_points, key=key)
     elif method == "nested-for-scan":
         traj = sim_nested_for_scan(conf_info, top_info, n_inner_steps=sample_every, n_outer_steps=n_points, key=key)
-    elif method == "batched-nested-scan":
+    elif method == "vmap-batched-nested-scan":
         assert(n_points % batch_size == 0)
         n_points_per_batch = n_points // batch_size
-        batched_trajs = sim_batched_nested_scan(conf_info, top_info, n_inner_steps=sample_every, n_outer_steps=n_points_per_batch, key=key, batch_size=batch_size)
+        traj = sim_vmap_nested_scan(conf_info, top_info, n_inner_steps=sample_every, n_outer_steps=n_points_per_batch, key=key, batch_size=batch_size)
+    elif method == "pmap-batched-nested-scan":
+        n_devices = jax.local_device_count()
+        assert(batch_size <= n_devices)
+        assert(n_points % batch_size == 0)
+        n_points_per_batch = n_points // batch_size
+        traj = sim_pmap_nested_scan(conf_info, top_info, n_inner_steps=sample_every, n_outer_steps=n_points_per_batch, key=key, batch_size=batch_size)
     else:
         raise RuntimeError(f"Invalid method: {method}")
 
