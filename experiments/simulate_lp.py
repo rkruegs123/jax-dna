@@ -165,8 +165,8 @@ def sim_batched_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps, k
     batch_trajs = vmap(batch_fn)(batch_keys)
 
     # FIXME: combine into one big trajectory
-    raise NotImplementedError
-    # return batch_trajs
+    # raise NotImplementedError
+    return batch_trajs
 
 if __name__ == "__main__":
     import argparse
@@ -245,6 +245,8 @@ if __name__ == "__main__":
         raise RuntimeError(f"Invalid method: {method}")
 
     end = time.time()
+
+    pdb.set_trace()
 
     with open(output_path, "a") as f:
         f.write(f"Time to generate trajectory: {end - start} seconds\n")
