@@ -186,7 +186,7 @@ def sim_pmap_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps,
 
     def eq_fn(eq_key):
         init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
-        init_state = init_fn(batch_key, init_body, mass=mass, seq=seq_oh,
+        init_state = init_fn(eq_key, init_body, mass=mass, seq=seq_oh,
                              bonded_nbrs=top_info.bonded_nbrs,
                              unbonded_nbrs=top_info.unbonded_nbrs.T)
         def fori_step_fn(t, state):
@@ -200,8 +200,7 @@ def sim_pmap_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps,
 
     key, eq_key = random.split(key)
     eq_keys = random.split(eq_key, batch_size)
-    eq_bodies = vmap(eq_fn)(eq_keys)
-
+    eq_bodies = pmap(eq_fn)(eq_keys)
 
 
     def batch_fn(batch_key, eq_body):
@@ -238,6 +237,7 @@ def sim_pmap_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps,
         orientation=rigid_body.Quaternion(combined_quat_vec))
 
     return combined_traj
+
 
 if __name__ == "__main__":
     import argparse
@@ -331,12 +331,7 @@ if __name__ == "__main__":
     with open(output_path, "a") as f:
         f.write(f"Time to generate trajectory: {end - start} seconds\n")
 
-    traj_info = trajectory.TrajectoryInfo(
-        top_info, read_from_states=True, states=traj, box_size=conf_info.box_size)
-    traj_info.write(run_dir / "traj.dat", reverse=True)
-
     # Compute the average persistence length
-
     def get_all_quartets(n_nucs_per_strand):
         s1_nucs = list(range(n_nucs_per_strand))
         s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
@@ -352,8 +347,10 @@ if __name__ == "__main__":
         return jnp.array(all_quartets, dtype=jnp.int32)
 
     quartets = get_all_quartets(n_nucs_per_strand=traj[0].center.shape[0] // 2)
-    quartets = quartets[25:]
-    quartets = quartets[:-25]
+    # quartets = quartets[25:]
+    # quartets = quartets[:-25]
+    quartets = quartets[5:]
+    quartets = quartets[:-5]
 
 
     all_curves = list()
@@ -413,3 +410,8 @@ if __name__ == "__main__":
     Lp = persistence_length.persistence_length_fit(mean_correlation_curve, mean_l0_avg)
     with open(output_path, "a") as f:
         f.write(f"\nFinal persistence length: {Lp*utils.nm_per_oxdna_length}\n")
+
+    # Write the trajectory to file
+    traj_info = trajectory.TrajectoryInfo(
+        top_info, read_from_states=True, states=traj, box_size=conf_info.box_size)
+    traj_info.write(run_dir / "traj.dat", reverse=True)
