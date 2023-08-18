@@ -260,7 +260,7 @@ def run(args):
             eq_key, ref_key = random.split(split)
 
             start = time.time()
-            ref_states, ref_energies = get_ref_states(params, eq_pos, ref_key)
+            ref_states, ref_energies = get_ref_states(params, ref_states[-1], ref_key)
             end = time.time()
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
@@ -272,7 +272,7 @@ def run(args):
         with open(loss_path, "a") as f:
             f.write(f"{loss}\n")
         with open(neff_path, "a") as f:
-            f.write(f"{neff}\n")
+            f.write(f"{n_eff}\n")
         with open(lp_path, "a") as f:
             f.write(f"{curr_lp}\n")
 
@@ -294,6 +294,8 @@ def run(args):
 
 if __name__ == "__main__":
     import argparse
+
+    parser = argparse.ArgumentParser(description="Optimize persistence length using differentiable trajectory reweighting")
 
     parser.add_argument('--n-expected-devices', type=int,
                         help="Expected number of devices. Present as a sanity check. This also serves as the batch size.")

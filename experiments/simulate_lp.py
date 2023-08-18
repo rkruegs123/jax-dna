@@ -389,7 +389,7 @@ if __name__ == "__main__":
     plt.plot(list(intermediate_lps.keys())[min_running_avg_idx:], list(intermediate_lps.values())[min_running_avg_idx:])
     plt.xlabel("Time")
     plt.ylabel("Lp (nm)")
-    plt.title("Running Average, Iniital Truncation")
+    plt.title("Running Average, Initial Truncation")
     # plt.show()
     plt.savefig(run_dir / "truncated_running_avg.png")
     plt.clf()
