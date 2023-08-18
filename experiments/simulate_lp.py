@@ -6,6 +6,7 @@ import numpy as onp
 from copy import deepcopy
 import functools
 import matplotlib.pyplot as plt
+import shutil
 
 import jax
 import jax.numpy as jnp
@@ -241,7 +242,6 @@ def sim_pmap_nested_scan(conf_info, top_info, n_inner_steps, n_outer_steps,
 
 if __name__ == "__main__":
     import argparse
-    import shutil
 
     parser = argparse.ArgumentParser(description="Simulate 202 bp duplex to eval. memory constraints")
     parser.add_argument('--method', type=str,

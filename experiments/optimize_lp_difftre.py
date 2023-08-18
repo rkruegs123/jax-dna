@@ -9,8 +9,9 @@ import matplotlib.pyplot as plt
 import numpy as onp
 
 import optax
+import jax
 import jax.numpy as jnp
-from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util
+from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util, pmap
 from jax_md import space, simulate, rigid_body
 
 from jax_dna.common import utils, topology, trajectory, checkpoint
@@ -20,6 +21,7 @@ from jax_dna.dna1 import model
 from jax.config import config
 config.update("jax_enable_x64", True)
 
+
 checkpoint_every = None
 if checkpoint_every is None:
     scan = lax.scan
@@ -27,9 +29,6 @@ else:
     scan = functools.partial(checkpoint.checkpoint_scan,
                              checkpoint_every=checkpoint_every)
 
-
-def tree_stack(trees):
-    return tree_util.tree_map(lambda *v: jnp.stack(v), *trees)
 
 def get_all_quartets(n_nucs_per_strand):
     s1_nucs = list(range(n_nucs_per_strand))
@@ -45,7 +44,38 @@ def get_all_quartets(n_nucs_per_strand):
         all_quartets.append(bp1 + bp2)
     return jnp.array(all_quartets, dtype=jnp.int32)
 
-def run():
+
+def run(args):
+
+    # Load arguments
+    n_eq_steps = args['n_eq_steps']
+    skipped_quartets_per_end = args['skipped_quartets_per_end']
+    n_devices = jax.local_device_count()
+    n_expected_devices = args['n_expected_devices']
+    assert(n_devices == n_expected_devices)
+    n_steps_per_batch = args['n_steps_per_batch']
+    sample_every = args['sample_every']
+    lr = args['lr']
+    target_lp = args['target_lp']
+    n_iters = args['n_iters']
+    min_neff_factor = args['min_neff_factor']
+    run_name = args['run_name']
+
+    # Setup the logging directoroy
+    if run_name is None:
+        raise RuntimeError(f"Must set a run name")
+    output_dir = Path("output/")
+    run_dir = output_dir / run_name
+    run_dir.mkdir(parents=False, exist_ok=False)
+    img_dir = run_dir / "img"
+    img_dir.mkdir(parents=False, exist_ok=False)
+
+    params_str = ""
+    for k, v in args.items():
+        params_str += f"{k}: {v}\n"
+    with open(run_dir / "params.txt", "w+") as f:
+        f.write(params_str)
+
 
     # Load the system
     sys_basedir = Path("data/sys-defs/persistence-length")
@@ -72,8 +102,7 @@ def run():
     mass = rigid_body.RigidBody(center=jnp.array([utils.nucleotide_mass], dtype=jnp.float64),
                                 orientation=jnp.array([utils.moment_of_inertia], dtype=jnp.float64))
 
-
-    n_eq_steps = 10000
+    # Setup functions for generation of reference states
     def eq_fn(params, body, key):
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
         energy_fn = lambda body: em.energy_fn(body,
@@ -89,54 +118,68 @@ def run():
 
         eq_state = lax.fori_loop(0, n_eq_steps, fori_step_fn, init_state)
         return eq_state.position
+    batched_eq_fn = pmap(eq_fn, in_axes=(None, None, 0))
 
-
-
-    # n_sample_steps = int(1e4) # For testing
-    # sample_every = int(1e1) # For testing
-    # n_sample_steps = int(1e7)
-    # sample_every = int(1e4)
-    n_sample_steps = int(1e7)
-    sample_every = int(1e4)
-    assert(n_sample_steps % sample_every == 0)
-    n_ref_states = n_sample_steps // sample_every
+    n_steps = n_steps_per_batch * n_devices
+    assert(n_steps_per_batch % sample_every == 0)
+    n_ref_states_per_batch = n_steps_per_batch // sample_every
+    n_ref_states = n_ref_states_per_batch * n_devices
 
     def get_ref_states(params, eq_init_body, key):
+
+        # Equilibrate
+        key, eq_key = random.split(key)
+        eq_keys = random.split(eq_key, n_devices)
+        eq_bodies = batched_eq_fn(params, eq_init_body, eq_keys)
+
+
+        # Simulate the equilibrated states
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
         energy_fn = lambda body: em.energy_fn(body,
                                               seq=seq_oh,
                                               bonded_nbrs=top_info.bonded_nbrs,
                                               unbonded_nbrs=top_info.unbonded_nbrs.T)
 
-        init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
-        init_state = init_fn(key, eq_init_body, mass=mass)
+        def batch_fn(batch_key, eq_body):
+            init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+            init_state = init_fn(batch_key, eq_body, mass=mass)
 
-        step_fn = jit(step_fn)
+            step_fn = jit(step_fn)
 
-        fori_step_fn = lambda t, state: step_fn(state)
-        fori_step_fn = jit(fori_step_fn)
+            fori_step_fn = lambda t, state: step_fn(state)
+            fori_step_fn = jit(fori_step_fn)
 
-        state = deepcopy(init_state)
-        trajectory = list()
-        for i in tqdm(range(n_ref_states)):
-            state = lax.fori_loop(0, sample_every, fori_step_fn, state)
-            trajectory.append(state.position)
+            @jit
+            def scan_fn(state, step):
+                state = lax.fori_loop(0, sample_every, fori_step_fn, state)
+                return state, state.position
 
-        ref_states = tree_stack(trajectory)
+            _, batch_ref_states = lax.scan(scan_fn, init_state, jnp.arange(n_ref_states_per_batch))
+            return batch_ref_states
+
+        batch_keys = random.split(key, n_devices)
+        all_batch_ref_states = pmap(batch_fn)(batch_keys, eq_bodies)
+
+        num_bases = all_batch_ref_states.center.shape[2] # FIXME: should just use top_info.n
+        assert(all_batch_ref_states.center.shape[3] == 3)
+
+        combined_center = all_batch_ref_states.center.reshape(-1, num_bases, 3)
+        combined_quat_vec = all_batch_ref_states.orientation.vec.reshape(-1, num_bases, 4)
+
+        ref_states = rigid_body.RigidBody(
+            center=combined_center,
+            orientation=rigid_body.Quaternion(combined_quat_vec))
         ref_energies = vmap(energy_fn)(ref_states)
 
         return ref_states, ref_energies
 
 
     # Construct the loss function
-
     quartets = get_all_quartets(n_nucs_per_strand=init_body.center.shape[0] // 2)
-    quartets = quartets[25:]
-    quartets = quartets[:-25]
+    quartets = quartets[skipped_quartets_per_end:]
+    quartets = quartets[:-skipped_quartets_per_end]
     base_site = jnp.array([model.com_to_hb, 0.0, 0.0])
     compute_all_curves = vmap(persistence_length.get_correlation_curve, (0, None, None))
-
-    target_lp_nm = 37.5 # FIXME: some dummy value to optimize to
 
     @jit
     def loss_fn(params, ref_states, ref_energies):
@@ -154,20 +197,20 @@ def run():
         denom = jnp.sum(boltzs)
         weights = boltzs / denom
 
-
         unweighted_corr_curves, unweighted_l0_avgs = compute_all_curves(ref_states, quartets, base_site)
         weighted_corr_curves = vmap(lambda v, w: v * w)(unweighted_corr_curves, weights)
         weighted_l0_avgs = vmap(lambda l0, w: l0 * w)(unweighted_l0_avgs, weights)
         expected_corr_curv = jnp.sum(weighted_corr_curves, axis=0)
         expected_l0_avg = jnp.sum(weighted_l0_avgs)
-        expected_lp = persistence_length.persistence_length_fit(expected_corr_curv, expected_l0_avg)
+        expected_lp = persistence_length.persistence_length_fit(expected_corr_curv,
+                                                                expected_l0_avg)
         expected_lp = expected_lp * utils.nm_per_oxdna_length
 
 
         # Compute effective sample size
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
 
-        return (expected_lp - target_lp_nm)**2, (n_eff, expected_lp, expected_corr_curv)
+        return (expected_lp - target_lp)**2, (n_eff, expected_lp, expected_corr_curv)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -175,26 +218,33 @@ def run():
     params = deepcopy(model.EMPTY_BASE_PARAMS)
     params["fene"] = model.DEFAULT_BASE_PARAMS["fene"]
     params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
-    lr = 0.001
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
 
-    n_epochs = 100
     key = random.PRNGKey(0)
 
-    init_body = conf_info.get_states()[0]
-    print(f"Generating initial reference states and energies...")
-    ref_states, ref_energies = get_ref_states(params, init_body, key)
-    print(f"Finished generating initial reference states and energies")
-
-    min_n_eff = int(n_ref_states * 0.90)
+    min_n_eff = int(n_ref_states * min_neff_factor)
     all_losses = list()
     all_n_effs = list()
     all_ref_losses = list()
     all_ref_times = list()
-    plot_every = 2
 
-    for i in tqdm(range(n_epochs)):
+    loss_path = run_dir / "loss.txt"
+    neff_path = run_dir / "neff.txt"
+    lp_path = run_dir / "lp.txt"
+    resample_log_path = run_dir / "resample_log.txt"
+
+    init_body = conf_info.get_states()[0]
+    print(f"Generating initial reference states and energies...")
+    with open(resample_log_path, "a") as f:
+        f.write(f"Generating initial reference states and energies...\n")
+    start = time.time()
+    ref_states, ref_energies = get_ref_states(params, init_body, key)
+    end = time.time()
+    with open(resample_log_path, "a") as f:
+        f.write(f"Finished generating initial reference states. Took {end - start} seconds.\n\n")
+
+    for i in tqdm(range(n_iters)):
         (loss, (n_eff, curr_lp, expected_corr_curv)), grads = grad_fn(params, ref_states, ref_energies)
 
         if i == 0:
@@ -202,47 +252,70 @@ def run():
             all_ref_times.append(i)
 
         if n_eff < min_n_eff:
-            print(f"n_eff was {n_eff}... resampling reference states...")
+            with open(resample_log_path, "a") as f:
+                f.write(f"Iteration {i}\n")
+                f.write(f"- n_eff was {n_eff}. Resampling...\n")
             key, split = random.split(key)
 
             eq_key, ref_key = random.split(split)
 
             start = time.time()
-            eq_pos = eq_fn(params, ref_states[-1], eq_key)
-            end = time.time()
-            print(f"Generating equilibrium state took {end - start} seconds")
-
-            start = time.time()
             ref_states, ref_energies = get_ref_states(params, eq_pos, ref_key)
             end = time.time()
-            print(f"Generating reference states took {end - start} seconds")
+            with open(resample_log_path, "a") as f:
+                f.write(f"- time to resample: {end - start} seconds\n\n")
             (loss, (n_eff, curr_lp, expected_corr_curv)), grads = grad_fn(params, ref_states, ref_energies)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
 
+        with open(loss_path, "a") as f:
+            f.write(f"{loss}\n")
+        with open(neff_path, "a") as f:
+            f.write(f"{neff}\n")
+        with open(lp_path, "a") as f:
+            f.write(f"{curr_lp}\n")
 
         all_losses.append(loss)
         all_n_effs.append(n_eff)
 
-
-        print(f"Loss: {loss}")
-        print(f"Effective sample size: {n_eff}")
-        print(f"Current expected Lp: {curr_lp}")
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
 
         plt.plot(expected_corr_curv)
-        plt.savefig(f"difftre_iter{i}_1e7v2_corr.png")
+        plt.savefig(img_dir / f"corr_iter{i}.png")
+        plt.clf()
+
+        plt.plot(onp.arange(i+1), all_losses, linestyle="--")
+        plt.scatter(all_ref_times, all_ref_losses, marker='o')
+        plt.savefig(img_dir / f"losses_iter{i}.png")
         plt.clf()
 
 
-        if i % plot_every == 0:
-            plt.plot(onp.arange(i+1), all_losses, linestyle="--")
-            plt.scatter(all_ref_times, all_ref_losses, marker='o')
-            plt.savefig(f"difftre_iter{i}_1e7v2.png")
-
-
-
 if __name__ == "__main__":
-    run()
+    import argparse
+
+    parser.add_argument('--n-expected-devices', type=int,
+                        help="Expected number of devices. Present as a sanity check. This also serves as the batch size.")
+    parser.add_argument('--n-iters', type=int, default=100,
+                        help="Number of iterations of gradient descent")
+    parser.add_argument('--n-eq-steps', type=int,
+                        help="Number of equilibration steps per device/batch. One batch per device.")
+    parser.add_argument('--n-steps-per-batch', type=int, default=int(1e7),
+                        help="Number of total steps (post-equilibration) for sampling per batch.")
+    parser.add_argument('--sample-every', type=int, default=int(1e4),
+                        help="Frequency of sampling reference states.")
+    parser.add_argument('--skipped-quartets-per-end', type=int, default=5,
+                        help="Number of quartets to ignore per end when calculating persistence length")
+    parser.add_argument('--lr', type=float, default=0.001,
+                        help="Learning rate")
+    parser.add_argument('--min-neff-factor', type=float, default=0.95,
+                        help="Factor for determining min Neff")
+    parser.add_argument('--target-lp', type=float,
+                        help="Target persistence length in nanometers")
+    parser.add_argument('--run-name', type=str,
+                        help='Run name')
+
+    args = vars(parser.parse_args())
+
+    run(args)
