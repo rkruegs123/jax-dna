@@ -36,7 +36,7 @@ def vector_autocorrelate(arr):
 def compute_l_vector(quartet, system: RigidBody, base_sites: Array):
     # Base pair 1 is comprised of a1 and b1. Base pair #2 is a2, b2.
     # i.e. a1 is H-bonded to b1, a2 is h-bonded to b2
-    a1, b1, a2, b2 = quartet #a1, b1, a2, b2 are the indices of the relevant nucleotides
+    a1, b1, a2, b2 = quartet # a1, b1, a2, b2 are the indices of the relevant nucleotides
 
     # get midpoints for each base pair
     mp1 = (base_sites[b1] + base_sites[a1]) / 2.

@@ -134,7 +134,7 @@ class TrajectoryInfo:
         bs = list()
         Es = list()
         ts = list()
-        for state_lines in all_state_lines:
+        for state_lines in tqdm(all_state_lines, desc="Loading trajectory from file"):
             t = float(state_lines[0].split('=')[1].strip())
             ts.append(t)
 
@@ -316,7 +316,8 @@ class TrajectoryInfo:
         from a file
         """
         states = list()
-        for t in self.traj_df.t.unique():
+        ts = list(self.traj_df.t.unique())
+        for t in tqdm(ts, desc="Retrieving states"):
             state_df = self.traj_df[self.traj_df['t'] == t]
             state = self.state_df_to_state(state_df)
             states.append(state)
