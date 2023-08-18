@@ -261,6 +261,9 @@ if __name__ == "__main__":
     parser.add_argument('--min-running-avg-idx', type=int,
                         help="Minimum index of the final trajectory for plotting a running average")
     parser.add_argument('--batch-size', type=int, help="Batch size")
+    parser.add_argument('--key-seed', type=int, default=0,
+                        help="Integer seed for key")
+    
 
     args = vars(parser.parse_args())
     method = args['method']
@@ -271,6 +274,7 @@ if __name__ == "__main__":
     running_avg_interval = args['running_avg_interval']
     min_running_avg_idx = args['min_running_avg_idx']
     n_eq_steps = args['n_eq_steps']
+    key_seed = args['key_seed']
 
     output_dir = Path("output/")
     run_dir = output_dir / run_name
@@ -297,7 +301,7 @@ if __name__ == "__main__":
         read_from_file=True, traj_path=conf_path, reverse_direction=True
     )
 
-    key = random.PRNGKey(0)
+    key = random.PRNGKey(key_seed)
 
     sample_every = n_steps // n_points
 
