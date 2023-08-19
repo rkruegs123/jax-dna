@@ -173,13 +173,47 @@ def run(args):
 
         return ref_states, ref_energies
 
-
-    # Construct the loss function
     quartets = get_all_quartets(n_nucs_per_strand=init_body.center.shape[0] // 2)
     quartets = quartets[skipped_quartets_per_end:]
     quartets = quartets[:-skipped_quartets_per_end]
     base_site = jnp.array([model.com_to_hb, 0.0, 0.0])
     compute_all_curves = vmap(persistence_length.get_correlation_curve, (0, None, None))
+
+
+    def log_ref_states_info(ref_states, i):
+        all_curves = list()
+        all_l0_avg = list()
+        intermediate_lps = dict()
+        running_avg_interval = 10
+        min_running_avg_idx = 50
+        for s_idx in tqdm(range(n_ref_states), desc="Computing running average of reference states"):
+            body = ref_states[s_idx]
+            correlation_curve, l0_avg = persistence_length.get_correlation_curve(body, quartets, base_site)
+            all_curves.append(correlation_curve)
+            all_l0_avg.append(l0_avg)
+
+            if s_idx % running_avg_interval == 0 and s_idx != 0:
+                mean_correlation_curve = jnp.mean(jnp.array(all_curves), axis=0)
+                mean_l0_avg = jnp.mean(jnp.array(all_l0_avg))
+                mean_Lp = persistence_length.persistence_length_fit(mean_correlation_curve, mean_l0_avg)
+                intermediate_lps[i*sample_every] = mean_Lp * utils.nm_per_oxdna_length
+
+        plt.plot(intermediate_lps.keys(), intermediate_lps.values())
+        plt.xlabel("Time")
+        plt.ylabel("Lp (nm)")
+        plt.title("Running Average")
+        plt.savefig(img_dir / "running_avg_i{i}.png")
+        plt.clf()
+
+        plt.plot(list(intermediate_lps.keys())[min_running_avg_idx:],
+                 list(intermediate_lps.values())[min_running_avg_idx:])
+        plt.xlabel("Time")
+        plt.ylabel("Lp (nm)")
+        plt.title("Running Average, Initial Truncation")
+        plt.savefig(img_dir / "truncated_running_avg_i{i}.png")
+        plt.clf()
+
+    # Construct the loss function
 
     @jit
     def loss_fn(params, ref_states, ref_energies):
@@ -243,6 +277,7 @@ def run(args):
     end = time.time()
     with open(resample_log_path, "a") as f:
         f.write(f"Finished generating initial reference states. Took {end - start} seconds.\n\n")
+    log_ref_states_info(ref_states, i)
 
     for i in tqdm(range(n_iters)):
         (loss, (n_eff, curr_lp, expected_corr_curv)), grads = grad_fn(params, ref_states, ref_energies)
@@ -264,6 +299,7 @@ def run(args):
             end = time.time()
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
+            log_ref_states_info(ref_states, i)
             (loss, (n_eff, curr_lp, expected_corr_curv)), grads = grad_fn(params, ref_states, ref_energies)
 
             all_ref_losses.append(loss)
