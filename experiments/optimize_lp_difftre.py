@@ -277,7 +277,7 @@ def run(args):
     end = time.time()
     with open(resample_log_path, "a") as f:
         f.write(f"Finished generating initial reference states. Took {end - start} seconds.\n\n")
-    log_ref_states_info(ref_states, i)
+    log_ref_states_info(ref_states, 0)
 
     for i in tqdm(range(n_iters)):
         (loss, (n_eff, curr_lp, expected_corr_curv)), grads = grad_fn(params, ref_states, ref_energies)
