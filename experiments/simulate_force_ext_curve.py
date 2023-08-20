@@ -157,8 +157,8 @@ def sim_force(total_force_magnitude, key, n_eq_steps, sample_every, n_steps_per_
 def run(args):
     # FIXME: maybe take as argument, and give n-steps-per-batch as a list as well, enforcing that device distribution works for all of them
     # forces = jnp.array([0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.375]) * 2 # Simulation units
-    # forces = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.75]
-    forces = [0.6, 0.75]
+    forces = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.75]
+    # forces = [0.6, 0.75]
 
     # Load arguments
     key_seed = args['key_seed']
