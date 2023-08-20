@@ -10,7 +10,7 @@ def get_force_fn(base_energy_or_force_fn, n, displacement_fn, nuc_ids,
                  center_force, orientation_force):
 
     center_force = jnp.array(center_force)
-    assert(center.force.shape == (3,)) # note differentiable
+    assert(center_force.shape == (3,)) # note differentiable
     zero_center_force = jnp.zeros(3)
 
     orientation_force = jnp.array(orientation_force)

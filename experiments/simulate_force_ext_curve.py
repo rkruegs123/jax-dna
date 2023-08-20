@@ -40,6 +40,23 @@ ext_force_bps2 = [104, 115]
 dir_force_axis = jnp.array([0, 0, 1])
 
 x_init = jnp.array([39.87, 50.60, 44.54]) # initialize to the true values
+x_init_si = jnp.array([x_init[0] * utils.nm_per_oxdna_length,
+                       x_init[1] * utils.nm_per_oxdna_length,
+                       x_init[2] * utils.oxdna_force_to_pn])
+
+# Load the system
+sys_basedir = Path("data/sys-defs/wlc-fit")
+top_path = sys_basedir / "generated.top"
+top_info = topology.TopologyInfo(top_path, reverse_direction=True)
+
+conf_path = sys_basedir / "generated.dat"
+conf_info = trajectory.TrajectoryInfo(
+    top_info,
+    read_from_file=True, traj_path=conf_path, reverse_direction=True
+)
+init_body = conf_info.get_states()[0]
+seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
+
 
 def compute_dist(state):
     end1_com = (state.center[ext_force_bps1[0]] + state.center[ext_force_bps1[1]]) / 2
@@ -69,18 +86,6 @@ def WLC(coeffs, x_data, force_data, kT):
     return residual
 
 def sim_force(total_force_magnitude, key, n_eq_steps, sample_every, n_steps_per_batch, batch_size):
-
-    # Load the system
-    sys_basedir = Path("data/sys-defs/wlc-fit")
-    top_path = sys_basedir / "generated.top"
-    top_info = topology.TopologyInfo(top_path, reverse_direction=True)
-
-    conf_path = sys_basedir / "generated.dat"
-    conf_info = trajectory.TrajectoryInfo(
-        top_info,
-        read_from_file=True, traj_path=conf_path, reverse_direction=True
-    )
-    init_body = conf_info.get_states()[0]
 
     # Setup our force fn
     force_magnitude_per_end = total_force_magnitude / 2.0
@@ -151,7 +156,9 @@ def sim_force(total_force_magnitude, key, n_eq_steps, sample_every, n_steps_per_
 
 def run(args):
     # FIXME: maybe take as argument, and give n-steps-per-batch as a list as well, enforcing that device distribution works for all of them
-    forces = jnp.array([0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.375]) * 2 # Simulation units
+    # forces = jnp.array([0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.375]) * 2 # Simulation units
+    # forces = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.75]
+    forces = [0.6, 0.75]
 
     # Load arguments
     key_seed = args['key_seed']
@@ -166,6 +173,8 @@ def run(args):
     run_name = args['run_name']
     num_points_per_batch = n_steps_per_batch // sample_every
     num_points = num_points_per_batch * batch_size
+    running_avg_interval = args['running_avg_interval']
+    min_running_avg_idx = args['min_running_avg_idx']
 
     # Setup the logging directoroy
     if run_name is None:
@@ -186,7 +195,7 @@ def run(args):
     with open(log_path, "a") as f:
         f.write(f"Generate trajectories...\n")
     f_trajs = {}
-    for force in forces:
+    for force in tqdm(forces, desc="Generating trajectories"):
         f_key, key = random.split(key)
         start = time.time()
         f_traj = sim_force(force, f_key, n_eq_steps, sample_every, n_steps_per_batch,
@@ -213,11 +222,10 @@ def run(args):
     # Compute the running average of forces
     with open(log_path, "a") as f:
         f.write(f"\nComputing distance running averages...\n")
-    running_avg_interval = 10
     num_running_avg_points = num_points // running_avg_interval
     all_running_averages = dict()
     start = time.time()
-    for force in forces:
+    for force in tqdm(forces, desc="Computing projected distances"):
         f_pdists = pdists[force]
         f_pdists_sampled = f_pdists[::running_avg_interval]
         f_running_averages = jnp.cumsum(f_pdists_sampled) / jnp.arange(1, f_pdists_sampled.shape[0]+1)
@@ -232,18 +240,15 @@ def run(args):
     plt.xlabel("Time")
     plt.ylabel("Avg. Distance")
     plt.title(f"Cumulative average")
-    # plt.show()
     plt.savefig(run_dir / "len_running_avg.png")
     plt.clf()
 
     # Plot the running averages (truncated)
-    min_running_avg_idx = 50
     for force in forces:
         plt.plot(all_running_averages[force][min_running_avg_idx:], label=f"{force}")
     plt.xlabel("Time")
     plt.ylabel("Avg. Distance")
     plt.title(f"Cumulative average")
-    # plt.show()
     plt.savefig(run_dir / "len_running_avg_truncated.png")
     plt.clf()
 
@@ -261,7 +266,7 @@ def run(args):
         f_lens = jnp.array(f_lens)
 
         gn = GaussNewton(residual_fun=WLC)
-        gn_sol = gn.run(x_init, x_data=lens, force_data=force_vals, kT=kT).params
+        gn_sol = gn.run(x_init, x_data=f_lens, force_data=jnp.array(forces), kT=kT).params
 
         all_l0s.append(gn_sol[0])
         all_lps.append(gn_sol[1])
@@ -277,7 +282,6 @@ def run(args):
     plt.legend()
     plt.title(f"WLC Fit Running Avg.")
     plt.xlabel("Time")
-    # plt.show()
     plt.savefig(run_dir / "wlc_fit_running_avg.png")
     plt.clf()
 
@@ -288,9 +292,58 @@ def run(args):
     plt.legend()
     plt.title(f"WLC Fit Running Avg. (Truncated)")
     plt.xlabel("Time")
-    # plt.show()
     plt.savefig(run_dir / "wlc_fit_running_avg_truncanted.png")
     plt.clf()
+
+    # Test the fit against true values
+
+    ## oxDNA units
+    final_f_lens = list()
+    for f in forces:
+        final_f_lens.append(jnp.mean(pdists[f]))
+    final_f_lens = jnp.array(final_f_lens)
+
+    gn = GaussNewton(residual_fun=WLC)
+    gn_sol = gn.run(x_init, x_data=final_f_lens, force_data=jnp.array(forces), kT=kT).params
+
+    test_forces = onp.linspace(0.05, 0.8, 20) # in simulation units
+    computed_extensions = [calculate_x(force, gn_sol[0], gn_sol[1], gn_sol[2], kT) for force in test_forces]
+    tom_extensions = [calculate_x(force, x_init[0], x_init[1], x_init[2], kT) for force in test_forces]
+
+    plt.plot(computed_extensions, test_forces, label="fit")
+    plt.scatter(final_f_lens, forces, label="samples")
+    plt.plot(tom_extensions, test_forces, label="tom fit")
+    plt.xlabel("Extension (oxDNA units)")
+    plt.ylabel("Force (oxDNA units)")
+    plt.title("Fit Evaluation, oxDNA Units")
+    plt.legend()
+    plt.savefig(run_dir / "fit_evaluation_oxdna.png")
+    plt.clf()
+
+
+    ## SI units
+    test_forces_si = test_forces * utils.oxdna_force_to_pn # in pN
+    final_f_lens_si = final_f_lens * utils.nm_per_oxdna_length # in nm
+    kT_si = 4.08846006711 # in pN*nm
+    forces_si = jnp.array(forces) * utils.oxdna_force_to_pn # pN
+
+    gn_si = GaussNewton(residual_fun=WLC)
+    gn_sol_si = gn_si.run(x_init_si, x_data=final_f_lens_si,
+                          force_data=forces_si, kT=kT_si).params
+
+    computed_extensions_si = [calculate_x(force, gn_sol_si[0], gn_sol_si[1], gn_sol_si[2], kT_si) for force in test_forces_si] # in nm
+    tom_extensions_si = [calculate_x(force, x_init_si[0], x_init_si[1], x_init_si[2], kT_si) for force in test_forces_si] # in nm
+
+    plt.plot(computed_extensions_si, test_forces_si, label="fit")
+    plt.scatter(final_f_lens_si, forces_si, label="samples")
+    plt.plot(tom_extensions_si, test_forces_si, label="tom fit")
+    plt.xlabel("Extension (nm)")
+    plt.ylabel("Force (pN)")
+    plt.title("Fit Evaluation, SI Units")
+    plt.legend()
+    plt.savefig(run_dir / "fit_evaluation_si.png")
+    plt.clf()
+
 
     # Write all the trajectories (after we've done relevant analysis)
     with open(log_path, "a") as f:
@@ -319,6 +372,8 @@ def get_parser():
     parser.add_argument('--sample-every', type=int, default=int(1e4),
                         help="Frequency of sampling reference states.")
     parser.add_argument('--key-seed', type=int, default=0, help="Integer seed for key")
+    parser.add_argument('--running-avg-interval', type=int, default=10, help="Interval (w.r.t. # of points) for computing running averages")
+    parser.add_argument('--min-running-avg-idx', type=int, default=50, help="Min. index for plotting truncated running average")
 
     return parser
 

@@ -46,6 +46,9 @@ def angstroms_to_oxdna_length(ang):
 def oxdna_length_to_angstroms(l):
     return l * ang_per_oxdna_length
 
+oxdna_force_to_pn = 48.63
+
+
 # Tom's thesis, page 24, top
 joules_per_oxdna_energy = 4.142e-20
 def joules_to_oxdna_energy(j):
