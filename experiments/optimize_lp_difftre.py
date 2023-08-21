@@ -7,6 +7,7 @@ from tqdm import tqdm
 import time
 import matplotlib.pyplot as plt
 import numpy as onp
+import pickle
 
 import optax
 import jax
@@ -169,7 +170,11 @@ def run(args):
         ref_states = rigid_body.RigidBody(
             center=combined_center,
             orientation=rigid_body.Quaternion(combined_quat_vec))
-        ref_energies = vmap(energy_fn)(ref_states)
+        # ref_energies = vmap(energy_fn)(ref_states)
+        ref_energies = list()
+        for i in tqdm(range(n_ref_states), desc="Computing reference energies"):
+            ref_energies.append(energy_fn(ref_states[i]))
+        ref_energies = jnp.array(ref_energies)
 
         return ref_states, ref_energies
 
@@ -196,13 +201,14 @@ def run(args):
                 mean_correlation_curve = jnp.mean(jnp.array(all_curves), axis=0)
                 mean_l0_avg = jnp.mean(jnp.array(all_l0_avg))
                 mean_Lp = persistence_length.persistence_length_fit(mean_correlation_curve, mean_l0_avg)
-                intermediate_lps[i*sample_every] = mean_Lp * utils.nm_per_oxdna_length
+                intermediate_lps[s_idx*sample_every] = mean_Lp * utils.nm_per_oxdna_length
 
+        pdb.set_trace()
         plt.plot(intermediate_lps.keys(), intermediate_lps.values())
         plt.xlabel("Time")
         plt.ylabel("Lp (nm)")
         plt.title("Running Average")
-        plt.savefig(img_dir / "running_avg_i{i}.png")
+        plt.savefig(img_dir / f"running_avg_i{i}.png")
         plt.clf()
 
         plt.plot(list(intermediate_lps.keys())[min_running_avg_idx:],
@@ -210,8 +216,10 @@ def run(args):
         plt.xlabel("Time")
         plt.ylabel("Lp (nm)")
         plt.title("Running Average, Initial Truncation")
-        plt.savefig(img_dir / "truncated_running_avg_i{i}.png")
+        plt.savefig(img_dir / f"truncated_running_avg_i{i}.png")
         plt.clf()
+
+        pickle.dump(intermediate_lps, open(img_dir / f"running_avg_data_i{i}.pkl", "wb"))
 
     # Construct the loss function
 
