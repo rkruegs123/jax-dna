@@ -32,7 +32,36 @@ else:
 def tree_stack(trees):
     return tree_util.tree_map(lambda *v: jnp.stack(v), *trees)
 
-def run():
+def run(args):
+
+    # Load parameters
+    n_iters = args['n_iters']
+    n_eq_steps = args['n_eq_steps']
+    sample_every = args['sample_every']
+    lr = args['lr']
+    min_neff_factor = args['min_neff_factor']
+    n_sample_steps = args['n_sample_steps']
+    assert(n_sample_steps % sample_every == 0)
+    n_ref_states = n_sample_steps // sample_every
+    plot_every = args['plot_every']
+    run_name = args['run_name']
+    target_ptwist = args['target_ptwist']
+
+    # Setup the logging directoroy
+    if run_name is None:
+        raise RuntimeError(f"Must set a run name")
+    output_dir = Path("output/")
+    run_dir = output_dir / run_name
+    run_dir.mkdir(parents=False, exist_ok=False)
+    img_dir = run_dir / "img"
+    img_dir.mkdir(parents=False, exist_ok=False)
+
+    params_str = ""
+    for k, v in args.items():
+        params_str += f"{k}: {v}\n"
+    with open(run_dir / "params.txt", "w+") as f:
+        f.write(params_str)
+
 
     # Load the system
     sys_basedir = Path("data/sys-defs/simple-helix")
@@ -101,12 +130,6 @@ def run():
 
         return traj
 
-
-    n_eq_steps = 5000
-    n_sample_steps = 50000
-    sample_every = 500
-    assert(n_sample_steps % sample_every == 0)
-    n_ref_states = n_sample_steps // sample_every
 
     def get_ref_states(params, init_body, key):
         trajectory = sim_fn(params, init_body, n_eq_steps + n_sample_steps, key)
@@ -177,7 +200,7 @@ def run():
         # Compute effective sample size
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
 
-        return (expected_ptwist - propeller.TARGET_PROPELLER_TWIST)**2, n_eff
+        return (expected_ptwist - target_ptwist)**2, (n_eff, expected_ptwist)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -185,42 +208,52 @@ def run():
     params = deepcopy(model.EMPTY_BASE_PARAMS)
     params["fene"] = model.DEFAULT_BASE_PARAMS["fene"]
     params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
-    lr = 0.001
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
 
-    n_epochs = 100
     key = random.PRNGKey(0)
 
     init_body = conf_info.get_states()[0]
     print(f"Generating initial reference states and energies...")
     ref_states, ref_energies = get_ref_states(params, init_body, key)
 
-    min_n_eff = int(n_ref_states * 0.95)
+    min_n_eff = int(n_ref_states * min_neff_factor)
     all_losses = list()
-    all_n_effs = list()
+    all_eptwists = list()
     all_ref_losses = list()
+    all_ref_eptwists = list()
     all_ref_times = list()
-    plot_every = 10
-    for i in tqdm(range(n_epochs)):
-        (loss, n_eff), grads = grad_fn(params, ref_states, ref_energies)
+
+    loss_path = run_dir / "loss.txt"
+    neff_path = run_dir / "neff.txt"
+    eptwist_path = run_dir / "eptwist.txt"
+
+    for i in tqdm(range(n_iters)):
+        (loss, (n_eff, expected_ptwist)), grads = grad_fn(params, ref_states, ref_energies)
 
         if i == 0:
             all_ref_losses.append(loss)
             all_ref_times.append(i)
+            all_ref_eptwists.append(expected_ptwist)
 
         if n_eff < min_n_eff:
             print(f"Resampling reference states...")
             key, split = random.split(key)
             ref_states, ref_energies = get_ref_states(params, ref_states[-1], split)
-            (loss, n_eff), grads = grad_fn(params, ref_states, ref_energies)
+            (loss, (n_eff, expected_ptwist)), grads = grad_fn(params, ref_states, ref_energies)
 
             all_ref_losses.append(loss)
+            all_ref_eptwists.append(expected_ptwist)
             all_ref_times.append(i)
 
-
+        with open(loss_path, "a") as f:
+            f.write(f"{loss}\n")
+        with open(eptwist_path, "a") as f:
+            f.write(f"{expected_ptwist}\n")
+        with open(neff_path, "a") as f:
+            f.write(f"{n_eff}\n")
         all_losses.append(loss)
-        all_n_effs.append(n_eff)
+        all_eptwists.append(expected_ptwist)
 
 
         print(f"Loss: {loss}")
@@ -229,10 +262,53 @@ def run():
         params = optax.apply_updates(params, updates)
 
         if i % plot_every == 0:
+
+            # Plot the losses
             plt.plot(onp.arange(i+1), all_losses, linestyle="--")
-            plt.scatter(all_ref_times, all_ref_losses, marker='o')
-            plt.savefig(f"difftre_iter{i}.png")
+            plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points")
+            plt.xlabel("Iteration")
+            plt.ylabel("Loss")
+            plt.legend()
+            plt.title(f"DiffTRE Propeller Twist Optimization, Neff factor={min_neff_factor}")
+            plt.savefig(img_dir / f"losses_iter{i}.png")
+            plt.clf()
+
+            # Plot the persistence lengths
+            plt.plot(onp.arange(i+1), all_eptwists, linestyle="--", color='blue')
+            plt.scatter(all_ref_times, all_ref_eptwists, marker='o', label="Resample points", color='blue')
+            plt.axhline(y=target_ptwist, linestyle='--', label="Target p. twist", color='red')
+            plt.xlabel("Iteration")
+            plt.ylabel("Expected Propeller Twist (deg)")
+            plt.legend()
+            plt.title(f"DiffTRE Propeller Twist Optimization, Neff factor={min_neff_factor}")
+            plt.savefig(img_dir / f"eptwists_iter{i}.png")
+            plt.clf()
 
 
 if __name__ == "__main__":
-    run()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Optimize structural properties using differentiable trajectory reweighting")
+
+    parser.add_argument('--n-iters', type=int, default=100,
+                        help="Number of iterations of gradient descent")
+    parser.add_argument('--n-eq-steps', type=int, default=10000,
+                        help="Number of equilibration steps")
+    parser.add_argument('--n-sample-steps', type=int, default=100000,
+                        help="Number of total steps for sampling reference states")
+    parser.add_argument('--sample-every', type=int, default=1000,
+                        help="Frequency of sampling reference states.")
+    parser.add_argument('--plot-every', type=int, default=10,
+                        help="Frequency of plotting data from gradient descent epochs")
+    parser.add_argument('--lr', type=float, default=0.001,
+                        help="Learning rate")
+    parser.add_argument('--min-neff-factor', type=float, default=0.95,
+                        help="Factor for determining min Neff")
+    parser.add_argument('--target-ptwist', type=float, default=propeller.TARGET_PROPELLER_TWIST,
+                        help="Target persistence length in degrees")
+    parser.add_argument('--run-name', type=str,
+                        help='Run name')
+
+    args = vars(parser.parse_args())
+
+    run(args)
