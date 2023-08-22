@@ -164,6 +164,8 @@ def run(args):
     key_seed = args['key_seed']
     key = random.PRNGKey(key_seed)
     n_steps_per_batch = args['n_steps_per_batch']
+    low_force_factor = args['low_force_factor']
+    low_force_threshold = args['low_force_threshold']
     n_eq_steps = args['n_eq_steps']
     n_devices = jax.local_device_count()
     n_expected_devices = args['n_expected_devices']
@@ -173,8 +175,10 @@ def run(args):
     run_name = args['run_name']
     num_points_per_batch = n_steps_per_batch // sample_every
     num_points = num_points_per_batch * batch_size
+    num_points_low_forces = num_points * low_force_factor
     running_avg_interval = args['running_avg_interval']
     min_running_avg_idx = args['min_running_avg_idx']
+    
 
     # Setup the logging directoroy
     if run_name is None:
@@ -196,9 +200,14 @@ def run(args):
         f.write(f"Generate trajectories...\n")
     f_trajs = {}
     for force in tqdm(forces, desc="Generating trajectories"):
+        if force <= low_force_threshold:
+            force_n_steps_per_batch = n_steps_per_batch * low_force_factor
+        else:
+            force_n_steps_per_batch = n_steps_per_batch
+        
         f_key, key = random.split(key)
         start = time.time()
-        f_traj = sim_force(force, f_key, n_eq_steps, sample_every, n_steps_per_batch,
+        f_traj = sim_force(force, f_key, n_eq_steps, sample_every, force_n_steps_per_batch,
                            batch_size=n_devices)
         end = time.time()
         with open(log_path, "a") as f:
@@ -227,7 +236,10 @@ def run(args):
     start = time.time()
     for force in tqdm(forces, desc="Computing projected distances"):
         f_pdists = pdists[force]
-        f_pdists_sampled = f_pdists[::running_avg_interval]
+        if force <= low_force_threshold:
+            f_pdists_sampled = f_pdists[::(running_avg_interval*low_force_factor)]
+        else:
+            f_pdists_sampled = f_pdists[::running_avg_interval]
         f_running_averages = jnp.cumsum(f_pdists_sampled) / jnp.arange(1, f_pdists_sampled.shape[0]+1)
         all_running_averages[force] = f_running_averages
     end = time.time()
@@ -237,18 +249,20 @@ def run(args):
     # Plot the running averages
     for force in forces:
         plt.plot(all_running_averages[force], label=f"{force}")
-    plt.xlabel("Time")
-    plt.ylabel("Avg. Distance")
+    plt.xlabel("Sample")
+    plt.ylabel("Avg. Distance (oxDNA units)")
     plt.title(f"Cumulative average")
+    plt.legend()
     plt.savefig(run_dir / "len_running_avg.png")
     plt.clf()
 
     # Plot the running averages (truncated)
     for force in forces:
         plt.plot(all_running_averages[force][min_running_avg_idx:], label=f"{force}")
-    plt.xlabel("Time")
-    plt.ylabel("Avg. Distance")
+    plt.xlabel("Sample")
+    plt.ylabel("Avg. Distance (oxDNA units)")
     plt.title(f"Cumulative average")
+    plt.legend()
     plt.savefig(run_dir / "len_running_avg_truncated.png")
     plt.clf()
 
@@ -293,6 +307,24 @@ def run(args):
     plt.title(f"WLC Fit Running Avg. (Truncated)")
     plt.xlabel("Time")
     plt.savefig(run_dir / "wlc_fit_running_avg_truncanted.png")
+    plt.clf()
+
+    # Plot running WLC fits (truncated, SI units)
+    plt.plot(jnp.array(all_l0s[min_running_avg_idx:])*utils.nm_per_oxdna_length, label="l0")
+    plt.plot(jnp.array(all_lps[min_running_avg_idx:])*utils.nm_per_oxdna_length, label="lp")
+    plt.legend()
+    plt.title(f"WLC Fit Running Avg. (Truncated)")
+    plt.xlabel("Time")
+    plt.ylabel("Length (nm)")
+    plt.savefig(run_dir / "wlc_fit_lens_running_avg_truncanted_si.png")
+    plt.clf()
+
+    plt.plot(jnp.array(all_ks[min_running_avg_idx:])*utils.oxdna_force_to_pn, label="k")
+    plt.legend()
+    plt.title(f"WLC Fit Running Avg. (Truncated)")
+    plt.xlabel("Time")
+    plt.ylabel("Extensional Modulus (pN)")
+    plt.savefig(run_dir / "wlc_fit_ext_mod_running_avg_truncanted_si.png")
     plt.clf()
 
     # Test the fit against true values
@@ -374,6 +406,8 @@ def get_parser():
     parser.add_argument('--key-seed', type=int, default=0, help="Integer seed for key")
     parser.add_argument('--running-avg-interval', type=int, default=10, help="Interval (w.r.t. # of points) for computing running averages")
     parser.add_argument('--min-running-avg-idx', type=int, default=50, help="Min. index for plotting truncated running average")
+    parser.add_argument('--low-force-factor', type=int, default=4, help="Multiplicative factor for # of steps for low forces")
+    parser.add_argument('--low-force-threshold', type=float, default=0.1, help="The maximum value of a force considered a low force")
 
     return parser
 

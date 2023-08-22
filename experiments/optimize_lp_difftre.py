@@ -203,7 +203,6 @@ def run(args):
                 mean_Lp = persistence_length.persistence_length_fit(mean_correlation_curve, mean_l0_avg)
                 intermediate_lps[s_idx*sample_every] = mean_Lp * utils.nm_per_oxdna_length
 
-        pdb.set_trace()
         plt.plot(intermediate_lps.keys(), intermediate_lps.values())
         plt.xlabel("Time")
         plt.ylabel("Lp (nm)")
