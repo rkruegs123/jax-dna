@@ -266,8 +266,10 @@ def run(args):
 
     min_n_eff = int(n_ref_states * min_neff_factor)
     all_losses = list()
+    all_lps = list()
     all_n_effs = list()
     all_ref_losses = list()
+    all_ref_lps = list()
     all_ref_times = list()
 
     loss_path = run_dir / "loss.txt"
@@ -292,6 +294,7 @@ def run(args):
         if i == 0:
             all_ref_losses.append(loss)
             all_ref_times.append(i)
+            all_ref_lps.append(curr_lp)
 
         if n_eff < min_n_eff:
             with open(resample_log_path, "a") as f:
@@ -311,6 +314,7 @@ def run(args):
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
+            all_ref_lps.append(curr_lp)
 
         with open(loss_path, "a") as f:
             f.write(f"{loss}\n")
@@ -321,6 +325,7 @@ def run(args):
 
         all_losses.append(loss)
         all_n_effs.append(n_eff)
+        all_lps.append(curr_lp)
 
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
@@ -329,8 +334,20 @@ def run(args):
         plt.savefig(img_dir / f"corr_iter{i}.png")
         plt.clf()
 
-        plt.plot(onp.arange(i+1), all_losses, linestyle="--")
-        plt.scatter(all_ref_times, all_ref_losses, marker='o')
+        plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
+        plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
+        plt.legend()
+        plt.ylabel("Loss")
+        plt.xlabel("Iteration")
+        plt.savefig(img_dir / f"losses_iter{i}.png")
+        plt.clf()
+
+        plt.plot(onp.arange(i+1), all_lps, linestyle="--", color="blue")
+        plt.scatter(all_ref_times, all_ref_lps, marker='o', label="Resample points", color="blue")
+        plt.axhline(y=target_lp, linestyle='--', label="Target Lp", color='red')
+        plt.legend()
+        plt.ylabel("Expected Lp (nm)")
+        plt.xlabel("Iteration")
         plt.savefig(img_dir / f"losses_iter{i}.png")
         plt.clf()
 
