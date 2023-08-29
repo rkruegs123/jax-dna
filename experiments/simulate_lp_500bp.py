@@ -277,13 +277,54 @@ if __name__ == "__main__":
 
     plt.plot(mean_correlation_curve)
     plt.title("Final Correlation Curve")
+    plt.xlabel("Nuc. Index")
+    plt.ylabel("Correlation")
     plt.savefig(run_dir / "final_corr_curve.png")
     # plt.show()
     plt.clf()
 
+
+    # Plot the final log correlation curve
+    plt.plot(jnp.log(mean_correlation_curve))
+    plt.title("Final Log-Correlation Curve")
+    plt.xlabel("Nuc. Index")
+    plt.ylabel("Log-Correlation")
+    plt.savefig(run_dir / "final_log_corr_curve.png")
+    # plt.show()
+    plt.clf()
+
+    # Plot the final log correlation curve with true answer
+    true_fn = lambda n: -n * mean_l0_avg / 50.60
+    plt.plot(jnp.log(mean_correlation_curve))
+    plt.plot(true_fn(jnp.arange(mean_correlation_curve.shape[0])), linestyle='--')
+    plt.xlabel("Nuc. Index")
+    plt.ylabel("Log-Correlation")
+    plt.title("Final Log-Correlation Curve")
+    plt.savefig(run_dir / "final_log_corr_curve_with_answer.png")
+    # plt.show()
+    plt.clf()
+
+
+    # Plot the Lps with various truncations
+    lps = [persistence_length.persistence_length_fit(mean_correlation_curve[:i], mean_l0_avg) for i in range(1, mean_correlation_curve.shape[0], 5)]
+    plt.plot(range(1, mean_correlation_curve.shape[0], 5), lps)
+    plt.xlabel("Truncation")
+    plt.ylabel("Lp")
+    plt.savefig(run_dir / "final_lp_truncated.png")
+    # plt.show()
+    plt.clf()
+
+
+
     Lp = persistence_length.persistence_length_fit(mean_correlation_curve, mean_l0_avg)
     with open(output_path, "a") as f:
         f.write(f"\nFinal persistence length: {Lp*utils.nm_per_oxdna_length}\n")
+
+    for i in [20, 40, 60, 80, 100]:
+        lp_truncated = persistence_length.persistence_length_fit(mean_correlation_curve[:i], mean_l0_avg)
+        with open(output_path, "a") as f:
+            f.write(f"\nFinal persistence length (n={i}): {lp_truncated*utils.nm_per_oxdna_length}\n")
+
 
     # Write the trajectory to file
     traj_info = trajectory.TrajectoryInfo(

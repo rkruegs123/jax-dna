@@ -18,6 +18,7 @@ Array = util.Array
 TARGET_PERSISTENCE_LENGTH_DSDNA = 47.5 # nm
 
 
+"""
 def vector_autocorrelate(arr):
     n_vectors = arr.shape[0]
 
@@ -31,6 +32,25 @@ def vector_autocorrelate(arr):
     acorr /= (n_vectors - jnp.arange(n_vectors))
 
     return acorr
+"""
+
+def vector_autocorrelate(arr):
+    max_dist = arr.shape[0]
+
+    def window_correlations(i):
+        li = arr[i]
+        i_correlation_fn = lambda j: jnp.where(j >= i, jnp.dot(li, arr[j]), 0.0)
+        i_correlations = vmap(i_correlation_fn)(jnp.arange(max_dist))
+        i_correlations = jnp.roll(i_correlations, -i)
+        return i_correlations
+
+        all_correlations += i_correlations
+
+    all_correlations = vmap(window_correlations)(jnp.arange(max_dist))
+    all_correlations = jnp.sum(all_correlations, axis=0)
+
+    all_correlations /= jnp.arange(max_dist, 0, -1)
+    return all_correlations
 
 
 def compute_l_vector(quartet, system: RigidBody, base_sites: Array):
@@ -45,6 +65,7 @@ def compute_l_vector(quartet, system: RigidBody, base_sites: Array):
     # get vector between midpoint
     l = mp2 - mp1
     l0 = jnp.linalg.norm(l)
+    l /= l0
 
     return l, l0
 
