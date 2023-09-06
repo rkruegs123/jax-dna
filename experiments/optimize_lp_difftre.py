@@ -62,6 +62,7 @@ def run(args):
     min_neff_factor = args['min_neff_factor']
     run_name = args['run_name']
     always_resample = args['always_resample']
+    lp_calc_truncation = args['lp_calc_truncation']
 
     # Setup the logging directoroy
     if run_name is None:
@@ -192,6 +193,7 @@ def run(args):
         all_curves = list()
         all_l0_avg = list()
         intermediate_lps = dict()
+        intermediate_lps_truncated = dict()
         running_avg_interval = 10
         min_running_avg_idx = 50
         for s_idx in tqdm(range(n_ref_states), desc="Computing running average of reference states"):
@@ -206,6 +208,12 @@ def run(args):
                 mean_Lp = persistence_length.persistence_length_fit(mean_correlation_curve, mean_l0_avg)
                 intermediate_lps[s_idx*sample_every] = mean_Lp * utils.nm_per_oxdna_length
 
+                mean_Lp_truncated = persistence_length.persistence_length_fit(
+                    mean_correlation_curve[:lp_calc_truncation],
+                    mean_l0_avg)
+                intermediate_lps_truncated[s_idx*sample_every] = mean_Lp_truncated * utils.nm_per_oxdna_length
+                
+
         plt.plot(intermediate_lps.keys(), intermediate_lps.values())
         plt.xlabel("Time")
         plt.ylabel("Lp (nm)")
@@ -217,11 +225,26 @@ def run(args):
                  list(intermediate_lps.values())[min_running_avg_idx:])
         plt.xlabel("Time")
         plt.ylabel("Lp (nm)")
-        plt.title("Running Average, Initial Truncation")
-        plt.savefig(img_dir / f"truncated_running_avg_i{i}.png")
+        plt.title(f"Running Average, Ignoring Initial {min_running_avg_idx}")
+        plt.savefig(img_dir / f"running_avg_ignoring_initial_i{i}.png")
         plt.clf()
 
-        pickle.dump(intermediate_lps, open(img_dir / f"running_avg_data_i{i}.pkl", "wb"))
+        plt.plot(intermediate_lps_truncated.keys(), intermediate_lps_truncated.values())
+        plt.xlabel("Time")
+        plt.ylabel("Lp (nm)")
+        plt.title(f"Running Average, Truncated {lp_calc_truncation}")
+        plt.savefig(img_dir / f"running_avg_truncated_i{i}.png")
+        plt.clf()
+
+        plt.plot(list(intermediate_lps_truncated.keys())[min_running_avg_idx:],
+                 list(intermediate_lps_truncated.values())[min_running_avg_idx:])
+        plt.xlabel("Time")
+        plt.ylabel("Lp (nm)")
+        plt.title(f"Running Average, Ignoring Initial {min_running_avg_idx}, Truncated {lp_calc_truncation}")
+        plt.savefig(img_dir / f"running_avg_ignoring_initial_truncated_i{i}.png")
+        plt.clf()
+
+        # pickle.dump(intermediate_lps, open(img_dir / f"running_avg_data_i{i}.pkl", "wb"))
 
     # Construct the loss function
 
@@ -247,17 +270,17 @@ def run(args):
 
         weighted_corr_curves = vmap(lambda v, w: v * w)(unweighted_corr_curves, weights)
         weighted_l0_avgs = vmap(lambda l0, w: l0 * w)(unweighted_l0_avgs, weights)
-        expected_corr_curv = jnp.sum(weighted_corr_curves, axis=0)
+        expected_corr_curve = jnp.sum(weighted_corr_curves, axis=0)
         expected_l0_avg = jnp.sum(weighted_l0_avgs)
-        expected_lp = persistence_length.persistence_length_fit(expected_corr_curv,
-                                                                expected_l0_avg)
+        expected_lp = persistence_length.persistence_length_fit(
+            expected_corr_curve[:lp_calc_truncation],
+            expected_l0_avg)
         expected_lp = expected_lp * utils.nm_per_oxdna_length
-
 
         # Compute effective sample size
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
 
-        return (expected_lp - target_lp)**2, (n_eff, expected_lp, expected_corr_curv)
+        return (expected_lp - target_lp)**2, (n_eff, expected_lp, expected_corr_curve, expected_l0_avg)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -273,15 +296,18 @@ def run(args):
     min_n_eff = int(n_ref_states * min_neff_factor)
     all_losses = list()
     all_lps = list()
+    all_l0s = list()
     all_n_effs = list()
     all_ref_losses = list()
     all_ref_lps = list()
+    all_ref_l0s = list()
     all_ref_times = list()
 
     loss_path = run_dir / "loss.txt"
     grads_path = run_dir / "grads.txt"
     neff_path = run_dir / "neff.txt"
     lp_path = run_dir / "lp.txt"
+    l0_avg_path = run_dir / "l0_avg.txt"
     resample_log_path = run_dir / "resample_log.txt"
 
     init_body = conf_info.get_states()[0]
@@ -296,12 +322,13 @@ def run(args):
     log_ref_states_info(ref_states, 0)
 
     for i in tqdm(range(n_iters)):
-        (loss, (n_eff, curr_lp, expected_corr_curv)), grads = grad_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs)
+        (loss, (n_eff, curr_lp, expected_corr_curve, curr_l0_avg)), grads = grad_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs)
 
         if i == 0:
             all_ref_losses.append(loss)
             all_ref_times.append(i)
             all_ref_lps.append(curr_lp)
+            all_ref_l0s.append(curr_l0_avg)
 
         if n_eff < min_n_eff or (always_resample and i != 0):
             with open(resample_log_path, "a") as f:
@@ -317,11 +344,12 @@ def run(args):
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
             log_ref_states_info(ref_states, i)
-            (loss, (n_eff, curr_lp, expected_corr_curv)), grads = grad_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs)
+            (loss, (n_eff, curr_lp, expected_corr_curve, curr_l0_avg)), grads = grad_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
             all_ref_lps.append(curr_lp)
+            all_ref_l0s.append(curr_l0_avg)
 
         with open(loss_path, "a") as f:
             f.write(f"{loss}\n")
@@ -329,16 +357,42 @@ def run(args):
             f.write(f"{n_eff}\n")
         with open(lp_path, "a") as f:
             f.write(f"{curr_lp}\n")
+        with open(l0_avg_path, "a") as f:
+            f.write(f"{curr_l0_avg}\n")
 
         all_losses.append(loss)
         all_n_effs.append(n_eff)
         all_lps.append(curr_lp)
+        all_l0s.append(curr_l0_avg)
 
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
 
-        plt.plot(expected_corr_curv)
+        plt.plot(expected_corr_curve)
+        plt.xlabel("Nuc. Index")
+        plt.ylabel("Correlation")
         plt.savefig(img_dir / f"corr_iter{i}.png")
+        plt.clf()
+
+        log_corr_fn = lambda n: -n * curr_l0_avg / (curr_lp / utils.nm_per_oxdna_length) # oxDNA units
+        plt.plot(jnp.log(expected_corr_curve))
+        plt.plot(log_corr_fn(jnp.arange(expected_corr_curve.shape[0])), linestyle='--')
+        plt.xlabel("Nuc. Index")
+        plt.ylabel("Log-Correlation")
+        plt.savefig(img_dir / f"log_corr_iter{i}.png")
+        plt.clf()
+
+        plt.plot(expected_corr_curve[:lp_calc_truncation])
+        plt.xlabel("Nuc. Index")
+        plt.ylabel("Correlation")
+        plt.savefig(img_dir / f"corr_truncated_iter{i}.png")
+        plt.clf()
+
+        plt.plot(jnp.log(expected_corr_curve[:lp_calc_truncation]))
+        plt.plot(log_corr_fn(jnp.arange(expected_corr_curve[:lp_calc_truncation].shape[0])), linestyle='--')
+        plt.xlabel("Nuc. Index")
+        plt.ylabel("Log-Correlation")
+        plt.savefig(img_dir / f"log_corr_truncated_iter{i}.png")
         plt.clf()
 
         plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
@@ -376,6 +430,8 @@ if __name__ == "__main__":
                         help="Frequency of sampling reference states.")
     parser.add_argument('--skipped-quartets-per-end', type=int, default=5,
                         help="Number of quartets to ignore per end when calculating persistence length")
+    parser.add_argument('--lp-calc-truncation', type=int, default=50,
+                        help="Cutoff quartet index when extracting Lp from correlation curve")
     parser.add_argument('--lr', type=float, default=0.001,
                         help="Learning rate")
     parser.add_argument('--min-neff-factor', type=float, default=0.95,
