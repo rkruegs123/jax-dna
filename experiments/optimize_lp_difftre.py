@@ -61,6 +61,7 @@ def run(args):
     n_iters = args['n_iters']
     min_neff_factor = args['min_neff_factor']
     run_name = args['run_name']
+    always_resample = args['always_resample']
 
     # Setup the logging directoroy
     if run_name is None:
@@ -126,6 +127,12 @@ def run(args):
     n_ref_states_per_batch = n_steps_per_batch // sample_every
     n_ref_states = n_ref_states_per_batch * n_devices
 
+    quartets = get_all_quartets(n_nucs_per_strand=init_body.center.shape[0] // 2)
+    quartets = quartets[skipped_quartets_per_end:]
+    quartets = quartets[:-skipped_quartets_per_end]
+    base_site = jnp.array([model.com_to_hb, 0.0, 0.0])
+    compute_all_curves = vmap(persistence_length.get_correlation_curve, (0, None, None))
+
     def get_ref_states(params, eq_init_body, key):
 
         # Equilibrate
@@ -176,13 +183,9 @@ def run(args):
             ref_energies.append(energy_fn(ref_states[i]))
         ref_energies = jnp.array(ref_energies)
 
-        return ref_states, ref_energies
+        unweighted_corr_curves, unweighted_l0_avgs = compute_all_curves(ref_states, quartets, base_site)
 
-    quartets = get_all_quartets(n_nucs_per_strand=init_body.center.shape[0] // 2)
-    quartets = quartets[skipped_quartets_per_end:]
-    quartets = quartets[:-skipped_quartets_per_end]
-    base_site = jnp.array([model.com_to_hb, 0.0, 0.0])
-    compute_all_curves = vmap(persistence_length.get_correlation_curve, (0, None, None))
+        return ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs
 
 
     def log_ref_states_info(ref_states, i):
@@ -223,7 +226,7 @@ def run(args):
     # Construct the loss function
 
     @jit
-    def loss_fn(params, ref_states, ref_energies):
+    def loss_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs):
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
 
         # Compute the weights
@@ -232,13 +235,16 @@ def run(args):
                                               bonded_nbrs=top_info.bonded_nbrs,
                                               unbonded_nbrs=top_info.unbonded_nbrs.T)
         energy_fn = jit(energy_fn)
+        
         new_energies = vmap(energy_fn)(ref_states)
+        # new_energies = jax.checkpoint(vmap(energy_fn))(ref_states)
+
+        
         diffs = new_energies - ref_energies # element-wise subtraction
         boltzs = jnp.exp(-beta * diffs)
         denom = jnp.sum(boltzs)
         weights = boltzs / denom
 
-        unweighted_corr_curves, unweighted_l0_avgs = compute_all_curves(ref_states, quartets, base_site)
         weighted_corr_curves = vmap(lambda v, w: v * w)(unweighted_corr_curves, weights)
         weighted_l0_avgs = vmap(lambda l0, w: l0 * w)(unweighted_l0_avgs, weights)
         expected_corr_curv = jnp.sum(weighted_corr_curves, axis=0)
@@ -273,6 +279,7 @@ def run(args):
     all_ref_times = list()
 
     loss_path = run_dir / "loss.txt"
+    grads_path = run_dir / "grads.txt"
     neff_path = run_dir / "neff.txt"
     lp_path = run_dir / "lp.txt"
     resample_log_path = run_dir / "resample_log.txt"
@@ -282,21 +289,21 @@ def run(args):
     with open(resample_log_path, "a") as f:
         f.write(f"Generating initial reference states and energies...\n")
     start = time.time()
-    ref_states, ref_energies = get_ref_states(params, init_body, key)
+    ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs = get_ref_states(params, init_body, key)
     end = time.time()
     with open(resample_log_path, "a") as f:
         f.write(f"Finished generating initial reference states. Took {end - start} seconds.\n\n")
     log_ref_states_info(ref_states, 0)
 
     for i in tqdm(range(n_iters)):
-        (loss, (n_eff, curr_lp, expected_corr_curv)), grads = grad_fn(params, ref_states, ref_energies)
+        (loss, (n_eff, curr_lp, expected_corr_curv)), grads = grad_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs)
 
         if i == 0:
             all_ref_losses.append(loss)
             all_ref_times.append(i)
             all_ref_lps.append(curr_lp)
 
-        if n_eff < min_n_eff:
+        if n_eff < min_n_eff or (always_resample and i != 0):
             with open(resample_log_path, "a") as f:
                 f.write(f"Iteration {i}\n")
                 f.write(f"- n_eff was {n_eff}. Resampling...\n")
@@ -305,12 +312,12 @@ def run(args):
             eq_key, ref_key = random.split(split)
 
             start = time.time()
-            ref_states, ref_energies = get_ref_states(params, ref_states[-1], ref_key)
+            ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs = get_ref_states(params, ref_states[-1], ref_key)
             end = time.time()
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
             log_ref_states_info(ref_states, i)
-            (loss, (n_eff, curr_lp, expected_corr_curv)), grads = grad_fn(params, ref_states, ref_energies)
+            (loss, (n_eff, curr_lp, expected_corr_curv)), grads = grad_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
@@ -348,7 +355,7 @@ def run(args):
         plt.legend()
         plt.ylabel("Expected Lp (nm)")
         plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"losses_iter{i}.png")
+        plt.savefig(img_dir / f"lps_iter{i}.png")
         plt.clf()
 
 
@@ -373,6 +380,8 @@ if __name__ == "__main__":
                         help="Learning rate")
     parser.add_argument('--min-neff-factor', type=float, default=0.95,
                         help="Factor for determining min Neff")
+    parser.add_argument('--always-resample', action='store_true',
+                        help="Ignore min-neff-factor and just resample every time")
     parser.add_argument('--target-lp', type=float,
                         help="Target persistence length in nanometers")
     parser.add_argument('--run-name', type=str,
