@@ -1,0 +1,11 @@
+;; This buffer is for text that is not saved, and for Lisp evaluation.
+;; To create a file, visit it with C-x C-f and enter text in its buffer.
+
+have to first test nested dictionary merging
+
+want to test this dictionary merging thing. Considering whether or not to separate out params from get_energy_fn. A proposal:
+- have a set_params that sets the model params
+  - test that we can get non-zero gradients through tihs
+- have a get_energy_fn that doesn't take any parameters but just returns the energy function
+
+then test the energy function

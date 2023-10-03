@@ -35,6 +35,24 @@ com_to_stacking = 0.34
 com_to_hb = 0.4
 com_to_backbone = -0.4
 
+def get_full_base_params(override_base_params):
+    fene_params = DEFAULT_BASE_PARAMS["fene"] | override_base_params["fene"]
+    exc_vol_params = DEFAULT_BASE_PARAMS["excluded_volume"] | override_base_params["excluded_volume"]
+    stacking_params = DEFAULT_BASE_PARAMS["stacking"] | override_base_params["stacking"]
+    hb_params = DEFAULT_BASE_PARAMS["hydrogen_bonding"] | override_base_params["hydrogen_bonding"]
+    cr_params = DEFAULT_BASE_PARAMS["cross_stacking"] | override_base_params["cross_stacking"]
+    cx_params = DEFAULT_BASE_PARAMS["coaxial_stacking"] | override_base_params["coaxial_stacking"]
+
+    base_params = {
+        "fene": fene_params,
+        "excluded_volume": exc_vol_params,
+        "stacking": stacking_params,
+        "hydrogen_bonding": hb_params,
+        "cross_stacking": cr_params,
+        "coaxial_stacking": cx_params
+    }
+    return base_params
+
 
 class EnergyModel:
     def __init__(self, displacement_fn, override_base_params=EMPTY_BASE_PARAMS, t_kelvin=DEFAULT_TEMP):
@@ -42,21 +60,7 @@ class EnergyModel:
         self.displacement_mapped = jit(space.map_bond(partial(displacement_fn)))
         self.t_kelvin = t_kelvin
 
-        fene_params = DEFAULT_BASE_PARAMS["fene"] | override_base_params["fene"]
-        exc_vol_params = DEFAULT_BASE_PARAMS["excluded_volume"] | override_base_params["excluded_volume"]
-        stacking_params = DEFAULT_BASE_PARAMS["stacking"] | override_base_params["stacking"]
-        hb_params = DEFAULT_BASE_PARAMS["hydrogen_bonding"] | override_base_params["hydrogen_bonding"]
-        cr_params = DEFAULT_BASE_PARAMS["cross_stacking"] | override_base_params["cross_stacking"]
-        cx_params = DEFAULT_BASE_PARAMS["coaxial_stacking"] | override_base_params["coaxial_stacking"]
-
-        self.base_params = {
-            "fene": fene_params,
-            "excluded_volume": exc_vol_params,
-            "stacking": stacking_params,
-            "hydrogen_bonding": hb_params,
-            "cross_stacking": cr_params,
-            "coaxial_stacking": cx_params
-        }
+        self.base_params = get_full_base_params(override_base_params)
         self.params = process(self.base_params, self.t_kelvin)
 
     def compute_subterms(self, body, seq, bonded_nbrs, unbonded_nbrs):

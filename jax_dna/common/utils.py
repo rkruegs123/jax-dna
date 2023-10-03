@@ -1,7 +1,7 @@
 import pdb
 import numpy as onp
 
-from jax import vmap, jit
+from jax import vmap, jit, tree_util
 import jax.numpy as jnp
 
 from jax.config import config
@@ -122,3 +122,6 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
+def tree_stack(trees):
+    return tree_util.tree_map(lambda *v: jnp.stack(v), *trees)

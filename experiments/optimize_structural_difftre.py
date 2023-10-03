@@ -10,7 +10,7 @@ import numpy as onp
 
 import optax
 import jax.numpy as jnp
-from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util, lax
+from jax import jit, vmap, random, grad, value_and_grad, lax, lax
 from jax_md import space, simulate, rigid_body
 
 from jax_dna.common import utils, topology, trajectory, checkpoint
@@ -28,9 +28,6 @@ else:
     scan = functools.partial(checkpoint.checkpoint_scan,
                              checkpoint_every=checkpoint_every)
 
-
-def tree_stack(trees):
-    return tree_util.tree_map(lambda *v: jnp.stack(v), *trees)
 
 def run(args):
 
@@ -122,7 +119,7 @@ def run(args):
                             bonded_nbrs=top_info.bonded_nbrs,
                             unbonded_nbrs=top_info.unbonded_nbrs.T)
             trajectory.append(state.position)
-        traj = tree_stack(trajectory)
+        traj = utils.tree_stack(trajectory)
         end = time.time()
         print(f"Generating reference states took {end - start} seconds")
         """
@@ -148,8 +145,6 @@ def run(args):
 
         ref_energies = vmap(energy_fn)(ref_states)
         return ref_states, ref_energies
-
-
 
 
     # Construct the loss function terms

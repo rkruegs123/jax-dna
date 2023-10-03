@@ -9,14 +9,8 @@ from jax_dna.common.trajectory import TrajectoryInfo
 from jax_dna.common.topology import TopologyInfo
 
 
-def run(args):
-    top_path = args['top_path']
-    conf_path = args['conf_path']
 
-    top_info = TopologyInfo(top_path, reverse_direction=True) # Note: we assume reversal for now
-    config_info = TrajectoryInfo(top_info, read_from_file=True,
-                                 traj_path=conf_path, reverse_direction=True)
-
+def center_conf(top_info, config_info):
     box_size = config_info.box_size
     config_info_states = config_info.get_states()
     assert(len(config_info_states) == 1)
@@ -29,9 +23,23 @@ def run(args):
 
     body_centered = RigidBody(center=center_adjusted, orientation=body.orientation)
 
-    centered_conf_path = Path(conf_path).parent / f"{Path(conf_path).stem}_centered.conf"
     centered_traj = TrajectoryInfo(top_info, read_from_states=True,
                                    states=[body_centered], box_size=config_info.box_size)
+
+    return centered_traj
+
+
+def run(args):
+    top_path = args['top_path']
+    conf_path = args['conf_path']
+
+    top_info = TopologyInfo(top_path, reverse_direction=True) # Note: we assume reversal for now
+    config_info = TrajectoryInfo(top_info, read_from_file=True,
+                                 traj_path=conf_path, reverse_direction=True)
+
+    centered_traj = center_conf(top_info, config_info)
+
+    centered_conf_path = Path(conf_path).parent / f"{Path(conf_path).stem}_centered.conf"
     centered_traj.write(centered_conf_path, reverse=True, write_topology=False)
 
 if __name__ == "__main__":

@@ -1,0 +1,19 @@
+;; This buffer is for text that is not saved, and for Lisp evaluation.
+;; To create a file, visit it with C-x C-f and enter text in its buffer.
+
+https://realpython.com/python-subprocess/
+
+ah. so we can't do something like `(cd FIXME && make)` or `cd FIXME && make` (b/c it's a subprocess) because cd is a bash command not a real system command.
+
+So, can do two things:
+- call Popen with cwd directly. Need to figure this one out
+- call bash explicitly with `run`. E.g. `subprocess.run(["bash", "-c", "cd ~/Downloads && ls"])`
+  - ah. Note that you can mimic this using the shell=True argument. E.g. `subprocess.run(["ls /usr/bin | grep pycode"], shell=True)`. Note you just give the entire command here as a single token.
+
+AH. Note thta we could also call bash explciitly. e.g. with:
+
+note that by default, subprocess.run inherits stdout from the python interpreteer
+
+note: we'll probably wnt to just print to stdout so we can see the progress of compilation
+
+but, to grab stdout, you pass capture_output=True to run(). Thena ccess by saving the process and doing process.stdout. Note that it's stored in bytes. Can encode using encoding="utf-8". Could equivalently do process.stdout.decode("utf-8")
