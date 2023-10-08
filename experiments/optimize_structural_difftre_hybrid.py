@@ -65,7 +65,7 @@ def run(args, oxdna_path, num_threads=4):
     params_str = ""
     for k, v in args.items():
         params_str += f"{k}: {v}\n"
-    with open(run_dir / "params.txt", "w+") as f:
+    with open(run_dir / "run_params.txt", "w+") as f:
         f.write(params_str)
 
     # Load the system
@@ -173,8 +173,44 @@ def run(args, oxdna_path, num_threads=4):
 
         unweighted_ptwists = vmap(compute_avg_ptwist)(traj_states)
 
+
+        # Logging
+        ptwist_running_avg = [jnp.mean(unweighted_ptwists[:i]) for i in range (1, n_ref_states+1)]
+        plt.plot(ptwist_running_avg)
+        plt.title("Prop. Twist Running Average")
+        plt.ylabel("Prop. Twist")
+        plt.xlabel("Sample")
+        plt.savefig(iter_dir / f"running_avg.png")
+        plt.clf()
+
+        # Plot histogram of ptwists
+        sns.histplot(unweighted_ptwists)
+        plt.savefig(iter_dir / f"ptwists.png")
+        plt.clf()
+
+        # Plot the energy differences
+        sns.histplot(energy_diffs)
+        plt.savefig(iter_dir / f"energy_diffs.png")
+        plt.clf()
+
+        # Plot the energies
+        sns.distplot(calc_energies, label="Calculated", color="red")
+        sns.distplot(gt_energies, label="Reference", color="green")
+        plt.legend()
+        plt.savefig(iter_dir / f"energies.png")
+        plt.clf()
+
+        # Record the loss
+        with open(iter_dir / "summary.txt", "w+") as f:
+            f.write(f"Mean energy diff: {onp.mean(energy_diffs)}\n")
+            f.write(f"Calc. energy var.: {onp.var(calc_energies)}\n")
+            f.write(f"Ref. energy var.: {onp.var(gt_energies)}\n")
+
+        with open(iter_dir / "params.txt", "w+") as f:
+            f.write(f"{pprint.pformat(params)}\n")
+
         # Return states and energies
-        return traj_states, calc_energies, iter_dir, unweighted_ptwists, energy_diffs
+        return traj_states, calc_energies, iter_dir, unweighted_ptwists
 
     # Construct the loss function terms
 
@@ -231,7 +267,7 @@ def run(args, oxdna_path, num_threads=4):
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
 
-    ref_states, ref_energies, curr_ref_dir, unweighted_ptwists, energy_diffs = get_ref_states(params, conf_path, i=0, seed=0)
+    ref_states, ref_energies, curr_ref_dir, unweighted_ptwists = get_ref_states(params, conf_path, i=0, seed=0)
 
     min_n_eff = int(n_ref_states * min_neff_factor)
     all_losses = list()
@@ -241,6 +277,7 @@ def run(args, oxdna_path, num_threads=4):
     all_ref_times = list()
 
     loss_path = run_dir / "loss.txt"
+    params_per_iter_path = run_dir / "params_per_iter.txt"
 
     # Do the thing
     num_resample_iters = 0
@@ -252,37 +289,16 @@ def run(args, oxdna_path, num_threads=4):
             all_ref_losses.append(loss)
             all_ref_times.append(i)
             all_ref_eptwists.append(expected_ptwist)
+            with open(curr_ref_dir / "summary.txt", "a") as f:
+                f.write(f"Loss: {loss}\n")
 
-            # Plot running average of ptwists
-            ptwist_running_avg = [jnp.mean(unweighted_ptwists[:i]) for i in range (1, n_ref_states+1)]
-            plt.plot(ptwist_running_avg)
-            plt.title("Prop. Twist Running Average")
-            plt.ylabel("Prop. Twist")
-            plt.xlabel("Sample")
-            plt.savefig(curr_ref_dir / f"running_avg.png")
-            plt.clf()
-
-            # Plot histogram of ptwists
-            sns.histplot(unweighted_ptwists)
-            plt.savefig(curr_ref_dir / f"ptwists.png")
-            plt.clf()
-
-            # Plot the energy differences
-            sns.histplot(energy_diffs)
-            plt.savefig(curr_ref_dir / f"energy_diffs.png")
-            plt.clf()
-
-            # Record the loss
-            with open(curr_ref_dir / "loss.txt", "w+") as f:
-                f.write(f"Loss: {loss}\nMean energy diff: {onp.mean(energy_diffs)}")
-
-        if n_eff < min_n_eff or num_resample_iters > max_approx_iters:
+        if n_eff < min_n_eff or num_resample_iters >= max_approx_iters:
             num_resample_iters = 0
 
             print(f"Resampling reference states...")
 
             prev_lastconf_path = curr_ref_dir / "last_conf.dat"
-            ref_states, ref_energies, curr_ref_dir, unweighted_ptwists, energy_diffs = get_ref_states(params, prev_lastconf_path, i=i, seed=i)
+            ref_states, ref_energies, curr_ref_dir, unweighted_ptwists = get_ref_states(params, prev_lastconf_path, i=i, seed=i)
 
             (loss, (n_eff, expected_ptwist)), grads = grad_fn(params, ref_states, ref_energies, unweighted_ptwists)
 
@@ -290,31 +306,13 @@ def run(args, oxdna_path, num_threads=4):
             all_ref_eptwists.append(expected_ptwist)
             all_ref_times.append(i)
 
-            # Plot running average of ptwists
-            ptwist_running_avg = [jnp.mean(unweighted_ptwists[:i]) for i in range (1, n_ref_states+1)]
-            plt.plot(ptwist_running_avg)
-            plt.title("Prop. Twist Running Average")
-            plt.ylabel("Prop. Twist")
-            plt.xlabel("Sample")
-            plt.savefig(curr_ref_dir / f"running_avg.png")
-            plt.clf()
-
-            # Plot histogram of ptwists
-            sns.histplot(unweighted_ptwists)
-            plt.savefig(curr_ref_dir / f"ptwists_hist.png")
-            plt.clf()
-
-            # Plot the energy differences
-            sns.histplot(energy_diffs)
-            plt.savefig(curr_ref_dir / f"energy_diffs.png")
-            plt.clf()
-
-            # Record the loss
-            with open(curr_ref_dir / "loss.txt", "w+") as f:
-                f.write(f"Loss: {loss}\nMean energy diff: {onp.mean(energy_diffs)}")
+            with open(curr_ref_dir / "summary.txt", "a") as f:
+                f.write(f"Loss: {loss}\n")
 
         with open(loss_path, "a") as f:
             f.write(f"{loss}\n")
+        with open(params_per_iter_path, "a") as f:
+            f.write(f"{pprint.pformat(params)}\n")
         all_losses.append(loss)
         all_eptwists.append(expected_ptwist)
 
@@ -346,6 +344,28 @@ def run(args, oxdna_path, num_threads=4):
             plt.savefig(img_dir / f"eptwists_iter{i}.png")
             plt.clf()
 
+
+    # Plot the losses
+    plt.plot(all_losses, linestyle="--")
+    plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points")
+    plt.xlabel("Iteration")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.title(f"DiffTRE Propeller Twist Optimization, Neff factor={min_neff_factor}")
+    plt.savefig(img_dir / f"final_losses.png")
+    plt.clf()
+
+    # Plot the persistence lengths
+    plt.plot(all_eptwists, linestyle="--", color='blue')
+    plt.scatter(all_ref_times, all_ref_eptwists, marker='o', label="Resample points", color='blue')
+    plt.axhline(y=target_ptwist, linestyle='--', label="Target p. twist", color='red')
+    plt.xlabel("Iteration")
+    plt.ylabel("Expected Propeller Twist (deg)")
+    plt.legend()
+    plt.title(f"DiffTRE Propeller Twist Optimization, Neff factor={min_neff_factor}")
+    plt.savefig(img_dir / f"final_eptwists.png")
+    plt.clf()
+
     return
 
 
@@ -355,7 +375,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Optimize structural properties using differentiable trajectory reweighting")
 
-    parser.add_argument('--n-iters', type=int, default=100,
+    parser.add_argument('--n-iters', type=int, default=200,
                         help="Number of iterations of gradient descent")
     parser.add_argument('--n-eq-steps', type=int, default=10000,
                         help="Number of equilibration steps")
