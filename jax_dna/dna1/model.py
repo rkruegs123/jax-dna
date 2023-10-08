@@ -35,6 +35,12 @@ com_to_stacking = 0.34
 com_to_hb = 0.4
 com_to_backbone = -0.4
 
+def add_coupling(base_params):
+    # Stacking
+    base_params["stacking"]["a_stack_6"] = base_params["stacking"]["a_stack_5"]
+    base_params["stacking"]["theta0_stack_6"] = base_params["stacking"]["theta0_stack_5"]
+    base_params["stacking"]["delta_theta_star_stack_6"] = base_params["stacking"]["delta_theta_star_stack_5"]
+
 def get_full_base_params(override_base_params):
     fene_params = DEFAULT_BASE_PARAMS["fene"] | override_base_params["fene"]
     exc_vol_params = DEFAULT_BASE_PARAMS["excluded_volume"] | override_base_params["excluded_volume"]
@@ -51,6 +57,7 @@ def get_full_base_params(override_base_params):
         "cross_stacking": cr_params,
         "coaxial_stacking": cx_params
     }
+    add_coupling(base_params)
     return base_params
 
 
@@ -97,6 +104,8 @@ class EnergyModel:
         theta4 = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nn_i], base_normals[nn_j])))
         theta5 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', dr_stack_nn, base_normals[nn_j]) / r_stack_nn))
         theta6 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nn_i], dr_stack_nn) / r_stack_nn))
+        # theta6 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', dr_stack_nn, base_normals[nn_j]) / r_stack_nn))
+        # theta5 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nn_i], dr_stack_nn) / r_stack_nn))
         cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nn_i], dr_back_nn) / r_back_nn
         cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nn_j], dr_back_nn) / r_back_nn
 

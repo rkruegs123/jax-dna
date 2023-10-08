@@ -288,6 +288,8 @@ variable_mapper = {
 }
 
 
+
+
 def recompile_oxdna(override_base_params, oxdna_path, t_kelvin, num_threads=4):
     if not oxdna_path.exists():
         raise RuntimeError(f"No oxDNA package at path: {oxdna_path}")
@@ -454,7 +456,7 @@ if __name__ == "__main__":
 
 
     override_base_params['stacking']['a_stack_5'] = 0.3
-    override_base_params['stacking']['a_stack_6'] = 0.3
+    override_base_params['stacking']['a_stack_6'] = 0.2
 
     """
     override_base_params['stacking']['a_stack'] = 5.99766143

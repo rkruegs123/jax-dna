@@ -33,6 +33,8 @@ else:
                              checkpoint_every=checkpoint_every)
 
 
+
+
 def run(args, oxdna_path, num_threads=4):
     # Load parameters
     n_iters = args['n_iters']
@@ -277,6 +279,7 @@ def run(args, oxdna_path, num_threads=4):
     all_ref_times = list()
 
     loss_path = run_dir / "loss.txt"
+    grads_path = run_dir / "grads.txt"
     params_per_iter_path = run_dir / "params_per_iter.txt"
 
     # Do the thing
@@ -313,6 +316,8 @@ def run(args, oxdna_path, num_threads=4):
             f.write(f"{loss}\n")
         with open(params_per_iter_path, "a") as f:
             f.write(f"{pprint.pformat(params)}\n")
+        with open(grads_path, "a") as f:
+            f.write(f"{pprint.pformat(grads)}\n")
         all_losses.append(loss)
         all_eptwists.append(expected_ptwist)
 
