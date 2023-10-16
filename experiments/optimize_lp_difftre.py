@@ -205,14 +205,14 @@ def run(args):
             if s_idx % running_avg_interval == 0 and s_idx != 0:
                 mean_correlation_curve = jnp.mean(jnp.array(all_curves), axis=0)
                 mean_l0_avg = jnp.mean(jnp.array(all_l0_avg))
-                mean_Lp = persistence_length.persistence_length_fit(mean_correlation_curve, mean_l0_avg)
+                mean_Lp, _ = persistence_length.persistence_length_fit(mean_correlation_curve, mean_l0_avg)
                 intermediate_lps[s_idx*sample_every] = mean_Lp * utils.nm_per_oxdna_length
 
-                mean_Lp_truncated = persistence_length.persistence_length_fit(
+                mean_Lp_truncated, _ = persistence_length.persistence_length_fit(
                     mean_correlation_curve[:lp_calc_truncation],
                     mean_l0_avg)
                 intermediate_lps_truncated[s_idx*sample_every] = mean_Lp_truncated * utils.nm_per_oxdna_length
-                
+
 
         plt.plot(intermediate_lps.keys(), intermediate_lps.values())
         plt.xlabel("Time")
@@ -258,11 +258,11 @@ def run(args):
                                               bonded_nbrs=top_info.bonded_nbrs,
                                               unbonded_nbrs=top_info.unbonded_nbrs.T)
         energy_fn = jit(energy_fn)
-        
+
         new_energies = vmap(energy_fn)(ref_states)
         # new_energies = jax.checkpoint(vmap(energy_fn))(ref_states)
 
-        
+
         diffs = new_energies - ref_energies # element-wise subtraction
         boltzs = jnp.exp(-beta * diffs)
         denom = jnp.sum(boltzs)
@@ -272,7 +272,7 @@ def run(args):
         weighted_l0_avgs = vmap(lambda l0, w: l0 * w)(unweighted_l0_avgs, weights)
         expected_corr_curve = jnp.sum(weighted_corr_curves, axis=0)
         expected_l0_avg = jnp.sum(weighted_l0_avgs)
-        expected_lp = persistence_length.persistence_length_fit(
+        expected_lp, _ = persistence_length.persistence_length_fit(
             expected_corr_curve[:lp_calc_truncation],
             expected_l0_avg)
         expected_lp = expected_lp * utils.nm_per_oxdna_length

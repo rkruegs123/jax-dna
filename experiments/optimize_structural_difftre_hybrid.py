@@ -1,7 +1,6 @@
 import pdb
 from pathlib import Path
 from copy import deepcopy
-import functools
 import pprint
 from tqdm import tqdm
 import time
@@ -14,23 +13,15 @@ import seaborn as sns
 
 import optax
 import jax.numpy as jnp
-from jax import jit, vmap, random, grad, value_and_grad, lax, lax
-from jax_md import space, simulate, rigid_body
+from jax import jit, vmap, random, grad, value_and_grad, lax
+from jax_md import space, rigid_body
 
-from jax_dna.common import utils, topology, trajectory, checkpoint, center_configuration
+from jax_dna.common import utils, topology, trajectory, center_configuration
 from jax_dna.loss import geometry, pitch, propeller
 from jax_dna.dna1 import model, oxdna_utils
 
 from jax.config import config
 config.update("jax_enable_x64", True)
-
-
-checkpoint_every = None
-if checkpoint_every is None:
-    scan = lax.scan
-else:
-    scan = functools.partial(checkpoint.checkpoint_scan,
-                             checkpoint_every=checkpoint_every)
 
 
 

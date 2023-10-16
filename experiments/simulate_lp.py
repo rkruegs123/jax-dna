@@ -263,7 +263,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch-size', type=int, help="Batch size")
     parser.add_argument('--key-seed', type=int, default=0,
                         help="Integer seed for key")
-    
+
 
     args = vars(parser.parse_args())
     method = args['method']
@@ -369,14 +369,14 @@ if __name__ == "__main__":
     for i in tqdm(range(n_states)):
         body = traj[i]
         correlation_curve, l0_avg = persistence_length.get_correlation_curve(body, quartets, base_site)
-        Lp = persistence_length.persistence_length_fit(correlation_curve, l0_avg)
+        Lp, _ = persistence_length.persistence_length_fit(correlation_curve, l0_avg)
 
         all_curves.append(correlation_curve)
         all_l0_avg.append(l0_avg)
 
         if i % running_avg_interval == 0 and i != 0:
             mean_correlation_curve = jnp.mean(jnp.array(all_curves), axis=0)
-            mean_Lp = persistence_length.persistence_length_fit(mean_correlation_curve, jnp.mean(jnp.array(all_l0_avg)))
+            mean_Lp, _ = persistence_length.persistence_length_fit(mean_correlation_curve, jnp.mean(jnp.array(all_l0_avg)))
             intermediate_lps[i*sample_every] = mean_Lp * utils.nm_per_oxdna_length
 
 
@@ -436,22 +436,22 @@ if __name__ == "__main__":
 
 
     # Plot the Lps with various truncations
-    lps = [persistence_length.persistence_length_fit(mean_correlation_curve[:i], mean_l0_avg) for i in range(1, mean_correlation_curve.shape[0], 5)]
+    lps = [persistence_length.persistence_length_fit(mean_correlation_curve[:i], mean_l0_avg)[0] for i in range(1, mean_correlation_curve.shape[0], 5)]
     plt.plot(range(1, mean_correlation_curve.shape[0], 5), lps)
     plt.xlabel("Truncation")
     plt.ylabel("Lp")
     plt.savefig(run_dir / "final_lp_truncated.png")
     # plt.show()
     plt.clf()
-    
 
-    Lp = persistence_length.persistence_length_fit(mean_correlation_curve, mean_l0_avg)
+
+    Lp, _ = persistence_length.persistence_length_fit(mean_correlation_curve, mean_l0_avg)
     with open(output_path, "a") as f:
         f.write(f"\nFinal persistence length: {Lp*utils.nm_per_oxdna_length}\n")
 
 
     for i in [20, 40, 60, 80, 100]:
-        lp_truncated = persistence_length.persistence_length_fit(mean_correlation_curve[:i], mean_l0_avg)
+        lp_truncated, _ = persistence_length.persistence_length_fit(mean_correlation_curve[:i], mean_l0_avg)
         with open(output_path, "a") as f:
             f.write(f"\nFinal persistence length (n={i}): {lp_truncated*utils.nm_per_oxdna_length}\n")
 

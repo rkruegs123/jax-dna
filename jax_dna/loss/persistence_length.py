@@ -89,7 +89,9 @@ def persistence_length_fit(autocorr, l0_av):
     slope = fit_[0][1] # slope = -l0_av / Lp
     Lp = -l0_av/slope
 
-    return Lp
+    offset = fit_[0][0] # slope = -l0_av / Lp
+
+    return Lp, offset
 
 def get_persistence_length_loss_fn(base_quartets, com_to_hb, target_lp=TARGET_PERSISTENCE_LENGTH_DSDNA):
 
@@ -97,7 +99,7 @@ def get_persistence_length_loss_fn(base_quartets, com_to_hb, target_lp=TARGET_PE
 
     def compute_lp(body):
         correlation_curve, l0_avg = get_correlation_curve(body, base_quartets, base_site)
-        lp = persistence_length_fit(correlation_curve, l0_avg) # oxDNA units
+        lp, _ = persistence_length_fit(correlation_curve, l0_avg) # oxDNA units
 
         lp_nm = lp * utils.nm_per_oxdna_length # nanometers
         return lp_nm
