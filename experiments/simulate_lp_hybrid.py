@@ -304,6 +304,7 @@ def run(args):
             no_stdout_energy=0
         )
 
+        """
         subprocess_cmd = f"oat persistence_length -p {n_threads} -n {iter_dir}/oat_corr.png {iter_dir}/output.dat {iter_dir}/input 5 45"
         oat_result = subprocess.run(shlex.split(subprocess_cmd), capture_output=True, text=True)
         rc = oat_result.returncode
@@ -312,6 +313,7 @@ def run(args):
         oat_stdout = oat_result.stdout.split('\n')
         oat_lp = float(oat_stdout[-4].split()[2]) # in nucleotides
         oat_contour_length = float(oat_stdout[-3].split()[-2])
+        """
 
         return traj_states, calc_energies, unweighted_corr_curves, unweighted_l0_avgs
 
@@ -322,7 +324,10 @@ def run(args):
     params = deepcopy(model.EMPTY_BASE_PARAMS)
     params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
 
+    start = time.time()
     ref_states, ref_energies, unweighted_corr_curves, unweighted_l0s = get_ref_states(params, i=0, seed=0)
+    end = time.time()
+    print(f"Took {end - start} seconds.")
 
 
 def get_parser():
