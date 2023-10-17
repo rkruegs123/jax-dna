@@ -16,7 +16,7 @@ import random
 
 import jax.numpy as jnp
 from jax_md import space
-from jax import vmap
+from jax import vmap, jit
 
 from jax_dna.common import utils, topology, trajectory, center_configuration
 from jax_dna.loss import persistence_length
@@ -186,6 +186,7 @@ def run(args):
             # reverse_direction=True)
             reverse_direction=False)
         traj_states = traj_info.get_states()
+        n_traj_states = len(traj_states)
         traj_states = utils.tree_stack(traj_states)
 
         ## Load the oxDNA energies
@@ -203,9 +204,15 @@ def run(args):
             seq=seq_oh,
             bonded_nbrs=top_info.bonded_nbrs,
             unbonded_nbrs=top_info.unbonded_nbrs.T)
+        energy_fn = jit(energy_fn)
 
         # Check energies
-        calc_energies = vmap(energy_fn)(traj_states)
+        calc_energies = list()
+        for ts_idx in tqdm(range(n_traj_states), desc="Calculating energies"):
+            ts = traj_states[ts_idx]
+            calc_energies.append(energy_fn(ts))
+        calc_energies = jnp.array(calc_energies)
+        # calc_energies = vmap(energy_fn)(traj_states)
         # gt_energies = energy_df.iloc[1:, :].potential_energy.to_numpy() * seq_oh.shape[0]
         gt_energies = energy_df.potential_energy.to_numpy() * seq_oh.shape[0]
 
