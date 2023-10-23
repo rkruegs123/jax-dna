@@ -99,7 +99,6 @@ def run(args, oxdna_path, num_threads=4):
             read_from_file=True, traj_path=init_conf_path,
             # reverse_direction=True
             reverse_direction=False
-
         )
         centered_init_conf_info = center_configuration.center_conf(top_info, init_conf_info)
         centered_init_conf_info.write(iter_dir / "init.conf", reverse=False, write_topology=False)

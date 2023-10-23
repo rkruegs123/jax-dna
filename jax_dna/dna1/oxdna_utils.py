@@ -375,7 +375,7 @@ def rewrite_input_file(template_path, output_dir,
                        init_conf_path=None, top_path=None,
                        save_interval=None, seed=None,
                        equilibration_steps=None, dt=None,
-                       no_stdout_energy=None
+                       no_stdout_energy=None, backend=None
 ):
     with open(template_path, "r") as f:
         input_template_lines = f.readlines()
@@ -440,6 +440,9 @@ def rewrite_input_file(template_path, output_dir,
             input_lines.append(f"{new_line}\n")
         elif tokens[0] == "no_stdout_energy" and no_stdout_energy is not None:
             new_line = gen_new_line(tokens, no_stdout_energy, int)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "backend" and backend is not None:
+            new_line = gen_new_line(tokens, backend, str)
             input_lines.append(f"{new_line}\n")
         else:
             input_lines.append(it_line)

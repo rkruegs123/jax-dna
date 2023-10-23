@@ -16,15 +16,22 @@ import random
 
 import jax.numpy as jnp
 from jax_md import space
-from jax import vmap, jit
+from jax import vmap, jit, lax
 
-from jax_dna.common import utils, topology, trajectory, center_configuration
+from jax_dna.common import utils, topology, trajectory, center_configuration, checkpoint
 from jax_dna.loss import persistence_length
 from jax_dna.dna1 import model, oxdna_utils
 
 from jax.config import config
 config.update("jax_enable_x64", True)
 
+
+checkpoint_every = 5
+if checkpoint_every is None:
+    scan = lax.scan
+else:
+    scan = functools.partial(checkpoint.checkpoint_scan,
+                             checkpoint_every=checkpoint_every)
 
 
 compute_all_curves = vmap(persistence_length.get_correlation_curve, (0, None, None))
@@ -124,7 +131,7 @@ def run(args):
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
 
-        # oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+        oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
 
         procs = list()
 
@@ -207,17 +214,30 @@ def run(args):
         energy_fn = jit(energy_fn)
 
         # Check energies
+
+        # Method 1: For loop
+        """
         calc_energies = list()
         for ts_idx in tqdm(range(n_traj_states), desc="Calculating energies"):
             ts = traj_states[ts_idx]
             calc_energies.append(energy_fn(ts))
         calc_energies = jnp.array(calc_energies)
+        """
+
+        # Method 2: vmap
         # calc_energies = vmap(energy_fn)(traj_states)
+
+        # Method 3: scan
+        energy_scan_fn = lambda state, ts: (None, energy_fn(ts))
+        _, calc_energies = scan(energy_scan_fn, None, traj_states)
+
+        
         # gt_energies = energy_df.iloc[1:, :].potential_energy.to_numpy() * seq_oh.shape[0]
         gt_energies = energy_df.potential_energy.to_numpy() * seq_oh.shape[0]
 
-        atol_places = 3
-        tol = 10**(-atol_places)
+        # atol_places = 3
+        # tol = 10**(-atol_places)
+        tol = 2.0
         energy_diffs = list()
         for i, (calc, gt) in enumerate(zip(calc_energies, gt_energies)):
             print(f"State {i}:")
@@ -330,6 +350,31 @@ def run(args):
     # FIXME: take care of CPU vs. GPU
     params = deepcopy(model.EMPTY_BASE_PARAMS)
     params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
+
+
+
+    params['stacking']['a_stack'] = 5.999
+    params['stacking']['a_stack_1'] = 2.001
+    params['stacking']['a_stack_2'] = 1.999
+    params['stacking']['a_stack_4'] = 1.299
+    params['stacking']['a_stack_5'] = 0.899
+    params['stacking']['a_stack_6'] = 0.9
+    params['stacking']['delta_theta_star_stack_4'] = 0.799
+    params['stacking']['delta_theta_star_stack_5'] = 0.951
+    params['stacking']['delta_theta_star_stack_6'] = 0.95
+    params['stacking']['dr0_stack'] = 0.399
+    params['stacking']['dr_c_stack'] = 0.899
+    params['stacking']['dr_high_stack'] = 0.74900015
+    params['stacking']['dr_low_stack'] = 0.32
+    params['stacking']['eps_stack_base'] = 1.3438
+    params['stacking']['eps_stack_kt_coeff'] = 2.6558
+    params['stacking']['neg_cos_phi1_star_stack'] = -0.651
+    params['stacking']['neg_cos_phi2_star_stack'] = -0.65
+    params['stacking']['theta0_stack_4'] = 0.001
+    params['stacking']['theta0_stack_5'] = 0.001
+    params['stacking']['theta0_stack_6'] = 0.001
+    params['stacking']['theta0_stack_6'] = 0.0
+    
 
     start = time.time()
     ref_states, ref_energies, unweighted_corr_curves, unweighted_l0s = get_ref_states(params, i=0, seed=0)

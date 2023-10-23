@@ -1,8 +1,14 @@
 # Program parameters
 backend = CPU
-# seed = 1
-# CUDA_list = verlet
-# CUDA_device = 0
+
+CUDA_list = verlet
+CUDA_device = 0
+use_edge = true
+# CUDA_avoid_cpu_calculations = true
+seed = 1
+
+
+interaction_type = DNA_nomesh
 
 # Simulatin parameters
 steps = 10000000000
@@ -30,3 +36,4 @@ print_conf_interval = 1000
 print_conf_ppc = 51
 print_energy_every = 50000
 time_scale = linear
+max_io = 4.0
