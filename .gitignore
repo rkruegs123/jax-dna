@@ -12,3 +12,5 @@ bak/v2/data/output
 output/
 
 *.png
+*.dat
+*.pkl

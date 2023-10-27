@@ -1,0 +1,17 @@
+;; This buffer is for text that is not saved, and for Lisp evaluation.
+;; To create a file, visit it with C-x C-f and enter text in its buffer.
+
+jax on cpu
+- try this for now
+
+two gpus
+
+
+check memory usage via nvidia-smi
+- we are running out of memory past 7 simulations
+
+could even decrease jax memoryp re-allocation
+- meh. this seems annoying
+
+could also do 6 instead of 4. then 9 instead of 8, etc. see if there's consistency in the number of failling, a "critical point"
+- yes -- 7 simulations

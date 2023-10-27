@@ -1,3 +1,6 @@
+from jax.config import config
+config.update('jax_platform_name', 'cpu')
+
 import pdb
 from pathlib import Path
 from copy import deepcopy
@@ -26,6 +29,7 @@ from jax_dna.dna1 import model, oxdna_utils
 
 from jax.config import config
 config.update("jax_enable_x64", True)
+config.update('jax_platform_name', 'cpu')
 
 
 checkpoint_every = 50

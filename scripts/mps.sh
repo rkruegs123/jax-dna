@@ -9,11 +9,15 @@ iter_basedir=$2;
 num_repeats=$3;
 
 # export CUDA_MPS_PIPE_DIRECOTRY=$iter_basedir;
-export CUDA_MPS_LOG_DIRECOTRY=$iter_basedir;
+export CUDA_MPS_LOG_DIRECTORY=$iter_basedir;
 
+
+sleep 2.0
 
 # Setup MPS control
 nvidia-cuda-mps-control -d
+
+sleep 2.0
 
 # Start the MPS jobs
 for i in $(seq 0 $(($num_repeats-1))); do
