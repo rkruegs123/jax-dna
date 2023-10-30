@@ -85,6 +85,8 @@ def run(args):
     target_lp = args['target_lp']
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
+    oxdna_cuda_device = args['oxdna_cuda_device']
+    oxdna_cuda_list = args['oxdna_cuda_list']
 
     # Setup the logging directory
     if run_name is None:
@@ -199,7 +201,9 @@ def run(args):
                 top_path=str(repeat_dir / "sys.top"),
                 save_interval=sample_every, seed=random.randrange(100),
                 equilibration_steps=n_eq_steps, dt=dt,
-                no_stdout_energy=0, backend=backend
+                no_stdout_energy=0, backend=backend,
+                cuda_device=oxdna_cuda_device, cuda_list=oxdna_cuda_list,
+                log_file=str(repeat_dir / "sim.log"),
             )
 
             if device == "cpu":
@@ -602,6 +606,11 @@ def get_parser():
                         help="Target persistence length in nanometers")
     parser.add_argument('--min-neff-factor', type=float, default=0.95,
                         help="Factor for determining min Neff")
+    parser.add_argument('--oxdna-cuda-device', type=int, default=0,
+                        help="CUDA device for running oxDNA simulations")
+    parser.add_argument('--oxdna-cuda-list', type=str, default="verlet",
+                        choices=["no", "verlet"],
+                        help="CUDA neighbor lists")
 
     return parser
 

@@ -6,7 +6,8 @@ CUDA_device = 0
 use_edge = true
 # CUDA_avoid_cpu_calculations = true
 seed = 1
-
+cells_auto_optimisation = false
+max_density_multiplier = 10
 
 interaction_type = DNA_nomesh
 
@@ -28,7 +29,7 @@ conf_file = init.conf
 trajectory_file = trajectory.dat
 lastconf_file = last_conf.dat
 refresh_vel = 1
-# log_file = log.dat
+log_file = sim.log
 no_stdout_energy = 1
 restart_step_counter = 0
 energy_file = energy.dat

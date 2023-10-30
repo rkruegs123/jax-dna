@@ -375,7 +375,9 @@ def rewrite_input_file(template_path, output_dir,
                        init_conf_path=None, top_path=None,
                        save_interval=None, seed=None,
                        equilibration_steps=None, dt=None,
-                       no_stdout_energy=None, backend=None
+                       no_stdout_energy=None, backend=None,
+                       cuda_device=None, cuda_list=None,
+                       log_file=None
 ):
     with open(template_path, "r") as f:
         input_template_lines = f.readlines()
@@ -443,6 +445,15 @@ def rewrite_input_file(template_path, output_dir,
             input_lines.append(f"{new_line}\n")
         elif tokens[0] == "backend" and backend is not None:
             new_line = gen_new_line(tokens, backend, str)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "CUDA_device" and cuda_device is not None:
+            new_line = gen_new_line(tokens, cuda_device, int)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "CUDA_list" and cuda_list is not None:
+            new_line = gen_new_line(tokens, cuda_list, str)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "log_file" and log_file is not None:
+            new_line = gen_new_line(tokens, log_file, str)
             input_lines.append(f"{new_line}\n")
         else:
             input_lines.append(it_line)
