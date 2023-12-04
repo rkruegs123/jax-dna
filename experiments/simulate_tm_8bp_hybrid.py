@@ -246,7 +246,8 @@ def run(args):
         for i, (calc, gt) in enumerate(zip(ref_energies, gt_energies)):
             diff = onp.abs(calc - gt)
             if diff > tol:
-                pdb.set_trace() # note: in practice, we wouldn't set a trace
+                print(f"WARNING: energy difference of {diff}")
+                # pdb.set_trace() # note: in practice, we wouldn't set a trace
             energy_diffs.append(diff)
 
         sns.distplot(ref_energies, label="Calculated", color="red")
