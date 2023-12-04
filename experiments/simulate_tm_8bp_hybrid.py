@@ -77,14 +77,14 @@ def run(args):
     assert(seq_oh.shape[0] % 2 == 0)
     n_bp = seq_oh.shape[0] // 2
 
-    conf_path_bound = sys_basedir / "init_bound.dat"
+    conf_path_bound = sys_basedir / "init_bound.conf"
     conf_info_bound = trajectory.TrajectoryInfo(
         top_info,
         read_from_file=True, traj_path=conf_path_bound,
         reverse_direction=True
         # reverse_direction=False
     )
-    conf_path_unbound = sys_basedir / "init_unbound.dat"
+    conf_path_unbound = sys_basedir / "init_unbound.conf"
     conf_info_unbound = trajectory.TrajectoryInfo(
         top_info,
         read_from_file=True, traj_path=conf_path_unbound,
