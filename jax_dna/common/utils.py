@@ -125,3 +125,9 @@ class bcolors:
 
 def tree_stack(trees):
     return tree_util.tree_map(lambda *v: jnp.stack(v), *trees)
+
+def kelvin_to_celsius(t_kelvin):
+    return t_kelvin - 273.15
+
+def celsius_to_kelvin(t_celsius):
+    return t_celsius + 273.15

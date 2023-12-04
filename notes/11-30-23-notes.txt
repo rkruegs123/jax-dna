@@ -1,0 +1,11 @@
+;; This buffer is for text that is not saved, and for Lisp evaluation.
+;; To create a file, visit it with C-x C-f and enter text in its buffer.
+
+For tomorrow:
+- clean the above running average thing. Can do something like this for a reference trajectory. Check that it would generalize to other duplex lengths, etc
+- write one that doesn't deal with traj_hist files. One that will transfer to optimization -- should just take reference states, ref energies (for eventual reweighting), array of order parameters for every state, params. This will do all the extrapolation, etc.
+- write a forward thing that simulates a melting temperature. Again, should generalize to different lengths.
+- Then, optimize w.r.t it
+
+
+note: I think we only have to do the extrpapolation once b/c it's transformed into an expectation over T, not T'. But we hvae to count every time because it's a weighted count.

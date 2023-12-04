@@ -377,7 +377,9 @@ def rewrite_input_file(template_path, output_dir,
                        equilibration_steps=None, dt=None,
                        no_stdout_energy=None, backend=None,
                        cuda_device=None, cuda_list=None,
-                       log_file=None
+                       log_file=None,
+                       extrapolate_hist=None, # Pre-formatted string
+                       weights_file=None, op_file=None
 ):
     with open(template_path, "r") as f:
         input_template_lines = f.readlines()
@@ -392,6 +394,8 @@ def rewrite_input_file(template_path, output_dir,
     traj_path = str(output_dir / "output.dat")
     energy_path = str(output_dir / "energy.dat")
     last_conf_path = str(output_dir / "last_conf.dat")
+    last_hist_path = str(output_dir / "last_hist.dat")
+    traj_hist_path = str(output_dir / "traj_hist.dat")
     output_path = str(output_dir / "input")
 
     def gen_new_line(tokens, new_val, new_val_type):
@@ -454,6 +458,22 @@ def rewrite_input_file(template_path, output_dir,
             input_lines.append(f"{new_line}\n")
         elif tokens[0] == "log_file" and log_file is not None:
             new_line = gen_new_line(tokens, log_file, str)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "extrapolate_hist" and extrapolate_hist is not None:
+            new_tokens = [tokens[0], tokens[1], extrapolate_hist]
+            new_line = ' '.join(new_tokens)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "weights_file" and weights_file is not None:
+            new_line = gen_new_line(tokens, weights_file, str)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "op_file" and op_file is not None:
+            new_line = gen_new_line(tokens, op_file, str)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "last_hist_file":
+            new_line = gen_new_line(tokens, last_hist_path, str)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "traj_hist_file":
+            new_line = gen_new_line(tokens, traj_hist_path, str)
             input_lines.append(f"{new_line}\n")
         else:
             input_lines.append(it_line)
