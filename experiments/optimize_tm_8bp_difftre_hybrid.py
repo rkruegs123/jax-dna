@@ -18,7 +18,7 @@ from jax_md import space
 from jax import vmap, jit, lax, grad, value_and_grad
 import optax
 
-from jax_dna.common import utils, topology, trajectory, checkpoint
+from jax_dna.common import utils, topology, trajectory, checkpoint, center_configuration
 from jax_dna.dna1 import model, oxdna_utils
 from jax_dna.loss import tm
 
@@ -140,8 +140,7 @@ def run(args):
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
 
-        # FIXME
-        # oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+        oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
 
         procs = list()
 
@@ -185,7 +184,8 @@ def run(args):
                 save_interval=sample_every, seed=random.randrange(100),
                 equilibration_steps=n_eq_steps,
                 no_stdout_energy=0, extrapolate_hist=extrapolate_temp_str,
-                weights_file=str(repeat_dir / "wfile.txt"), op_file=str(repeat_dir / "op.txt")
+                weights_file=str(repeat_dir / "wfile.txt"), op_file=str(repeat_dir / "op.txt"),
+                log_file=str(repeat_dir / "sim.log"),
             )
 
             procs.append(subprocess.Popen([oxdna_exec_path, repeat_dir / "input"]))
