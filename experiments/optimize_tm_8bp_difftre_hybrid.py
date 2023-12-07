@@ -444,7 +444,8 @@ def run(args):
                 op = all_ops[rs_idx]
                 op_weight = all_op_weights[rs_idx]
 
-                calc_energy = ref_energies[rs_idx]
+                # calc_energy = ref_energies[rs_idx] # this is wrong
+                calc_energy = new_energies[rs_idx]
                 calc_energy_temp = energy_fn_temp(rs)
 
                 boltz_diff = jnp.exp(calc_energy/kT - calc_energy_temp/extrap_kt)
