@@ -2,6 +2,7 @@
 backend = CPU
 backend_precision = double
 seed = 18112
+interaction_type = DNA_nomesh
 
 # Simulation parameters
 sim_type = VMMC

@@ -153,7 +153,7 @@ def run(args):
             shutil.copy(weights_path, repeat_dir / "wfile.txt")
             shutil.copy(op_path, repeat_dir / "op.txt")
 
-            if prev_basedir is None:
+            if prev_basedir is None or True: # FIXME: just doing this every time
                 if r % 2 == 0:
                     conf_info_copy = deepcopy(conf_info_bound)
                 else:
@@ -167,8 +167,7 @@ def run(args):
                     reverse_direction=True
                     # reverse_direction=False
                 )
-                conf_info_copy = center_configuration.center_conf(
-                    top_info, prev_lastconf_info)
+                # conf_info_copy = center_configuration.center_conf(top_info, prev_lastconf_info)
             conf_info_copy.traj_df.t = onp.full(seq_oh.shape[0], r*n_steps_per_sim)
 
             conf_info_copy.write(repeat_dir / "init.conf",
@@ -489,7 +488,7 @@ def run(args):
         f.write(f"Generating initial reference states and energies...\n")
     start = time.time()
     prev_ref_basedir = None
-    ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(params, i=0, seed=0, prev_basedir=prev_ref_basedir)
+    ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(params, i=0, seed=key, prev_basedir=prev_ref_basedir)
     prev_ref_basedir = deepcopy(ref_iter_dir)
     end = time.time()
     with open(resample_log_path, "a") as f:
@@ -515,7 +514,7 @@ def run(args):
                 f.write(f"- n_eff was {n_eff}. Resampling...\n")
 
             start = time.time()
-            ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_basedir=prev_ref_basedir)
+            ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(params, i=i, seed=key+1+i, prev_basedir=prev_ref_basedir)
             end = time.time()
             prev_ref_basedir = deepcopy(ref_iter_dir)
             with open(resample_log_path, "a") as f:
