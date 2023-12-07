@@ -85,6 +85,7 @@ def run(args):
     tm_path = log_dir / "tm.txt"
     width_path = log_dir / "width.txt"
     resample_log_path = log_dir / "resample_log.txt"
+    iter_params_path = log_dir / "iter_params.txt"
 
     params_str = ""
     params_str += f"n_ref_states: {n_ref_states}\n"
@@ -541,6 +542,8 @@ def run(args):
             f.write(f"{curr_width}\n")
         with open(times_path, "a") as f:
             f.write(f"{iter_end - iter_start}\n")
+        with open(iter_params_path, "a") as f:
+            f.write(f"{pprint.pformat(params)}\n")
 
         all_losses.append(loss)
         all_n_effs.append(n_eff)
