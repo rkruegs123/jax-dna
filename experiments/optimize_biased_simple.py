@@ -52,16 +52,13 @@ def run(args):
     t_kelvin = args['temp']
     extrapolate_temps = jnp.array([float(et) for et in args['extrapolate_temps']]) # in Kelvin
     assert(jnp.all(extrapolate_temps[:-1] <= extrapolate_temps[1:])) # check that temps. are sorted
-    n_extrap_temps = len(extrapolate_temps)
-    extrapolate_kts = vmap(utils.get_kt)(extrapolate_temps)
     extrapolate_temp_str = ', '.join([f"{tc}K" for tc in extrapolate_temps])
 
     n_iters = args['n_iters']
     lr = args['lr']
-    target_tm = args['target_tm']
+    target_finf = args['target_finf']
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
-    optimizer_type = args['optimizer_type']
 
 
     # Setup the logging directory
@@ -84,8 +81,7 @@ def run(args):
     times_path = log_dir / "times.txt"
     grads_path = log_dir / "grads.txt"
     neff_path = log_dir / "neff.txt"
-    tm_path = log_dir / "tm.txt"
-    width_path = log_dir / "width.txt"
+    finf_path = log_dir / "finf.txt"
     resample_log_path = log_dir / "resample_log.txt"
     iter_params_path = log_dir / "iter_params.txt"
 
@@ -262,14 +258,14 @@ def run(args):
         all_running_tms, all_running_widths = tm.traj_hist_running_avg_1d(all_traj_hist_fpaths)
 
         plt.plot(all_running_tms)
-        plt.xlabel("Iteration")
+        plt.xlabel("Sample")
         plt.ylabel("Tm (C)")
         plt.savefig(iter_dir / "traj_hist_running_tm.png")
         # plt.show()
         plt.clf()
 
         plt.plot(all_running_widths)
-        plt.xlabel("Iteration")
+        plt.xlabel("Sample")
         plt.ylabel("Width (C)")
         plt.savefig(iter_dir / "traj_hist_running_width.png")
         # plt.show()
@@ -364,114 +360,34 @@ def run(args):
         plt.clf()
 
 
-        ## Unbias reference counts
-        ref_unbiased_counts = onp.zeros(n_bp+1)
+        ## Log running avg. of ratios
+        ref_biased_counts = onp.zeros(n_bp+1)
         all_ops = energy_df.op.to_numpy()
         all_op_weights = onp.array([weight_mapper[op] for op in all_ops])
-        for rs_idx in tqdm(range(n_ref_states)):
-            op = all_ops[rs_idx]
-            op_weight = all_op_weights[rs_idx]
-            ref_unbiased_counts[op] += 1/op_weight
-
-        fig, ax = plt.subplots(1, 2, figsize=(12, 5))
-        sns.barplot(x=jnp.arange(9), y=ref_unbiased_counts, ax=ax[0])
-        ax[0].set_title(f"Periodic Counts, Reference T={t_kelvin}K")
-        ax[0].set_xlabel("num_bp")
-        sns.barplot(x=last_hist_df['num_bp'], y=last_hist_df['count_unbiased'], ax=ax[1])
-        ax[1].set_title(f"Frequent Counts, Reference T={t_kelvin}K")
-        # fig.show()
-        # plt.show()
-        plt.savefig(iter_dir / "unbiased_counts.png")
-        plt.clf()
-
-        sim_finf = tm.compute_finf(ref_unbiased_counts)
-
-        ## Unbias counts for each temperature
-        all_unbiased_counts = list()
+        running_avg_finfs = list()
+        running_avg_iters = list()
         running_avg_min = 250
         running_avg_freq = 50
-        running_avg_mapper = dict()
-        for extrap_t_kelvin, extrap_kt in zip(extrapolate_temps, extrapolate_kts):
-            em_temp = model.EnergyModel(displacement_fn, params, t_kelvin=extrap_t_kelvin)
-            energy_fn_temp = lambda body: em_temp.energy_fn(
-                body,
-                seq=seq_oh,
-                bonded_nbrs=top_info.bonded_nbrs,
-                unbonded_nbrs=top_info.unbonded_nbrs.T)
-            energy_fn_temp = jit(energy_fn_temp)
+        for rs_idx in tqdm(range(n_ref_states)):
+            op = all_ops[rs_idx]
+            ref_biased_counts[op] += 1
 
-            temp_unbiased_counts = onp.zeros(9)
-            for rs_idx in tqdm(range(n_ref_states), desc=f"Extrapolating to {extrap_t_kelvin}K"):
-                rs = ref_states[rs_idx]
-                op = all_ops[rs_idx]
-                op_weight = weight_mapper[op]
-
-                calc_energy = ref_energies[rs_idx]
-                calc_energy_temp = energy_fn_temp(rs)
-
-                boltz_diff = jnp.exp(calc_energy/kT - calc_energy_temp/extrap_kt)
-                temp_unbiased_counts[op] += 1/op_weight * boltz_diff
-
-                
-                if rs_idx >= running_avg_min and rs_idx % running_avg_freq == 0:
-                    if rs_idx not in running_avg_mapper:
-                        running_avg_mapper[rs_idx] = [deepcopy(temp_unbiased_counts)]
-                    else:
-                        running_avg_mapper[rs_idx].append(deepcopy(temp_unbiased_counts))
+            if rs_idx >= running_avg_min and rs_idx % running_avg_freq == 0:
+                # curr_finf = tm.compute_finf(ref_biased_counts)
+                curr_finf = ref_biased_counts[-1] / ref_biased_counts[0]
+                running_avg_finfs.append(curr_finf)
+                running_avg_iters.append(rs_idx)
 
 
-            all_unbiased_counts.append(temp_unbiased_counts)
-
-            fig, ax = plt.subplots(1, 2, figsize=(12, 5))
-            sns.barplot(x=jnp.arange(9), y=temp_unbiased_counts, ax=ax[0])
-            ax[0].set_title(f"Periodic Counts, T={extrap_t_kelvin}K")
-            ax[0].set_xlabel("num_bp")
-            sns.barplot(x=last_hist_df['num_bp'], y=last_hist_df[str(extrap_t_kelvin)], ax=ax[1])
-            ax[1].set_title(f"Frequent Counts, T={extrap_t_kelvin}K")
-            # plt.show()
-            plt.savefig(iter_dir / f"unbiased_counts_{extrap_t_kelvin}K_extrap.png")
-            plt.clf()
-
-        ## Compute discrete running avg. Tm
-        running_avg_iters = list()
-        running_avg_tms = list()
-        for running_avg_iter, running_avg_unb_counts in running_avg_mapper.items():
-            iter_unb_counts = onp.array(running_avg_unb_counts)
-            iter_discrete_finfs = vmap(tm.compute_finf)(iter_unb_counts)
-            iter_tm = tm.compute_tm(extrapolate_temps, iter_discrete_finfs)
-
-            running_avg_iters.append(running_avg_iter)
-            running_avg_tms.append(iter_tm)
-
-        plt.plot(running_avg_iters, running_avg_tms, '-o')
-        plt.savefig(iter_dir / f"discrete_running_avg_tm.png")
+        plt.plot(running_avg_iters, running_avg_finfs, '-o')
+        plt.savefig(iter_dir / f"discrete_running_avg_finf.png")
         plt.clf()
 
-        ## Compute final Tms and widths, log all, as well as time
-        all_unbiased_counts = onp.array(all_unbiased_counts) # (ntemps, n_bp+1)
-        discrete_finfs = vmap(tm.compute_finf)(all_unbiased_counts)
-
-        calc_tm = tm.compute_tm(extrapolate_temps, discrete_finfs)
-        calc_width = tm.compute_width(extrapolate_temps, discrete_finfs)
-
-        last_hist_extrap_counts = last_hist_df.to_numpy()[:, -n_extrap_temps:].T # (ntemps, n_bp+1)
-        ref_finfs = vmap(tm.compute_finf)(last_hist_extrap_counts)
-
-        ref_tm = tm.compute_tm(extrapolate_temps, ref_finfs)
-        ref_width = tm.compute_width(extrapolate_temps, ref_finfs)
-
-        ## Plot melting temperature
-        rev_finfs = jnp.flip(ref_finfs)
-        rev_temps = jnp.flip(extrapolate_temps)
-        finfs_extrap = jnp.arange(0.1, 1., 0.05)
-        temps_extrap = jnp.interp(finfs_extrap, rev_finfs, rev_temps)
-        plt.plot(temps_extrap, finfs_extrap)
-        plt.xlabel("T/K")
-        plt.ylabel("Duplex Yield")
-        plt.title(f"Tm={ref_tm}, width={ref_width}")
-        plt.savefig(iter_dir / "melting_curve.png")
-        plt.clf()
-        
+        ## Compute final finfs
+        # calc_finf = tm.compute_finf(ref_biased_counts)
+        calc_finf = ref_biased_counts[-1] / ref_biased_counts[0]
+        # ref_finf = tm.compute_finf(last_hist_df['count_biased'].to_numpy())
+        ref_finf = last_hist_df['count_biased'].to_numpy()[-1] / last_hist_df['count_biased'].to_numpy()[0]
 
         end = time.time()
         analyze_time = end - start
@@ -479,11 +395,8 @@ def run(args):
         summary_str = ""
         summary_str += f"Simulation time: {sim_time}\n"
         summary_str += f"Analyze time: {analyze_time}\n"
-        summary_str += f"Reference Tm: {ref_tm}\n"
-        summary_str += f"Reference width: {ref_width}\n"
-        summary_str += f"Calc. Tm: {calc_tm}\n"
-        summary_str += f"Calc. width: {calc_width}\n"
-        summary_str += f"Simulation finf: {sim_finf}\n"
+        summary_str += f"Reference finf: {ref_finf}\n"
+        summary_str += f"Calc. finf: {calc_finf}\n"
         with open(iter_dir / "summary.txt", "w+") as f:
             f.write(summary_str)
 
@@ -508,77 +421,50 @@ def run(args):
         denom = jnp.sum(boltzs)
         weights = boltzs / denom
 
-        # FIXME: use weights appropriately below
 
-        def compute_extrap_temp_finfs(t_kelvin_extrap):
-            extrap_kt = utils.get_kt(t_kelvin_extrap)
-            em_temp = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin_extrap)
-            energy_fn_temp = lambda body: em_temp.energy_fn(
-                body,
-                seq=seq_oh,
-                bonded_nbrs=top_info.bonded_nbrs,
-                unbonded_nbrs=top_info.unbonded_nbrs.T)
-            energy_fn_temp = jit(energy_fn_temp)
+        # Compute finf
+        def bias_scan_fn(unb_counts, rs_idx):
+            rs = ref_states[rs_idx]
+            op = all_ops[rs_idx]
 
-            def unbias_scan_fn(unb_counts, rs_idx):
-                rs = ref_states[rs_idx]
-                op = all_ops[rs_idx]
-                op_weight = all_op_weights[rs_idx]
-
-                # calc_energy = ref_energies[rs_idx] # this is wrong
-                calc_energy = new_energies[rs_idx]
-                calc_energy_temp = energy_fn_temp(rs)
-
-                boltz_diff = jnp.exp(calc_energy/kT - calc_energy_temp/extrap_kt)
-
-                difftre_weight = weights[rs_idx]
-                # weighted_add_term = n_ref_states/difftre_weight * 1/op_weight * boltz_diff
-                weighted_add_term = n_ref_states*difftre_weight * 1/op_weight * boltz_diff
-                return unb_counts.at[op].add(weighted_add_term), None
-
-            temp_unbiased_counts, _ = scan(unbias_scan_fn, jnp.zeros(n_bp+1), jnp.arange(n_ref_states))
-            temp_finfs = tm.compute_finf(temp_unbiased_counts)
-            return temp_finfs
-
-        finfs = vmap(compute_extrap_temp_finfs)(extrapolate_temps)
-        curr_tm = tm.compute_tm(extrapolate_temps, finfs)
-        curr_width = tm.compute_width(extrapolate_temps, finfs)
-
+            difftre_weight = weights[rs_idx]
+            # weighted_add_term = n_ref_states/difftre_weight
+            weighted_add_term = n_ref_states * difftre_weight
+            return unb_counts.at[op].add(weighted_add_term), None
+        curr_biased_counts, _ = scan(bias_scan_fn, jnp.zeros(n_bp+1), jnp.arange(n_ref_states))
+        # curr_finf = tm.compute_finf(curr_biased_counts)
+        curr_finf = curr_biased_counts[-1] / curr_biased_counts[0]
+        
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
-        aux = (curr_tm, curr_width, n_eff)
-        rmse = jnp.sqrt((target_tm - curr_tm)**2)
-        return rmse, aux
+        aux = (curr_finf, n_eff)
+        return (target_finf - curr_finf)**2, aux
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
     # Initialize parameters
     params = deepcopy(model.EMPTY_BASE_PARAMS)
-    params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
-    params["hydrogen_bonding"] = model.DEFAULT_BASE_PARAMS["hydrogen_bonding"]
+    # params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
     """
+    params["stacking"] = dict()
+    for stack_opt_key in ["eps_stack_base", "a_stack", "a_stack_4", "a_stack_5", "a_stack_6", "a_stack_1", "a_stack_2"]:
+        params["stacking"][stack_opt_key] = model.DEFAULT_BASE_PARAMS["stacking"][stack_opt_key]
+    """
+    
+    
+    # params["hydrogen_bonding"] = model.DEFAULT_BASE_PARAMS["hydrogen_bonding"]
     params["hydrogen_bonding"] = dict()
     for hb_opt_key in ["a_hb", "eps_hb", "a_hb_1", "a_hb_2", "a_hb_3", "a_hb_4", "a_hb_7", "a_hb_8"]:
         params["hydrogen_bonding"][hb_opt_key] = model.DEFAULT_BASE_PARAMS["hydrogen_bonding"][hb_opt_key]
-    """
 
-    if optimizer_type == "adam":
-        optimizer = optax.adam(learning_rate=lr)
-    elif optimizer_type == "sgd":
-        optimizer = optax.sgd(learning_rate=lr)
-    elif optimizer_type == "rmsprop":
-        optimizer = optax.rmsprop(learning_rate=lr)
-    else:
-        raise RuntimeError(f"Invalid optimizer type: {optimizer_type}")
+    optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
 
     min_n_eff = int(n_ref_states * min_neff_factor)
     all_losses = list()
-    all_tms = list()
-    all_widths = list()
+    all_finfs = list()
     all_n_effs = list()
     all_ref_losses = list()
-    all_ref_tms = list()
-    all_ref_widths = list()
+    all_ref_finfs = list()
     all_ref_times = list()
 
     with open(resample_log_path, "a") as f:
@@ -595,14 +481,13 @@ def run(args):
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
-        (loss, (curr_tm, curr_width, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights)
+        (loss, (curr_finf, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights)
         num_resample_iters += 1
 
         if i == 0:
             all_ref_losses.append(loss)
             all_ref_times.append(i)
-            all_ref_tms.append(curr_tm)
-            all_ref_widths.append(curr_width)
+            all_ref_finfs.append(curr_finf)
 
         if n_eff < min_n_eff or num_resample_iters > max_approx_iters:
             num_resample_iters = 0
@@ -617,12 +502,11 @@ def run(args):
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
 
-            (loss, (curr_tm, curr_width, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights)
+            (loss, (curr_finf, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
-            all_ref_tms.append(curr_tm)
-            all_ref_widths.append(curr_width)
+            all_ref_finfs.append(curr_finf)
 
         iter_end = time.time()
 
@@ -632,10 +516,8 @@ def run(args):
             f.write(f"{pprint.pformat(grads)}\n")
         with open(neff_path, "a") as f:
             f.write(f"{n_eff}\n")
-        with open(tm_path, "a") as f:
-            f.write(f"{curr_tm}\n")
-        with open(width_path, "a") as f:
-            f.write(f"{curr_width}\n")
+        with open(finf_path, "a") as f:
+            f.write(f"{curr_finf}\n")
         with open(times_path, "a") as f:
             f.write(f"{iter_end - iter_start}\n")
         with open(iter_params_path, "a") as f:
@@ -643,8 +525,7 @@ def run(args):
 
         all_losses.append(loss)
         all_n_effs.append(n_eff)
-        all_tms.append(curr_tm)
-        all_widths.append(curr_width)
+        all_finfs.append(curr_finf)
 
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
@@ -657,13 +538,13 @@ def run(args):
         plt.savefig(img_dir / f"losses_iter{i}.png")
         plt.clf()
 
-        plt.plot(onp.arange(i+1), all_tms, linestyle="--", color="blue")
-        plt.scatter(all_ref_times, all_ref_tms, marker='o', label="Resample points", color="blue")
-        plt.axhline(y=target_tm, linestyle='--', label="Target Tm", color='red')
+        plt.plot(onp.arange(i+1), all_finfs, linestyle="--", color="blue")
+        plt.scatter(all_ref_times, all_ref_finfs, marker='o', label="Resample points", color="blue")
+        plt.axhline(y=target_finf, linestyle='--', label="Target finf", color='red')
         plt.legend()
-        plt.ylabel("Expected Tm")
+        plt.ylabel("Expected finf")
         plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"tms_iter{i}.png")
+        plt.savefig(img_dir / f"finfs_iter{i}.png")
         plt.clf()
 
 
@@ -702,13 +583,10 @@ def get_parser():
     parser.add_argument('--n-iters', type=int, default=200,
                         help="Number of iterations of gradient descent")
     parser.add_argument('--lr', type=float, default=0.001, help="Learning rate")
-    parser.add_argument('--target-tm', type=float, required=True,
-                        help="Target melting temperature in Kelvin")
+    parser.add_argument('--target-finf', type=float, required=True,
+                        help="Target finf")
     parser.add_argument('--min-neff-factor', type=float, default=0.95,
                         help="Factor for determining min Neff")
-    parser.add_argument('--optimizer-type', type=str,
-                        default="adam", choices=["adam", "sgd", "rmsprop"])
-
 
     return parser
 
