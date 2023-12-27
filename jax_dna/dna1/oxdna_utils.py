@@ -379,7 +379,8 @@ def rewrite_input_file(template_path, output_dir,
                        cuda_device=None, cuda_list=None,
                        log_file=None,
                        extrapolate_hist=None, # Pre-formatted string
-                       weights_file=None, op_file=None
+                       weights_file=None, op_file=None,
+                       external_forces_file=None
 ):
     with open(template_path, "r") as f:
         input_template_lines = f.readlines()
@@ -474,6 +475,9 @@ def rewrite_input_file(template_path, output_dir,
             input_lines.append(f"{new_line}\n")
         elif tokens[0] == "traj_hist_file":
             new_line = gen_new_line(tokens, traj_hist_path, str)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "external_forces_file":
+            new_line = gen_new_line(tokens, external_forces_file, str)
             input_lines.append(f"{new_line}\n")
         else:
             input_lines.append(it_line)

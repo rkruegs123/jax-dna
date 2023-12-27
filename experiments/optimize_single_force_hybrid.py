@@ -37,6 +37,13 @@ else:
 
 def run(args):
     # Load parameters
+    device = args['device']
+    if device == "cpu":
+        backend = "CPU"
+    elif device == "gpu":
+        backend = "CUDA"
+    else:
+        raise RuntimeError(f"Invalid device: {device}")
     n_threads = args['n_threads']
     key = args['key']
     n_sims = args['n_sims']
@@ -200,6 +207,7 @@ def run(args):
                 no_stdout_energy=0, backend=backend,
                 cuda_device=oxdna_cuda_device, cuda_list=oxdna_cuda_list,
                 log_file=str(repeat_dir / "sim.log"),
+                external_forces_file=str(repeat_dir / "external.conf")
             )
 
             if device == "cpu":
@@ -413,6 +421,7 @@ def run(args):
 
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
+        iter_start = time.time()
 
         (loss, (n_eff, curr_pdist)), grads = grad_fn(params, ref_states, ref_combined_energies, pdists)
         num_resample_iters += 1
@@ -467,7 +476,7 @@ def run(args):
         plt.savefig(img_dir / f"losses_iter{i}.png")
         plt.clf()
 
-        plt.plot(onp.arange(i+1), all_lps, linestyle="--", color="blue")
+        plt.plot(onp.arange(i+1), all_pdists, linestyle="--", color="blue")
         plt.scatter(all_ref_times, all_ref_pdists, marker='o', label="Resample points", color="blue")
         plt.axhline(y=target_pdist, linestyle='--', label="Target pdist", color='red')
         plt.legend()
@@ -482,6 +491,7 @@ def get_parser():
     # Simulation arguments
     parser = argparse.ArgumentParser(description="Optimize a single force extension")
 
+    parser.add_argument('--device', type=str, default="cpu", choices=["cpu", "gpu"])
     parser.add_argument('--n-threads', type=int, default=4,
                         help="Number of threads for oxDNA compilation")
     parser.add_argument('--key', type=int, default=0)
@@ -501,7 +511,7 @@ def get_parser():
                         help='Run name')
     parser.add_argument('--temp', type=float, default=utils.DEFAULT_TEMP,
                         help="Simulation temperature in Kelvin")
-    parser.add_argument('--oxdna-cuda-device', type=int, default0,
+    parser.add_argument('--oxdna-cuda-device', type=int, default=0,
                         help="CUDA device for running oxDNA simulations")
     parser.add_argument('--oxdna-cuda-list', type=str, default="verlet",
                         choices=["no", "verlet"],
