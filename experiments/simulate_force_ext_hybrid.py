@@ -51,7 +51,7 @@ def simulate(args):
     sample_every = args['sample_every']
     assert(n_steps_per_sim % sample_every == 0)
     n_ref_states_per_sim = n_steps_per_sim // sample_every
-    n_ref_states = n_ref_states_per_sim * n_sims
+    n_ref_states = n_ref_states_per_sim * n_sims_per_force
     run_name = args['run_name']
     oxdna_path = Path(args['oxdna_path'])
     oxdna_exec_path = oxdna_path / "build/bin/oxDNA"
@@ -88,8 +88,8 @@ def simulate(args):
     externals_basedir = sys_basedir / "externals"
     ## note: no external_path set
     # external_path = externals_basedir / f"external_{force_per_nuc}.conf"
-    if not external_path.exists():
-        raise RuntimeError(f"No external forces file at location: {external_path}")
+    # if not external_path.exists():
+    #     raise RuntimeError(f"No external forces file at location: {external_path}")
     input_template_path = sys_basedir / "input"
 
 
@@ -118,7 +118,7 @@ def simulate(args):
     random.seed(key)
 
     params = deepcopy(model.EMPTY_BASE_PARAMS)
-    iter_dir = ref_traj_dir / f"simulation"
+    iter_dir = run_dir / f"simulation"
     iter_dir.mkdir(parents=False, exist_ok=False)
 
     oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
@@ -207,6 +207,8 @@ def analyze(args):
     # FIXME: combine force input files into master force output files
     # FIXME: compute running averages with and without known persistence length (could add the Lp as an argument)
     # FIXME: should also add a simulate-only and analyze-only flag
+    # FIXME: should also maybe make the multiplier on the number of simulations rather than on the length of a given simulation... Note that I don't think this sohuld chang eth ebehavior of analyze, as the ocmbined force output will be the same length
+    # FIXME: then, should add an assert that the number of total simulations i sless than or equal to the number of individual threads.
 
     raise NotImplementedError
 
