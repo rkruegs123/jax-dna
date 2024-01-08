@@ -13,6 +13,7 @@ import shlex
 import argparse
 import pandas as pd
 import random
+import seaborn as sns
 
 import jax.numpy as jnp
 from jax_md import space
@@ -29,15 +30,23 @@ config.update("jax_enable_x64", True)
 
 ALL_FORCES = [0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.375] # per nucleotide
 TOTAL_FORCES = jnp.array(ALL_FORCES) * 2.0
+TOTAL_FORCES_SI = TOTAL_FORCES * utils.oxdna_force_to_pn # pN
+test_forces = onp.linspace(0.05, 0.8, 20) # in simulation units
+test_forces_si = test_forces * utils.oxdna_force_to_pn # in pN
 num_forces = len(ALL_FORCES)
 ext_force_bps1 = [5, 214] # should each experience force_per_nuc
 ext_force_bps2 = [104, 115] # should each experience -force_per_nuc
 dir_force_axis = jnp.array([0, 0, 1])
+kT_si = 4.08846006711 # in pN*nm
+min_running_avg_idx = 10
 
 x_init = jnp.array([39.87, 50.60, 44.54]) # initialize to the true values
 x_init_si = jnp.array([x_init[0] * utils.nm_per_oxdna_length,
                        x_init[1] * utils.nm_per_oxdna_length,
                        x_init[2] * utils.oxdna_force_to_pn])
+x_init_lp_fixed = jnp.array([39.87, 44.54])
+x_init_lp_fixed_si = jnp.array([x_init_lp_fixed[0] * utils.nm_per_oxdna_length,
+                                x_init_lp_fixed[1] * utils.oxdna_force_to_pn])
 
 
 def compute_dist(state):
@@ -69,16 +78,12 @@ def WLC(coeffs, x_data, force_data, kT):
     return residual
 
 
-x_init_lp_fixed = jnp.array([39.87, 44.54])
-x_init_lp_fixed_si = jnp.array([x_init_lp_fixed[0] * utils.nm_per_oxdna_length,
-                                x_init_lp_fixed[1] * utils.oxdna_force_to_pn])
-def WLC_lp_fixed(coeffs, x_data, force_data, kT):
+def WLC_lp_fixed(coeffs, x_data, force_data, kT, lp):
     # coefficients ordering: [L0, K]
     l0 = coeffs[0]
-    lps = x_init[1]
     k = coeffs[1]
 
-    x_calc = calculate_x(force_data, l0, lps, k, kT)
+    x_calc = calculate_x(force_data, l0, lp, k, kT)
     residual = x_data - x_calc
     return residual
 
@@ -162,6 +167,7 @@ def simulate(args):
     dt = 5e-3
     kT = utils.get_kt(t_kelvin)
     beta = 1 / kT
+        
 
     # Do the simulation
     random.seed(key)
@@ -186,10 +192,13 @@ def simulate(args):
     sim_idx = 0
     for force in ALL_FORCES:
         sim_start_step = 0
-        for f_sim_idx in range(n_sims_per_force):
+
+        sims_to_add = n_sims_per_force
+        if force in low_forces:
+            sims_to_add *= low_force_multiplier
+            
+        for f_sim_idx in range(sims_to_add):
             sim_length = n_steps_per_sim
-            if force in low_forces:
-                sim_length *= low_force_multiplier
 
             sim_lengths.append(sim_length)
             sim_forces.append(force)
@@ -268,6 +277,22 @@ def analyze(args):
     n_ref_states = n_ref_states_per_sim * n_sims_per_force
     run_name = args['run_name']
     t_kelvin = args['temp']
+    kT = utils.get_kt(t_kelvin)
+    beta = 1 / kT
+    tom_extensions = {float(f): calculate_x(f, x_init[0], x_init[1], x_init[2], kT) for f in TOTAL_FORCES}
+
+    @jit
+    def get_wlc_params(f_lens):
+        gn = GaussNewton(residual_fun=WLC)
+        gn_sol = gn.run(x_init, x_data=f_lens, force_data=TOTAL_FORCES, kT=kT).params
+        return gn_sol
+
+    @jit
+    def get_wlc_params_lp_fixed(f_lens):
+        gn = GaussNewton(residual_fun=WLC_lp_fixed)
+        gn_sol = gn.run(x_init_lp_fixed, x_data=f_lens,
+                        force_data=TOTAL_FORCES, kT=kT, lp=x_init[1]).params
+        return gn_sol
 
     low_forces_input = args['low_forces']
     low_forces = list()
@@ -279,14 +304,29 @@ def analyze(args):
     low_force_multiplier = args['low_force_multiplier']
     assert(low_force_multiplier >= 1)
 
+    sys_basedir = Path("data/templates/force-ext")
+    top_path = sys_basedir / "sys.top"
+    top_info = topology.TopologyInfo(top_path, reverse_direction=True)
+    seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
+    assert(seq_oh.shape[0] == 220) # 110 bp duplex
+    n = seq_oh.shape[0]
+
+    displacement_fn, shift_fn = space.free()
+
     if run_name is None:
         raise RuntimeError(f"Must set run name")
     output_dir = Path("output/")
     run_dir = output_dir / run_name
 
+    sim_dir = run_dir / f"simulation"
+    assert(sim_dir.exists())
+
     params = deepcopy(model.EMPTY_BASE_PARAMS)
     iter_dir = run_dir / f"analyze"
     iter_dir.mkdir(parents=False, exist_ok=False)
+
+    single_force_dir = iter_dir / f"single_force"
+    single_force_dir.mkdir(parents=False, exist_ok=False)
 
 
     # Check for simulation information existence
@@ -312,24 +352,24 @@ def analyze(args):
     # Combine force trajectories into master output files and load
     combine_cmds = {force: "cat " for force in ALL_FORCES}
     force_to_idxs = {force: list() for force in ALL_FORCES}
-    for idx in range(n_sims):
+    for idx in range(len(sim_idxs)):
         sim_force = sim_forces[idx]
         assert(sim_force in ALL_FORCES)
 
-        repeat_dir = iter_dir / f"r{r}"
-        combine_cmd[sim_force] += f"{repeat_dir}/output.dat "
+        repeat_dir = sim_dir / f"r{sim_idxs[idx]}"
+        combine_cmds[sim_force] += f"{repeat_dir}/output.dat "
         force_to_idxs[sim_force].append(idx)
     force_to_energy_df = dict()
     energy_df_columns = ["time", "potential_energy", "kinetic_energy", "total_energy"]
     for force in ALL_FORCES:
-        energy_dfs = [pd.read_csv(iter_dir / f"r{r}" / "energy.dat", names=energy_df_columns,
+        energy_dfs = [pd.read_csv(sim_dir / f"r{r}" / "energy.dat", names=energy_df_columns,
                                   delim_whitespace=True)[1:] for r in force_to_idxs[force]]
         energy_df = pd.concat(energy_dfs, ignore_index=True)
         force_to_energy_df[force] = energy_df
     trajectories = dict()
     for force in ALL_FORCES:
-        combine_cmd[force] += f"> {iter_dir}/output_{force}.dat"
-        combine_proc = subprocess.run(combine_cmd[force], shell=True)
+        combine_cmds[force] += f"> {iter_dir}/output_{force}.dat"
+        combine_proc = subprocess.run(combine_cmds[force], shell=True)
         if combine_proc.returncode != 0:
             raise RuntimeError(f"Combining trajectories for force {force} failed with error code: {combine_proc.returncode}")
 
@@ -345,12 +385,6 @@ def analyze(args):
     # Check energies
 
     ## Generate an energy function
-    sys_basedir = Path("data/templates/force-ext")
-    top_path = sys_basedir / "sys.top"
-    top_info = topology.TopologyInfo(top_path, reverse_direction=True)
-    seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
-    assert(seq_oh.shape[0] == 220) # 110 bp duplex
-    n = seq_oh.shape[0]
 
     em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
     energy_fn = lambda body: em.energy_fn(
@@ -363,6 +397,7 @@ def analyze(args):
     ## FIXME: log energy differences how we do during optimization
     atol_places = 3
     tol = 10**(-atol_places)
+    energy_diffs = list()
     for force in ALL_FORCES:
         energy_df = force_to_energy_df[force]
         traj_states = trajectories[force]
@@ -376,36 +411,140 @@ def analyze(args):
 
         gt_energies = energy_df.potential_energy.to_numpy() * seq_oh.shape[0]
 
-        energy_diffs = list()
         for i, (calc, gt) in enumerate(zip(calc_energies, gt_energies)):
             print(f"State {i}:")
             print(f"\t- Calc. Energy: {calc}")
             print(f"\t- Reference. Energy: {gt}")
             diff = onp.abs(calc - gt)
+            energy_diffs.append(diff)
             print(f"\t- Difference: {diff}")
 
-            if diff >= tol:
-                # pdb.set_trace()
-                print(f"WARNING: energy difference of {diff}")
+    sns.histplot(energy_diffs)
+    plt.savefig(iter_dir / f"energy_diffs.png")
+    plt.clf()
 
     # Compute projected distances
     pdists = dict()
-    for force in ALL_FORCES:
+    for force in tqdm(ALL_FORCES, desc="Computing projected distances"):
         traj = trajectories[force]
-        pdists[force] = vmap(compute_dist)(traj)
+        force_dists = vmap(compute_dist)(traj)
+        pdists[force] = force_dists
+        sns.distplot(force_dists, label=f"{force*2}")
+    plt.legend()
+    plt.savefig(iter_dir / f"pdist_dists.png")
+    plt.clf()
+
+    final_f_lens = list() # oxDNA units
+    for f in ALL_FORCES:
+        final_f_lens.append(jnp.mean(pdists[f]))
+    final_f_lens = jnp.array(final_f_lens)
+    final_f_lens_si = final_f_lens * utils.nm_per_oxdna_length # in nm
 
 
     # Compute the running average of forces
     all_running_avg_pdists = dict()
     running_avg_interval = 10
-    for force in ALL_FORCES:
+    for force, forcex2 in zip(ALL_FORCES, TOTAL_FORCES):
         f_pdists = pdists[force]
+        f_running_averages = jnp.cumsum(f_pdists) / jnp.arange(1, f_pdists.shape[0]+1)
+
+        plt.plot(f_running_averages)
+        plt.axhline(y=tom_extensions[float(forcex2)], linestyle="--")
+        plt.xlabel("Sample")
+        plt.ylabel("Avg. Distance (oxDNA units)")
+        plt.title(f"Cumulative average, force={force*2}")
+        plt.savefig(single_force_dir / f"pdist_running_avg_{force*2}.png")
+        plt.clf()
+
+        plt.plot(f_running_averages[min_running_avg_idx:])
+        plt.axhline(y=tom_extensions[float(forcex2)], linestyle="--")
+        plt.xlabel("Sample")
+        plt.ylabel("Avg. Distance (oxDNA units)")
+        plt.title(f"Cumulative average, force={force*2}")
+        plt.savefig(single_force_dir / f"pdist_running_avg_{force*2}_trunc.png")
+        plt.clf()
+        
         if force in low_forces:
-            f_pdists_sampled = f_pdists[::(running_avg_interval*low_force_multiplier)]
+            f_running_averages_sampled = f_running_averages[::(running_avg_interval*low_force_multiplier)]
         else:
-            f_pdists_sampled = f_pdists[::running_avg_interval]
-        f_running_averages = jnp.cumsum(f_pdists_sampled) / jnp.arange(1, f_pdists_sampled.shape[0]+1)
-        all_running_avg_pdists[force] = f_running_averages
+            f_running_averages_sampled = f_running_averages[::running_avg_interval]
+
+
+        all_l0s = list()
+        all_lps = list()
+        all_ks = list()
+        all_l0s_lp_fixed = list()
+        all_ks_lp_fixed = list()
+        for i in tqdm(range(len(f_running_averages_sampled)), desc=f"Computing running avg. for {forcex2}"):
+            f_lens = list()
+            for f, fx2 in zip(ALL_FORCES, TOTAL_FORCES):
+                if f == force:
+                    f_lens.append(f_running_averages_sampled[i])
+                else:
+                    f_lens.append(tom_extensions[float(fx2)])
+            f_lens = jnp.array(f_lens)
+            
+            # gn = GaussNewton(residual_fun=WLC)
+            # gn_sol = gn.run(x_init, x_data=f_lens, force_data=TOTAL_FORCES, kT=kT).params
+            gn_sol = get_wlc_params(f_lens)
+
+            all_l0s.append(gn_sol[0])
+            all_lps.append(gn_sol[1])
+            all_ks.append(gn_sol[2])
+
+            # gn = GaussNewton(residual_fun=WLC_lp_fixed)
+            # gn_sol = gn.run(x_init_lp_fixed, x_data=f_lens,
+            #                 force_data=TOTAL_FORCES, kT=kT, lp=x_init[1]).params
+            gn_sol = get_wlc_params_lp_fixed(f_lens)
+            all_l0s_lp_fixed.append(gn_sol[0])
+            all_ks_lp_fixed.append(gn_sol[1])
+
+
+        plt.plot(all_l0s, label="l0", color="green")
+        plt.axhline(y=x_init[0], label="l0, true", linestyle="--", color="green")
+        plt.plot(all_lps, label="lp", color="blue")
+        plt.axhline(y=x_init[1], label="lp, true", linestyle="--", color="blue")
+        plt.plot(all_ks, label="k", color="red")
+        plt.axhline(y=x_init[2], label="k, true", linestyle="--", color="red")
+        plt.legend()
+        plt.title(f"WLC Fit Running Avg.")
+        plt.xlabel("Time")
+        plt.savefig(single_force_dir / f"wlc_fit_running_avg_{force*2}.png")
+        plt.clf()
+
+        plt.plot(all_l0s_lp_fixed, label="l0", color="green")
+        plt.axhline(y=x_init_lp_fixed[0], label="l0, true", linestyle="--", color="green")
+        plt.plot(all_ks_lp_fixed, label="k", color="red")
+        plt.axhline(y=x_init_lp_fixed[1], label="k, true", linestyle="--", color="red")
+        plt.legend()
+        plt.title(f"WLC Fit Running Avg., Lp={x_init[1]}")
+        plt.xlabel("Time")
+        plt.savefig(single_force_dir / f"wlc_fit_running_avg_{force*2}_lp_fixed.png")
+        plt.clf()
+
+        plt.plot(all_l0s[min_running_avg_idx:], label="l0", color="green")
+        plt.axhline(y=x_init[0], label="l0, true", linestyle="--", color="green")
+        plt.plot(all_lps[min_running_avg_idx:], label="lp", color="blue")
+        plt.axhline(y=x_init[1], label="lp, true", linestyle="--", color="blue")
+        plt.plot(all_ks[min_running_avg_idx:], label="k", color="red")
+        plt.axhline(y=x_init[2], label="k, true", linestyle="--", color="red")
+        plt.legend()
+        plt.title(f"WLC Fit Running Avg. (Truncated)")
+        plt.xlabel("Time")
+        plt.savefig(single_force_dir / f"wlc_fit_running_avg_{force*2}_truncanted.png")
+        plt.clf()
+
+        plt.plot(all_l0s_lp_fixed[min_running_avg_idx:], label="l0", color="green")
+        plt.axhline(y=x_init_lp_fixed[0], label="l0, true", linestyle="--", color="green")
+        plt.plot(all_ks_lp_fixed[min_running_avg_idx:], label="k", color="red")
+        plt.axhline(y=x_init_lp_fixed[1], label="k, true", linestyle="--", color="red")
+        plt.legend()
+        plt.title(f"WLC Fit Running Avg. (Truncated), Lp={x_init[1]}")
+        plt.xlabel("Time")
+        plt.savefig(single_force_dir / f"wlc_fit_running_avg_{force*2}_truncanted_lp_fixed.png")
+        plt.clf()
+                    
+        all_running_avg_pdists[force] = f_running_averages_sampled
 
 
     # Plot the running averages
@@ -419,7 +558,6 @@ def analyze(args):
     plt.clf()
 
     # Plot the running averages (truncated)
-    min_running_avg_idx = 50
     for force in ALL_FORCES:
         plt.plot(all_running_avg_pdists[force][min_running_avg_idx:], label=f"{force}")
     plt.xlabel("Sample")
@@ -429,19 +567,20 @@ def analyze(args):
     plt.savefig(iter_dir / "pdist_running_avg_trunc.png")
     plt.clf()
 
-    # Calculate the running WLC fits
+    # Calculate the running WLC fits *with Lp unknown*
     all_l0s = list()
     all_lps = list()
     all_ks = list()
     num_running_avg_points = len(all_running_avg_pdists[ALL_FORCES[-1]])
-    for i in range(num_running_avg_points):
+    for i in tqdm(range(num_running_avg_points), desc="Computing running avgs"):
         f_lens = list()
         for f in ALL_FORCES:
             f_lens.append(all_running_avg_pdists[f][i])
         f_lens = jnp.array(f_lens)
 
-        gn = GaussNewton(residual_fun=WLC)
-        gn_sol = gn.run(x_init, x_data=f_lens, force_data=TOTAL_FORCES, kT=kT).params
+        # gn = GaussNewton(residual_fun=WLC)
+        # gn_sol = gn.run(x_init, x_data=f_lens, force_data=TOTAL_FORCES, kT=kT).params
+        gn_sol = get_wlc_params(f_lens)
 
         all_l0s.append(gn_sol[0])
         all_lps.append(gn_sol[1])
@@ -504,20 +643,16 @@ def analyze(args):
     # Test the fit against true values
 
     ## oxDNA units
-    final_f_lens = list()
-    for f in ALL_FORCES:
-        final_f_lens.append(jnp.mean(pdists[f]))
-    final_f_lens = jnp.array(final_f_lens)
 
-    gn = GaussNewton(residual_fun=WLC)
-    gn_sol = gn.run(x_init, x_data=final_f_lens, force_data=TOTAL_FORCES, kT=kT).params
+    # gn = GaussNewton(residual_fun=WLC)
+    # gn_sol = gn.run(x_init, x_data=final_f_lens, force_data=TOTAL_FORCES, kT=kT).params
+    gn_sol = get_wlc_params(final_f_lens)
 
-    test_forces = onp.linspace(0.05, 0.8, 20) # in simulation units
     computed_extensions = [calculate_x(force, gn_sol[0], gn_sol[1], gn_sol[2], kT) for force in test_forces]
     tom_extensions = [calculate_x(force, x_init[0], x_init[1], x_init[2], kT) for force in test_forces]
 
     plt.plot(computed_extensions, test_forces, label="fit")
-    plt.scatter(final_f_lens, forces, label="samples")
+    plt.scatter(final_f_lens, TOTAL_FORCES, label="samples")
     plt.plot(tom_extensions, test_forces, label="tom fit")
     plt.xlabel("Extension (oxDNA units)")
     plt.ylabel("Force (oxDNA units)")
@@ -528,20 +663,16 @@ def analyze(args):
 
 
     ## SI units
-    test_forces_si = test_forces * utils.oxdna_force_to_pn # in pN
-    final_f_lens_si = final_f_lens * utils.nm_per_oxdna_length # in nm
-    kT_si = 4.08846006711 # in pN*nm
-    forces_si = TOTAL_FORCES * utils.oxdna_force_to_pn # pN
 
     gn_si = GaussNewton(residual_fun=WLC)
     gn_sol_si = gn_si.run(x_init_si, x_data=final_f_lens_si,
-                          force_data=forces_si, kT=kT_si).params
+                          force_data=TOTAL_FORCES_SI, kT=kT_si).params
 
     computed_extensions_si = [calculate_x(force, gn_sol_si[0], gn_sol_si[1], gn_sol_si[2], kT_si) for force in test_forces_si] # in nm
     tom_extensions_si = [calculate_x(force, x_init_si[0], x_init_si[1], x_init_si[2], kT_si) for force in test_forces_si] # in nm
 
     plt.plot(computed_extensions_si, test_forces_si, label="fit")
-    plt.scatter(final_f_lens_si, forces_si, label="samples")
+    plt.scatter(final_f_lens_si, TOTAL_FORCES_SI, label="samples")
     plt.plot(tom_extensions_si, test_forces_si, label="tom fit")
     plt.xlabel("Extension (nm)")
     plt.ylabel("Force (pN)")
@@ -551,28 +682,24 @@ def analyze(args):
     plt.clf()
 
 
-
-
-    # Repeat WLC analysis with a fixed Lp
-
+    # Repeat WLC analysis *with a fixed Lp*
 
     # Calculate the running WLC fits
     all_l0s = list()
-    all_lps = list()
     all_ks = list()
-    num_running_avg_points = len(all_running_avg_pdists[ALL_FORCES[-1]])
-    for i in range(num_running_avg_points):
+    for i in tqdm(range(num_running_avg_points), desc="Computing running avg., Lp fixed"):
         f_lens = list()
         for f in ALL_FORCES:
             f_lens.append(all_running_avg_pdists[f][i])
         f_lens = jnp.array(f_lens)
 
-        gn = GaussNewton(residual_fun=WLC_lp_fixed)
-        gn_sol = gn.run(x_init_lp_fixed, x_data=f_lens, force_data=TOTAL_FORCES, kT=kT).params
+        # gn = GaussNewton(residual_fun=WLC_lp_fixed)
+        # gn_sol = gn.run(x_init_lp_fixed, x_data=f_lens,
+        #                 force_data=TOTAL_FORCES, kT=kT, lp=x_init[1]).params
+        gn_sol = get_wlc_params_lp_fixed(f_lens)
 
         all_l0s.append(gn_sol[0])
-        all_lps.append(gn_sol[1])
-        all_ks.append(gn_sol[2])
+        all_ks.append(gn_sol[1])
 
     # Plot running WLC fits
     plt.plot(all_l0s, label="l0", color="green")
@@ -624,21 +751,16 @@ def analyze(args):
 
     # Test the fit against true values
 
-    ## oxDNA units
-    final_f_lens = list()
-    for f in ALL_FORCES:
-        final_f_lens.append(jnp.mean(pdists[f]))
-    final_f_lens = jnp.array(final_f_lens)
+    # gn = GaussNewton(residual_fun=WLC_lp_fixed)
+    # gn_sol = gn.run(x_init_lp_fixed, x_data=final_f_lens, force_data=TOTAL_FORCES,
+    #                 kT=kT, lp=x_init[1]).params
+    gn_sol = get_wlc_params_lp_fixed(final_f_lens)
 
-    gn = GaussNewton(residual_fun=WLC_lp_fixed)
-    gn_sol = gn.run(x_init_lp_fixed, x_data=final_f_lens, force_data=TOTAL_FORCES, kT=kT).params
-
-    test_forces = onp.linspace(0.05, 0.8, 20) # in simulation units
     computed_extensions = [calculate_x(force, gn_sol[0], x_init[1], gn_sol[1], kT) for force in test_forces]
-    tom_extensions = [calculate_x(force, x_init_lp_fixed[0], x_init[1], x_init_lp_fixed[2], kT) for force in test_forces]
+    tom_extensions = [calculate_x(force, x_init_lp_fixed[0], x_init[1], x_init_lp_fixed[1], kT) for force in test_forces]
 
     plt.plot(computed_extensions, test_forces, label="fit")
-    plt.scatter(final_f_lens, forces, label="samples")
+    plt.scatter(final_f_lens, TOTAL_FORCES, label="samples")
     plt.plot(tom_extensions, test_forces, label="tom fit")
     plt.xlabel("Extension (oxDNA units)")
     plt.ylabel("Force (oxDNA units)")
@@ -649,20 +771,16 @@ def analyze(args):
 
 
     ## SI units
-    test_forces_si = test_forces * utils.oxdna_force_to_pn # in pN
-    final_f_lens_si = final_f_lens * utils.nm_per_oxdna_length # in nm
-    kT_si = 4.08846006711 # in pN*nm
-    forces_si = TOTAL_FORCES * utils.oxdna_force_to_pn # pN
 
     gn_si = GaussNewton(residual_fun=WLC_lp_fixed)
     gn_sol_si = gn_si.run(x_init_lp_fixed_si, x_data=final_f_lens_si,
-                          force_data=forces_si, kT=kT_si).params
+                          force_data=TOTAL_FORCES_SI, kT=kT_si, lp=x_init_si[1]).params
 
     computed_extensions_si = [calculate_x(force, gn_sol_si[0], x_init_si[1], gn_sol_si[1], kT_si) for force in test_forces_si] # in nm
     tom_extensions_si = [calculate_x(force, x_init_lp_fixed_si[0], x_init_si[1], x_init_lp_fixed_si[1], kT_si) for force in test_forces_si] # in nm
 
     plt.plot(computed_extensions_si, test_forces_si, label="fit")
-    plt.scatter(final_f_lens_si, forces_si, label="samples")
+    plt.scatter(final_f_lens_si, TOTAL_FORCES_SI, label="samples")
     plt.plot(tom_extensions_si, test_forces_si, label="tom fit")
     plt.xlabel("Extension (nm)")
     plt.ylabel("Force (pN)")
@@ -717,6 +835,9 @@ def get_parser():
     parser.add_argument('--low-force-multiplier', type=int, default=1,
                         help="Multiplicative factor for low force simulation length")
 
+    parser.add_argument('--simulate-only', action='store_true')
+    parser.add_argument('--analyze-only', action='store_true')
+
 
     return parser
 
@@ -727,7 +848,12 @@ if __name__ == "__main__":
 
     assert(args['n_eq_steps'] == 0)
 
-    run(args)
+    if args['simulate_only']:
+        simulate(args)
+    elif args['analyze_only']:
+        analyze(args)
+    else:
+        run(args)
 
 
 
