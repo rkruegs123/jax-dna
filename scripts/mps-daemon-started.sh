@@ -8,18 +8,10 @@ oxdna_exec_path="${oxdna_basedir}/build/bin/oxDNA";
 iter_basedir=$2;
 num_repeats=$3;
 
-# export CUDA_MPS_PIPE_DIRECOTRY=$iter_basedir;
-export CUDA_MPS_LOG_DIRECTORY=$iter_basedir;
+# export CUDA_MPS_LOG_DIRECTORY=$iter_basedir;
 
 
-# export NCCL_BLOCKING_WAIT=1;
-
-sleep 2.0
-
-# Setup MPS control
-nvidia-cuda-mps-control -d
-
-sleep 2.0
+sleep 1.0
 
 # Start the MPS jobs
 for i in $(seq 0 $(($num_repeats-1))); do
@@ -27,11 +19,10 @@ for i in $(seq 0 $(($num_repeats-1))); do
     input_path="${repeat_dir}/input"
 
     $oxdna_exec_path $input_path &
-    # timeout 1.0h $oxdna_exec_path $input_path &
     sleep 0.25
 done
 wait
-echo quit | nvidia-cuda-mps-control
+
 
 
 

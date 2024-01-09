@@ -87,6 +87,11 @@ def run(args):
     max_approx_iters = args['max_approx_iters']
     oxdna_cuda_device = args['oxdna_cuda_device']
     oxdna_cuda_list = args['oxdna_cuda_list']
+    mps_running = args['mps_running']
+    if mps_running:
+        mps_script_path = "./scripts/mps-daemon-started.sh"
+    else:
+        mps_script_path = "./scripts/mps.sh"
 
     # Setup the logging directory
     if run_name is None:
@@ -218,7 +223,7 @@ def run(args):
                 if rc != 0:
                     raise RuntimeError(f"oxDNA simulation failed with error code: {rc}")
         elif device == "gpu":
-            mps_cmd = f"./scripts/mps.sh {oxdna_path} {iter_dir} {n_sims}"
+            mps_cmd = f"{mps_script_path} {oxdna_path} {iter_dir} {n_sims}"
             mps_proc = subprocess.run(mps_cmd, shell=True)
             if mps_proc.returncode != 0:
                 raise RuntimeError(f"Generating states via MPS failed with error code: {mps_proc.returncode}")
@@ -441,7 +446,10 @@ def run(args):
 
         print(f"\nFinised computing reference states.\n")
 
-        return (expected_lp - target_lp)**2, (n_eff, expected_lp, expected_corr_curve, expected_l0_avg, expected_offset)
+        mse = (expected_lp - target_lp)**2
+        rmse = jnp.sqrt(mse)
+
+        return rmse, (n_eff, expected_lp, expected_corr_curve, expected_l0_avg, expected_offset)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -606,11 +614,14 @@ def get_parser():
                         help="Target persistence length in nanometers")
     parser.add_argument('--min-neff-factor', type=float, default=0.95,
                         help="Factor for determining min Neff")
+
     parser.add_argument('--oxdna-cuda-device', type=int, default=0,
                         help="CUDA device for running oxDNA simulations")
     parser.add_argument('--oxdna-cuda-list', type=str, default="verlet",
                         choices=["no", "verlet"],
                         help="CUDA neighbor lists")
+    parser.add_argument('--mps-running', action='store_true',
+                        help="If set and GPU selected, will not start/stop the MPS daemon every time")
 
     return parser
 
