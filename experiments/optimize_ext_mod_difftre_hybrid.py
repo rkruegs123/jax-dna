@@ -126,6 +126,22 @@ def WLC_lp_fixed(coeffs, x_data, force_data, kT, lp):
     return residual
 
 
+# Compute the average persistence length
+def get_all_quartets(n_nucs_per_strand):
+    s1_nucs = list(range(n_nucs_per_strand))
+    s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
+    s2_nucs.reverse()
+
+    bps = list(zip(s1_nucs, s2_nucs))
+    n_bps = len(s1_nucs)
+    all_quartets = list()
+    for i in range(n_bps-1):
+        bp1 = bps[i]
+        bp2 = bps[i+1]
+        all_quartets.append(bp1 + bp2)
+    return jnp.array(all_quartets, dtype=jnp.int32)
+
+
 def run(args):
     # Load parameters
 
@@ -175,12 +191,36 @@ def run(args):
     low_force_multiplier = args['low_force_multiplier']
     assert(low_force_multiplier >= 1)
 
+
+    ## Setup metadata for set of force ext. simulations
+    sim_forces_fe = list()
+    sim_idxs_fe = list()
+    sim_start_steps_fe = list()
+
+    sim_idx_fe = 0
     n_ref_states_fe = 0
-    for f in PER_NUC_FORCES:
+    for force in PER_NUC_FORCES:
+
         n_force_states = n_sims_per_force * n_ref_states_per_sim_fe
-        if f in low_forces:
+        if force in low_forces:
             n_force_states *= low_force_multiplier
         n_ref_states_fe += n_force_states
+        
+        sim_start_step = 0
+
+        sims_to_add = n_sims_per_force
+        if force in low_forces:
+            sims_to_add *= low_force_multiplier
+
+        for f_sim_idx in range(sims_to_add):
+            sim_forces_fe.append(force)
+            sim_idxs_fe.append(sim_idx_fe)
+            sim_start_steps_fe.append(sim_start_step)
+
+            sim_idx_fe += 1
+            sim_start_step += n_steps_per_sim_fe
+    n_sims_fe = len(sim_idxs_fe)
+    n_sims_total = n_sims_lp + n_sims_fe
 
 
     # Setup the logging directory
@@ -189,6 +229,9 @@ def run(args):
     output_dir = Path("output/")
     run_dir = output_dir / run_name
     run_dir.mkdir(parents=False, exist_ok=False)
+
+    ref_traj_dir = run_dir / "ref_traj"
+    ref_traj_dir.mkdir(parents=False, exist_ok=False)
 
     loss_path = run_dir / "loss.txt"
     times_path = run_dir / "times.txt"
@@ -201,6 +244,7 @@ def run(args):
 
     params_str = ""
     params_str += f"n_ref_states_lp: {n_ref_states_lp}\n"
+    params_str += f"n_sims_total: {n_sims_total}\n"
     for k, v in args.items():
         params_str += f"{k}: {v}\n"
     with open(run_dir / "params.txt", "w+") as f:
@@ -274,26 +318,6 @@ def run(args):
 
     box_size_fe = conf_info_fe.box_size # Only for writing the trajectory
 
-    ### Setup metadata for set of force ext. simulations
-    sim_forces_fe = list()
-    sim_idxs_fe = list()
-    sim_start_steps_fe = list()
-
-    sim_idx_fe = 0
-    for force in PER_NUC_FORCES:
-        sim_start_step = 0
-
-        sims_to_add = n_sims_per_force
-        if force in low_forces:
-            sims_to_add *= low_force_multiplier
-
-        for f_sim_idx in range(sims_to_add):
-            sim_forces.append(force)
-            sim_idxs.append(sim_idx_fe)
-            sim_start_steps.append(sim_start_step)
-
-            sim_idx_fe += 1
-            sim_start_step += n_steps_per_sim_fe
 
     # Do the simulations
     def get_ref_states(params, i, seed, prev_basedir):
@@ -357,7 +381,7 @@ def run(args):
         fe_dir = iter_dir / "fe"
         fe_dir.mkdir(parents=False, exist_ok=False)
         fe_input_paths = list()
-        for sim_force, sim_idx, sim_start in zip(sim_forces, sim_idxs, sim_start_steps):
+        for sim_force, sim_idx, start_step in zip(sim_forces_fe, sim_idxs_fe, sim_start_steps_fe):
             repeat_dir = fe_dir / f"r{sim_idx}"
             repeat_dir.mkdir(parents=False, exist_ok=False)
 
@@ -420,6 +444,20 @@ def run(args):
             all_lp_times = all_times[:len(lp_input_paths)]
             all_fe_times = all_times[len(lp_input_paths):]
             all_hostnames = [ret_info[2] for ret_info in all_ret_info]
+
+            sns.histplot(all_lp_times)
+            plt.savefig(iter_dir / f"lp_sim_times.png")
+            plt.clf()
+
+            sns.histplot(all_fe_times)
+            plt.savefig(iter_dir / f"fe_sim_times.png")
+            plt.clf()
+
+            sns.distplot(all_lp_times, label="Lp", color="green")
+            sns.distplot(all_fe_times, label="Force ext.", color="blue")
+            plt.legend()
+            plt.savefig(iter_dir / f"sim_times.png")
+            plt.clf()
 
             with open(resample_log_path, "a") as f:
                 f.write(f"Performed {len(all_input_paths)} simulations with Ray...\n")
@@ -602,11 +640,11 @@ def run(args):
         ### Combine force trajectories into master output files
         combine_cmds = {force: "cat " for force in PER_NUC_FORCES}
         force_to_idxs = {force: list() for force in PER_NUC_FORCES}
-        for idx in range(len(sim_idxs)):
-            sim_force = sim_forces[idx]
+        for idx in range(len(sim_idxs_fe)):
+            sim_force = sim_forces_fe[idx]
             assert(sim_force in PER_NUC_FORCES)
 
-            repeat_dir = fe_dir / f"r{sim_idxs[idx]}"
+            repeat_dir = fe_dir / f"r{sim_idxs_fe[idx]}"
             combine_cmds[sim_force] += f"{repeat_dir}/output.dat "
             force_to_idxs[sim_force].append(idx)
 
@@ -1013,3 +1051,10 @@ def get_parser():
                         help="Multiplicative factor for low force simulation length")
 
     return parser
+
+
+if __name__ == "__main__":
+    parser = get_parser()
+    args = vars(parser.parse_args())
+
+    run(args)
