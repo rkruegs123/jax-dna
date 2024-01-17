@@ -266,9 +266,11 @@ def run(args):
 
     @jit
     def get_wlc_params_lp_fixed(f_lens, lp_fixed):
+
         gn = GaussNewton(residual_fun=WLC_lp_fixed, implicit_diff=True)
-        gn_sol = gn.run(x_init_lp_fixed, x_data=f_lens,
-                        force_data=TOTAL_FORCES, kT=kT, lp=lp_fixed).params
+        gn_sol = gn.run(x_init_lp_fixed, f_lens,
+                        TOTAL_FORCES, kT, lp_fixed).params
+        
         return gn_sol
 
 
@@ -352,7 +354,7 @@ def run(args):
                 prev_repeat_dir = prev_basedir / "lp" / f"r{r}"
                 prev_lastconf_path = prev_repeat_dir / "last_conf.dat"
                 prev_lastconf_info = trajectory.TrajectoryInfo(
-                    top_info,
+                    top_info_lp,
                     read_from_file=True, traj_path=prev_lastconf_path,
                     # reverse_direction=True
                     reverse_direction=False
@@ -554,7 +556,7 @@ def run(args):
         for i in range(0, n_curves, compute_every):
             inter_mean_corr_curve = jnp.mean(unweighted_corr_curves[:i], axis=0)
 
-            inter_mean_Lp_truncated, _ = persistence_length.persistence_length_fit(inter_mean_corr_curve[:truncation], mean_l0)
+            inter_mean_Lp_truncated, _ = persistence_length.persistence_length_fit(inter_mean_corr_curve[:corr_curve_truncation], mean_l0)
             all_inter_lps_truncated.append(inter_mean_Lp_truncated * utils.nm_per_oxdna_length)
 
             inter_mean_Lp, _ = persistence_length.persistence_length_fit(inter_mean_corr_curve, mean_l0)
@@ -596,7 +598,7 @@ def run(args):
         rounded_offset = onp.round(offset, 3)
         rounded_neg_inverse_slope = onp.round(neg_inverse_slope, 3)
         fit_str = f"fit, -n/{rounded_neg_inverse_slope} + {rounded_offset}"
-        plt.plot(fit_fn(jnp.arange(truncation)), linestyle='--', label=fit_str)
+        plt.plot(fit_fn(jnp.arange(corr_curve_truncation)), linestyle='--', label=fit_str)
 
         plt.title(f"Log-Correlation Curve, Truncated.")
         plt.xlabel("Nuc. Index")
@@ -619,6 +621,7 @@ def run(args):
             f.write(f"Mean energy diff: {onp.mean(energy_diffs)}\n")
             f.write(f"Calc. energy var.: {onp.var(calc_energies_lp)}\n")
             f.write(f"Ref. energy var.: {onp.var(gt_energies)}\n")
+            f.write(f"Lp (oxDNA units): {mean_Lp_truncated}\n")
 
         with open(lp_dir / "params.txt", "w+") as f:
             f.write(f"{pprint.pformat(params)}\n")
@@ -677,8 +680,8 @@ def run(args):
         energy_fn = lambda body: em.energy_fn(
             body,
             seq=seq_oh_fe,
-            bonded_nbrs=top_info.bonded_nbrs,
-            unbonded_nbrs=top_info.unbonded_nbrs.T)
+            bonded_nbrs=top_info_fe.bonded_nbrs,
+            unbonded_nbrs=top_info_fe.unbonded_nbrs.T)
         energy_fn = jit(energy_fn)
 
         ### Calculate energies and check energy differences
@@ -765,9 +768,10 @@ def run(args):
 
         all_l0s = list()
         all_ks = list()
+        num_running_avg_points = len(all_running_avg_pdists[PER_NUC_FORCES[-1]])
         for i in tqdm(range(num_running_avg_points), desc="Computing running avg., Lp fixed"):
             f_lens = list()
-            for f in ALL_FORCES:
+            for f in PER_NUC_FORCES:
                 f_lens.append(all_running_avg_pdists[f][i])
             f_lens = jnp.array(f_lens)
 
@@ -809,7 +813,7 @@ def run(args):
             trajectories_fe_arr.append(trajectories_fe[force])
             calc_energies_fe_arr.append(calc_energies_fe[force])
             pdists_arr.append(pdists[force])
-        trajectories_fe_arr = jnp.array(trajectories_fe_arr)
+        trajectories_fe_arr = utils.tree_stack(trajectories_fe_arr)
         calc_energies_fe_arr = jnp.array(calc_energies_fe_arr)
         pdists_arr = jnp.array(pdists_arr)
 
@@ -835,8 +839,8 @@ def run(args):
         energy_fn_lp = lambda body: em.energy_fn(
             body,
             seq=seq_oh_lp,
-            bonded_nbrs=top_info.bonded_nbrs,
-            unbonded_nbrs=top_info.unbonded_nbrs.T)
+            bonded_nbrs=top_info_lp.bonded_nbrs,
+            unbonded_nbrs=top_info_lp.unbonded_nbrs.T)
         energy_fn_lp = jit(energy_fn_lp)
 
         energy_scan_fn_lp = lambda state, rs: (None, energy_fn_lp(rs))
@@ -860,8 +864,8 @@ def run(args):
         energy_fn_fe = lambda body: em.energy_fn(
             body,
             seq=seq_oh_fe,
-            bonded_nbrs=top_info.bonded_nbrs,
-            unbonded_nbrs=top_info.unbonded_nbrs.T)
+            bonded_nbrs=top_info_fe.bonded_nbrs,
+            unbonded_nbrs=top_info_fe.unbonded_nbrs.T)
         energy_fn_fe = jit(energy_fn_fe)
 
         energy_scan_fn_fe = lambda state, rs: (None, energy_fn_fe(rs))
@@ -908,6 +912,7 @@ def run(args):
     min_n_eff = int(n_ref_states * min_neff_factor)
     all_losses = list()
     all_lps = list()
+    all_l0s = list()
     all_n_effs = list()
     all_ext_mods = list()
 
