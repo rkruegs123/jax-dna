@@ -191,6 +191,20 @@ def run(args):
     low_force_multiplier = args['low_force_multiplier']
     assert(low_force_multiplier >= 1)
 
+    is_low_force = list()
+    low_force_idxs = list()
+    normal_force_idxs = list()
+    for f_idx, f in enumerate(PER_NUC_FORCES):
+        if f in low_forces:
+            is_low_force.append(1)
+            low_force_idxs.append(f_idx)
+        else:
+            is_low_force.append(0)
+            normal_force_idxs.append(f_idx)
+    is_low_force = jnp.array(is_low_force, dtype=jnp.int32)
+    normal_force_idxs = jnp.array(normal_force_idxs, dtype=jnp.int32)
+    low_force_idxs = jnp.array(low_force_idxs, dtype=jnp.int32)
+
 
     ## Setup metadata for set of force ext. simulations
     sim_forces_fe = list()
@@ -205,7 +219,7 @@ def run(args):
         if force in low_forces:
             n_force_states *= low_force_multiplier
         n_ref_states_fe += n_force_states
-        
+
         sim_start_step = 0
 
         sims_to_add = n_sims_per_force
@@ -227,20 +241,27 @@ def run(args):
     if run_name is None:
         raise RuntimeError(f"Must set run name")
     output_dir = Path("output/")
+
     run_dir = output_dir / run_name
     run_dir.mkdir(parents=False, exist_ok=False)
 
     ref_traj_dir = run_dir / "ref_traj"
     ref_traj_dir.mkdir(parents=False, exist_ok=False)
 
-    loss_path = run_dir / "loss.txt"
-    times_path = run_dir / "times.txt"
-    grads_path = run_dir / "grads.txt"
-    neff_path = run_dir / "neff.txt"
-    lp_path = run_dir / "lp.txt"
-    l0_avg_path = run_dir / "l0_avg.txt"
-    ext_mod_path = run_dir / "ext_mod.txt"
-    resample_log_path = run_dir / "resample_log.txt"
+    img_dir = run_dir / "img"
+    img_dir.mkdir(parents=False, exist_ok=False)
+
+    log_dir = run_dir / "log"
+    log_dir.mkdir(parents=False, exist_ok=False)
+
+    loss_path = log_dir / "loss.txt"
+    times_path = log_dir / "times.txt"
+    grads_path = log_dir / "grads.txt"
+    neff_path = log_dir / "neff.txt"
+    lp_path = log_dir / "lp.txt"
+    l0_avg_path = log_dir / "l0_avg.txt"
+    ext_mod_path = log_dir / "ext_mod.txt"
+    resample_log_path = log_dir / "resample_log.txt"
 
     params_str = ""
     params_str += f"n_ref_states_lp: {n_ref_states_lp}\n"
@@ -270,7 +291,7 @@ def run(args):
         gn = GaussNewton(residual_fun=WLC_lp_fixed, implicit_diff=True)
         gn_sol = gn.run(x_init_lp_fixed, f_lens,
                         TOTAL_FORCES, kT, lp_fixed).params
-        
+
         return gn_sol
 
 
@@ -557,10 +578,10 @@ def run(args):
             inter_mean_corr_curve = jnp.mean(unweighted_corr_curves[:i], axis=0)
 
             inter_mean_Lp_truncated, _ = persistence_length.persistence_length_fit(inter_mean_corr_curve[:corr_curve_truncation], mean_l0)
-            all_inter_lps_truncated.append(inter_mean_Lp_truncated * utils.nm_per_oxdna_length)
+            all_inter_lps_truncated.append(inter_mean_Lp_truncated)
 
             inter_mean_Lp, _ = persistence_length.persistence_length_fit(inter_mean_corr_curve, mean_l0)
-            all_inter_lps.append(inter_mean_Lp * utils.nm_per_oxdna_length)
+            all_inter_lps.append(inter_mean_Lp)
 
         plt.plot(list(range(0, n_curves, compute_every)), all_inter_lps)
         plt.ylabel("Lp")
@@ -633,6 +654,7 @@ def run(args):
 
 
         ## Force extension
+        analyze_start = time.time()
         fe_analyze_dir = fe_dir / "analyze"
         fe_analyze_dir.mkdir(parents=False, exist_ok=False)
 
@@ -728,7 +750,6 @@ def run(args):
         for f in PER_NUC_FORCES:
             final_f_lens.append(jnp.mean(pdists[f]))
         final_f_lens = jnp.array(final_f_lens)
-        final_f_lens_si = final_f_lens * utils.nm_per_oxdna_length # in nm
 
 
         ### Compute running averages
@@ -801,23 +822,53 @@ def run(args):
         plt.savefig(fe_analyze_dir / "fit_evaluation_oxdna_lp_fixed.png")
         plt.clf()
 
+        analyze_end = time.time()
+        with open(resample_log_path, "a") as f:
+            f.write(f"- Remaining force ext. analysis took {analyze_end - analyze_start} seconds\n")
+
+        with open(fe_analyze_dir / "summary.txt", "w+") as f:
+            f.write(f"Ext. modulus (oxDNA units): {gn_sol[1]}\n")
+            f.write(f"Contour length (oxDNA units): {gn_sol[0]}\n")
+            f.write(f"Using Lp (oxDNA units): {mean_Lp_truncated}\n")
+            f.write(f"Force lengths (oxDNA units): {pprint.pformat(final_f_lens)}\n")
+
 
         # Return all information
         lp_info = [traj_states_lp, calc_energies_lp, unweighted_corr_curves, unweighted_l0_avgs]
 
         ## Postprocess force ext. reference data
+
         trajectories_fe_arr = list()
         calc_energies_fe_arr = list()
         pdists_arr = list()
+
+        trajectories_fe_low_forces_arr = list()
+        calc_energies_fe_low_forces_arr = list()
+        pdists_low_forces_arr = list()
+
         for force in PER_NUC_FORCES:
-            trajectories_fe_arr.append(trajectories_fe[force])
-            calc_energies_fe_arr.append(calc_energies_fe[force])
-            pdists_arr.append(pdists[force])
+
+            if force in low_forces:
+                trajectories_fe_low_forces_arr.append(trajectories_fe[force])
+                calc_energies_fe_low_forces_arr.append(calc_energies_fe[force])
+                pdists_low_forces_arr.append(pdists[force])
+            else:
+                trajectories_fe_arr.append(trajectories_fe[force])
+                calc_energies_fe_arr.append(calc_energies_fe[force])
+                pdists_arr.append(pdists[force])
+
         trajectories_fe_arr = utils.tree_stack(trajectories_fe_arr)
         calc_energies_fe_arr = jnp.array(calc_energies_fe_arr)
         pdists_arr = jnp.array(pdists_arr)
 
-        fe_info = [trajectories_fe_arr, calc_energies_fe_arr, pdists_arr]
+        trajectories_fe_low_forces_arr = jnp.array(trajectories_fe_low_forces_arr)
+        calc_energies_fe_low_forces_arr = jnp.array(calc_energies_fe_low_forces_arr)
+        pdists_low_forces_arr = jnp.array(pdists_low_forces_arr)
+
+        fe_info = [
+            trajectories_fe_arr, calc_energies_fe_arr, pdists_arr,
+            trajectories_fe_low_forces_arr, calc_energies_fe_low_forces_arr, pdists_low_forces_arr
+        ]
 
         return tuple(lp_info + fe_info + [iter_dir])
 
@@ -830,7 +881,8 @@ def run(args):
                 unweighted_corr_curves, unweighted_l0_avgs,
 
                 # Force ext. metadata
-                ref_states_fe, ref_energies_fe, ref_pdists
+                ref_states_fe, ref_energies_fe, ref_pdists,
+                ref_states_fe_lf, ref_energies_fe_lf, ref_pdists_lf
 
     ):
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
@@ -872,7 +924,8 @@ def run(args):
         def calc_energies_fe(force_ref_states):
             _, calc_energies_fe = scan(energy_scan_fn_fe, None, force_ref_states)
             return calc_energies_fe
-        all_calc_energies_fe = vmap(calc_energies_fe)(ref_states_fe)
+        all_calc_energies_fe_nf = vmap(calc_energies_fe)(ref_states_fe) # `nf` denotes "normal" force
+        all_calc_energies_fe_lf = vmap(calc_energies_fe)(ref_states_fe_lf)
 
         def calc_weights_fe(ref_energies, new_energies):
             diffs = new_energies - ref_energies
@@ -880,12 +933,18 @@ def run(args):
             denom = jnp.sum(boltzs)
             weights = boltzs / denom
             return weights
-        all_weights_fe = vmap(calc_weights_fe)(ref_energies_fe, all_calc_energies_fe)
+        all_weights_fe_nf = vmap(calc_weights_fe)(ref_energies_fe, all_calc_energies_fe_nf)
+        all_weights_fe_lf = vmap(calc_weights_fe)(ref_energies_fe_lf, all_calc_energies_fe_lf)
 
 
         def get_expected_pdist(force_pdists, force_weights):
             return jnp.dot(force_pdists, force_weights)
-        all_expected_pdists = vmap(get_expected_pdist)(ref_pdists, all_weights_fe)
+        all_expected_pdists_nf = vmap(get_expected_pdist)(ref_pdists, all_weights_fe_nf)
+        all_expected_pdists_lf = vmap(get_expected_pdist)(ref_pdists_lf, all_weights_fe_lf)
+
+        all_expected_pdists = jnp.zeros(num_forces)
+        all_expected_pdists = all_expected_pdists.at[low_force_idxs].set(all_expected_pdists_lf)
+        all_expected_pdists = all_expected_pdists.at[normal_force_idxs].set(all_expected_pdists_nf)
 
         gn_sol = get_wlc_params_lp_fixed(all_expected_pdists, expected_lp)
         expected_ext_mod = gn_sol[1]
@@ -910,11 +969,17 @@ def run(args):
 
     n_ref_states = n_ref_states_fe + n_ref_states_lp
     min_n_eff = int(n_ref_states * min_neff_factor)
+
     all_losses = list()
     all_lps = list()
     all_l0s = list()
     all_n_effs = list()
     all_ext_mods = list()
+
+    all_ref_losses = list()
+    all_ref_lps = list()
+    all_ref_ext_mods = list()
+    all_ref_times = list()
 
     with open(resample_log_path, "a") as f:
         f.write(f"Generating initial reference states and energies...\n")
@@ -926,8 +991,9 @@ def run(args):
 
     lp_ref_info = ref_info[:4]
     ref_states_lp, ref_energies_lp, unweighted_corr_curves, unweighted_l0_avgs = lp_ref_info
-    fe_ref_info = ref_info[4:7]
-    ref_states_fe, ref_energies_fe, ref_pdists = fe_ref_info
+    fe_ref_info = ref_info[4:10]
+    ref_states_fe, ref_energies_fe, ref_pdists = fe_ref_info[:3]
+    ref_states_fe_lf, ref_energies_fe_lf, ref_pdists_lf = fe_ref_info[3:]
     ref_iter_dir = ref_info[-1]
     prev_ref_basedir = deepcopy(ref_iter_dir)
 
@@ -944,6 +1010,14 @@ def run(args):
         n_eff = aux[0]
         num_resample_iters += 1
 
+        if i == 0:
+            expected_lp = aux[1]
+            expected_ext_mod = aux[5]
+            all_ref_losses.append(loss)
+            all_ref_lps.append(expected_lp)
+            all_ref_ext_mods.append(expected_ext_mod)
+            all_ref_times.append(i)
+
         if n_eff < min_n_eff or num_resample_iters >= max_approx_iters:
             num_resample_iters = 0
             with open(resample_log_path, "a") as f:
@@ -956,8 +1030,9 @@ def run(args):
 
             lp_ref_info = ref_info[:4]
             ref_states_lp, ref_energies_lp, unweighted_corr_curves, unweighted_l0_avgs = lp_ref_info
-            fe_ref_info = ref_info[4:7]
-            ref_states_fe, ref_energies_fe, ref_pdists = fe_ref_info
+            fe_ref_info = ref_info[4:10]
+            ref_states_fe, ref_energies_fe, ref_pdists = fe_ref_info[:3]
+            ref_states_fe_lf, ref_energies_fe_lf, ref_pdists_lf = fe_ref_info[3:]
             ref_iter_dir = ref_info[-1]
             prev_ref_basedir = deepcopy(ref_iter_dir)
 
@@ -967,6 +1042,13 @@ def run(args):
             (loss, aux), grads = grad_fn(
                 params, ref_states_lp, ref_energies_lp, unweighted_corr_curves, unweighted_l0_avgs,
                 ref_states_fe, ref_energies_fe, ref_pdists)
+
+            expected_lp = aux[1]
+            expected_ext_mod = aux[5]
+            all_ref_losses.append(loss)
+            all_ref_lps.append(expected_lp)
+            all_ref_ext_mods.append(expected_ext_mod)
+            all_ref_times.append(i)
 
         iter_end = time.time()
 
@@ -986,12 +1068,65 @@ def run(args):
             f.write(f"{expected_ext_mod}\n")
         with open(times_path, "a") as f:
             f.write(f"{iter_end - iter_start}\n")
+        with open(grads_path, "a") as f:
+            f.write(f"{pprint.pformat(grads)}\n")
 
         all_losses.append(loss)
         all_n_effs.append(n_eff)
         all_lps.append(expected_lp)
         all_l0s.append(expected_l0_avg)
         all_ext_mods.append(expected_ext_mod)
+
+
+        # Plot the current Lp correlation curve
+        log_corr_fn = lambda n: -n * expected_l0_avg / expected_lp + expected_offset # oxDNA units
+        plt.plot(jnp.log(expected_corr_curve))
+        plt.plot(log_corr_fn(jnp.arange(expected_corr_curve.shape[0])), linestyle='--')
+        plt.xlabel("Nuc. Index")
+        plt.ylabel("Log-Correlation")
+        plt.savefig(img_dir / f"log_corr_iter{i}.png")
+        plt.clf()
+
+
+        # Plot the current fit
+        computed_extensions = [calculate_x(force, expected_gn_sol[0], expected_lp, expected_gn_sol[1], kT) for force in test_forces]
+        plt.plot(computed_extensions, test_forces, label="fit")
+        plt.scatter(all_expected_pdists, TOTAL_FORCES, label="samples")
+        plt.xlabel("Extension (oxDNA units)")
+        plt.ylabel("Force (oxDNA units)")
+        plt.title("WLC Fit, oxDNA Units, Lp Fixed")
+        plt.legend()
+        plt.savefig(img_dir / "fit_i{i}.png")
+        plt.clf()
+
+
+        # Plot observables
+
+        plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
+        plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
+        plt.legend()
+        plt.ylabel("Loss")
+        plt.xlabel("Iteration")
+        plt.savefig(img_dir / f"losses_iter{i}.png")
+        plt.clf()
+
+        plt.plot(onp.arange(i+1), all_lps, linestyle="--", color="blue")
+        plt.scatter(all_ref_times, all_ref_lps, marker='o', label="Resample points", color="blue")
+        plt.legend()
+        plt.ylabel("Expected Lp (nm)")
+        plt.xlabel("Iteration")
+        plt.savefig(img_dir / f"lps_iter{i}.png")
+        plt.clf()
+
+        plt.plot(onp.arange(i+1), all_ext_mods, linestyle="--", color="blue")
+        plt.scatter(all_ref_times, all_ref_ext_mods, marker='o', label="Resample points", color="blue")
+        plt.axhline(y=target_ext_mod, linestyle='--', label="Target Ext. Modulus", color='red')
+        plt.legend()
+        plt.ylabel("Expected Ext. Modulus (oxDNA units)")
+        plt.xlabel("Iteration")
+        plt.savefig(img_dir / f"ext_mods_iter{i}.png")
+        plt.clf()
+
 
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
