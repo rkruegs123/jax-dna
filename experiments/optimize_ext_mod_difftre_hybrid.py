@@ -77,7 +77,8 @@ TOTAL_FORCES_SI = TOTAL_FORCES * utils.oxdna_force_to_pn # pN
 test_forces = onp.linspace(0.05, 0.8, 20) # in simulation units
 test_forces_si = test_forces * utils.oxdna_force_to_pn # in pN
 kT_si = 4.08846006711 # in pN*nm
-min_running_avg_idx = 10
+min_running_avg_idx_wlc = 10
+min_running_avg_idx_pdist = 250
 
 x_init = jnp.array([39.87, 50.60, 44.54]) # initialize to the true values
 x_init_si = jnp.array([x_init[0] * utils.nm_per_oxdna_length,
@@ -381,7 +382,7 @@ def run(args):
                     reverse_direction=False
                 )
                 init_conf_info = center_configuration.center_conf(
-                    top_info, prev_lastconf_info)
+                    top_info_lp, prev_lastconf_info)
 
             init_conf_info.traj_df.t = onp.full(seq_oh_lp.shape[0], r*n_steps_per_sim_lp)
             init_conf_info.write(repeat_dir / "init.conf", reverse=False, write_topology=False)
@@ -590,11 +591,29 @@ def run(args):
         plt.savefig(lp_dir / "running_avg.png")
         plt.clf()
 
+        n_inter_lps = len(all_inter_lps)
+        n_inter_lps_div2 = n_inter_lps // 2
+        div2_times = [n_curves // 2 * compute_every + idx*compute_every for idx in range(n_inter_lps_div2)]
+        
+        plt.plot(div2_times, all_inter_lps[n_inter_lps_div2:])
+        plt.ylabel("Lp")
+        plt.xlabel("# Samples")
+        plt.title("Lp running average")
+        plt.savefig(lp_dir / "running_avg_second_half.png")
+        plt.clf()
+
         plt.plot(list(range(0, n_curves, compute_every)), all_inter_lps_truncated)
         plt.ylabel("Lp")
         plt.xlabel("# Samples")
         plt.title("Lp running average, truncated")
         plt.savefig(lp_dir / "running_avg_truncated.png")
+        plt.clf()
+
+        plt.plot(div2_times, all_inter_lps_truncated[n_inter_lps_div2:])
+        plt.ylabel("Lp")
+        plt.xlabel("# Samples")
+        plt.title("Lp running average, truncated")
+        plt.savefig(lp_dir / "running_avg_truncated_second_half.png")
         plt.clf()
 
         plt.plot(mean_corr_curve)
@@ -761,7 +780,7 @@ def run(args):
             f_pdists = pdists[force]
             f_running_averages = jnp.cumsum(f_pdists) / jnp.arange(1, f_pdists.shape[0]+1)
 
-            plt.plot(f_running_averages[min_running_avg_idx:])
+            plt.plot(f_running_averages[min_running_avg_idx_pdist:])
             plt.xlabel("Sample")
             plt.ylabel("Avg. Distance (oxDNA units)")
             plt.title(f"Cumulative average, force={force*2}")
@@ -777,7 +796,7 @@ def run(args):
 
         ### Plot the running averages
         for force in PER_NUC_FORCES:
-            plt.plot(all_running_avg_pdists[force][min_running_avg_idx:], label=f"{force}")
+            plt.plot(all_running_avg_pdists[force][min_running_avg_idx_pdist:], label=f"{force}")
         plt.xlabel("Sample")
         plt.ylabel("Avg. Distance (oxDNA units)")
         plt.title(f"Cumulative average")
@@ -785,11 +804,40 @@ def run(args):
         plt.savefig(fe_analyze_dir / "pdist_running_avg_trunc.png")
         plt.clf()
 
-        ### Check WLC fit convergence with fixed Lp
+
+        num_running_avg_points = len(all_running_avg_pdists[PER_NUC_FORCES[-1]])
+        
+        ### Check WLC fit convergence *without* fixed Lp
+        all_l0s = list()
+        all_lps = list()
+        all_ks = list()
+
+        for i in tqdm(range(num_running_avg_points), desc="Computing running avg."):
+            f_lens = list()
+            for f in PER_NUC_FORCES:
+                f_lens.append(all_running_avg_pdists[f][i])
+            f_lens = jnp.array(f_lens)
+
+            gn_sol = get_wlc_params(f_lens)
+            all_l0s.append(gn_sol[0])
+            all_lps.append(gn_sol[1])
+            all_ks.append(gn_sol[2])
+
+        plt.plot(all_l0s[min_running_avg_idx_wlc:], label="l0", color="green")
+        plt.plot(all_lps[min_running_avg_idx_wlc:], label="lp", color="blue")
+        plt.plot(all_ks[min_running_avg_idx_wlc:], label="k", color="red")
+        plt.legend()
+        plt.title(f"WLC Fit Running Avg. (Truncated)")
+        plt.xlabel("Time")
+        plt.savefig(fe_analyze_dir / "wlc_fit_running_avg_truncanted.png")
+        plt.clf()
+            
+        
+        ### Check WLC fit convergence *with* fixed Lp
 
         all_l0s = list()
         all_ks = list()
-        num_running_avg_points = len(all_running_avg_pdists[PER_NUC_FORCES[-1]])
+        
         for i in tqdm(range(num_running_avg_points), desc="Computing running avg., Lp fixed"):
             f_lens = list()
             for f in PER_NUC_FORCES:
@@ -801,8 +849,8 @@ def run(args):
             all_l0s.append(gn_sol[0])
             all_ks.append(gn_sol[1])
 
-        plt.plot(all_l0s[min_running_avg_idx:], label="l0", color="green")
-        plt.plot(all_ks[min_running_avg_idx:], label="k", color="red")
+        plt.plot(all_l0s[min_running_avg_idx_wlc:], label="l0", color="green")
+        plt.plot(all_ks[min_running_avg_idx_wlc:], label="k", color="red")
         plt.legend()
         plt.title(f"WLC Fit Running Avg. (Truncated), Lp Fixed")
         plt.xlabel("Time")
@@ -810,7 +858,21 @@ def run(args):
         plt.clf()
 
 
-        ### Plot the final fit
+        ### Plot the final fit (Lp not fixed)
+        gn_sol = get_wlc_params(final_f_lens)
+        computed_extensions = [calculate_x(force, gn_sol[0], gn_sol[1], gn_sol[2], kT) for force in test_forces]
+        plt.plot(computed_extensions, test_forces, label="fit")
+        plt.scatter(final_f_lens, TOTAL_FORCES, label="samples")
+        plt.xlabel("Extension (oxDNA units)")
+        plt.ylabel("Force (oxDNA units)")
+        plt.title("WLC Fit, oxDNA Units")
+        plt.legend()
+        plt.savefig(fe_analyze_dir / "fit_evaluation_oxdna.png")
+        plt.clf()
+        
+        
+
+        ### Plot the final fit (Lp fixed)
         gn_sol = get_wlc_params_lp_fixed(final_f_lens, mean_Lp_truncated)
         computed_extensions = [calculate_x(force, gn_sol[0], mean_Lp_truncated, gn_sol[1], kT) for force in test_forces]
         plt.plot(computed_extensions, test_forces, label="fit")
@@ -861,7 +923,7 @@ def run(args):
         calc_energies_fe_arr = jnp.array(calc_energies_fe_arr)
         pdists_arr = jnp.array(pdists_arr)
 
-        trajectories_fe_low_forces_arr = jnp.array(trajectories_fe_low_forces_arr)
+        trajectories_fe_low_forces_arr = utils.tree_stack(trajectories_fe_low_forces_arr)
         calc_energies_fe_low_forces_arr = jnp.array(calc_energies_fe_low_forces_arr)
         pdists_low_forces_arr = jnp.array(pdists_low_forces_arr)
 
@@ -952,7 +1014,8 @@ def run(args):
         mse = (target_ext_mod - expected_ext_mod)**2
         rmse = jnp.sqrt(mse)
 
-        all_weights = jnp.concatenate([weights_lp, all_weights_fe.flatten()])
+        all_weights = jnp.concatenate([
+            weights_lp, all_weights_fe_nf.flatten(), all_weights_fe_lf.flatten()])
         n_eff = jnp.exp(-jnp.sum(all_weights * jnp.log(all_weights)))
 
         return rmse, (n_eff, expected_lp, expected_corr_curve, expected_l0_avg, expected_offset,
@@ -1006,7 +1069,9 @@ def run(args):
 
         (loss, aux), grads = grad_fn(
             params, ref_states_lp, ref_energies_lp, unweighted_corr_curves, unweighted_l0_avgs,
-            ref_states_fe, ref_energies_fe, ref_pdists)
+            ref_states_fe, ref_energies_fe, ref_pdists,
+            ref_states_fe_lf, ref_energies_fe_lf, ref_pdists_lf
+        )
         n_eff = aux[0]
         num_resample_iters += 1
 
@@ -1041,7 +1106,9 @@ def run(args):
 
             (loss, aux), grads = grad_fn(
                 params, ref_states_lp, ref_energies_lp, unweighted_corr_curves, unweighted_l0_avgs,
-                ref_states_fe, ref_energies_fe, ref_pdists)
+                ref_states_fe, ref_energies_fe, ref_pdists,
+                ref_states_fe_lf, ref_energies_fe_lf, ref_pdists_lf
+            )
 
             expected_lp = aux[1]
             expected_ext_mod = aux[5]
@@ -1096,7 +1163,7 @@ def run(args):
         plt.ylabel("Force (oxDNA units)")
         plt.title("WLC Fit, oxDNA Units, Lp Fixed")
         plt.legend()
-        plt.savefig(img_dir / "fit_i{i}.png")
+        plt.savefig(img_dir / f"fit_i{i}.png")
         plt.clf()
 
 
