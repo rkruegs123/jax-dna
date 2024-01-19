@@ -1,0 +1,16 @@
+;; This buffer is for text that is not saved, and for Lisp evaluation.
+;; To create a file, visit it with C-x C-f and enter text in its buffer.
+
+OK. We will probably want to run their persistence length script. Therefore, we should probably install oxpy. Can do using our fixed oxDNA installation. Will need to reocmpile withthe python option on.
+
+TODO:
+- test oat persistence length
+- try oxDNA_analysis_tools.persistence_length in a python script
+- just do the above, and then as well as our own. Check for equality/matching/etc.
+- then do the GPU thing
+- then optimize!
+
+
+
+in the oxdna code, they normalize Lp based on l0. So it is just number of nucleotides!!
+- note that we have slight discrepancies with their calculated Lp. Should really comprae our correlations to theirs. If they don't match, maybe it's a binning thing.

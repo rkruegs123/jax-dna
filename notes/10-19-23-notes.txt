@@ -1,0 +1,11 @@
+Things to do next:
+- use the (centered) old repeat final states as the initial state for the next refernece run
+- GPU!!
+  - check energy values
+  - also, add option to not print energy values to run much faster
+  - do more samples, eval convergence
+- have a second oxdna-bin to run things in parallel
+- read in states more efficiently
+- could also try a higher target lp -- may be more stable
+
+

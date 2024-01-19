@@ -1,0 +1,44 @@
+Prmset_cgDNA+_CGF_10mus_int_12mus_ends.mat (Use this for DNA) 
+--- Parameterset for DNA with 10 mus simulation for interior blocks and 12 mus for each ends
+--- cgFrame for frame fitting
+--- TIP3P water model, JC ion model and BSC1 force field
+--- Max entropy computation for prmsets
+--- used full covariance matrix not truncated
+--- Positive definite reconstruction for all sequences (upto 12 mers)
+
+Di_hmethyl_methylated-hemi_combine.mat 
+
+
+
+
+cgDNA+_Curves_BSTJ_10mus_FS.mat
+-- same as above except CURVEs+ instead of cgFrame
+
+Prmset_cgRNA+_OL3_CGF_10mus_int_12mus_ends.mat
+--- Parameterset for RNA with 10 mus simulation for interior blocks and 12 mus for each ends
+-- OL3 forcefiled
+-- same water and ion model as above
+-- same training library as above
+--- cgFrame for frames
+--- only GC ends 
+-- Alphabets in the parametersets are still ATCG for coding purposes.
+-Trimer NPDE 
+    'ATA' 
+    'ACA'
+    'TCA'
+    'TAA'
+    'TTG'
+
+
+
+cgHYB+_CGF_OL3_BSC1_10mus_FS_GC_ends.mat
+Note that 
+a) only for GC ends but more important there is no symmetry relation between 5' and 3' GC ends
+b) Similarly all 16 dimers are independent .. no symmetry relation
+c) OL3 forcefiled for RNA strand and TIP3P for DNA strand
+d) -- same water and ion model as above
+-- same training library as above but no palindromic symmetry
+--- cgFrame for frames
+-- Alphabets in the parametersets are still ATCG for coding purposes.
+
+

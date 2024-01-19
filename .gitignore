@@ -1,4 +1,16 @@
 **/*~
+**/**/*~
+**/**/**/*~
+
 **/__pycache__/
+**/**/__pycache__/
+**/**/**/__pycache__/
 
 v2/data/output
+bak/v2/data/output
+
+output/
+
+*.png
+*.dat
+*.pkl

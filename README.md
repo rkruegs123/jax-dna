@@ -6,6 +6,79 @@ To install jax-md rigid body check in locally, do FIXME. Must have this to run c
 
 ## Misc. Notes
 
+
+August 13, 2023
+
+- Have to do the following for Lp optimization:
+  - for each iteration, log: (i) the reference states themselves, (ii) the average correlation curve, (iii) average l0_avg, (iv) running average of Lp to check for convergence
+- should really set this up correctly, then move onto oxDNA 1.5 and 2.0, etc. While Megan does umbrella sampling in the background...
+
+August 12, 2023
+
+- We really have to average the correlatoin curves rather than the individual Lps. So, any effort to compute Lp now is useless.
+
+August 11, 2023
+
+- letting those persistence length experiments run. Let's just see what happens there
+- next steps on persistence length optimization:
+  - both of the scanned simulations fit in memory. Nice.
+  - should see if we can make things faster with batching. We can just do vmap, and see if that's faster. We could change it to pmap whenever we want. Note that it took 4.5 hours straight.
+  - regardless of method, in main, we should then compute a running average of the persistence lengthto check convergence
+
+
+August 10, 2023
+
+TODOs
+- let persistence length trajectory finish on cluster
+  - visualize
+  - TODO: talk to Megan about this. Also, why were we getting ~140 rather than ~120?
+- make `persistence_length.py` take RB geometry as input rather than load base_site etc fromutlis and what not
+  - DONE
+- add a test that loads this trajectory and computes its persistence length
+  - note: waiting on this
+- make a DiffTRE script that optimizes w.r.t. persistence legnth
+  - OK. So tom's thesis reports it in nm by accident when it is really A. First, make this change in our Lp code to be consistent with units. Let's just deal in nm.
+  - should also batch the collection of reference states... will have to figure out how to combine things...
+    - DONE
+  - running into memory issues with this. Need to expeimrent with different simulation methods
+- pray
+- once that works, implement oxDNA 1.5 and 2.0. Will eventually want to return to elastic modulus and thermodynamic parmaeters, as well as single stranded
+
+note: eventually we may want to have a bsae class that stores COM, back/base/stack sites, etc. So we don't have to keep recomputing them. Could make it a dataclass and pass it around instead of the trajectory...
+
+August 8, 2023
+- why is the reference state generation so slow for DiffTRE? Need to benchmark this a bit, progress bar, the whole thing...
+- then, would be really cool to try it on persistence length
+- but also need to read the rest o fth epaper. "Effective sample size" isn't exactly working as expected... loss doesn't decrease as monotonically as expected...
+- also need to do a lot more logging...
+
+August 4, 2023
+- Some things to add:
+  - Slower diffusion for stable gradients. Find some middle ground between fast and slow
+    - DONE
+  - log avg. helical distance w.r.t. target helical distance
+    - DONE
+  - add other loss terms, e.g. bb distance
+    - DONE
+  - experiment with gradient norm. can we tree_map jnp.linalg.norm?
+    - holding off for now
+
+- once we do these things, we have a couple of prioriites
+1. Redo an optimization at the correct gamma, check that tihngs are OK
+- note that the mean of residuals isn't the same as the residual o fth emean
+- TODO: check. Note how different the gradients are b/w rescale factor of 1000 and 2500 (or 3000?). Maybe we really are getting blowup...
+2. Then, there are three priorities:
+- (i) differentiabl etrajectory reweighting
+- (ii) cgDNA reference frame and loss
+  - prelim refactor. Can maybe get rid of eframe. Should also add a new experment that optimizes KL divergence...
+  - note that we also haven't made it model agnostic, and we assume  aparticular shapae at th emoment...
+  - ah, also note that our experiment for cgDNA as it stands still jsut does fene and stacking... not HB. Also, need  to do GC vs. AT for HB. But maybe good enough fo rnow?
+- (iii) oxDNA 1.5 and 2.0
+
+
+Also note that, as it stands, loss functions kind of assume a linear rigid body nucleotide
+
+
 April 14, 2023
 
 - 0 forces
@@ -14,7 +87,7 @@ April 14, 2023
 - optional: different simulation lengths
 - optional: review structural optimizations. review sizes of gradients, and do longer simulations
 - optional: experiment with *not* nested scan for simulation
-- optional: run the current mehcanical setup but with the structural llss functionand no external force. this will tell us if its a structural problem. 
+- optional: run the current mehcanical setup but with the structural llss functionand no external force. this will tell us if its a structural problem.
   - note: if gradients are exploding in this case, could be that gradients explode for large systems
   - if gradients *dont* explode, could also try for very *low* force, to see if introducing nay external force causes them to explode
 - optional: run the structural loss function with a very large helix, and the mechanica lloss function witha very short helix
@@ -225,9 +298,9 @@ TODO:
 - continue tinkering with metaD calcs
 - try longer sim lengths/larger batches for starting from random initial parameters... i.e. look into why the random params aren't working
 - implement dummy bias-exchange with well-tempered metaD
-- experiment with implicit differentiation for mechanical and structural gradients 
+- experiment with implicit differentiation for mechanical and structural gradients
 - restructure metaD code to enable easy 1D or 2D or ND metaD
- 
+
 
 #### Jan 31, 2023
 
@@ -246,4 +319,4 @@ maybe ask chrisy about extneral forces with remi
 
 we'll talk baout vmmc stuff but not today
 
-experiment with implicit differentiation for mechanical and structural gradients 
+experiment with implicit differentiation for mechanical and structural gradients
