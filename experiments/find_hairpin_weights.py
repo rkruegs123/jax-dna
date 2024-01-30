@@ -8,105 +8,10 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 from tabulate import tabulate
+import subprocess
 
 from jax_dna.common import utils
 from jax_dna.dna1 import model, oxdna_utils
-
-
-"""
-TOOD:
-- run, see what we get
-- if looks good, remove `test`
-- also, should combine all the copied logic below -- e.g. for running simulations and analyzing and what not
-- then, redo to make sure everything is OK
-- then, try for another hairpin topology
-"""
-
-
-
-def test():
-
-    # Note: correct optimal weights are
-    # array([4.44439477e+01, 1.09434846e+01, 1.69474976e+02, 3.58109507e+02,
-    #        2.75530254e+03, 8.69255724e+01, 5.98754309e+00, 1.43154144e+00])
-
-    basedir = Path("/home/ryan/Documents/Harvard/research/brenner/oxdna-tutorial/2.2-biased-monte-carlo")
-
-    example_wfile_path = basedir / "ENERGY1" / "wfile.txt"
-    weights_df = pd.read_fwf(example_wfile_path, names=["op1", "op2", "weight"])
-    num_ops = len(weights_df)
-    bins = np.arange(num_ops + 1) - 0.5
-    pair2idx = dict()
-    idx2pair = dict()
-    idx2weight = dict()
-    for row_idx, row in weights_df.iterrows():
-        op1 = int(row.op1)
-        op2 = int(row.op2)
-        pair2idx[(op1, op2)] = row_idx
-        idx2pair[row_idx] = (op1, op2)
-        idx2weight[row_idx] = row.weight
-
-    all_op_idxs = list()
-    all_weights = list()
-    for i in range(1, 6):
-        energy_dir = basedir / f"ENERGY{i}"
-        data = np.array(pd.read_fwf(energy_dir / "energy.dat", header=None)[[5,6,7]])[1000:]
-
-        for j in range(data.shape[0]):
-            op1 = data[j][0]
-            op2 = data[j][1]
-            pair_idx = pair2idx[(op1, op2)]
-            weight = data[j][2]
-            assert(idx2weight[pair_idx] == weight)
-            all_op_idxs.append(pair_idx)
-            all_weights.append(weight)
-
-    all_op_idxs = np.array(all_op_idxs)
-    all_weights = np.array(all_weights)
-
-    plt.plot(all_op_idxs)
-    plt.show()
-    plt.clf()
-
-    plt.hist(all_op_idxs, bins=bins)
-    plt.xlabel("state")
-    plt.ylabel("visits")
-    plt.show()
-    plt.clf()
-
-
-    # Unbias to estimate the free energy
-
-    f, ax = plt.subplots(1, 1, figsize=(6, 6))
-    probs = ax.hist(all_op_idxs, bins=bins, weights=1 / all_weights)[0]
-    plt.show()
-    plt.clf()
-
-    normed = probs / sum(probs)
-    optimal_weights = 1 / normed
-
-
-    probs_v2 = np.zeros(num_ops)
-    for op_idx, op_weight in zip(all_op_idxs, all_weights):
-        probs_v2[op_idx] += 1/op_weight
-
-    assert(np.allclose(probs, probs_v2))
-
-    normed_v2 = probs_v2 / sum(probs_v2) # CHECK THIS. Then should just do a histogram of this...
-
-
-    pdb.set_trace()
-
-    updated_weights_df = weights_df.copy(deep=True)
-    updated_weights_df.weight = optimal_weights
-
-    with open("new_wfile.txt", "w") as of:
-        content = tabulate(updated_weights_df.values.tolist(),
-                           list(updated_weights_df.columns),
-                           tablefmt="plain", numalign="left")
-        of.write(content + "\n")
-
-
 
 
 
@@ -135,16 +40,16 @@ def run(args):
     stem_bp = args['stem_bp']
     loop_nt = args['loop_nt']
     hairpin_basedir = Path("data/sys-defs/hairpins")
-    hairpin_dir = hairpin_basedir / f"{step_bp}bp_stem_{loop_nt}nt_loop"
+    hairpin_dir = hairpin_basedir / f"{stem_bp}bp_stem_{loop_nt}nt_loop"
     assert(hairpin_dir.exists())
     init_conf_path = hairpin_dir / "init.conf"
-    topology_path = hairpin_dir / "sys.top"
+    top_path = hairpin_dir / "sys.top"
     input_template_path = hairpin_dir / "input"
     op_path = hairpin_dir / "op.txt"
     wfile_path = hairpin_dir / "wfile.txt"
 
     # Process the weights information
-    init_weights_df = pd.read_fwf(wfile_path, names=["op1", "op2", "weight"])
+    weights_df = pd.read_fwf(wfile_path, names=["op1", "op2", "weight"])
     num_ops = len(weights_df)
     bins = np.arange(num_ops + 1) - 0.5
     pair2idx = dict()
@@ -167,7 +72,7 @@ def run(args):
 
     # Recompile once at the beginning with default parameters
     params = deepcopy(model.EMPTY_BASE_PARAMS)
-    oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+    # oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
 
     # Setup a run with bad weights
     initial_weights_dir = run_dir / "initial_weights"
@@ -176,6 +81,7 @@ def run(args):
     procs = list()
     for i in range(n_sims):
         repeat_dir = initial_weights_dir / f"r{i}"
+        repeat_dir.mkdir(parents=False, exist_ok=False)
 
         shutil.copy(top_path, repeat_dir / "sys.top")
         shutil.copy(wfile_path, repeat_dir / "wfile.txt")
@@ -193,6 +99,7 @@ def run(args):
             no_stdout_energy=0, weights_file=str(repeat_dir / "wfile.txt"),
             op_file=str(repeat_dir / "op.txt"),
             log_file=str(repeat_dir / "sim.log"),
+            restart_step_counter=1 # Because we will not be concatenating the outputs, so we can equilibrate
         )
 
         procs.append(subprocess.Popen([oxdna_exec_path, repeat_dir / "input"]))
@@ -218,7 +125,7 @@ def run(args):
             op2 = data[j][1]
             pair_idx = pair2idx[(op1, op2)]
             weight = data[j][2]
-            assert(idx2weight[pair_idx] == weight)
+            assert(np.isclose(idx2weight[pair_idx], weight, atol=1e-3))
             all_op_idxs.append(pair_idx)
             all_weights.append(weight)
 
@@ -262,7 +169,6 @@ def run(args):
     optimal_wfile_path = run_dir / "optimal_weights.txt"
     with open(optimal_wfile_path, "w") as of:
         content = tabulate(updated_weights_df.values.tolist(),
-                           list(updated_weights_df.columns),
                            tablefmt="plain", numalign="left")
         of.write(content + "\n")
 
@@ -271,9 +177,21 @@ def run(args):
     check_weights_dir = run_dir / "check_weights"
     check_weights_dir.mkdir(parents=False, exist_ok=False)
 
+
+    pair2idx = dict()
+    idx2pair = dict()
+    idx2weight = dict()
+    for row_idx, row in updated_weights_df.iterrows():
+        op1 = int(row.op1)
+        op2 = int(row.op2)
+        pair2idx[(op1, op2)] = row_idx
+        idx2pair[row_idx] = (op1, op2)
+        idx2weight[row_idx] = row.weight
+
     procs = list()
     for i in range(n_sims):
         repeat_dir = check_weights_dir / f"r{i}"
+        repeat_dir.mkdir(parents=False, exist_ok=False)
 
         shutil.copy(top_path, repeat_dir / "sys.top")
         shutil.copy(optimal_wfile_path, repeat_dir / "wfile.txt")
@@ -291,6 +209,7 @@ def run(args):
             no_stdout_energy=0, weights_file=str(repeat_dir / "wfile.txt"),
             op_file=str(repeat_dir / "op.txt"),
             log_file=str(repeat_dir / "sim.log"),
+            restart_step_counter=1 # Because we will not be concatenating the outputs, so we can equilibrate
         )
 
         procs.append(subprocess.Popen([oxdna_exec_path, repeat_dir / "input"]))
@@ -315,7 +234,7 @@ def run(args):
             op2 = data[j][1]
             pair_idx = pair2idx[(op1, op2)]
             weight = data[j][2]
-            assert(idx2weight[pair_idx] == weight)
+            assert(np.isclose(idx2weight[pair_idx], weight, atol=1e-3))
             all_op_idxs.append(pair_idx)
             all_weights.append(weight)
 
@@ -351,6 +270,8 @@ def get_parser():
     parser = argparse.ArgumentParser(description="Find the weights for a given hairpin")
 
     parser.add_argument('--device', type=str, default="cpu", choices=["cpu"])
+    parser.add_argument('--n-threads', type=int, default=2,
+                        help="Number of threads for oxDNA compilation")
     parser.add_argument('--n-sims', type=int, default=2,
                         help="Number of individual simulations")
     parser.add_argument('--n-steps-per-sim', type=int, default=int(5e6),
@@ -378,5 +299,4 @@ if __name__ == "__main__":
     parser = get_parser()
     args = vars(parser.parse_args())
 
-    # run(args)
-    test()
+    run(args)
