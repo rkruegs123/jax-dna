@@ -600,7 +600,8 @@ def run(args):
             f.write(f"- Remaining force ext. analysis took {analyze_end - analyze_start} seconds\n")
 
         with open(fe_analyze_dir / "summary.txt", "w+") as f:
-            f.write(f"Ext. modulus (oxDNA units): {gn_sol[1]}\n")
+            f.write(f"Ext. modulus (oxDNA units): {gn_sol[2]}\n")
+            f.write(f"Lp (oxDNA units): {gn_sol[1]}\n")
             f.write(f"Contour length (oxDNA units): {gn_sol[0]}\n")
             f.write(f"Force lengths (oxDNA units): {pprint.pformat(final_f_lens)}\n")
 
@@ -807,7 +808,7 @@ def run(args):
         with open(lp_path, "a") as f:
             f.write(f"{expected_lp}\n")
         with open(l0_avg_path, "a") as f:
-            f.write(f"{expected_l0_avg}\n")
+            f.write(f"{expected_l0}\n")
         with open(ext_mod_path, "a") as f:
             f.write(f"{expected_ext_mod}\n")
         with open(times_path, "a") as f:
@@ -818,7 +819,7 @@ def run(args):
         all_losses.append(loss)
         all_n_effs.append(n_eff)
         all_lps.append(expected_lp)
-        all_l0s.append(expected_l0_avg)
+        all_l0s.append(expected_l0)
         all_ext_mods.append(expected_ext_mod)
 
 
