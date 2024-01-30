@@ -1,0 +1,18 @@
+{
+order_parameter = bond
+name = all_native_bonds
+pair1 = 0, 15
+pair2 = 1, 14
+pair3 = 2, 13
+pair4 = 3, 12
+}
+
+{
+order_parameter = mindistance
+name = distances
+pair1 = 0, 15
+pair2 = 1, 14
+pair3 = 2, 13
+pair4 = 3, 12
+interfaces = 1.5,2,4
+}
