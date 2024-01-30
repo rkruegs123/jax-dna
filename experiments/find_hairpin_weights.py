@@ -72,7 +72,7 @@ def run(args):
 
     # Recompile once at the beginning with default parameters
     params = deepcopy(model.EMPTY_BASE_PARAMS)
-    # oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+    oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
 
     # Setup a run with bad weights
     initial_weights_dir = run_dir / "initial_weights"
