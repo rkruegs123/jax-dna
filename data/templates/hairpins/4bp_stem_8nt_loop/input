@@ -20,6 +20,7 @@ op_file = op.txt
 weights_file = wfile.txt
 safe_weights = 0
 default_weight = 0
+extrapolate_hist = 36C, 42C, 45C, 48C, 51C, 54C, 57C, 60C, 63C, 66C, 69C, 72C
 small_system = 1
 
 # Define sequence dependence

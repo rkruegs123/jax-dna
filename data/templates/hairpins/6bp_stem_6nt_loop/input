@@ -9,7 +9,7 @@ sim_type = VMMC
 ensemble = NVT
 max_cluster_size = 10
 steps = 5e6
-equilibration_steps = 1e5
+equilibration_steps = 0
 
 delta_translation = 0.22
 delta_rotation = 0.22
@@ -20,6 +20,7 @@ op_file = op.txt
 weights_file = wfile.txt
 safe_weights = 0
 default_weight = 0
+extrapolate_hist = 36C, 42C, 45C, 48C, 51C, 54C, 57C, 60C, 63C, 66C, 69C, 72C
 small_system = 1
 
 # Define sequence dependence
@@ -27,7 +28,7 @@ use_average_seq = 1
 
 # Input/output
 topology = sys.top
-conf_file = init.dat
+conf_file = init.conf
 log_file = sim.log
 trajectory_file = trajectory.dat
 no_stdout_energy = 0

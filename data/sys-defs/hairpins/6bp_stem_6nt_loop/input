@@ -13,7 +13,7 @@ equilibration_steps = 1e5
 
 delta_translation = 0.22
 delta_rotation = 0.22
-T = 23C
+T = 57C
 verlet_skin = 1.00
 umbrella_sampling = 1
 op_file = op.txt

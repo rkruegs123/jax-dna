@@ -284,7 +284,7 @@ def get_parser():
     parser.add_argument('--oxdna-path', type=str,
                         default="/home/ryan/Documents/Harvard/research/brenner/oxdna-bin/oxDNA/",
                         help='oxDNA base directory')
-    parser.add_argument('--temp', type=float, default=utils.DEFAULT_TEMP,
+    parser.add_argument('--temp', type=float, default=330.0,
                         help="Temperature in kelvin")
 
     parser.add_argument('--stem-bp', type=int, default=4,

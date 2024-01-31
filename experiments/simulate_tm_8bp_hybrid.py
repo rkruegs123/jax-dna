@@ -202,7 +202,7 @@ def run(args):
         energy_df_columns = [
             "time", "potential_energy", "kinetic_energy", "total_energy",
             "op_idx", "op", "op_weight"
-        ]
+        ] # NOTE: this is wrong. the columns are different for VMMC than for MD! And op_idx is not a thing!
         energy_dfs = [pd.read_csv(iter_dir / f"r{r}" / "energy.dat", names=energy_df_columns,
                                   delim_whitespace=True)[1:] for r in range(n_sims)]
         energy_df = pd.concat(energy_dfs, ignore_index=True)
