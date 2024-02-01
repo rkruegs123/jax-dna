@@ -24,7 +24,7 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 
 
-def hairpin_tm_running_avg(traj_hist_fpaths, n_stem_bp, n_dist_thresholds):
+def hairpin_tm_running_avg(traj_hist_files, n_stem_bp, n_dist_thresholds):
     n_files = len(traj_hist_files)
     num_ops = 2
     n_skip_lines = 2 + num_ops
@@ -93,11 +93,11 @@ def hairpin_tm_running_avg(traj_hist_fpaths, n_stem_bp, n_dist_thresholds):
             ratios.append(ratio)
         ratios = onp.array(ratios)
 
-        tm = tm.compute_tm(extrapolated_temps, ratios)
-        width = tm.compute_width(extrapolated_temps, ratios)
+        tm_ = tm.compute_tm(extrapolated_temps, ratios)
+        width_ = tm.compute_width(extrapolated_temps, ratios)
 
-        all_tms.append(tm)
-        all_widths.append(width)
+        all_tms.append(tm_)
+        all_widths.append(width_)
 
     return all_tms, all_widths
 
@@ -128,12 +128,12 @@ def run(args):
     # Load the system
     hairpin_basedir = Path("data/templates/hairpins")
     sys_basedir = hairpin_basedir / f"{stem_bp}bp_stem_{loop_nt}nt_loop"
-    assert(sys_dir.exists())
-    init_conf_path = sys_dir / "init.conf"
-    top_path = sys_dir / "sys.top"
-    input_template_path = sys_dir / "input"
-    op_path = sys_dir / "op.txt"
-    wfile_path = sys_dir / "wfile.txt"
+    assert(sys_basedir.exists())
+    init_conf_path = sys_basedir / "init.conf"
+    top_path = sys_basedir / "sys.top"
+    input_template_path = sys_basedir / "input"
+    op_path = sys_basedir / "op.txt"
+    wfile_path = sys_basedir / "wfile.txt"
 
     top_info = topology.TopologyInfo(top_path,
                                      # reverse_direction=False
@@ -147,7 +147,7 @@ def run(args):
         top_info, read_from_file=True, traj_path=init_conf_path,
         reverse_direction=True
     )
-    box_size = conf_info_bound.box_size
+    box_size = conf_info.box_size
 
     displacement_fn, shift_fn = space.free()
 
@@ -160,9 +160,6 @@ def run(args):
     num_ops = len(weights_df)
     n_stem_bp = len(weights_df.op1.unique())
     n_dist_thresholds = len(weights_df.op2.unique())
-    unbound_op_idxs = onp.array([n_stem_bp*d_idx for d_idx in range(n_dist_thresholds)])
-    bound_op_idxs = onp.array(list(range(1, 1+n_stem_bp)))
-    bins = np.arange(num_ops + 1) - 0.5
     pair2idx = dict()
     idx2pair = dict()
     idx2weight = dict()
@@ -204,7 +201,7 @@ def run(args):
             repeat_dir.mkdir(parents=False, exist_ok=False)
 
             shutil.copy(top_path, repeat_dir / "sys.top")
-            shutil.copy(weights_path, repeat_dir / "wfile.txt")
+            shutil.copy(wfile_path, repeat_dir / "wfile.txt")
             shutil.copy(op_path, repeat_dir / "op.txt")
 
             conf_info_copy = deepcopy(conf_info)
@@ -240,8 +237,6 @@ def run(args):
 
         end = time.time()
         sim_time = end - start
-
-        pdb.set_trace()
 
         # Analyze
         start = time.time()
@@ -280,8 +275,6 @@ def run(args):
         # plt.show()
         plt.clf()
 
-        pdb.set_trace()
-
         ## Load states from oxDNA simulation
         traj_info = trajectory.TrajectoryInfo(
             top_info, read_from_file=True,
@@ -315,10 +308,12 @@ def run(args):
 
             if last_hist_df is None:
                 last_hist_df = repeat_last_hist_df
+                orig_num_bp_col = deepcopy(last_hist_df['num_bp'])
+                orig_dist_threshold_idx_col = deepcopy(last_hist_df['dist_threshold_idx'])
             else:
                 last_hist_df = last_hist_df.add(repeat_last_hist_df)
-
-        pdb.set_trace()
+        last_hist_df['num_bp'] = orig_num_bp_col
+        last_hist_df['dist_threshold_idx'] = orig_dist_threshold_idx_col
 
         ## Check energies
         em_base = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
@@ -359,7 +354,6 @@ def run(args):
         # plt.show()
         plt.clf()
 
-        pdb.set_trace()
 
         ## Check uniformity across biased counts
         fig, ax = plt.subplots(1, 2, figsize=(12, 5))
@@ -372,13 +366,13 @@ def run(args):
         for row_idx, row in weights_df.iterrows():
             op1 = int(row.op1)
             op2 = int(row.op2)
-            op_name = f"({row.op1}, {row.op2})"
+            op_name = f"({op1}, {op2})"
 
             count_row = count_df[(count_df.op1 == op1) & (count_df.op2 == op2)]
-            if not count_row:
+            if count_row.empty:
                 op_count = 0
             else:
-                op_count = count_row.count
+                op_count = count_row['count'].to_numpy()[0]
 
             op_names.append(op_name)
             op_counts_periodic.append(op_count)
@@ -395,14 +389,12 @@ def run(args):
         for row_idx, row in weights_df.iterrows():
             op1 = int(row.op1)
             op2 = int(row.op2)
-            op_name = f"({row.op1}, {row.op2})"
 
             last_hist_row = last_hist_df[(last_hist_df.num_bp == op1) \
                                          & (last_hist_df.dist_threshold_idx == op2)]
-            assert(last_hist_row)
-            op_count = last_hist_row.count
+            assert(not last_hist_row.empty)
+            op_count = last_hist_row['count_biased'].to_numpy()[0]
 
-            op_names.append(op_name)
             op_counts_frequent.append(op_count)
         op_counts_frequent = onp.array(op_counts_frequent)
 
@@ -412,8 +404,6 @@ def run(args):
         plt.savefig(iter_dir / "biased_counts.png")
         plt.clf()
 
-
-        pdb.set_trace()
 
 
         ## Unbias reference counts
@@ -431,8 +421,6 @@ def run(args):
 
         plt.savefig(iter_dir / "unbiased_counts.png")
         plt.clf()
-
-        pdb.set_trace()
 
 
         ## Unbias counts for each temperature
@@ -476,7 +464,7 @@ def run(args):
 
                 last_hist_row = last_hist_df[(last_hist_df.num_bp == op1) \
                                              & (last_hist_df.dist_threshold_idx == op2)]
-                frequent_extrap_counts.append(last_hist_row[str(extrap_t_kelvin)])
+                frequent_extrap_counts.append(last_hist_row[str(extrap_t_kelvin)].to_numpy()[0])
             frequent_extrap_counts = onp.array(frequent_extrap_counts)
             all_unbiased_counts_ref.append(frequent_extrap_counts)
 
@@ -489,14 +477,26 @@ def run(args):
         all_unbiased_counts = onp.array(all_unbiased_counts)
         all_unbiased_counts_ref = onp.array(all_unbiased_counts_ref)
 
-        pdb.set_trace()
 
         # Compute the final Tms and widths
+        unbound_op_idxs = list()
+        bound_op_idxs = list()
+        for row_idx, row in weights_df.iterrows():
+            op1 = int(row.op1)
+            if op1 == 0:
+                unbound_op_idxs.append(row_idx)
+            else:
+                bound_op_idxs.append(row_idx)
+        bound_op_idxs = onp.array(bound_op_idxs)
+        unbound_op_idxs = onp.array(unbound_op_idxs)
+
+        pdb.set_trace()
+
         unbound_unbiased_counts = all_unbiased_counts[:, unbound_op_idxs]
         bound_unbiased_counts = all_unbiased_counts[:, bound_op_idxs]
 
         ratios = list()
-        for t_idx in range(len(extrapolated_temps)):
+        for t_idx in range(len(extrapolate_temps)):
             unbound_count = unbound_unbiased_counts[t_idx].sum()
             bound_count = bound_unbiased_counts[t_idx].sum()
 
@@ -512,7 +512,7 @@ def run(args):
         unbound_unbiased_counts_ref = all_unbiased_counts_ref[:, unbound_op_idxs]
         bound_unbiased_counts_ref = all_unbiased_counts_ref[:, bound_op_idxs]
         ratios_ref = list()
-        for t_idx in range(len(extrapolated_temps)):
+        for t_idx in range(len(extrapolate_temps)):
             unbound_count_ref = unbound_unbiased_counts_ref[t_idx].sum()
             bound_count_ref = bound_unbiased_counts_ref[t_idx].sum()
 
@@ -559,7 +559,7 @@ def get_parser():
                         help="Number of individual simulations")
     parser.add_argument('--n-steps-per-sim', type=int, default=int(5e6),
                         help="Number of steps per simulation")
-    parser.add_argument('--n-eq-steps', type=int, default=int(1e5),
+    parser.add_argument('--n-eq-steps', type=int, default=0,
                         help="Number of equilibration steps")
     parser.add_argument('--sample-every', type=int, default=int(1e3),
                         help="Frequency of sampling reference states.")
