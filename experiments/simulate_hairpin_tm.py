@@ -490,8 +490,6 @@ def run(args):
         bound_op_idxs = onp.array(bound_op_idxs)
         unbound_op_idxs = onp.array(unbound_op_idxs)
 
-        pdb.set_trace()
-
         unbound_unbiased_counts = all_unbiased_counts[:, unbound_op_idxs]
         bound_unbiased_counts = all_unbiased_counts[:, bound_op_idxs]
 
@@ -525,8 +523,6 @@ def run(args):
 
         end = time.time()
         analyze_time = end - start
-
-        pdb.set_trace()
 
         summary_str = ""
         summary_str += f"Simulation time: {sim_time}\n"
