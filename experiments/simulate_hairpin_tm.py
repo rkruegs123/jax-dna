@@ -61,8 +61,8 @@ def hairpin_tm_running_avg(traj_hist_files, n_stem_bp, n_dist_thresholds):
     # Compute running averages
     all_tms = list()
     all_widths = list()
-    # start_hist_idx = 50
-    start_hist_idx = 5
+    start_hist_idx = 50
+    # start_hist_idx = 5
     assert(n_hists > start_hist_idx)
     for hist_idx in tqdm(range(start_hist_idx, n_hists), desc="Traj. histogram running avg."):
         start_line = hist_idx * lines_per_hist
@@ -191,7 +191,7 @@ def run(args):
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
 
-        # oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+        oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
 
         procs = list()
 
