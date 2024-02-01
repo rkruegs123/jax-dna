@@ -42,7 +42,8 @@ def run(args):
     hairpin_basedir = Path("data/sys-defs/hairpins")
     hairpin_dir = hairpin_basedir / f"{stem_bp}bp_stem_{loop_nt}nt_loop"
     assert(hairpin_dir.exists())
-    init_conf_path = hairpin_dir / "init.conf"
+    conf_path_unbound = hairpin_dir / "init_unbound.conf"
+    conf_path_bound = hairpin_dir / "init_bound.conf"
     top_path = hairpin_dir / "sys.top"
     input_template_path = hairpin_dir / "input"
     op_path = hairpin_dir / "op.txt"
@@ -86,8 +87,11 @@ def run(args):
         shutil.copy(top_path, repeat_dir / "sys.top")
         shutil.copy(wfile_path, repeat_dir / "wfile.txt")
         shutil.copy(op_path, repeat_dir / "op.txt")
-        shutil.copy(init_conf_path, repeat_dir / "init.conf")
 
+        if i % 2 == 0:
+            shutil.copy(conf_path_bound, repeat_dir / "init.conf")
+        else:
+            shutil.copy(conf_path_unbound, repeat_dir / "init.conf")
 
         oxdna_utils.rewrite_input_file(
             input_template_path, repeat_dir,
@@ -196,7 +200,11 @@ def run(args):
         shutil.copy(top_path, repeat_dir / "sys.top")
         shutil.copy(optimal_wfile_path, repeat_dir / "wfile.txt")
         shutil.copy(op_path, repeat_dir / "op.txt")
-        shutil.copy(init_conf_path, repeat_dir / "init.conf")
+
+        if i % 2 == 0:
+            shutil.copy(conf_path_bound, repeat_dir / "init.conf")
+        else:
+            shutil.copy(conf_path_unbound, repeat_dir / "init.conf")
 
 
         oxdna_utils.rewrite_input_file(

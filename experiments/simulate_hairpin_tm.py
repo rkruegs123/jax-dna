@@ -129,7 +129,8 @@ def run(args):
     hairpin_basedir = Path("data/templates/hairpins")
     sys_basedir = hairpin_basedir / f"{stem_bp}bp_stem_{loop_nt}nt_loop"
     assert(sys_basedir.exists())
-    init_conf_path = sys_basedir / "init.conf"
+    conf_path_unbound = sys_basedir / "init_unbound.conf"
+    conf_path_bound = sys_basedir / "init_bound.conf"
     top_path = sys_basedir / "sys.top"
     input_template_path = sys_basedir / "input"
     op_path = sys_basedir / "op.txt"
@@ -143,11 +144,15 @@ def run(args):
     n_nt = seq_oh.shape[0]
     assert(n_nt == 2*stem_bp + loop_nt)
 
-    conf_info = trajectory.TrajectoryInfo(
-        top_info, read_from_file=True, traj_path=init_conf_path,
+    conf_info_unbound = trajectory.TrajectoryInfo(
+        top_info, read_from_file=True, traj_path=conf_path_unbound,
         reverse_direction=True
     )
-    box_size = conf_info.box_size
+    conf_info_bound = trajectory.TrajectoryInfo(
+        top_info, read_from_file=True, traj_path=conf_path_bound,
+        reverse_direction=True
+    )
+    box_size = conf_info_bound.box_size
 
     displacement_fn, shift_fn = space.free()
 
@@ -204,7 +209,11 @@ def run(args):
             shutil.copy(wfile_path, repeat_dir / "wfile.txt")
             shutil.copy(op_path, repeat_dir / "op.txt")
 
-            conf_info_copy = deepcopy(conf_info)
+            if r % 2 == 0:
+                conf_info_copy = deepcopy(conf_info_bound)
+            else:
+                conf_info_copy = deepcopy(conf_info_unbound)
+
             conf_info_copy.traj_df.t = onp.full(seq_oh.shape[0], r*n_steps_per_sim)
 
             conf_info_copy.write(repeat_dir / "init.conf",

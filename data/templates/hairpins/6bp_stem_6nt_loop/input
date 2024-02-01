@@ -28,7 +28,7 @@ use_average_seq = 1
 
 # Input/output
 topology = sys.top
-conf_file = init.conf
+conf_file = init_unbound.conf
 log_file = sim.log
 trajectory_file = trajectory.dat
 no_stdout_energy = 0
