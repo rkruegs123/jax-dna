@@ -512,7 +512,7 @@ def run(args):
                 rs = ref_states[rs_idx]
                 op1, op2 = all_ops[rs_idx]
                 op_idx = pair2idx[(op1, op2)]
-                op_weight = idx2weight[op_idx]
+                op_weight = idx2weight[int(op_idx)]
 
                 calc_energy = ref_energies[rs_idx]
                 calc_energy_temp = energy_fn_temp(rs)
@@ -596,16 +596,21 @@ def run(args):
             f.write(summary_str)
 
         all_op_weights = list()
+        all_op_idxs = list()
         for op1, op2 in all_ops:
             op_idx = pair2idx[(op1, op2)]
-            op_weight = idx2weight[op_idx]
+            op_weight = idx2weight[int(op_idx)]
             all_op_weights.append(op_weight)
+            all_op_idxs.append(op_idx)
+
+        all_ops = jnp.array(all_ops).astype(jnp.int32)
+        all_op_weights = jnp.array(all_op_weights)
+        all_op_idxs = jnp.array(all_op_idxs)
+
+        return ref_states, ref_energies, all_ops, all_op_weights, all_op_idxs, iter_dir
 
 
-        return ref_states, ref_energies, jnp.array(all_ops).astype(jnp.int32), jnp.array(all_op_weights), iter_dir
-
-
-    def loss_fn(params, ref_states, ref_energies, all_ops, all_op_weights):
+    def loss_fn(params, ref_states, ref_energies, all_ops, all_op_weights, all_op_idxs):
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
 
         # Compute the weights
@@ -637,8 +642,8 @@ def run(args):
             def unbias_scan_fn(unb_counts, rs_idx):
                 rs = ref_states[rs_idx]
                 op1, op2 = all_ops[rs_idx]
-                op_idx = pair2idx[(op1, op2)]
-                op_weight = idx2weight[op_idx]
+                op_idx = all_op_idxs[rs_idx]
+                op_weight = all_op_weights[rs_idx]
 
                 # calc_energy = ref_energies[rs_idx] # this is wrong
                 calc_energy = new_energies[rs_idx]
@@ -696,7 +701,7 @@ def run(args):
         f.write(f"Generating initial reference states and energies...\n")
     start = time.time()
     prev_ref_basedir = None
-    ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(params, i=0, seed=key, prev_basedir=prev_ref_basedir)
+    ref_states, ref_energies, ref_ops, ref_op_weights, ref_op_idxs, ref_iter_dir = get_ref_states(params, i=0, seed=key, prev_basedir=prev_ref_basedir)
     prev_ref_basedir = deepcopy(ref_iter_dir)
     end = time.time()
     with open(resample_log_path, "a") as f:
@@ -706,7 +711,7 @@ def run(args):
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
-        (loss, (curr_tm, curr_width, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights)
+        (loss, (curr_tm, curr_width, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights, ref_op_idxs)
         num_resample_iters += 1
 
         if i == 0:
@@ -722,13 +727,13 @@ def run(args):
                 f.write(f"- n_eff was {n_eff}. Resampling...\n")
 
             start = time.time()
-            ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(params, i=i, seed=key+1+i, prev_basedir=prev_ref_basedir)
+            ref_states, ref_energies, ref_ops, ref_op_weights, ref_op_idxs, ref_iter_dir = get_ref_states(params, i=i, seed=key+1+i, prev_basedir=prev_ref_basedir)
             end = time.time()
             prev_ref_basedir = deepcopy(ref_iter_dir)
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
 
-            (loss, (curr_tm, curr_width, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights)
+            (loss, (curr_tm, curr_width, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights, ref_op_idxs)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
