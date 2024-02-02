@@ -12,10 +12,11 @@ import random
 from copy import deepcopy
 import seaborn as sns
 import pprint
+import functools
 
 import jax.numpy as jnp
 from jax_md import space
-from jax import vmap, jit, lax
+from jax import vmap, jit, lax, grad, value_and_grad
 import optax
 
 from jax_dna.common import utils, topology, trajectory, checkpoint
@@ -24,6 +25,14 @@ from jax_dna.loss import tm
 
 from jax.config import config
 config.update("jax_enable_x64", True)
+
+
+checkpoint_every = 25
+if checkpoint_every is None:
+    scan = lax.scan
+else:
+    scan = functools.partial(checkpoint.checkpoint_scan,
+                             checkpoint_every=checkpoint_every)
 
 
 def hairpin_tm_running_avg(traj_hist_files, n_stem_bp, n_dist_thresholds):
@@ -227,12 +236,13 @@ def run(args):
     iter_params_path = log_dir / "iter_params.txt"
 
     params_str = ""
+    params_str += f"n_ref_states: {n_ref_states}\n"
     for k, v in args.items():
         params_str += f"{k}: {v}\n"
     with open(run_dir / "params.txt", "w+") as f:
         f.write(params_str)
 
-    def get_ref_states(params, i, seed):
+    def get_ref_states(params, i, seed, prev_basedir):
         random.seed(seed)
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
@@ -250,10 +260,21 @@ def run(args):
             shutil.copy(wfile_path, repeat_dir / "wfile.txt")
             shutil.copy(op_path, repeat_dir / "op.txt")
 
-            if r % 2 == 0:
-                conf_info_copy = deepcopy(conf_info_bound)
+            if prev_basedir is None or True: # FIXME: just doing this every time
+                if r % 2 == 0:
+                    conf_info_copy = deepcopy(conf_info_bound)
+                else:
+                    conf_info_copy = deepcopy(conf_info_unbound)
             else:
-                conf_info_copy = deepcopy(conf_info_unbound)
+                prev_repeat_dir = prev_basedir / f"r{r}"
+                prev_lastconf_path = prev_repeat_dir / "last_conf.dat"
+                prev_lastconf_info = trajectory.TrajectoryInfo(
+                    top_info,
+                    read_from_file=True, traj_path=prev_lastconf_path,
+                    reverse_direction=True
+                    # reverse_direction=False
+                )
+                # conf_info_copy = center_configuration.center_conf(top_info, prev_lastconf_info)
 
             conf_info_copy.traj_df.t = onp.full(seq_oh.shape[0], r*n_steps_per_sim)
 
@@ -581,7 +602,7 @@ def run(args):
             all_op_weights.append(op_weight)
 
 
-        return ref_states, ref_energies, jnp.array(all_ops), jnp.array(all_op_weights), iter_dir
+        return ref_states, ref_energies, jnp.array(all_ops).astype(jnp.int32), jnp.array(all_op_weights), iter_dir
 
 
     def loss_fn(params, ref_states, ref_energies, all_ops, all_op_weights):
@@ -603,7 +624,7 @@ def run(args):
         weights = boltzs / denom
 
 
-        def compute_extrap_temp_finfs(t_kelvin_extrap):
+        def compute_extrap_temp_ratios(t_kelvin_extrap):
             extrap_kt = utils.get_kt(t_kelvin_extrap)
             em_temp = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin_extrap)
             energy_fn_temp = lambda body: em_temp.energy_fn(
@@ -631,10 +652,10 @@ def run(args):
                 return unb_counts.at[op_idx].add(weighted_add_term), None
 
             temp_unbiased_counts, _ = scan(unbias_scan_fn, jnp.zeros(num_ops), jnp.arange(n_ref_states))
-            temp_finfs = tm.compute_finf(temp_unbiased_counts)
-            return temp_finfs
+            temp_ratios = compute_ratio(temp_unbiased_counts)
+            return temp_ratios
 
-        ratios = vmap(compute_ratio)(extrapolate_temps)
+        ratios = vmap(compute_extrap_temp_ratios)(extrapolate_temps)
         curr_tm = tm.compute_tm(extrapolate_temps, ratios)
         curr_width = tm.compute_width(extrapolate_temps, ratios)
 
