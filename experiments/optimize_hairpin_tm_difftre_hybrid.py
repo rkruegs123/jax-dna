@@ -242,6 +242,10 @@ def run(args):
     with open(run_dir / "params.txt", "w+") as f:
         f.write(params_str)
 
+    max_seed_tries = 5
+    seed_check_sample_freq = 10
+    seed_check_steps = 100
+
     def get_ref_states(params, i, seed, prev_basedir):
         random.seed(seed)
         iter_dir = ref_traj_dir / f"iter{i}"
@@ -283,12 +287,48 @@ def run(args):
                                  reverse=True,
                                  write_topology=False)
 
+
+            check_seed_dir = repeat_dir / "check_seed"
+            check_seed_dir.mkdir(parents=False, exist_ok=False)
+            s_idx = 0
+            valid_seed = None
+            while s_idx < max_seed_tries and valid_seed is None:
+                seed_try = random.randrange(10000)
+                seed_dir = check_seed_dir / f"s{seed_try}"
+                seed_dir.mkdir(parents=False, exist_ok=False)
+
+                oxdna_utils.rewrite_input_file(
+                    input_template_path, seed_dir,
+                    temp=f"{t_kelvin}K", steps=seed_check_steps,
+                    init_conf_path=str(repeat_dir / "init.conf"),
+                    top_path=str(repeat_dir / "sys.top"),
+                    save_interval=seed_check_sample_freq, seed=seed_try,
+                    equilibration_steps=0,
+                    no_stdout_energy=0, extrapolate_hist=extrapolate_temp_str,
+                    weights_file=str(repeat_dir / "wfile.txt"),
+                    op_file=str(repeat_dir / "op.txt"),
+                    log_file=str(repeat_dir / "sim.log"),
+                )
+
+                seed_proc = subprocess.Popen([oxdna_exec_path, seed_dir / "input"])
+                seed_proc.wait()
+                seed_rc = seed_proc.returncode
+
+                if seed_rc == 0:
+                    valid_seed = seed_try
+
+                s_idx += 1
+
+            if valid_seed is None:
+                raise RuntimeError(f"Could not find valid seed.")
+
+
             oxdna_utils.rewrite_input_file(
                 input_template_path, repeat_dir,
                 temp=f"{t_kelvin}K", steps=n_steps_per_sim,
                 init_conf_path=str(repeat_dir / "init.conf"),
                 top_path=str(repeat_dir / "sys.top"),
-                save_interval=sample_every, seed=random.randrange(100),
+                save_interval=sample_every, seed=valid_seed,
                 equilibration_steps=n_eq_steps,
                 no_stdout_energy=0, extrapolate_hist=extrapolate_temp_str,
                 weights_file=str(repeat_dir / "wfile.txt"),
