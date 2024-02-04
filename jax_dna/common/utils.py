@@ -8,26 +8,27 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 
 
-DNA_MAPPER = {
-    "A": [1, 0, 0, 0],
-    "C": [0, 1, 0, 0],
-    "G": [0, 0, 1, 0],
-    "T": [0, 0, 0, 1]
-}
-DNA_BASES = set("ACGT")
+DNA_ALPHA = "ACGT"
 
+DNA_MAPPER = dict()
+for b_idx, base in enumerate(DNA_ALPHA):
+    base_oh = [0, 0, 0, 0]
+    base_oh[b_idx] = 1
+    DNA_MAPPER[base] = base_oh
+
+# Flattened HB weights yield the correct Kron. product
 # Kron: AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT
-HB_WEIGHTS = jnp.array([
-    0.0, 0.0, 0.0, 1.0, # AX
-    0.0, 0.0, 1.0, 0.0, # CX
-    0.0, 1.0, 0.0, 0.0, # GX
-    1.0, 0.0, 0.0, 0.0  # TX
+HB_WEIGHTS_SA = jnp.array([
+    [0.0, 0.0, 0.0, 1.0], # AX
+    [0.0, 0.0, 1.0, 0.0], # CX
+    [0.0, 1.0, 0.0, 0.0], # GX
+    [1.0, 0.0, 0.0, 0.0]  # TX
 ])
 get_hb_probs = vmap(lambda seq, i, j: jnp.kron(seq[i], seq[j]), in_axes=(None, 0, 0), out_axes=0)
 
 def get_one_hot(seq: str):
     seq = seq.upper()
-    if not set(seq).issubset(DNA_BASES):
+    if not set(seq).issubset(set(DNA_ALPHA)):
         raise RuntimeError(f"Sequence contains bases other than ACGT: {seq}")
     seq_one_hot = [DNA_MAPPER[b] for b in seq]
     return onp.array(seq_one_hot, dtype=onp.float64) # float so they can become probabilistic

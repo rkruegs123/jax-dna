@@ -10,7 +10,7 @@ import jax.numpy as jnp
 import jax.debug
 from jax_md.partition import NeighborListFormat, neighbor_list
 
-from jax_dna.common.utils import DNA_BASES, bcolors
+from jax_dna.common.utils import bcolors, DNA_ALPHA
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -96,7 +96,7 @@ def check_valid_top_df(top_df, n_strands, n, verbose=False):
 
     # Check for valid bases
     for i, nuc_row in top_df.iterrows():
-        if nuc_row.base not in DNA_BASES:
+        if nuc_row.base not in set(DNA_ALPHA):
             raise RuntimeError(f"Invalid base at position {i}: {nuc_row.base}")
 
     # Check that top_df strands are 1-indexed and increase by 1

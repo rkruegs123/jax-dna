@@ -71,10 +71,14 @@ def get_full_base_params(override_base_params):
 
 
 class EnergyModel:
-    def __init__(self, displacement_fn, override_base_params=EMPTY_BASE_PARAMS, t_kelvin=DEFAULT_TEMP):
+    def __init__(self, displacement_fn, override_base_params=EMPTY_BASE_PARAMS,
+                 t_kelvin=DEFAULT_TEMP, ss_hb_weights=utils.HB_WEIGHTS_SA):
         self.displacement_fn = displacement_fn
         self.displacement_mapped = jit(space.map_bond(partial(displacement_fn)))
         self.t_kelvin = t_kelvin
+
+        self.ss_hb_weights = ss_hb_weights
+        self.ss_hb_weights_flat = self.ss_hb_weights.flatten()
 
         self.base_params = get_full_base_params(override_base_params)
         self.params = process(self.base_params, self.t_kelvin)
@@ -164,7 +168,7 @@ class EnergyModel:
             theta7_op, theta8_op, **self.params["hydrogen_bonding"])
         v_hb = jnp.where(mask, v_hb, 0.0) # Mask for neighbors
         hb_probs = utils.get_hb_probs(seq, op_i, op_j) # get the probabilities of all possibile hydrogen bonds for all neighbors
-        hb_weights = jnp.dot(hb_probs, utils.HB_WEIGHTS)
+        hb_weights = jnp.dot(hb_probs, self.ss_hb_weights_flat)
         hb_dg = jnp.dot(hb_weights, v_hb)
 
         cr_stack_dg = cross_stacking(
@@ -276,7 +280,7 @@ class TestDna1(unittest.TestCase):
 
     def check_energy_subterms(self, basedir, top_fname, traj_fname, t_kelvin,
                               use_neighbors=True, r_cutoff=10.0, dr_threshold=0.2,
-                              tol_places=4, verbose=False):
+                              tol_places=4, verbose=True):
 
         print(f"\n---- Checking energy breakdown agreement for base directory: {basedir} ----")
 
