@@ -11,6 +11,7 @@ from jax import jit, random, lax, grad, value_and_grad
 import jax.numpy as jnp
 from jax_md import space, simulate, rigid_body
 
+from jax_dna.common.read_seq_specific import read_ss_oxdna
 from jax_dna.common.utils import DEFAULT_TEMP, clamp
 from jax_dna.common.utils import Q_to_back_base, Q_to_base_normal, Q_to_cross_prod
 from jax_dna.common.interactions import v_fene_smooth, stacking, exc_vol_bonded, \
@@ -290,7 +291,14 @@ class TestDna1(unittest.TestCase):
 
     def check_energy_subterms(self, basedir, top_fname, traj_fname, t_kelvin,
                               use_neighbors=True, r_cutoff=10.0, dr_threshold=0.2,
-                              tol_places=4, verbose=True):
+                              tol_places=4, verbose=False, avg_seq=True):
+
+        if avg_seq:
+            ss_hb_weights = utils.HB_WEIGHTS_SA,
+            ss_stack_weights = utils.STACK_WEIGHTS_SA
+        else:
+            ss_path = "data/seq-specific/seq_oxdna1.txt"
+            ss_hb_weights, ss_stack_weights = read_ss_oxdna(ss_path)
 
         print(f"\n---- Checking energy breakdown agreement for base directory: {basedir} ----")
 
@@ -325,7 +333,8 @@ class TestDna1(unittest.TestCase):
         traj_states = traj_info.get_states()
 
         displacement_fn, shift_fn = space.periodic(traj_info.box_size)
-        model = EnergyModel(displacement_fn, t_kelvin=t_kelvin)
+        model = EnergyModel(displacement_fn, t_kelvin=t_kelvin,
+                            ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
 
         ## setup neighbors, if necessary
         if use_neighbors:
@@ -376,14 +385,15 @@ class TestDna1(unittest.TestCase):
         print(utils.bcolors.WARNING + "\nWARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file\n" + utils.bcolors.ENDC)
 
         subterm_tests = [
-            (self.test_data_basedir / "simple-helix", "generated.top", "output.dat", 296.15),
-            (self.test_data_basedir / "simple-coax", "generated.top", "output.dat", 296.15)
+            (self.test_data_basedir / "simple-helix", "generated.top", "output.dat", 296.15, True),
+            (self.test_data_basedir / "simple-coax", "generated.top", "output.dat", 296.15, True)
+            (self.test_data_basedir / "simple-helix-ss", "generated.top", "output.dat", 296.15, False),
         ]
 
-        for basedir, top_fname, traj_fname, t_kelvin in subterm_tests:
+        for basedir, top_fname, traj_fname, t_kelvin, avg_seq in subterm_tests:
             for use_neighbors in [False, True]:
                 self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin,
-                                           use_neighbors=use_neighbors)
+                                           use_neighbors=use_neighbors, avg_seq=avg_seq)
 
 
 if __name__ == "__main__":
