@@ -16,7 +16,7 @@ for b_idx, base in enumerate(DNA_ALPHA):
     base_oh[b_idx] = 1
     DNA_MAPPER[base] = base_oh
 
-# Flattened HB weights yield the correct Kron. product
+# Flattened HB/stack weights yield the correct Kron. product
 # Kron: AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT
 HB_WEIGHTS_SA = jnp.array([
     [0.0, 0.0, 0.0, 1.0], # AX
@@ -24,7 +24,13 @@ HB_WEIGHTS_SA = jnp.array([
     [0.0, 1.0, 0.0, 0.0], # GX
     [1.0, 0.0, 0.0, 0.0]  # TX
 ])
-get_hb_probs = vmap(lambda seq, i, j: jnp.kron(seq[i], seq[j]), in_axes=(None, 0, 0), out_axes=0)
+STACK_WEIGHTS_SA = jnp.array([
+    [1.0, 1.0, 1.0, 1.0], # AX
+    [1.0, 1.0, 1.0, 1.0], # CX
+    [1.0, 1.0, 1.0, 1.0], # GX
+    [1.0, 1.0, 1.0, 1.0]  # TX
+])
+get_pair_probs = vmap(lambda seq, i, j: jnp.kron(seq[i], seq[j]), in_axes=(None, 0, 0), out_axes=0)
 
 def get_one_hot(seq: str):
     seq = seq.upper()

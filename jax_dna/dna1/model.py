@@ -72,13 +72,18 @@ def get_full_base_params(override_base_params):
 
 class EnergyModel:
     def __init__(self, displacement_fn, override_base_params=EMPTY_BASE_PARAMS,
-                 t_kelvin=DEFAULT_TEMP, ss_hb_weights=utils.HB_WEIGHTS_SA):
+                 t_kelvin=DEFAULT_TEMP, ss_hb_weights=utils.HB_WEIGHTS_SA,
+                 ss_stack_weights=utils.STACK_WEIGHTS_SA
+    ):
         self.displacement_fn = displacement_fn
         self.displacement_mapped = jit(space.map_bond(partial(displacement_fn)))
         self.t_kelvin = t_kelvin
 
         self.ss_hb_weights = ss_hb_weights
         self.ss_hb_weights_flat = self.ss_hb_weights.flatten()
+
+        self.ss_stack_weights = ss_stack_weights
+        self.ss_stack_weights_flat = self.ss_stack_weights.flatten()
 
         self.base_params = get_full_base_params(override_base_params)
         self.params = process(self.base_params, self.t_kelvin)
@@ -155,7 +160,12 @@ class EnergyModel:
         fene_dg = v_fene_smooth(r_back_nn, **self.params["fene"]).sum()
         exc_vol_bonded_dg = exc_vol_bonded(dr_base_nn, dr_back_base_nn, dr_base_back_nn,
                                            **self.params["excluded_volume_bonded"]).sum()
-        stack_dg = stacking(r_stack_nn, theta4, theta5, theta6, cosphi1, cosphi2, **self.params["stacking"]).sum()
+
+        v_stack = stacking(r_stack_nn, theta4, theta5, theta6, cosphi1, cosphi2, **self.params["stacking"])
+        stack_probs = utils.get_pair_probs(seq, nn_i, nn_j)
+        stack_weights = jnp.dot(stack_probs, self.ss_stack_weights_flat)
+        stack_dg = jnp.dot(stack_weights, v_stack)
+        # stack_dg = stacking(r_stack_nn, theta4, theta5, theta6, cosphi1, cosphi2, **self.params["stacking"]).sum()
 
         exc_vol_unbonded_dg = exc_vol_unbonded(
             dr_base_op, dr_backbone_op, dr_back_base_op, dr_base_back_op,
@@ -167,7 +177,7 @@ class EnergyModel:
             dr_base_op, theta1_op, theta2_op, theta3_op, theta4_op,
             theta7_op, theta8_op, **self.params["hydrogen_bonding"])
         v_hb = jnp.where(mask, v_hb, 0.0) # Mask for neighbors
-        hb_probs = utils.get_hb_probs(seq, op_i, op_j) # get the probabilities of all possibile hydrogen bonds for all neighbors
+        hb_probs = utils.get_pair_probs(seq, op_i, op_j) # get the probabilities of all possibile hydrogen bonds for all neighbors
         hb_weights = jnp.dot(hb_probs, self.ss_hb_weights_flat)
         hb_dg = jnp.dot(hb_weights, v_hb)
 
