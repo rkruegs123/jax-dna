@@ -117,8 +117,8 @@ def run(args):
     kT = utils.get_kt(t_kelvin)
     beta = 1 / kT
     params = deepcopy(model.EMPTY_BASE_PARAMS)
-    
-    
+
+
     # Setup the logging directory
     if run_name is None:
         raise RuntimeError(f"Must set run name")
@@ -136,7 +136,7 @@ def run(args):
             params_str += f"{k}: {v}\n"
         with open(run_dir / "params.txt", "w+") as f:
             f.write(params_str)
-        
+
 
         # Do the simulation
         random.seed(key)
@@ -150,6 +150,9 @@ def run(args):
             procs = list()
 
         ## Setup the simulation information
+        max_seed_tries = 5
+        seed_check_sample_freq = 10
+        seed_check_steps = 100
         for r in range(n_sims):
             repeat_dir = iter_dir / f"r{r}"
             repeat_dir.mkdir(parents=False, exist_ok=False)
@@ -161,12 +164,45 @@ def run(args):
             init_conf_info.traj_df.t = onp.full(seq_oh.shape[0], r*n_steps_per_sim)
             init_conf_info.write(repeat_dir / "init.conf", reverse=False, write_topology=False)
 
+            check_seed_dir = repeat_dir / "check_seed"
+            check_seed_dir.mkdir(parents=False, exist_ok=False)
+            s_idx = 0
+            valid_seed = None
+            while s_idx < max_seed_tries and valid_seed is None:
+                seed_try = random.randrange(10000)
+                seed_dir = check_seed_dir / f"s{seed_try}"
+                seed_dir.mkdir(parents=False, exist_ok=False)
+
+                oxdna_utils.rewrite_input_file(
+                    input_template_path, seed_dir,
+                    temp=f"{t_kelvin}K", steps=seed_check_steps,
+                    init_conf_path=str(repeat_dir / "init.conf"),
+                    top_path=str(repeat_dir / "sys.top"),
+                    save_interval=seed_check_sample_freq, seed=seed_try,
+                    equilibration_steps=0, dt=dt,
+                    no_stdout_energy=0, backend=backend,
+                    cuda_device=oxdna_cuda_device, cuda_list=oxdna_cuda_list,
+                    log_file=str(seed_dir / "sim.log"),
+                )
+
+                seed_proc = subprocess.Popen([oxdna_exec_path, seed_dir / "input"])
+                seed_proc.wait()
+                seed_rc = seed_proc.returncode
+
+                if seed_rc == 0:
+                    valid_seed = seed_try
+
+                s_idx += 1
+
+            if valid_seed is None:
+                raise RuntimeError(f"Could not find valid seed.")
+
             oxdna_utils.rewrite_input_file(
                 input_template_path, repeat_dir,
                 temp=f"{t_kelvin}K", steps=n_steps_per_sim,
                 init_conf_path=str(repeat_dir / "init.conf"),
                 top_path=str(repeat_dir / "sys.top"),
-                save_interval=sample_every, seed=random.randrange(100),
+                save_interval=sample_every, seed=valid_seed,
                 equilibration_steps=n_eq_steps, dt=dt,
                 no_stdout_energy=0, backend=backend,
                 cuda_device=oxdna_cuda_device, cuda_list=oxdna_cuda_list,
@@ -266,7 +302,7 @@ def run(args):
         pitches = pitch.get_all_pitches(body, quartets, displacement_fn, model.com_to_hb)
         return pitches.sum()
     compute_theta = jit(compute_theta)
-    
+
     fjoules_per_oxdna_energy = utils.joules_per_oxdna_energy * 1e15 # 1e15 fJ per J
     fm_per_oxdna_length = utils.ang_per_oxdna_length * 1e5 # 1e5 fm per Angstrom
     all_theta = list()
@@ -286,14 +322,14 @@ def run(args):
             curr_theta0 = onp.mean(all_theta)
             dtheta = onp.array(all_theta) - curr_theta0
             dtheta_sqr = dtheta**2
-            
+
             avg_dtheta_sqr = onp.mean(dtheta_sqr)
 
             C_oxdna = (kT * contour_length) / avg_dtheta_sqr # oxDNA units
             C_fjfm = C_oxdna * fjoules_per_oxdna_energy * fm_per_oxdna_length
             all_c_fjfm.append(C_fjfm)
 
-            
+
     all_theta = onp.array(all_theta)
     all_theta0 = onp.array(all_theta0)
     theta0 = onp.mean(all_theta0)
@@ -317,7 +353,7 @@ def run(args):
     plt.legend()
     plt.savefig(run_dir / "theta0_running_avg.png")
     plt.clf()
-                         
+
 
     ## Plot running average of C
     plt.plot(all_c_fjfm)
