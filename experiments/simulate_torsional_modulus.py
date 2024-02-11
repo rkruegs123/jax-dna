@@ -50,6 +50,7 @@ def get_all_quartets(n_nucs_per_strand):
 
 def run(args):
     # Load parameters
+    use_vmmc = args['use_vmmc']
     device = args['device']
     if device == "cpu":
         backend = "CPU"
@@ -76,7 +77,11 @@ def run(args):
     oxdna_cuda_list = args['oxdna_cuda_list']
 
     # Load the system
-    sys_basedir = Path(f"data/templates/torsional-modulus-{n_bp}bp")
+    
+    if use_vmmc:
+        sys_basedir = Path(f"data/templates/torsional-modulus-{n_bp}bp-vmmc")
+    else:
+        sys_basedir = Path(f"data/templates/torsional-modulus-{n_bp}bp")
     input_template_path = sys_basedir / "input"
 
     top_path = sys_basedir / "sys.top"
@@ -373,6 +378,8 @@ def get_parser():
     parser.add_argument('--oxdna-cuda-list', type=str, default="verlet",
                         choices=["no", "verlet"],
                         help="CUDA neighbor lists")
+    parser.add_argument('--use-vmmc', action='store_true',
+                        help="If set, will use VMMC instead of MD")
 
     return parser
 
