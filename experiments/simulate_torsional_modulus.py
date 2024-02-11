@@ -106,8 +106,8 @@ def run(args):
 
     # FIXME: use real oxDNA theta0. Maybe from a calculation of the pitch?
     # theta0 is 35 degrees per bp -- http://nanobionano.unibo.it/StrutturisticaAcNucl/BryantCozzarelliBustamanteDNATorqueMeasurement.pdf
-    theta0_per_bp = 35 * jnp.pi/180.0 # radians
-    theta0 = theta0_per_bp * quartets.shape[0]
+    exp_theta0_per_bp = 35 * jnp.pi/180.0 # radians
+    exp_theta0 = exp_theta0_per_bp * quartets.shape[0]
 
     conf_path = sys_basedir / "init.conf"
     conf_info = trajectory.TrajectoryInfo(
@@ -252,8 +252,8 @@ def run(args):
     # Compute the torsional modulus
     fjoules_per_oxdna_energy = utils.joules_per_oxdna_energy * 1e15 # 1e15 fJ per J
     fm_per_oxdna_length = utils.ang_per_oxdna_length * 1e5 # 1e5 fm per Angstrom
-    all_dtheta_sqr = list()
-    all_dtheta = list()
+    all_theta = list()
+    all_theta0 = list()
     running_avg_freq = 10
     min_rs_idx = 50 # minimum idx for running average
     all_c_fjfm = list()
@@ -261,26 +261,44 @@ def run(args):
         ref_state = traj_states[rs_idx]
         pitches = pitch.get_all_pitches(ref_state, quartets, displacement_fn, model.com_to_hb)
         theta = pitches.sum()
-        dtheta = theta - theta0
-        all_dtheta.append(dtheta)
-        dtheta_sqr = dtheta**2
-        all_dtheta_sqr.append(dtheta_sqr)
+        all_theta.append(theta)
+        theta0 = onp.mean(all_theta)
+        all_theta0.append(theta0)
 
         if rs_idx % running_avg_freq == 0 and rs_idx > min_rs_idx:
+
+            curr_theta0 = onp.mean(all_theta)
+            all_dtheta = onp.array(all_theta) - curr_theta0
+            all_dtheta_sqr = all_dtheta**2
+            
             avg_dtheta_sqr = onp.mean(all_dtheta_sqr)
 
             C_oxdna = (kT * contour_length) / avg_dtheta_sqr # oxDNA units
             C_fjfm = C_oxdna * fjoules_per_oxdna_energy * fm_per_oxdna_length
             all_c_fjfm.append(C_fjfm)
 
-    all_dtheta_sqr = onp.array(all_dtheta_sqr)
-    all_dtheta = onp.array(all_dtheta)
+    all_theta = onp.array(all_theta)
+    all_theta0 = onp.array(all_theta0)
+    theta0 = onp.mean(all_theta0)
 
-    ## Plot running average
+    all_dtheta = all_theta - theta0
+    all_dtheta_sqr = all_dtheta**2
+
+
+    ## Plot running average of theta0
+    plt.plot(all_theta0, label="Running Avg.")
+    plt.ylabel("Theta0")
+    plt.axhline(y=exp_theta0, linestyle="--", label="Expected Theta0")
+    plt.legend()
+    plt.savefig(run_dir / "theta0_running_avg.png")
+    plt.clf()
+                         
+
+    ## Plot running average of C
     plt.plot(all_c_fjfm)
     plt.ylabel("C (fJfm)")
     plt.title("C running average")
-    plt.savefig(run_dir / "running_avg.png")
+    plt.savefig(run_dir / "c_running_avg.png")
     plt.clf()
 
     ## Plot the distribution of thetas
@@ -302,6 +320,7 @@ def run(args):
     summary_str += f"Avg. dtheta: {onp.mean(all_dtheta)}\n"
     summary_str += f"C (oxDNA units): {C_oxdna}\n"
     summary_str += f"C (fJfm): {C_fjfm}\n"
+    summary_str += f"Theta_0: {theta0}\n"
     with open(run_dir / "summary.txt", "w+") as f:
         f.write(summary_str)
 
