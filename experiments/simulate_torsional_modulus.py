@@ -59,6 +59,7 @@ def run(args):
         raise RuntimeError(f"Invalid device: {device}")
     n_threads = args['n_threads']
     key = args['key']
+    n_bp = args['n_bp']
     n_sims = args['n_sims']
     if device == "gpu":
         raise NotImplementedError(f"Still need to implement GPU version...")
@@ -74,32 +75,18 @@ def run(args):
     oxdna_cuda_device = args['oxdna_cuda_device']
     oxdna_cuda_list = args['oxdna_cuda_list']
 
-    # Setup the logging directory
-    if run_name is None:
-        raise RuntimeError(f"Must set run name")
-    output_dir = Path("output/")
-    run_dir = output_dir / run_name
-    run_dir.mkdir(parents=False, exist_ok=False)
-
-    params_str = ""
-    params_str += f"n_ref_states: {n_ref_states}\n"
-    for k, v in args.items():
-        params_str += f"{k}: {v}\n"
-    with open(run_dir / "params.txt", "w+") as f:
-        f.write(params_str)
-
     # Load the system
-    sys_basedir = Path("data/templates/torsional-modulus")
+    sys_basedir = Path(f"data/templates/torsional-modulus-{n_bp}bp")
     input_template_path = sys_basedir / "input"
 
     top_path = sys_basedir / "sys.top"
     top_info = topology.TopologyInfo(top_path, reverse_direction=True)
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
-    assert(seq_oh.shape[0] == 60) # 30 bp duplex
+    assert(seq_oh.shape[0] == n_bp*2) # 20 bp or 30 bp duplex
     n = seq_oh.shape[0]
 
-    quartets = get_all_quartets(n_nucs_per_strand=n // 2)
-    quartets = quartets[5:24] # Restrict to central 20 bp
+    quartets = get_all_quartets(n_nucs_per_strand=n_bp)
+    quartets = quartets[5:n_bp-6] # Restrict to central n_bp-10 bp
 
     rise_per_bp = 3.4 / utils.ang_per_oxdna_length # oxDNA length units
     contour_length = quartets.shape[0] * rise_per_bp # oxDNA length units
@@ -124,78 +111,97 @@ def run(args):
     t_kelvin = utils.DEFAULT_TEMP
     kT = utils.get_kt(t_kelvin)
     beta = 1 / kT
-
-    # Do the simulation
-    random.seed(key)
-
     params = deepcopy(model.EMPTY_BASE_PARAMS)
+    
+    
+    # Setup the logging directory
+    if run_name is None:
+        raise RuntimeError(f"Must set run name")
+    output_dir = Path("output/")
+    run_dir = output_dir / run_name
     iter_dir = run_dir / f"simulation"
-    iter_dir.mkdir(parents=False, exist_ok=False)
 
-    oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+    if not run_dir.exists():
 
-    sim_start = time.time()
-    if device == "cpu":
-        procs = list()
+        run_dir.mkdir(parents=False, exist_ok=False)
 
-    ## Setup the simulation information
-    for r in range(n_sims):
-        repeat_dir = iter_dir / f"r{r}"
-        repeat_dir.mkdir(parents=False, exist_ok=False)
+        params_str = ""
+        params_str += f"n_ref_states: {n_ref_states}\n"
+        for k, v in args.items():
+            params_str += f"{k}: {v}\n"
+        with open(run_dir / "params.txt", "w+") as f:
+            f.write(params_str)
+        
 
-        shutil.copy(top_path, repeat_dir / "sys.top")
+        # Do the simulation
+        random.seed(key)
 
-        init_conf_info = deepcopy(conf_info)
+        iter_dir.mkdir(parents=False, exist_ok=False)
 
-        init_conf_info.traj_df.t = onp.full(seq_oh.shape[0], r*n_steps_per_sim)
-        init_conf_info.write(repeat_dir / "init.conf", reverse=False, write_topology=False)
+        oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
 
-        oxdna_utils.rewrite_input_file(
-            input_template_path, repeat_dir,
-            temp=f"{t_kelvin}K", steps=n_steps_per_sim,
-            init_conf_path=str(repeat_dir / "init.conf"),
-            top_path=str(repeat_dir / "sys.top"),
-            save_interval=sample_every, seed=random.randrange(100),
-            equilibration_steps=n_eq_steps, dt=dt,
-            no_stdout_energy=0, backend=backend,
-            cuda_device=oxdna_cuda_device, cuda_list=oxdna_cuda_list,
-            log_file=str(repeat_dir / "sim.log"),
-        )
+        sim_start = time.time()
+        if device == "cpu":
+            procs = list()
+
+        ## Setup the simulation information
+        for r in range(n_sims):
+            repeat_dir = iter_dir / f"r{r}"
+            repeat_dir.mkdir(parents=False, exist_ok=False)
+
+            shutil.copy(top_path, repeat_dir / "sys.top")
+
+            init_conf_info = deepcopy(conf_info)
+
+            init_conf_info.traj_df.t = onp.full(seq_oh.shape[0], r*n_steps_per_sim)
+            init_conf_info.write(repeat_dir / "init.conf", reverse=False, write_topology=False)
+
+            oxdna_utils.rewrite_input_file(
+                input_template_path, repeat_dir,
+                temp=f"{t_kelvin}K", steps=n_steps_per_sim,
+                init_conf_path=str(repeat_dir / "init.conf"),
+                top_path=str(repeat_dir / "sys.top"),
+                save_interval=sample_every, seed=random.randrange(100),
+                equilibration_steps=n_eq_steps, dt=dt,
+                no_stdout_energy=0, backend=backend,
+                cuda_device=oxdna_cuda_device, cuda_list=oxdna_cuda_list,
+                log_file=str(repeat_dir / "sim.log"),
+            )
+
+            if device == "cpu":
+                procs.append(subprocess.Popen([oxdna_exec_path, repeat_dir / "input"]))
 
         if device == "cpu":
-            procs.append(subprocess.Popen([oxdna_exec_path, repeat_dir / "input"]))
+            for p in procs:
+                p.wait()
 
-    if device == "cpu":
-        for p in procs:
-            p.wait()
+            for p in procs:
+                rc = p.returncode
+                if rc != 0:
+                    raise RuntimeError(f"oxDNA simulation failed with error code: {rc}")
+        elif device == "gpu":
+            mps_script_path = "./scripts/mps.sh"
+            mps_cmd = f"{mps_script_path} {oxdna_path} {iter_dir} {n_sims}"
+            mps_proc = subprocess.run(mps_cmd, shell=True)
+            if mps_proc.returncode != 0:
+                raise RuntimeError(f"Generating states via MPS failed with error code: {mps_proc.returncode}")
 
-        for p in procs:
-            rc = p.returncode
-            if rc != 0:
-                raise RuntimeError(f"oxDNA simulation failed with error code: {rc}")
-    elif device == "gpu":
-        mps_script_path = "./scripts/mps.sh"
-        mps_cmd = f"{mps_script_path} {oxdna_path} {iter_dir} {n_sims}"
-        mps_proc = subprocess.run(mps_cmd, shell=True)
-        if mps_proc.returncode != 0:
-            raise RuntimeError(f"Generating states via MPS failed with error code: {mps_proc.returncode}")
+        else:
+            raise RuntimeError(f"Invalid device: {device}")
 
-    else:
-        raise RuntimeError(f"Invalid device: {device}")
+        sim_end = time.time()
 
-    sim_end = time.time()
+        # Analyze
 
-    # Analyze
-
-    ## Combine trajectories
-    combine_cmd = "cat "
-    for r in range(n_sims):
-        repeat_dir = iter_dir / f"r{r}"
-        combine_cmd += f"{repeat_dir}/output.dat "
-    combine_cmd += f"> {iter_dir}/output.dat"
-    combine_proc = subprocess.run(combine_cmd, shell=True)
-    if combine_proc.returncode != 0:
-        raise RuntimeError(f"Combining trajectories failed with error code: {combine_proc.returncode}")
+        ## Combine trajectories
+        combine_cmd = "cat "
+        for r in range(n_sims):
+            repeat_dir = iter_dir / f"r{r}"
+            combine_cmd += f"{repeat_dir}/output.dat "
+        combine_cmd += f"> {iter_dir}/output.dat"
+        combine_proc = subprocess.run(combine_cmd, shell=True)
+        if combine_proc.returncode != 0:
+            raise RuntimeError(f"Combining trajectories failed with error code: {combine_proc.returncode}")
 
     ## Load states from oxDNA simulation
     load_start = time.time()
@@ -250,6 +256,12 @@ def run(args):
     plt.clf()
 
     # Compute the torsional modulus
+
+    def compute_theta(body):
+        pitches = pitch.get_all_pitches(body, quartets, displacement_fn, model.com_to_hb)
+        return pitches.sum()
+    compute_theta = jit(compute_theta)
+    
     fjoules_per_oxdna_energy = utils.joules_per_oxdna_energy * 1e15 # 1e15 fJ per J
     fm_per_oxdna_length = utils.ang_per_oxdna_length * 1e5 # 1e5 fm per Angstrom
     all_theta = list()
@@ -259,8 +271,7 @@ def run(args):
     all_c_fjfm = list()
     for rs_idx in tqdm(range(n_ref_states)):
         ref_state = traj_states[rs_idx]
-        pitches = pitch.get_all_pitches(ref_state, quartets, displacement_fn, model.com_to_hb)
-        theta = pitches.sum()
+        theta = compute_theta(ref_state)
         all_theta.append(theta)
         theta0 = onp.mean(all_theta)
         all_theta0.append(theta0)
@@ -268,22 +279,31 @@ def run(args):
         if rs_idx % running_avg_freq == 0 and rs_idx > min_rs_idx:
 
             curr_theta0 = onp.mean(all_theta)
-            all_dtheta = onp.array(all_theta) - curr_theta0
-            all_dtheta_sqr = all_dtheta**2
+            dtheta = onp.array(all_theta) - curr_theta0
+            dtheta_sqr = dtheta**2
             
-            avg_dtheta_sqr = onp.mean(all_dtheta_sqr)
+            avg_dtheta_sqr = onp.mean(dtheta_sqr)
 
             C_oxdna = (kT * contour_length) / avg_dtheta_sqr # oxDNA units
             C_fjfm = C_oxdna * fjoules_per_oxdna_energy * fm_per_oxdna_length
             all_c_fjfm.append(C_fjfm)
 
+            
     all_theta = onp.array(all_theta)
     all_theta0 = onp.array(all_theta0)
     theta0 = onp.mean(all_theta0)
 
-    all_dtheta = all_theta - theta0
-    all_dtheta_sqr = all_dtheta**2
+    dtheta = all_theta - theta0
+    dtheta_sqr = dtheta**2
 
+
+    ## Plot theta trajectory
+    plt.plot(all_theta)
+    plt.ylabel("Theta")
+    plt.axhline(y=theta0, linestyle="--", label="Theta0")
+    plt.legend()
+    plt.savefig(run_dir / "theta_traj.png")
+    plt.clf()
 
     ## Plot running average of theta0
     plt.plot(all_theta0, label="Running Avg.")
@@ -302,22 +322,22 @@ def run(args):
     plt.clf()
 
     ## Plot the distribution of thetas
-    sns.histplot(all_dtheta)
+    sns.histplot(dtheta)
     plt.savefig(run_dir / f"dtheta_dist.png")
     plt.clf()
 
-    sns.histplot(all_dtheta_sqr)
+    sns.histplot(dtheta_sqr)
     plt.savefig(run_dir / f"dtheta_sqr_dist.png")
     plt.clf()
 
     ## Compute the final C
-    avg_dtheta_sqr = onp.mean(all_dtheta_sqr)
+    avg_dtheta_sqr = onp.mean(dtheta_sqr)
     C_oxdna = (kT * contour_length) / avg_dtheta_sqr # oxDNA units
     C_fjfm = C_oxdna * fjoules_per_oxdna_energy * fm_per_oxdna_length
 
 
     summary_str = f"Avg. dtheta sqr: {avg_dtheta_sqr}\n"
-    summary_str += f"Avg. dtheta: {onp.mean(all_dtheta)}\n"
+    summary_str += f"Avg. dtheta: {onp.mean(dtheta)}\n"
     summary_str += f"C (oxDNA units): {C_oxdna}\n"
     summary_str += f"C (fJfm): {C_fjfm}\n"
     summary_str += f"Theta_0: {theta0}\n"
@@ -331,6 +351,8 @@ def get_parser():
     parser = argparse.ArgumentParser(description="Calculate persistence length via standalone oxDNA package")
 
     parser.add_argument('--device', type=str, default="cpu", choices=["cpu", "gpu"])
+    parser.add_argument('--n-bp', type=int, default=20, choices=[20, 30],
+                        help="Number of base pairs in the duplex")
     parser.add_argument('--n-threads', type=int, default=4,
                         help="Number of threads for oxDNA compilation")
     parser.add_argument('--key', type=int, default=0)
