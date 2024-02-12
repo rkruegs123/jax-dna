@@ -77,7 +77,7 @@ def run(args):
     oxdna_cuda_list = args['oxdna_cuda_list']
 
     # Load the system
-    
+
     if use_vmmc:
         sys_basedir = Path(f"data/templates/torsional-modulus-{n_bp}bp-vmmc")
     else:
@@ -319,11 +319,12 @@ def run(args):
 
         if rs_idx % running_avg_freq == 0 and rs_idx > min_rs_idx:
 
-            curr_theta0 = onp.mean(all_theta)
-            dtheta = onp.array(all_theta) - curr_theta0
-            dtheta_sqr = dtheta**2
+            # curr_theta0 = onp.mean(all_theta)
+            # dtheta = onp.array(all_theta) - curr_theta0
+            # dtheta_sqr = dtheta**2
 
-            avg_dtheta_sqr = onp.mean(dtheta_sqr)
+            # avg_dtheta_sqr = onp.mean(dtheta_sqr)
+            avg_dtheta_sqr = onp.var(all_theta)
 
             C_oxdna = (kT * contour_length) / avg_dtheta_sqr # oxDNA units
             C_fjfm = C_oxdna * fjoules_per_oxdna_energy * fm_per_oxdna_length
