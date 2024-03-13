@@ -6,6 +6,7 @@ import numpy as onp
 from tqdm import tqdm
 
 import jax.numpy as jnp
+from jax import jit
 from jax_md.rigid_body import RigidBody, Quaternion
 
 from jax_dna.common.utils import Q_to_back_base, Q_to_base_normal, tree_stack
