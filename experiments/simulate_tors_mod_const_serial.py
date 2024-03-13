@@ -150,7 +150,11 @@ def run(args):
         all_bp1_sq_diff = (all_bp1_pos - all_init_bp1)**2
         bp1_term = all_bp1_sq_diff.sum()
 
-        bias_val = bp1_term
+        all_bp2_pos = vmap(get_bp_pos, (None, 0))(body, bps2)
+        all_bp2_sq_diff = (all_bp2_pos - all_init_bp2)**2
+        bp2_term = all_bp2_sq_diff[:2].sum()
+
+        bias_val = bp1_term + bp2_term
         return 0.5*spring_k*bias_val
 
     def energy_fn(body, **kwargs):
