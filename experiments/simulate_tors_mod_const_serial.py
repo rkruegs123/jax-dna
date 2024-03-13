@@ -140,6 +140,7 @@ def run(args):
         return base_energy
 
     init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+    step_fn = jit(step_fn)
     key, eq_key = random.split(key)
     state = init_fn(eq_key, init_body, mass=mass)
     eq_traj = list()
@@ -150,11 +151,14 @@ def run(args):
     eq_traj = utils.tree_stack(eq_traj)
 
     traj = list()
+    energies = list()
     for i in tqdm(range(n_sample_steps), colour="green", desc="Sampling"):
         state = step_fn(state)
         if i % sample_every == 0:
             traj.append(state.position)
+            energies.append(energy_fn(state.position))
     traj = utils.tree_stack(traj)
+    energies = onp.array(energies)
 
     end = time.time()
     print(f"- Simulation finished: {end - start} seconds\n")
@@ -168,6 +172,10 @@ def run(args):
     traj_info = trajectory.TrajectoryInfo(
         top_info, read_from_states=True, states=traj, box_size=conf_info.box_size)
     traj_info.write(run_dir / f"traj.dat", reverse=True)
+
+    plt.plot(energies)
+    plt.savefig(run_dir / "energies.png")
+    plt.clf()
 
     # Compute the torsional modulus
     def compute_theta(body):
