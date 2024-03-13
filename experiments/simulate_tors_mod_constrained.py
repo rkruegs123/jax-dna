@@ -90,7 +90,6 @@ conf_info = trajectory.TrajectoryInfo(
     read_from_file=True, traj_path=conf_path, reverse_direction=True
 )
 init_body = conf_info.get_states()[0]
-pdb.set_trace()
 init_center = onp.array(init_body.center)
 init_bp2 = (init_center[bp2[0]] + init_center[bp2[1]]) / 2
 # init_center[:, 0] -= init_bp2[0]
