@@ -65,7 +65,11 @@ strand2_end = n_bp*2-1
 
 offset = 1
 bp1 = [strand1_start+offset, strand2_end-offset]
+bps1 = onp.array([onp.arange(0, strand1_start+offset+1),
+                  onp.arange(strand2_end, strand2_end-offset-1, -1)]).T
 bp2 = [strand1_end-offset, strand2_start+offset]
+bps2 = onp.array([onp.arange(strand1_end-offset, strand1_end+1),
+                  onp.arange(strand2_start+offset, strand2_start-1, -1)]).T
 
 quartets = get_all_quartets(n_nucs_per_strand=n_bp)
 quartets = quartets[offset:n_bp-1-offset] # Restrict to central n_bp-10 bp
@@ -88,14 +92,21 @@ conf_info = trajectory.TrajectoryInfo(
     top_info,
     read_from_file=True, traj_path=conf_path, reverse_direction=True
 )
+
+
 init_body = conf_info.get_states()[0]
-init_center = onp.array(init_body.center)
-init_bp2 = (init_center[bp2[0]] + init_center[bp2[1]]) / 2
-# init_center[:, 0] -= init_bp2[0]
-# init_center[:, 1] -= init_bp2[1]
-init_bp1 = jnp.array((init_center[bp1[0]] + init_center[bp1[1]]) / 2)
-init_body = init_body.set(center=jnp.array(init_center))
+
+def get_bp_pos(body, bp):
+    return (body.center[bp[0]] + body.center[bp[1]]) / 2
+
+init_bp2 = get_bp_pos(init_body, bp2)
+init_bp1 = get_bp_pos(init_body, bp1)
 seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
+
+all_init_bp1 = vmap(get_bp_pos, (None, 0))(init_body, bps1)
+all_init_bp2 = vmap(get_bp_pos, (None, 0))(init_body, bps2)
+
+
 
 
 def run(args):
@@ -133,11 +144,20 @@ def run(args):
         seq=seq_oh,
         bonded_nbrs=top_info.bonded_nbrs,
         unbonded_nbrs=top_info.unbonded_nbrs.T)
+
+    def harmonic_bias(body):
+        all_bp1_pos = vmap(get_bp_pos, (None, 0))(body, bps1)
+        all_bp1_sq_diff = (all_bp1_pos - all_init_bp1)**2
+        bp1_term = all_bp1_sq_diff.sum()
+
+        bias_val = bp1_term
+        return 0.5*spring_k*bias_val
+
     def energy_fn(body, **kwargs):
         base_energy = base_energy_fn(body, **kwargs)
-        # bias_val = harmonic_bias(body)
-        # return base_energy + bias_val
-        return base_energy
+        bias_val = harmonic_bias(body)
+        return base_energy + bias_val
+        # return base_energy
 
     init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
     step_fn = jit(step_fn)
