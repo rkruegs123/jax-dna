@@ -176,13 +176,20 @@ def run(args):
 
     traj = list()
     energies = list()
+    base_energies = list()
+    harmonic_biases = list()
     for i in tqdm(range(n_sample_steps), colour="green", desc="Sampling"):
         state = step_fn(state)
         if i % sample_every == 0:
-            traj.append(state.position)
-            energies.append(energy_fn(state.position))
+            curr_pos = state.position
+            traj.append(curr_pos)
+            energies.append(energy_fn(curr_pos))
+            base_energies.append(base_energy_fn(curr_pos))
+            harmonic_biases.append(harmonic_bias(curr_pos))
     traj = utils.tree_stack(traj)
     energies = onp.array(energies)
+    base_energies = onp.array(base_energies)
+    harmonic_biases = onp.array(harmonic_biases)
 
     end = time.time()
     print(f"- Simulation finished: {end - start} seconds\n")
@@ -199,6 +206,14 @@ def run(args):
 
     plt.plot(energies)
     plt.savefig(run_dir / "energies.png")
+    plt.clf()
+
+    plt.plot(base_energies)
+    plt.savefig(run_dir / "base_energies.png")
+    plt.clf()
+
+    plt.plot(harmonic_biases)
+    plt.savefig(run_dir / "harmonic_biases.png")
     plt.clf()
 
     # Compute the torsional modulus
