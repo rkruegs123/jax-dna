@@ -145,13 +145,22 @@ def run(args):
         bonded_nbrs=top_info.bonded_nbrs,
         unbonded_nbrs=top_info.unbonded_nbrs.T)
 
-    target_z = init_body.center[0, 2]
 
     def harmonic_bias(body):
-        zs = body.center[:, 2]
-        diffs = zs - target_z
-        term = (diffs**2).sum()
+        all_bp1_pos = vmap(get_bp_pos, (None, 0))(body, bps1)
+        all_bp1_sq_diff = (all_bp1_pos - all_init_bp1)**2
+        bp1_term = all_bp1_sq_diff.sum()
 
+        all_bp2_pos = vmap(get_bp_pos, (None, 0))(body, bps2)
+        all_bp2_sq_diff = (all_bp2_pos - all_init_bp1)**2
+        bp2_term = all_bp2_sq_diff[:, -1].sum()
+
+        # term = bp1_term + bp2_term
+
+        diffs = all_bp1_pos - all_bp2_pos
+        diffs_sqr = diffs**2
+        term = diffs_sqr[:, :2].sum()
+        
         return 0.5*spring_k*term
 
     def energy_fn(body, **kwargs):

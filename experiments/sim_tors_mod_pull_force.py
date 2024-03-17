@@ -15,7 +15,7 @@ import jax.numpy as jnp
 from jax import jit, vmap, random, lax, tree_util, pmap
 from jax_md import space, simulate, rigid_body
 
-from jax_dna.common import utils, topology, trajectory, checkpoint
+from jax_dna.common import utils, topology, trajectory, checkpoint, ext_force
 from jax_dna.dna1 import model
 from jax_dna.loss import pitch
 
@@ -58,6 +58,9 @@ def run(args):
     run_name = args['run_name']
     assert(n_steps_per_batch % sample_every == 0)
     spring_k = args['spring_k']
+    fixed_bp = args['fixed_bp']
+    force_pn = args['force']
+    force_oxdna = force_pn / utils.oxdna_force_to_pn
 
 
     displacement_fn, shift_fn = space.free()
@@ -78,9 +81,13 @@ def run(args):
     strand2_start = n_bp
     strand2_end = n_bp*2-1
 
-    offset = 4
+    offset = fixed_bp - 1
     bp1 = [strand1_start+offset, strand2_end-offset]
+    bps1 = onp.array([onp.arange(0, strand1_start+offset+1),
+                      onp.arange(strand2_end, strand2_end-offset-1, -1)]).T
     bp2 = [strand1_end-offset, strand2_start+offset]
+    bps2 = onp.array([onp.arange(strand1_end-offset, strand1_end+1),
+                      onp.arange(strand2_start+offset, strand2_start-1, -1)]).T
 
     quartets = get_all_quartets(n_nucs_per_strand=n_bp)
     quartets = quartets[offset:n_bp-1-offset] # Restrict to central n_bp-10 bp
@@ -110,21 +117,14 @@ def run(args):
     def get_bp_pos(body, bp):
         return (body.center[bp[0]] + body.center[bp[1]]) / 2
 
+    init_bp2 = get_bp_pos(init_body, bp2)
+    init_bp1 = get_bp_pos(init_body, bp1)
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
-    @jit
-    def get_cosine_vals(body):
-        bp1_midp = get_bp_pos(body, bp1)
-        bp2_midp = get_bp_pos(body, bp2)
+    all_init_bp1 = vmap(get_bp_pos, (None, 0))(init_body, bps1)
+    all_init_bp2 = vmap(get_bp_pos, (None, 0))(init_body, bps2)
 
-        midp_vec = displacement_fn(bp1_midp, bp2_midp)
-        bp1_vec = displacement_fn(body.center[bp1[0]], body.center[bp1[1]])
-        bp2_vec = displacement_fn(body.center[bp2[0]], body.center[bp2[1]])
 
-        cosval1 = jnp.dot(bp1_vec, midp_vec) / (jnp.linalg.norm(bp1_vec) * jnp.linalg.norm(midp_vec))
-        cosval2 = jnp.dot(bp2_vec, midp_vec) / (jnp.linalg.norm(bp2_vec) * jnp.linalg.norm(midp_vec))
-
-        return cosval1, cosval2
 
     def sim_torsional(spring_k, key, n_eq_steps, sample_every, n_steps_per_batch, batch_size):
 
@@ -136,14 +136,25 @@ def run(args):
             unbonded_nbrs=top_info.unbonded_nbrs.T)
 
         def harmonic_bias(body):
-            cosval1, cosval2 = get_cosine_vals(body)
-            ops = cosval1**2 + cosval2**2
-            return 0.5*spring_k*ops
+            all_bp1_pos = vmap(get_bp_pos, (None, 0))(body, bps1)
+            all_bp1_sq_diff = (all_bp1_pos - all_init_bp1)**2
+            bp1_term = all_bp1_sq_diff.sum()
+
+            all_bp2_pos = vmap(get_bp_pos, (None, 0))(body, bps2)
+            all_bp2_sq_diff = (all_bp2_pos - all_init_bp2)**2
+            bp2_term = all_bp2_sq_diff[:2].sum()
+
+            bias_val = bp1_term + bp2_term
+            return 0.5*spring_k*bias_val
 
         def energy_fn(body, **kwargs):
             base_energy = base_energy_fn(body, **kwargs)
             bias_val = harmonic_bias(body)
             return base_energy + bias_val
+
+        _, force_fn = ext_force.get_force_fn(
+            energy_fn, top_info.n, displacement_fn,
+            bp2, [0, 0, force_oxdna/2], [0, 0, 0, 0])
 
 
         # Setup equilibration
@@ -153,7 +164,7 @@ def run(args):
         # Setup sampling simulation
         def batch_fn(batch_key):
 
-            init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+            init_fn, step_fn = simulate.nvt_langevin(force_fn, shift_fn, dt, kT, gamma)
             init_state = init_fn(batch_key, init_body, mass=mass)
 
             def fori_step_fn(t, state):
@@ -185,6 +196,12 @@ def run(args):
 
         return combined_traj
 
+
+
+
+
+
+    
 
 
     # Setup the logging directoroy
@@ -229,11 +246,6 @@ def run(args):
     min_rs_idx = 50 # minimum idx for running average
     all_c_fjfm = list()
 
-    all_perp_theta1 = list()
-    all_perp_theta2 = list()
-
-    all_distances = list()
-
     n_ref_states = traj.center.shape[0]
 
     for rs_idx in tqdm(range(n_ref_states)):
@@ -242,15 +254,6 @@ def run(args):
         all_theta.append(theta)
         theta0 = onp.mean(all_theta)
         all_theta0.append(theta0)
-
-        theta1, theta2 = get_cosine_vals(ref_state)
-        all_perp_theta1.append(theta1)
-        all_perp_theta2.append(theta2)
-
-        bp1_midp = get_bp_pos(ref_state, bp1)
-        bp2_midp = get_bp_pos(ref_state, bp2)
-        midp_vec = displacement_fn(bp1_midp, bp2_midp)
-        all_distances.append(space.distance(midp_vec))
 
         if rs_idx % running_avg_freq == 0 and rs_idx > min_rs_idx:
 
@@ -265,19 +268,6 @@ def run(args):
             C_fjfm = C_oxdna * fjoules_per_oxdna_energy * fm_per_oxdna_length
             all_c_fjfm.append(C_fjfm)
 
-    all_distances = onp.array(all_distances)
-    plt.plot(all_distances)
-    plt.axhline(y=contour_length, linestyle="--", label="Est. Contour Length")
-    plt.legend()
-    plt.savefig(run_dir / "distances.png")
-
-    all_perp_theta1 = onp.array(all_perp_theta1)
-    all_perp_theta2 = onp.array(all_perp_theta2)
-    plt.plot(all_perp_theta1, label="Theta1")
-    plt.plot(all_perp_theta2, label="Theta2")
-    plt.legend()
-    plt.savefig(run_dir / "perp_thetas.png")
-    plt.clf()
 
     all_theta = onp.array(all_theta)
     all_theta0 = onp.array(all_theta0)
@@ -347,6 +337,10 @@ def get_parser():
     parser.add_argument('--key-seed', type=int, default=0, help="Integer seed for key")
     parser.add_argument('--spring-k', type=float, default=200.0,
                         help="Spring constant for the harmonic bias")
+    parser.add_argument('--fixed-bp', type=int, default=2,
+                        help="Number of base pairs to fix on either end.")
+    parser.add_argument('--force', type=float, default=10.0,
+                        help="Pulling force in pN")
 
     return parser
 
