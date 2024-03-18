@@ -166,8 +166,9 @@ def run(args):
             bp2_pos = get_bp_pos(body, bp2_harm)
             bp2_sq_diff = (bp2_pos - init_bp2)**2
             bp2_xy_term = bp2_sq_diff[:2].sum()
-            bp2_z_term = (bp2_pos[2] - all_init_bp1[1][2])**2
-            bp2_term = bp2_xy_term + bp2_z_term
+            # bp2_z_term = (bp2_pos[2] - all_init_bp1[1][2])**2
+            # bp2_term = bp2_xy_term + bp2_z_term
+            bp2_term = bp2_xy_term
 
             bias_val = bp1_term + bp2_term
             return 0.5*spring_k*bias_val
@@ -179,7 +180,7 @@ def run(args):
 
         _, force_fn = ext_force.get_force_fn(
             energy_fn, top_info.n, displacement_fn,
-            bp2_harm, [0, 0, force_oxdna/2], [0, 0, 0, 0])
+            bp2_harm, [0, 0, -force_oxdna/2], [0, 0, 0, 0])
 
 
         # Setup equilibration
@@ -254,6 +255,7 @@ def run(args):
     # Compute the torsional modulus
     def compute_theta(body):
         pitches = compute_pitches(body, quartets, displacement_fn, model.com_to_hb)
+        # pitches = pitch.get_all_pitches(body, quartets, displacement_fn, model.com_to_hb)
         return pitches.sum()
     compute_theta = jit(compute_theta)
 
@@ -339,6 +341,9 @@ def run(args):
     summary_str += f"C (oxDNA units): {C_oxdna}\n"
     summary_str += f"C (fJfm): {C_fjfm}\n"
     summary_str += f"Theta_0: {theta0}\n"
+    measured_nt = 72
+    theta0_per_kb = 1000/measured_nt * theta0
+    summary_str += f"Theta_0 (per kb): {theta0_per_kb}\n"
     with open(run_dir / "summary.txt", "w+") as f:
         f.write(summary_str)
 
