@@ -83,7 +83,7 @@ exp_theta0_per_bp = 35 * jnp.pi/180.0 # radians
 exp_theta0 = exp_theta0_per_bp * quartets.shape[0]
 
 # Load the system
-sys_basedir = Path("data/templates/tors-mod-40bp")
+sys_basedir = Path("data/templates/tors-mod-40bp-v2")
 top_path = sys_basedir / "sys.top"
 top_info = topology.TopologyInfo(top_path, reverse_direction=True)
 
@@ -160,7 +160,7 @@ def run(args):
         diffs = all_bp1_pos - all_bp2_pos
         diffs_sqr = diffs**2
         term = diffs_sqr[:, :2].sum()
-        
+
         return 0.5*spring_k*term
 
     def energy_fn(body, **kwargs):
