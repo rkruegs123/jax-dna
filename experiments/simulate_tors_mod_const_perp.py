@@ -270,6 +270,7 @@ def run(args):
     plt.axhline(y=contour_length, linestyle="--", label="Est. Contour Length")
     plt.legend()
     plt.savefig(run_dir / "distances.png")
+    plt.clf()
 
     all_perp_theta1 = onp.array(all_perp_theta1)
     all_perp_theta2 = onp.array(all_perp_theta2)
