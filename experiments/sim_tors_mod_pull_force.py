@@ -1,3 +1,4 @@
+"""Replicating `Compute_Extension_Torsion_oxDNA.cpp` in JCTC work."""
 import pdb
 from pathlib import Path
 from tqdm import tqdm
@@ -30,6 +31,36 @@ else:
     scan = functools.partial(checkpoint.checkpoint_scan,
                              checkpoint_every=checkpoint_every)
 
+
+def single_pitch(quartet, base_sites, displacement_fn):
+    # a1 is h-bonded to b1, a2 is h-bonded to b2
+    a1, b1, a2, b2 = quartet
+
+    # get normalized base-base vectors for each base pair, 1 and 2
+    bb1 = displacement_fn(base_sites[b1], base_sites[a1])
+    bb1 = bb1 / jnp.linalg.norm(bb1)
+    bb2 = displacement_fn(base_sites[b2], base_sites[a2])
+    bb2 = bb2 / jnp.linalg.norm(bb2)
+
+    # Compute angle *assuming* vectors lie in same x-y plane
+    theta = jnp.arccos(utils.clamp(jnp.dot(bb1[:2], bb2[:2])))
+    return theta
+
+def compute_pitches(body, quartets, displacement_fn, com_to_hb):
+    # Construct the base site position in the body frame
+    base_site_bf = jnp.array([com_to_hb, 0.0, 0.0])
+
+    # Compute the space-frame base sites
+    base_sites = body.center + rigid_body.quaternion_rotate(
+        body.orientation, base_site_bf)
+
+    # Compute the pitches for all quartets
+    all_pitches = vmap(single_pitch, (0, None, None))(
+        quartets, base_sites, displacement_fn)
+
+    return all_pitches
+
+    
 def get_all_quartets(n_nucs_per_strand):
     s1_nucs = list(range(n_nucs_per_strand))
     s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
@@ -56,15 +87,14 @@ def run(args):
     n_eq_steps = args['n_eq_steps']
     sample_every = args['sample_every']
     run_name = args['run_name']
+    dt = args['dt']
     assert(n_steps_per_batch % sample_every == 0)
     spring_k = args['spring_k']
-    fixed_bp = args['fixed_bp']
     force_pn = args['force']
     force_oxdna = force_pn / utils.oxdna_force_to_pn
 
 
     displacement_fn, shift_fn = space.free()
-    dt = 5e-3
     t_kelvin = utils.DEFAULT_TEMP
     kT = utils.get_kt(t_kelvin)
     gamma = rigid_body.RigidBody(
@@ -75,22 +105,22 @@ def run(args):
     params = deepcopy(model.EMPTY_BASE_PARAMS)
     em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
 
-    n_bp = 30
+    n_bp = 40
     strand1_start = 0
     strand1_end = n_bp-1
     strand2_start = n_bp
     strand2_end = n_bp*2-1
 
-    offset = fixed_bp - 1
-    bp1 = [strand1_start+offset, strand2_end-offset]
-    bps1 = onp.array([onp.arange(0, strand1_start+offset+1),
-                      onp.arange(strand2_end, strand2_end-offset-1, -1)]).T
-    bp2 = [strand1_end-offset, strand2_start+offset]
-    bps2 = onp.array([onp.arange(strand1_end-offset, strand1_end+1),
-                      onp.arange(strand2_start+offset, strand2_start-1, -1)]).T
+    bps1_harm = onp.array([onp.arange(0, strand1_start+2),
+                           onp.arange(strand2_end, strand2_end-2, -1)]).T
+    bp2_harm = [strand1_end-1, strand2_start+1]
+
 
     quartets = get_all_quartets(n_nucs_per_strand=n_bp)
-    quartets = quartets[offset:n_bp-1-offset] # Restrict to central n_bp-10 bp
+    quartets = quartets[4:n_bp-5] # Restrict to central n_bp-10 bp
+
+    bp1_meas = [4, strand2_end-4]
+    bp2_meas = [strand1_end-4, strand2_start+4]
 
     rise_per_bp = 3.4 / utils.ang_per_oxdna_length # oxDNA length units
     contour_length = quartets.shape[0] * rise_per_bp # oxDNA length units
@@ -101,7 +131,7 @@ def run(args):
     exp_theta0 = exp_theta0_per_bp * quartets.shape[0]
 
     # Load the system
-    sys_basedir = Path("data/templates/torsional-modulus-30bp-constrained")
+    sys_basedir = Path("data/templates/tors-mod-40bp")
     top_path = sys_basedir / "sys.top"
     top_info = topology.TopologyInfo(top_path, reverse_direction=True)
 
@@ -111,21 +141,14 @@ def run(args):
         read_from_file=True, traj_path=conf_path, reverse_direction=True
     )
 
-
     init_body = conf_info.get_states()[0]
-
     def get_bp_pos(body, bp):
         return (body.center[bp[0]] + body.center[bp[1]]) / 2
-
-    init_bp2 = get_bp_pos(init_body, bp2)
-    init_bp1 = get_bp_pos(init_body, bp1)
+    all_init_bp1 = vmap(get_bp_pos, (None, 0))(init_body, bps1_harm)
+    init_bp2 = get_bp_pos(init_body, bp2_harm)
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
-    all_init_bp1 = vmap(get_bp_pos, (None, 0))(init_body, bps1)
-    all_init_bp2 = vmap(get_bp_pos, (None, 0))(init_body, bps2)
-
-
-
+    
     def sim_torsional(spring_k, key, n_eq_steps, sample_every, n_steps_per_batch, batch_size):
 
         # Setup our force fn
@@ -136,13 +159,15 @@ def run(args):
             unbonded_nbrs=top_info.unbonded_nbrs.T)
 
         def harmonic_bias(body):
-            all_bp1_pos = vmap(get_bp_pos, (None, 0))(body, bps1)
+            all_bp1_pos = vmap(get_bp_pos, (None, 0))(body, bps1_harm)
             all_bp1_sq_diff = (all_bp1_pos - all_init_bp1)**2
             bp1_term = all_bp1_sq_diff.sum()
 
-            all_bp2_pos = vmap(get_bp_pos, (None, 0))(body, bps2)
-            all_bp2_sq_diff = (all_bp2_pos - all_init_bp2)**2
-            bp2_term = all_bp2_sq_diff[:2].sum()
+            bp2_pos = get_bp_pos(body, bp2_harm)
+            bp2_sq_diff = (bp2_pos - init_bp2)**2
+            bp2_xy_term = bp2_sq_diff[:2].sum()
+            bp2_z_term = (bp2_pos[2] - all_init_bp1[1][2])**2
+            bp2_term = bp2_xy_term + bp2_z_term
 
             bias_val = bp1_term + bp2_term
             return 0.5*spring_k*bias_val
@@ -154,7 +179,7 @@ def run(args):
 
         _, force_fn = ext_force.get_force_fn(
             energy_fn, top_info.n, displacement_fn,
-            bp2, [0, 0, force_oxdna/2], [0, 0, 0, 0])
+            bp2_harm, [0, 0, force_oxdna/2], [0, 0, 0, 0])
 
 
         # Setup equilibration
@@ -198,12 +223,6 @@ def run(args):
 
 
 
-
-
-
-    
-
-
     # Setup the logging directoroy
     if run_name is None:
         raise RuntimeError(f"Must set a run name")
@@ -234,7 +253,7 @@ def run(args):
 
     # Compute the torsional modulus
     def compute_theta(body):
-        pitches = pitch.get_all_pitches(body, quartets, displacement_fn, model.com_to_hb)
+        pitches = compute_pitches(body, quartets, displacement_fn, model.com_to_hb)
         return pitches.sum()
     compute_theta = jit(compute_theta)
 
@@ -335,12 +354,12 @@ def get_parser():
     parser.add_argument('--sample-every', type=int, default=int(1e4),
                         help="Frequency of sampling reference states.")
     parser.add_argument('--key-seed', type=int, default=0, help="Integer seed for key")
-    parser.add_argument('--spring-k', type=float, default=200.0,
+    parser.add_argument('--spring-k', type=float, default=10.0,
                         help="Spring constant for the harmonic bias")
-    parser.add_argument('--fixed-bp', type=int, default=2,
-                        help="Number of base pairs to fix on either end.")
     parser.add_argument('--force', type=float, default=10.0,
                         help="Pulling force in pN")
+    parser.add_argument('--dt', type=float, default=5e-3,
+                        help="Timestep")
 
     return parser
 

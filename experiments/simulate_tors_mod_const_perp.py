@@ -58,10 +58,29 @@ def run(args):
     run_name = args['run_name']
     assert(n_steps_per_batch % sample_every == 0)
     spring_k = args['spring_k']
+    dt = args['dt']
+    sys_basedir = Path(args['sys_basedir'])
+    assert(sys_basedir.exists())
 
+
+    # Load the system
+    top_path = sys_basedir / "sys.top"
+    top_info = topology.TopologyInfo(top_path, reverse_direction=True)
+
+    conf_path = sys_basedir / "init.conf"
+    conf_info = trajectory.TrajectoryInfo(
+        top_info,
+        read_from_file=True, traj_path=conf_path, reverse_direction=True
+    )
+
+
+    init_body = conf_info.get_states()[0]
+    n_nt = init_body.center.shape[0]
+    assert(n_nt % 2 == 0)
+    n_bp = n_nt // 2
+    print(f"Number of base pairs: {n_bp}")
 
     displacement_fn, shift_fn = space.free()
-    dt = 5e-3
     t_kelvin = utils.DEFAULT_TEMP
     kT = utils.get_kt(t_kelvin)
     gamma = rigid_body.RigidBody(
@@ -72,7 +91,6 @@ def run(args):
     params = deepcopy(model.EMPTY_BASE_PARAMS)
     em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
 
-    n_bp = 30
     strand1_start = 0
     strand1_end = n_bp-1
     strand2_start = n_bp
@@ -93,19 +111,6 @@ def run(args):
     exp_theta0_per_bp = 35 * jnp.pi/180.0 # radians
     exp_theta0 = exp_theta0_per_bp * quartets.shape[0]
 
-    # Load the system
-    sys_basedir = Path("data/templates/torsional-modulus-30bp-constrained")
-    top_path = sys_basedir / "sys.top"
-    top_info = topology.TopologyInfo(top_path, reverse_direction=True)
-
-    conf_path = sys_basedir / "init.conf"
-    conf_info = trajectory.TrajectoryInfo(
-        top_info,
-        read_from_file=True, traj_path=conf_path, reverse_direction=True
-    )
-
-
-    init_body = conf_info.get_states()[0]
 
     def get_bp_pos(body, bp):
         return (body.center[bp[0]] + body.center[bp[1]]) / 2
@@ -348,6 +353,9 @@ def get_parser():
     parser.add_argument('--key-seed', type=int, default=0, help="Integer seed for key")
     parser.add_argument('--spring-k', type=float, default=200.0,
                         help="Spring constant for the harmonic bias")
+    parser.add_argument('--dt', type=float, default=5e-3, help="Timestep")
+    parser.add_argument('--sys-basedir', type=str, help='Base directory for system',
+                        default="data/templates/torsional-modulus-30bp-constrained")
 
     return parser
 
