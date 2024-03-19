@@ -47,7 +47,9 @@ def get_all_quartets(n_nucs_per_strand):
 
 displacement_fn, shift_fn = space.free()
 dt = 5e-3
+# dt = 5e-4
 t_kelvin = utils.DEFAULT_TEMP
+# t_kelvin -= 50.0
 kT = utils.get_kt(t_kelvin)
 gamma = rigid_body.RigidBody(
     center=jnp.array([kT/2.5], dtype=jnp.float64),
@@ -108,6 +110,20 @@ all_init_bp2 = vmap(get_bp_pos, (None, 0))(init_body, bps2)
 
 
 
+@jit
+def get_cosine_vals(body):
+    bp1_midp = get_bp_pos(body, bp1)
+    bp2_midp = get_bp_pos(body, bp2)
+
+    midp_vec = displacement_fn(bp1_midp, bp2_midp)
+    bp1_vec = displacement_fn(body.center[bp1[0]], body.center[bp1[1]])
+    bp2_vec = displacement_fn(body.center[bp2[0]], body.center[bp2[1]])
+
+    cosval1 = jnp.dot(bp1_vec, midp_vec) / (jnp.linalg.norm(bp1_vec) * jnp.linalg.norm(midp_vec))
+    cosval2 = jnp.dot(bp2_vec, midp_vec) / (jnp.linalg.norm(bp2_vec) * jnp.linalg.norm(midp_vec))
+
+    return cosval1, cosval2
+
 
 def run(args):
 
@@ -153,13 +169,16 @@ def run(args):
 
         all_bp2_pos = vmap(get_bp_pos, (None, 0))(body, bps2)
         all_bp2_sq_diff = (all_bp2_pos - all_init_bp1)**2
-        bp2_term = all_bp2_sq_diff[:, -1].sum()
+        bp2_term = all_bp2_sq_diff[:, :2].sum()
 
         # term = bp1_term + bp2_term
 
         diffs = all_bp1_pos - all_bp2_pos
         diffs_sqr = diffs**2
         term = diffs_sqr[:, :2].sum()
+
+        cosval1, cosval2 = get_cosine_vals(body)
+        term  += cosval1**2 + cosval2**2
 
         return 0.5*spring_k*term
 

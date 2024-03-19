@@ -60,7 +60,7 @@ def compute_pitches(body, quartets, displacement_fn, com_to_hb):
 
     return all_pitches
 
-    
+
 def get_all_quartets(n_nucs_per_strand):
     s1_nucs = list(range(n_nucs_per_strand))
     s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
@@ -113,6 +113,7 @@ def run(args):
 
     bps1_harm = onp.array([onp.arange(0, strand1_start+2),
                            onp.arange(strand2_end, strand2_end-2, -1)]).T
+    nts1_harm = bps1_harm.flatten()
     bp2_harm = [strand1_end-1, strand2_start+1]
 
 
@@ -142,13 +143,16 @@ def run(args):
     )
 
     init_body = conf_info.get_states()[0]
+    def get_nuc_pos(body, idx):
+        return body.center[idx]
+    all_init_nt1 = vmap(get_nuc_pos, (None, 0))(init_body, nts1_harm)
     def get_bp_pos(body, bp):
         return (body.center[bp[0]] + body.center[bp[1]]) / 2
     all_init_bp1 = vmap(get_bp_pos, (None, 0))(init_body, bps1_harm)
     init_bp2 = get_bp_pos(init_body, bp2_harm)
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
-    
+
     def sim_torsional(spring_k, key, n_eq_steps, sample_every, n_steps_per_batch, batch_size):
 
         # Setup our force fn
@@ -159,9 +163,13 @@ def run(args):
             unbonded_nbrs=top_info.unbonded_nbrs.T)
 
         def harmonic_bias(body):
-            all_bp1_pos = vmap(get_bp_pos, (None, 0))(body, bps1_harm)
-            all_bp1_sq_diff = (all_bp1_pos - all_init_bp1)**2
-            bp1_term = all_bp1_sq_diff.sum()
+            # all_bp1_pos = vmap(get_bp_pos, (None, 0))(body, bps1_harm)
+            # all_bp1_sq_diff = (all_bp1_pos - all_init_bp1)**2
+            # bp1_term = all_bp1_sq_diff.sum()
+
+            all_nt1_pos = vmap(get_nuc_pos, (None, 0))(body, nts1_harm)
+            all_nt1_sq_diff = (all_nt1_pos - all_init_nt1)**2
+            bp1_term = all_nt1_sq_diff.sum()
 
             bp2_pos = get_bp_pos(body, bp2_harm)
             bp2_sq_diff = (bp2_pos - init_bp2)**2
