@@ -13,7 +13,7 @@ import seaborn as sns
 import jax
 import jax.numpy as jnp
 from jax import jit, vmap, random, lax, tree_util, pmap
-from jax_md import space, simulate, rigid_body
+from jax_md import space, simulate, rigid_body, quantity
 
 from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.dna1 import model
@@ -94,7 +94,8 @@ strand2_end = n_bp*2-1
 # Base pairs subject to harmonic springs
 bps1_harm = onp.array([onp.arange(0, strand1_start+2),
                        onp.arange(strand2_end, strand2_end-2, -1)]).T
-bp2_harm = [strand1_end-1, strand2_start+1]
+nts1_harm = jnp.array(bps1_harm.flatten())
+bp2_harm = jnp.array([strand1_end-1, strand2_start+1])
 
 # The region for which theta and distance are measured
 quartets = get_all_quartets(n_nucs_per_strand=n_bp)
@@ -125,15 +126,21 @@ conf_info = trajectory.TrajectoryInfo(
 
 
 init_body = conf_info.get_states()[0]
+mv_bp2_x = -0.5 * (init_body.center[bp2[0]][0] + init_body.center[bp2[1]][0])
+mv_bp2_y = -0.5 * (init_body.center[bp2[0]][1] + init_body.center[bp2[1]][1])
+init_center = onp.array(init_body.center)
+init_center[:, 0] += mv_bp2_x
+init_center[:, 1] += mv_bp2_y
+init_body = rigid_body.RigidBody(center=jnp.array(init_center), orientation=orientation)
 
+def get_nuc_pos(body, idx):
+    return body.center[idx]
+all_init_nt1 = vmap(get_nuc_pos, (None, 0))(init_body, nts1_harm)
 def get_bp_pos(body, bp):
     return (body.center[bp[0]] + body.center[bp[1]]) / 2
-
-all_init_bp1 = vmap(get_bp_pos, (None, 0))(init_body, bps1_harm)
+# all_init_bp1 = vmap(get_bp_pos, (None, 0))(init_body, bps1_harm)
 init_bp2 = get_bp_pos(init_body, bp2_harm)
 seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
-
-
 
 
 
@@ -173,26 +180,25 @@ def run(args):
         seq=seq_oh,
         bonded_nbrs=top_info.bonded_nbrs,
         unbonded_nbrs=top_info.unbonded_nbrs.T)
+    base_force_fn = quantity.canonicalize_force(base_energy_or_force_fn)
 
-    def harmonic_bias(body):
-        all_bp1_pos = vmap(get_bp_pos, (None, 0))(body, bps1_harm)
-        all_bp1_sq_diff = (all_bp1_pos - all_init_bp1)**2
-        bp1_term = all_bp1_sq_diff.sum()
+    def force_fn(body, **kwargs):
+        base_force = base_force_fn(body, **kwargs)
 
-        bp2_pos = get_bp_pos(body, bp2_harm)
-        bp2_sq_diff = (bp2_pos - init_bp2)**2
-        bp2_term = bp2_sq_diff[:2].sum()
+        all_nt1_pos = vmap(get_nuc_pos, (None, 0))(body, nts1_harm)
+        nt1_diff = all_nt1_pos - all_init_nt1
+        center = base_force.center.at[nts1_harm].add(-spring_k*nt1_diff)
 
-        bias_val = bp1_term + bp2_term
-        return 0.5*spring_k*bias_val
+        bp2_nuc_pos = vmap(get_nuc_pos, (None, 0))(body, bp2_harm)
+        bp2_x_sm = bp2_nuc_pos[0][0] + bp2_nuc_pos[1][0]
+        bp2_y_sm = bp2_nuc_pos[0][1] + bp2_nuc_pos[1][1]
+        bp2_avg_force = jnp.array([-spring_k*bp2_x_sm, -spring_k*bp2_y_sm, 0.0])
+        center = center.at[bp2_harm].add(bp2_avg_force)
 
-    def energy_fn(body, **kwargs):
-        base_energy = base_energy_fn(body, **kwargs)
-        bias_val = harmonic_bias(body)
-        return base_energy + bias_val
-        # return base_energy
+        return rigid_body.RigidBody(center=center, orientation=base_force.orientation)
 
-    init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+    
+    init_fn, step_fn = simulate.nvt_langevin(force_fn, shift_fn, dt, kT, gamma)
     step_fn = jit(step_fn)
     key, eq_key = random.split(key)
     state = init_fn(eq_key, init_body, mass=mass)
@@ -204,21 +210,15 @@ def run(args):
     eq_traj = utils.tree_stack(eq_traj)
 
     traj = list()
-    energies = list()
     base_energies = list()
-    harmonic_biases = list()
     for i in tqdm(range(n_sample_steps), colour="green", desc="Sampling"):
         state = step_fn(state)
         if i % sample_every == 0:
             curr_pos = state.position
             traj.append(curr_pos)
-            energies.append(energy_fn(curr_pos))
             base_energies.append(base_energy_fn(curr_pos))
-            harmonic_biases.append(harmonic_bias(curr_pos))
     traj = utils.tree_stack(traj)
-    energies = onp.array(energies)
     base_energies = onp.array(base_energies)
-    harmonic_biases = onp.array(harmonic_biases)
 
     end = time.time()
     print(f"- Simulation finished: {end - start} seconds\n")
@@ -233,16 +233,8 @@ def run(args):
         top_info, read_from_states=True, states=traj, box_size=conf_info.box_size)
     traj_info.write(run_dir / f"traj.dat", reverse=True)
 
-    plt.plot(energies)
-    plt.savefig(run_dir / "energies.png")
-    plt.clf()
-
     plt.plot(base_energies)
     plt.savefig(run_dir / "base_energies.png")
-    plt.clf()
-
-    plt.plot(harmonic_biases)
-    plt.savefig(run_dir / "harmonic_biases.png")
     plt.clf()
 
     # Compute the torsional modulus
@@ -259,6 +251,9 @@ def run(args):
     running_avg_freq = 10
     min_rs_idx = 50 # minimum idx for running average
     all_c_fjfm = list()
+    nt1_diffs_path = run_dir / "nt1_diffs.txt"
+    nt2_x_path = run_dir / "nt2_x.txt"
+    nt2_y_path = run_dir / "nt2_y.txt"
 
     n_ref_states = traj.center.shape[0]
 
@@ -273,6 +268,21 @@ def run(args):
         bp2_meas_pos = get_bp_pos(ref_state, bp2_meas)
         dist = onp.abs(bp1_meas_pos[2] - bp2_meas_pos[2])
         all_distances.append(dist)
+
+        with open(nt1_diffs_path, "a") as f:
+            all_nt1_pos = vmap(get_nuc_pos, (None, 0))(ref_state, nts1_harm)
+            nt1_diff = list(all_nt1_pos - all_init_nt1)
+            f.write(f"{' '.join(nt1_diff)}\n")
+
+        bp2_nuc_pos = vmap(get_nuc_pos, (None, 0))(ref_state, bp2_harm)
+        with open(nt2_abs_x_path, "a") as f:
+            bp2_x = list(bp2_nuc_pos[:, 0])
+            f.write(f"{' '.join(bp2_x)}\n")
+            f.write(f"{onp.sum(bp2_x)}\n")
+        with open(nt2_abs_y_path, "a") as f:
+            bp2_y = list(bp2_nuc_pos[:, 1])
+            f.write(f"{' '.join(bp2_y)}\n")
+            f.write(f"{onp.sum(bp2_y)}\n")
 
         if rs_idx % running_avg_freq == 0 and rs_idx > min_rs_idx:
 
