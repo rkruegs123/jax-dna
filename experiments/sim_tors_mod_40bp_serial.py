@@ -126,12 +126,13 @@ conf_info = trajectory.TrajectoryInfo(
 
 
 init_body = conf_info.get_states()[0]
-mv_bp2_x = -0.5 * (init_body.center[bp2[0]][0] + init_body.center[bp2[1]][0])
-mv_bp2_y = -0.5 * (init_body.center[bp2[0]][1] + init_body.center[bp2[1]][1])
+mv_bp2_x = -0.5 * (init_body.center[bp2_harm[0]][0] + init_body.center[bp2_harm[1]][0])
+mv_bp2_y = -0.5 * (init_body.center[bp2_harm[0]][1] + init_body.center[bp2_harm[1]][1])
 init_center = onp.array(init_body.center)
 init_center[:, 0] += mv_bp2_x
 init_center[:, 1] += mv_bp2_y
-init_body = rigid_body.RigidBody(center=jnp.array(init_center), orientation=orientation)
+init_body = rigid_body.RigidBody(center=jnp.array(init_center),
+                                 orientation=init_body.orientation)
 
 def get_nuc_pos(body, idx):
     return body.center[idx]
@@ -180,7 +181,7 @@ def run(args):
         seq=seq_oh,
         bonded_nbrs=top_info.bonded_nbrs,
         unbonded_nbrs=top_info.unbonded_nbrs.T)
-    base_force_fn = quantity.canonicalize_force(base_energy_or_force_fn)
+    base_force_fn = quantity.canonicalize_force(base_energy_fn)
 
     def force_fn(body, **kwargs):
         base_force = base_force_fn(body, **kwargs)
@@ -197,7 +198,7 @@ def run(args):
 
         return rigid_body.RigidBody(center=center, orientation=base_force.orientation)
 
-    
+
     init_fn, step_fn = simulate.nvt_langevin(force_fn, shift_fn, dt, kT, gamma)
     step_fn = jit(step_fn)
     key, eq_key = random.split(key)
@@ -271,18 +272,22 @@ def run(args):
 
         with open(nt1_diffs_path, "a") as f:
             all_nt1_pos = vmap(get_nuc_pos, (None, 0))(ref_state, nts1_harm)
-            nt1_diff = list(all_nt1_pos - all_init_nt1)
-            f.write(f"{' '.join(nt1_diff)}\n")
+            nt1_diff = all_nt1_pos - all_init_nt1
+            f.write(f"State {rs_idx}:\n")
+            for nuc_idx in range(nts1_harm.shape[0]):
+                f.write(f"\t{' '.join([str(val) for val in nt1_diff[nuc_idx]])}\n")
 
         bp2_nuc_pos = vmap(get_nuc_pos, (None, 0))(ref_state, bp2_harm)
-        with open(nt2_abs_x_path, "a") as f:
+        with open(nt2_x_path, "a") as f:
             bp2_x = list(bp2_nuc_pos[:, 0])
-            f.write(f"{' '.join(bp2_x)}\n")
-            f.write(f"{onp.sum(bp2_x)}\n")
-        with open(nt2_abs_y_path, "a") as f:
+            f.write(f"State {rs_idx}:\n")
+            f.write(f"\t- Individual: {' '.join([str(val) for val in bp2_x])}\n")
+            f.write(f"\t- Sum: {onp.sum(bp2_x)}\n")
+        with open(nt2_y_path, "a") as f:
             bp2_y = list(bp2_nuc_pos[:, 1])
-            f.write(f"{' '.join(bp2_y)}\n")
-            f.write(f"{onp.sum(bp2_y)}\n")
+            f.write(f"State {rs_idx}:\n")
+            f.write(f"\t- Individual: {' '.join([str(val) for val in bp2_y])}\n")
+            f.write(f"\t- Sum: {onp.sum(bp2_y)}\n")
 
         if rs_idx % running_avg_freq == 0 and rs_idx > min_rs_idx:
 
@@ -362,13 +367,14 @@ def run(args):
 def get_parser():
     parser = argparse.ArgumentParser(description="Simulate torsional modulus with x- and y- constrained")
     parser.add_argument('--run-name', type=str, help='Run name')
-    parser.add_argument('--n-sample-steps', type=int, default=int(1e7),
+    parser.add_argument('--n-sample-steps', type=int, default=int(1e4),
                         help="Number of total steps (post-equilibration) for sampling per batch.")
-    parser.add_argument('--n-eq-steps', type=int, help="Number of equilibration steps")
-    parser.add_argument('--sample-every', type=int, default=int(1e4),
+    parser.add_argument('--n-eq-steps', type=int, default=int(1e3),
+                        help="Number of equilibration steps")
+    parser.add_argument('--sample-every', type=int, default=int(5e2),
                         help="Frequency of sampling reference states.")
     parser.add_argument('--key-seed', type=int, default=0, help="Integer seed for key")
-    parser.add_argument('--spring-k', type=float, default=200.0,
+    parser.add_argument('--spring-k', type=float, default=10.0,
                         help="Spring constant for the harmonic bias")
 
     return parser
