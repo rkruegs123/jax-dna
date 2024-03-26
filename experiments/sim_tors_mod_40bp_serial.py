@@ -104,7 +104,6 @@ quartets = quartets[4:n_bp-5]
 bp1_meas = [4, strand2_end-4]
 bp2_meas = [strand1_end-4, strand2_start+4]
 
-
 rise_per_bp = 3.4 / utils.ang_per_oxdna_length # oxDNA length units
 contour_length = quartets.shape[0] * rise_per_bp # oxDNA length units
 
@@ -157,6 +156,8 @@ def run(args):
     run_name = args['run_name']
     assert(n_sample_steps % sample_every == 0)
     spring_k = args['spring_k']
+    force_pn = args['force']
+    force_oxdna = force_pn / utils.oxdna_force_to_pn
 
 
     # Setup the logging directoroy
@@ -193,7 +194,8 @@ def run(args):
         bp2_nuc_pos = vmap(get_nuc_pos, (None, 0))(body, bp2_harm)
         bp2_x_sm = bp2_nuc_pos[0][0] + bp2_nuc_pos[1][0]
         bp2_y_sm = bp2_nuc_pos[0][1] + bp2_nuc_pos[1][1]
-        bp2_avg_force = jnp.array([-spring_k*bp2_x_sm, -spring_k*bp2_y_sm, 0.0])
+        # bp2_avg_force = jnp.array([-spring_k*bp2_x_sm, -spring_k*bp2_y_sm, 0.0])
+        bp2_avg_force = jnp.array([-spring_k*bp2_x_sm, -spring_k*bp2_y_sm, -force_oxdna/2])
         center = center.at[bp2_harm].add(bp2_avg_force)
 
         return rigid_body.RigidBody(center=center, orientation=base_force.orientation)
@@ -376,6 +378,10 @@ def get_parser():
     parser.add_argument('--key-seed', type=int, default=0, help="Integer seed for key")
     parser.add_argument('--spring-k', type=float, default=10.0,
                         help="Spring constant for the harmonic bias")
+    parser.add_argument('--force', type=float, default=10.0,
+                        help="Pulling force in pN")
+    parser.add_argument('--dt', type=float, default=5e-3,
+                        help="Timestep")
 
     return parser
 
