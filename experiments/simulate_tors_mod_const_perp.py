@@ -100,6 +100,10 @@ def run(args):
     bp1 = [strand1_start+offset, strand2_end-offset]
     bp2 = [strand1_end-offset, strand2_start+offset]
 
+    def get_bp_pos(body, bp):
+        return (body.center[bp[0]] + body.center[bp[1]]) / 2
+
+
     quartets = get_all_quartets(n_nucs_per_strand=n_bp)
     quartets = quartets[offset:n_bp-1-offset] # Restrict to central n_bp-10 bp
 
@@ -111,9 +115,6 @@ def run(args):
     exp_theta0_per_bp = 35 * jnp.pi/180.0 # radians
     exp_theta0 = exp_theta0_per_bp * quartets.shape[0]
 
-
-    def get_bp_pos(body, bp):
-        return (body.center[bp[0]] + body.center[bp[1]]) / 2
 
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
@@ -131,6 +132,42 @@ def run(args):
 
         return cosval1, cosval2
 
+    def compute_projected_pitch(quartet, base_sites, helix_dir):
+        a1, b1, a2, b2 = quartet
+
+        # get base-base vectors for each base pair, 1 and 2
+        bb1 = displacement_fn(base_sites[b1], base_sites[a1])
+        bb2 = displacement_fn(base_sites[b2], base_sites[a2])
+
+        # get "average" helical axis
+        a2a1 = displacement_fn(base_sites[a1], base_sites[a2])
+        b2b1 = displacement_fn(base_sites[b1], base_sites[b2])
+
+        # project each of the base-base vectors onto the plane perpendicular to the helical axis
+        bb1_projected = displacement_fn(bb1, jnp.dot(bb1, helix_dir) * helix_dir)
+        bb2_projected = displacement_fn(bb2, jnp.dot(bb2, helix_dir) * helix_dir)
+
+        bb1_projected_dir = bb1_projected / jnp.linalg.norm(bb1_projected)
+        bb2_projected_dir = bb2_projected / jnp.linalg.norm(bb2_projected)
+
+        # find the angle between the projections of the base-base vectors in the plane perpendicular to the "local/average" helical axis
+        theta = jnp.arccos(utils.clamp(jnp.dot(bb1_projected_dir, bb2_projected_dir)))
+        return theta
+
+    def get_all_projected_pitches(body):
+        base_site_bf = jnp.array([model.com_to_hb, 0.0, 0.0])
+        base_sites = body.center + rigid_body.quaternion_rotate(
+            body.orientation, base_site_bf)
+
+        bp1_midp = get_bp_pos(body, bp1)
+        bp2_midp = get_bp_pos(body, bp2)
+        midp_vec = displacement_fn(bp1_midp, bp2_midp)
+        midp_vec_norm = midp_vec / jnp.linalg.norm(midp_vec)
+
+        all_pitches = vmap(compute_projected_pitch, (0, None, None))(
+            quartets, base_sites, midp_vec_norm)
+        return all_pitches
+
     def sim_torsional(spring_k, key, n_eq_steps, sample_every, n_steps_per_batch, batch_size):
 
         # Setup our force fn
@@ -143,7 +180,10 @@ def run(args):
         def harmonic_bias(body):
             cosval1, cosval2 = get_cosine_vals(body)
             ops = cosval1**2 + cosval2**2
-            return 0.5*spring_k*ops
+            perp_term = 0.5*spring_k*ops
+
+            tot_bias = perp_term
+            return tot_bias
 
         def energy_fn(body, **kwargs):
             base_energy = base_energy_fn(body, **kwargs)
@@ -222,7 +262,8 @@ def run(args):
 
     # Compute the torsional modulus
     def compute_theta(body):
-        pitches = pitch.get_all_pitches(body, quartets, displacement_fn, model.com_to_hb)
+        # pitches = pitch.get_all_pitches(body, quartets, displacement_fn, model.com_to_hb)
+        pitches = get_all_projected_pitches(body)
         return pitches.sum()
     compute_theta = jit(compute_theta)
 
@@ -241,6 +282,8 @@ def run(args):
 
     n_ref_states = traj.center.shape[0]
 
+    cosine_path = run_dir / "cosines.txt"
+
     for rs_idx in tqdm(range(n_ref_states)):
         ref_state = traj[rs_idx]
         theta = compute_theta(ref_state)
@@ -248,9 +291,13 @@ def run(args):
         theta0 = onp.mean(all_theta)
         all_theta0.append(theta0)
 
+
         theta1, theta2 = get_cosine_vals(ref_state)
         all_perp_theta1.append(theta1)
         all_perp_theta2.append(theta2)
+
+        with open(cosine_path, "a") as f:
+            f.write(f"{theta1}\t{theta2}\n")
 
         bp1_midp = get_bp_pos(ref_state, bp1)
         bp2_midp = get_bp_pos(ref_state, bp2)
