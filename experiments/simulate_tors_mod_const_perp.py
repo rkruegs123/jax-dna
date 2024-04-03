@@ -324,6 +324,8 @@ def run(args):
     plt.savefig(run_dir / "distances.png")
     plt.clf()
 
+    onp.save(run_dir / "distances.npy", all_distances, allow_pickle=False)
+
     all_perp_theta1 = onp.array(all_perp_theta1)
     all_perp_theta2 = onp.array(all_perp_theta2)
     plt.plot(all_perp_theta1, label="Theta1")
@@ -332,12 +334,18 @@ def run(args):
     plt.savefig(run_dir / "perp_thetas.png")
     plt.clf()
 
+    onp.save(run_dir / "cos1.npy", all_perp_theta1, allow_pickle=False)
+    onp.save(run_dir / "cos2.npy", all_perp_theta2, allow_pickle=False)
+
     all_theta = onp.array(all_theta)
     all_theta0 = onp.array(all_theta0)
     theta0 = onp.mean(all_theta0)
 
+    onp.save(run_dir / "theta.npy", all_theta, allow_pickle=False)
     dtheta = all_theta - theta0
     dtheta_sqr = dtheta**2
+
+    onp.save(run_dir / "dtheta.npy", dtheta, allow_pickle=False)
 
     ## Plot theta trajectory
     plt.plot(all_theta)

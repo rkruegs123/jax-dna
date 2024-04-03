@@ -17,6 +17,7 @@ from jax_md import space, simulate, rigid_body, quantity
 
 from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.dna1 import model
+from jax_dna.dna2 import model as model2
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -36,12 +37,24 @@ def single_pitch(quartet, base_sites, displacement_fn):
 
     # get normalized base-base vectors for each base pair, 1 and 2
     bb1 = displacement_fn(base_sites[b1], base_sites[a1])
-    bb1 = bb1 / jnp.linalg.norm(bb1)
     bb2 = displacement_fn(base_sites[b2], base_sites[a2])
+
+    """
+    bb1 = bb1 / jnp.linalg.norm(bb1)
     bb2 = bb2 / jnp.linalg.norm(bb2)
 
     # Compute angle *assuming* vectors lie in same x-y plane
     theta = jnp.arccos(utils.clamp(jnp.dot(bb1[:2], bb2[:2])))
+    """
+
+    bb1 = bb1[:2]
+    bb2 = bb2[:2]
+
+    bb1 = bb1 / jnp.linalg.norm(bb1)
+    bb2 = bb2 / jnp.linalg.norm(bb2)
+
+    theta = jnp.arccos(utils.clamp(jnp.dot(bb1, bb2)))
+    
     return theta
 
 def compute_pitches(body, quartets, displacement_fn, com_to_hb):
@@ -75,15 +88,18 @@ def get_all_quartets(n_nucs_per_strand):
 
 displacement_fn, shift_fn = space.free()
 dt = 5e-3
-t_kelvin = utils.DEFAULT_TEMP
+# t_kelvin = utils.DEFAULT_TEMP
+t_kelvin = 300.0
 kT = utils.get_kt(t_kelvin)
 gamma = rigid_body.RigidBody(
     center=jnp.array([kT/2.5], dtype=jnp.float64),
     orientation=jnp.array([kT/7.5], dtype=jnp.float64))
 mass = rigid_body.RigidBody(center=jnp.array([utils.nucleotide_mass], dtype=jnp.float64),
                             orientation=jnp.array([utils.moment_of_inertia], dtype=jnp.float64))
-params = deepcopy(model.EMPTY_BASE_PARAMS)
-em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
+# params = deepcopy(model.EMPTY_BASE_PARAMS)
+# em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
+# em = model.EnergyModel(displacement_fn, t_kelvin=t_kelvin)
+em = model2.EnergyModel(displacement_fn, t_kelvin=t_kelvin)
 
 n_bp = 40
 strand1_start = 0

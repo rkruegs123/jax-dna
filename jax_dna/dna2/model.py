@@ -97,7 +97,7 @@ class EnergyModel:
         # Add Debye-Huckel parameters
         self.params['debye'] = dict()
         db_lambda_factor = 0.3616455
-        db_salt_conc = 0.5
+        db_salt_conc = 0.15
         kT = utils.get_kt(self.t_kelvin)
         db_lambda = db_lambda_factor * onp.sqrt(kT / 0.1) / onp.sqrt(db_salt_conc)
         self.params['debye']['minus_kappa'] = -1.0 / db_lambda
