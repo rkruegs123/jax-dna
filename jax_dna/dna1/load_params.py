@@ -280,7 +280,7 @@ def add_exc_vol_bonded(params):
     params["excluded_volume_bonded"] = {k: exc_vol_params[k] for k in exc_vol_bonded_param_names}
     return params
 
-def process(params, t_kelvin):
+def _process(params, t_kelvin):
     # Add misc.
     params = add_misc(params, t_kelvin)
 
@@ -301,7 +301,7 @@ def load(params_path="data/thermo-params/dna1.toml", t_kelvin=DEFAULT_TEMP, proc
         raise RuntimeError(f"No file at location: {params_path}")
     params = toml.load(params_path)
     if process:
-        params = process(params, t_kelvin)
+        params = _process(params, t_kelvin)
     return params
 
 

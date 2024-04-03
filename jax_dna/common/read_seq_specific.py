@@ -9,7 +9,9 @@ def read_ss_oxdna(
         ss_path,
         default_f1_eps_hb=1.077,
         default_f1_eps_base_stack=1.3448,
-        default_f1_eps_kt_coeff_stack=2.6568
+        default_f1_eps_kt_coeff_stack=2.6568,
+        enforce_symmetry=True,
+        t_kelvin=DEFAULT_TEMP
 ):
 
     ss_path = Path(ss_path)
@@ -48,7 +50,7 @@ def read_ss_oxdna(
     if "HYDR_A_T" in vals:
         hb_at_val = vals["HYDR_A_T"]
     if "HYDR_T_A" in vals:
-        if hb_at_val is not None:
+        if hb_at_val is not None and enforce_symmetry:
             assert(hb_at_val == vals["HYDR_T_A"])
         else:
             hb_at_val = vals["HYDR_T_A"]
@@ -59,7 +61,7 @@ def read_ss_oxdna(
     if "HYDR_G_C" in vals:
         hb_gc_val = vals["HYDR_G_C"]
     if "HYDR_C_G" in vals:
-        if hb_gc_val is not None:
+        if hb_gc_val is not None and enforce_symmetry:
             assert(hb_gc_val == vals["HYDR_C_G"])
         else:
             hb_gc_val = vals["HYDR_C_G"]
@@ -76,7 +78,7 @@ def read_ss_oxdna(
     stack_mult = onp.zeros((4, 4))
     stck_fact_eps = vals["STCK_FACT_EPS"]
 
-    kt = get_kt(DEFAULT_TEMP) # Note: could be any value for kT within reason
+    kt = get_kt(t_kelvin) # Note: could be any value for kT within reason
     sa_f1_eps = default_f1_eps_base_stack + kt * default_f1_eps_kt_coeff_stack
 
     uncoupled_vals = ["GC", "CG", "AT", "TA"]
@@ -100,12 +102,15 @@ def read_ss_oxdna(
         key2 = f"STCK_{nt21}_{nt22}"
         val2 = vals[key2]
 
-        assert(val1 == val2)
+        if enforce_symmetry:
+            assert(val1 == val2)
 
         calc_f1_eps = val1 * (1.0 - stck_fact_eps + (kt * 9.0 * stck_fact_eps))
         mult = calc_f1_eps / sa_f1_eps
-
         stack_mult[DNA_ALPHA.index(nt11), DNA_ALPHA.index(nt12)] = mult
+
+        calc_f1_eps = val2 * (1.0 - stck_fact_eps + (kt * 9.0 * stck_fact_eps))
+        mult = calc_f1_eps / sa_f1_eps
         stack_mult[DNA_ALPHA.index(nt21), DNA_ALPHA.index(nt22)] = mult
 
     return hb_mult, stack_mult

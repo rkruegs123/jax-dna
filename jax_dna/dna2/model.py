@@ -6,6 +6,7 @@ from tqdm import tqdm
 from copy import deepcopy
 import pandas as pd
 import numpy as onp
+from io import StringIO
 
 from jax import jit, random, lax, grad, value_and_grad, vmap
 import jax.numpy as jnp
@@ -15,9 +16,10 @@ from jax_dna.common.read_seq_specific import read_ss_oxdna
 from jax_dna.common.utils import DEFAULT_TEMP, clamp
 from jax_dna.common.utils import Q_to_back_base, Q_to_base_normal, Q_to_cross_prod
 from jax_dna.common.interactions import v_fene_smooth, stacking, exc_vol_bonded, \
-    exc_vol_unbonded, cross_stacking, coaxial_stacking, hydrogen_bonding
+    exc_vol_unbonded, cross_stacking, coaxial_stacking, hydrogen_bonding, \
+    coaxial_stacking2
 from jax_dna.common import utils, topology, trajectory
-from jax_dna.dna1.load_params import load, process
+from jax_dna.dna1.load_params import load, _process
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -38,9 +40,15 @@ OVERRIDE_PARAMS['stacking']['eps_stack_kt_coeff'] = 2.6717
 OVERRIDE_PARAMS['hydrogen_bonding']['eps_hb'] = 1.0678
 OVERRIDE_PARAMS['coaxial_stacking']['k_coax'] = 58.5
 OVERRIDE_PARAMS['coaxial_stacking']['theta0_coax_1'] = onp.pi - 0.25
+OVERRIDE_PARAMS['coaxial_stacking']['A_coax_1_f6'] = 40.0
+OVERRIDE_PARAMS['coaxial_stacking']['B_coax_1_f6'] = onp.pi - 0.025
 
 
+"""
+Missing couplings:
+- back_base vs. base_back in excluded_volume. In LAMMPS, we are just using back_base.
 
+"""
 def add_coupling(base_params):
     # Stacking
     base_params["stacking"]["a_stack_6"] = base_params["stacking"]["a_stack_5"]
@@ -79,7 +87,7 @@ def get_full_base_params(override_base_params):
 class EnergyModel:
     def __init__(self, displacement_fn, override_base_params=OVERRIDE_PARAMS,
                  t_kelvin=DEFAULT_TEMP, ss_hb_weights=utils.HB_WEIGHTS_SA,
-                 ss_stack_weights=utils.STACK_WEIGHTS_SA
+                 ss_stack_weights=utils.STACK_WEIGHTS_SA, salt_conc=0.5
     ):
         self.displacement_fn = displacement_fn
         self.displacement_mapped = jit(space.map_bond(partial(displacement_fn)))
@@ -92,16 +100,26 @@ class EnergyModel:
         self.ss_stack_weights_flat = self.ss_stack_weights.flatten()
 
         self.base_params = get_full_base_params(override_base_params)
-        self.params = process(self.base_params, self.t_kelvin)
+        self.params = _process(self.base_params, self.t_kelvin)
 
         # Add Debye-Huckel parameters
         self.params['debye'] = dict()
         db_lambda_factor = 0.3616455
-        db_salt_conc = 0.15
         kT = utils.get_kt(self.t_kelvin)
-        db_lambda = db_lambda_factor * onp.sqrt(kT / 0.1) / onp.sqrt(db_salt_conc)
+        db_lambda = db_lambda_factor * onp.sqrt(kT / 0.1) / onp.sqrt(salt_conc)
         self.params['debye']['minus_kappa'] = -1.0 / db_lambda
         self.params['debye']['r_high'] = 3.0 * db_lambda
+
+        # Process coaxial stacking terms
+        del self.params['coaxial_stacking']['a_coax_3p']
+        del self.params['coaxial_stacking']['cos_phi3_star_coax']
+        del self.params['coaxial_stacking']['b_cos_phi3_coax']
+        del self.params['coaxial_stacking']['cos_phi3_c_coax']
+        del self.params['coaxial_stacking']['a_coax_4p']
+        del self.params['coaxial_stacking']['cos_phi4_star_coax']
+        del self.params['coaxial_stacking']['b_cos_phi4_coax']
+        del self.params['coaxial_stacking']['cos_phi4_c_coax']
+
 
         db_prefactor = 0.0543
         self.params['debye']['prefactor'] = db_prefactor
@@ -214,9 +232,9 @@ class EnergyModel:
             theta4_op, theta7_op, theta8_op, **self.params["cross_stacking"])
         cr_stack_dg = jnp.where(mask, cr_stack_dg, 0.0).sum() # Mask for neighbors
 
-        cx_stack_dg = coaxial_stacking(
+        cx_stack_dg = coaxial_stacking2(
             dr_stack_op, theta4_op, theta1_op, theta5_op,
-            theta6_op, cosphi3_op, cosphi4_op, **self.params["coaxial_stacking"])
+            theta6_op, **self.params["coaxial_stacking"])
         cx_stack_dg = jnp.where(mask, cx_stack_dg, 0.0).sum() # Mask for neighbors
 
 
@@ -241,17 +259,162 @@ class EnergyModel:
         return fene_dg + exc_vol_bonded_dg + stack_dg + exc_vol_unbonded_dg + hb_dg + cr_stack_dg + cx_stack_dg + db_dg
 
 
-class TestDna1(unittest.TestCase):
+class TestDna2(unittest.TestCase):
     test_data_basedir = Path("data/test-data")
 
+    def test_lammps(self):
+        t_kelvin = 300.0
+
+        override_params = deepcopy(OVERRIDE_PARAMS)
+        del override_params['stacking']['eps_stack_base']
+        del override_params['stacking']['eps_stack_kt_coeff']
+        del override_params['hydrogen_bonding']['eps_hb']
+
+        ss_path = "data/seq-specific/seq_oxdna2.txt"
+        ss_hb_weights, ss_stack_weights = read_ss_oxdna(
+            ss_path,
+            # OVERRIDE_PARAMS['hydrogen_bonding']['eps_hb'],
+            # OVERRIDE_PARAMS['stacking']['eps_stack_base'],
+            # OVERRIDE_PARAMS['stacking']['eps_stack_kt_coeff'],
+            enforce_symmetry=False,
+            t_kelvin=t_kelvin
+        )
+        # ss_hb_weights = utils.HB_WEIGHTS_SA
+        # ss_stack_weights = utils.STACK_WEIGHTS_SA
+
+        basedir = Path("data/test-data/lammps-oxdna2-40bp/")
+        log_path = basedir / "log.lammps"
+
+        with open(log_path, "r") as f:
+            log_lines = f.readlines()
+
+        start_line_idx = -1
+        end_line_idx = -1
+        check_start_str = "v_tns Temp"
+        check_end_str = "Loop time of"
+        n_check_end_str = 0
+        for idx, line in enumerate(log_lines):
+            if line[:len(check_start_str)] == check_start_str:
+                assert(start_line_idx == -1)
+                start_line_idx = idx
+
+            if line[:len(check_end_str)] == check_end_str:
+                n_check_end_str += 1
+                end_line_idx = idx
+        assert(n_check_end_str <= 2)
 
 
-    def check_energy_subterms(self, basedir, top_fname, traj_fname, t_kelvin,
+        log_df_lines = log_lines[start_line_idx:end_line_idx]
+        log_df = pd.read_csv(StringIO(''.join(log_df_lines)), delim_whitespace=True)
+        # df = pd.read_csv(StringIO(lines.join('\n')))
+        # df = pd.read_csv(StringIO('\n'.join([l.strip() for l in log_df_lines]))
+
+        top_path = basedir / "data.top"
+        if not top_path.exists():
+            raise RuntimeError(f"No topology file at location: {top_path}")
+        traj_path = basedir / "data.oxdna"
+        if not traj_path.exists():
+            raise RuntimeError(f"No trajectory file at location: {traj_path}")
+
+        ## note: we don't reverse direction to keep ordering the same
+        top_info = topology.TopologyInfo(top_path, reverse_direction=False)
+        seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
+        traj_info = trajectory.TrajectoryInfo(
+            top_info, read_from_file=True, traj_path=traj_path, reverse_direction=False)
+        traj_states = traj_info.get_states()
+
+        displacement_fn, shift_fn = space.periodic(traj_info.box_size)
+        model = EnergyModel(displacement_fn, t_kelvin=t_kelvin,
+                            override_base_params=override_params,
+                            ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights,
+                            salt_conc=0.15)
+
+        neighbors_idx = top_info.unbonded_nbrs.T
+
+        compute_subterms_fn = jit(model.compute_subterms)
+        computed_subterms = list()
+        for state in tqdm(traj_states):
+
+            dgs = compute_subterms_fn(
+                state, seq_oh, top_info.bonded_nbrs, neighbors_idx)
+            avg_subterms = onp.array(dgs) / top_info.n # average per nucleotide
+            computed_subterms.append(avg_subterms)
+
+        computed_subterms = onp.array(computed_subterms)
+
+        pdb.set_trace()
+
+        for idx in range(len(traj_states)):
+            print(f"\nState {idx}:")
+            ith_subterms = computed_subterms[idx]
+            row = log_df.iloc[idx]
+
+            # FENE
+            computed_fene = ith_subterms[0]
+            gt_fene = row.E_bond
+            print(f"- |FENE diff|: {onp.abs(gt_fene - computed_fene)}")
+
+            # Excluded volume
+            computed_excv = ith_subterms[1] + ith_subterms[3]
+            gt_excv = row.c_excvEnergy
+            print(f"- |Exc. Vol. diff|: {onp.abs(gt_excv - computed_excv)}")
+
+            # Stack
+            computed_stk = ith_subterms[2]
+            gt_stk = row.c_stkEnergy
+            print(f"- |Stack diff|: {onp.abs(gt_stk - computed_stk)}")
+
+            # Hydrogen bonding
+            computed_hb = ith_subterms[4]
+            gt_hb = row.c_hbondEnergy
+            print(f"- |H.B. diff|: {onp.abs(gt_hb - computed_hb)}")
+
+            # Cross stack
+            computed_xstk = ith_subterms[5]
+            gt_xstk = row.c_xstkEnergy
+            print(f"- |X Stack diff|: {onp.abs(gt_xstk - computed_xstk)}")
+
+            # Coaxial stack
+            computed_coaxstk = ith_subterms[6]
+            gt_coaxstk = row.c_coaxstkEnergy
+            coax_diff = onp.abs(gt_coaxstk - computed_coaxstk)
+            if coax_diff > 0.0:
+                pdb.set_trace()
+            print(f"- |Coax. Stack diff|: {coax_diff}")
+
+            # Debye-Huckel
+            computed_dh = ith_subterms[7]
+            gt_dh = row.c_dhEnergy
+            print(f"- |Debye diff|: {onp.abs(gt_dh - computed_dh)}")
+
+        return
+
+
+    def check_energy_subterms(self, basedir, top_fname, traj_fname,
+                              t_kelvin, salt_conc,
                               r_cutoff=10.0, dr_threshold=0.2,
                               tol_places=4, verbose=True, avg_seq=True):
 
-        ss_hb_weights = utils.HB_WEIGHTS_SA
-        ss_stack_weights = utils.STACK_WEIGHTS_SA
+        override_params = deepcopy(OVERRIDE_PARAMS)
+
+        if avg_seq:
+            ss_hb_weights = utils.HB_WEIGHTS_SA
+            ss_stack_weights = utils.STACK_WEIGHTS_SA
+        else:
+
+            del override_params['stacking']['eps_stack_base']
+            del override_params['stacking']['eps_stack_kt_coeff']
+            del override_params['hydrogen_bonding']['eps_hb']
+
+            ss_path = "data/seq-specific/seq_oxdna2.txt"
+            ss_hb_weights, ss_stack_weights = read_ss_oxdna(
+                ss_path,
+                # OVERRIDE_PARAMS['hydrogen_bonding']['eps_hb'],
+                # OVERRIDE_PARAMS['stacking']['eps_stack_base'],
+                # OVERRIDE_PARAMS['stacking']['eps_stack_kt_coeff'],
+                enforce_symmetry=False,
+                t_kelvin=t_kelvin
+            )
 
 
         print(f"\n---- Checking energy breakdown agreement for base directory: {basedir} ----")
@@ -287,7 +450,8 @@ class TestDna1(unittest.TestCase):
         traj_states = traj_info.get_states()
 
         displacement_fn, shift_fn = space.periodic(traj_info.box_size)
-        model = EnergyModel(displacement_fn, t_kelvin=t_kelvin,
+        model = EnergyModel(displacement_fn, t_kelvin=t_kelvin, salt_conc=salt_conc,
+                            override_base_params=override_params,
                             ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
 
         ## setup neighbors, if necessary
@@ -325,7 +489,8 @@ class TestDna1(unittest.TestCase):
                 print(f"\t\t|Exc. Vol. Non-bonded Diff.|: {onp.abs(ith_computed_subterms[3] - ith_oxdna_subterms[3])}")
                 print(f"\t\t|H.B. Diff.|: {onp.abs(ith_computed_subterms[4] - ith_oxdna_subterms[4])}")
                 print(f"\t\t|Cr. Stack Diff.|: {onp.abs(ith_computed_subterms[5] - ith_oxdna_subterms[5])}")
-                print(f"\t\t|Cx. Stack Diff.|: {onp.abs(ith_computed_subterms[6] - ith_oxdna_subterms[6])}")
+                coax_diff = onp.abs(ith_computed_subterms[6] - ith_oxdna_subterms[6])
+                print(f"\t\t|Cx. Stack Diff.|: {coax_diff}")
                 print(f"\t\t|Debye Diff.|: {onp.abs(ith_computed_subterms[7] - ith_oxdna_subterms[7])}")
                 # print(f"\t\t|Difference|: {onp.abs(ith_computed_subterms - ith_oxdna_subterms)}")
                 # print(f"\t\t|HB Difference|: {onp.abs(ith_computed_subterms[4] - ith_oxdna_subterms[4])}")
@@ -337,11 +502,14 @@ class TestDna1(unittest.TestCase):
         print(utils.bcolors.WARNING + "\nWARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file\n" + utils.bcolors.ENDC)
 
         subterm_tests = [
-            (self.test_data_basedir / "simple-helix-oxdna2", "generated.top", "output.dat", 296.15, True)
+            # (self.test_data_basedir / "simple-helix-oxdna2", "generated.top", "output.dat", 296.15, 0.5, True),
+            # (self.test_data_basedir / "simple-helix-oxdna2-ss", "generated.top", "output.dat", 296.15, 0.5, False),
+            # (self.test_data_basedir / "simple-coax-oxdna2", "generated.top", "output.dat", 296.15, 0.5, True)
+            (self.test_data_basedir / "simple-coax-oxdna2-rev", "generated.top", "output.dat", 296.15, 0.5, True)
         ]
 
-        for basedir, top_fname, traj_fname, t_kelvin, avg_seq in subterm_tests:
-            self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin,
+        for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq in subterm_tests:
+            self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin, salt_conc,
                                        avg_seq=avg_seq)
 
 

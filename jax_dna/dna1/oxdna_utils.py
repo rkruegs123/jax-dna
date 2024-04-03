@@ -309,7 +309,7 @@ def recompile_oxdna(override_base_params, oxdna_path, t_kelvin, num_threads=4):
     base_params = model.get_full_base_params(override_base_params)
     kt = get_kt(t_kelvin)
     base_params_to_process = deepcopy(base_params) # they are processed in-place
-    params = load_params.process(base_params_to_process, t_kelvin)
+    params = load_params._process(base_params_to_process, t_kelvin)
 
     ## Add back in eps_stack_base and eps_stack_kt_coeff
     del params['stacking']['eps_stack']

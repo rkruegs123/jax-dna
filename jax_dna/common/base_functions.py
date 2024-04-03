@@ -111,5 +111,10 @@ def f5(x, x_star, x_c, # thresholding/smoothing parameters
                                          0.0)))
 
 
+def f6(theta, a, b):
+    cond = (theta >= b)
+    val = a/2 * (theta - b)**2
+    return jnp.where(cond, val, 0.0)
+
 if __name__ == "__main__":
     pass
