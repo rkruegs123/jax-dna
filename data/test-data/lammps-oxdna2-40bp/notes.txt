@@ -1,0 +1,6 @@
+Use Sep 29 2021 LAMMPS.
+
+Use TacoxDNA to convert LAMMPS output:
+python3 src/LAMMPS_oxDNA.py ../jaxmd-oxdna/data/test-data/lammps-oxdna2-40bp/data ../jaxmd-oxdna/data/test-data/lammps-oxdna2-40bp/filename.dat
+
+Be sure to use a big enough box such that we are effectively doing free boundaries. otherwise it doesn't play nicely.

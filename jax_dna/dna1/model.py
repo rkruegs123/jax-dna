@@ -17,7 +17,7 @@ from jax_dna.common.utils import Q_to_back_base, Q_to_base_normal, Q_to_cross_pr
 from jax_dna.common.interactions import v_fene_smooth, stacking, exc_vol_bonded, \
     exc_vol_unbonded, cross_stacking, coaxial_stacking, hydrogen_bonding
 from jax_dna.common import utils, topology, trajectory
-from jax_dna.dna1.load_params import load, process
+from jax_dna.dna1.load_params import load, _process
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -87,7 +87,7 @@ class EnergyModel:
         self.ss_stack_weights_flat = self.ss_stack_weights.flatten()
 
         self.base_params = get_full_base_params(override_base_params)
-        self.params = process(self.base_params, self.t_kelvin)
+        self.params = _process(self.base_params, self.t_kelvin)
 
     def compute_subterms(self, body, seq, bonded_nbrs, unbonded_nbrs):
         nn_i = bonded_nbrs[:, 0]
