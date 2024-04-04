@@ -338,10 +338,15 @@ class TestDna2(unittest.TestCase):
             self.assertAlmostEqual(gt_fene, computed_fene, places=tol_places)
 
             # Excluded volume
-            computed_excv = ith_subterms[1] + ith_subterms[3]
+            # Notee: lammps does not included bonded excluded volume
+            # computed_excv = ith_subterms[1] + ith_subterms[3]
+            computed_excv = ith_subterms[3]
             gt_excv = row.c_excvEnergy
-            print(f"- |Exc. Vol. diff|: {onp.abs(gt_excv - computed_excv)}")
-            # self.assertAlmostEqual(gt_excv, computed_excv, places=tol_places)
+            excv_diff = onp.abs(gt_excv - computed_excv)
+            print(f"- |Exc. Vol. diff|: {excv_diff}")
+            # if excv_diff > 10**(-tol_places):
+            #     pdb.set_trace()
+            self.assertAlmostEqual(gt_excv, computed_excv, places=tol_places)
 
             # Stack
             computed_stk = ith_subterms[2]
