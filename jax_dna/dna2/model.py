@@ -88,6 +88,7 @@ def get_full_base_params(override_base_params, seq_avg=True):
 
 com_to_backbone_x = -0.3400
 com_to_backbone_y = 0.3408
+com_to_backbone_oxdna1 = -0.4
 com_to_stacking = 0.34
 com_to_hb = 0.4
 class EnergyModel:
@@ -126,6 +127,7 @@ class EnergyModel:
         cross_prods = Q_to_cross_prod(Q) # space frame, normalized
 
         back_sites = body.center + com_to_backbone_x*back_base_vectors + com_to_backbone_y*cross_prods
+        back_sites_dna1 = body.center + com_to_backbone_oxdna1 * back_base_vectors
         stack_sites = body.center + com_to_stacking * back_base_vectors
         base_sites = body.center + com_to_hb * back_base_vectors
 
@@ -142,11 +144,14 @@ class EnergyModel:
         dr_stack_nn = self.displacement_mapped(stack_sites[nn_i], stack_sites[nn_j])
         r_stack_nn = jnp.linalg.norm(dr_stack_nn, axis=1)
 
+        dr_back_dna1_nn = self.displacement_mapped(back_sites_dna1[nn_i], back_sites_dna1[nn_j]) # N x N x 3
+        r_back_dna1_nn = jnp.linalg.norm(dr_back_dna1_nn, axis=1)
+
         theta4 = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nn_i], base_normals[nn_j])))
         theta5 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', dr_stack_nn, base_normals[nn_j]) / r_stack_nn))
         theta6 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[nn_i], dr_stack_nn) / r_stack_nn))
-        cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nn_i], dr_back_nn) / r_back_nn
-        cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nn_j], dr_back_nn) / r_back_nn
+        cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nn_i], dr_back_dna1_nn) / r_back_dna1_nn
+        cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nn_j], dr_back_dna1_nn) / r_back_dna1_nn
 
 
         ## Exc. vol unbonded variables
@@ -236,7 +241,7 @@ class EnergyModel:
 class TestDna2(unittest.TestCase):
     test_data_basedir = Path("data/test-data")
 
-    def test_lammps(self):
+    def test_lammps(self, tol_places=4):
         t_kelvin = 300.0
 
         ss_path = "data/seq-specific/seq_oxdna2.txt"
@@ -330,39 +335,44 @@ class TestDna2(unittest.TestCase):
             computed_fene = ith_subterms[0]
             gt_fene = row.E_bond
             print(f"- |FENE diff|: {onp.abs(gt_fene - computed_fene)}")
+            self.assertAlmostEqual(gt_fene, computed_fene, places=tol_places)
 
             # Excluded volume
             computed_excv = ith_subterms[1] + ith_subterms[3]
             gt_excv = row.c_excvEnergy
             print(f"- |Exc. Vol. diff|: {onp.abs(gt_excv - computed_excv)}")
+            # self.assertAlmostEqual(gt_excv, computed_excv, places=tol_places)
 
             # Stack
             computed_stk = ith_subterms[2]
             gt_stk = row.c_stkEnergy
             print(f"- |Stack diff|: {onp.abs(gt_stk - computed_stk)}")
+            self.assertAlmostEqual(gt_stk, computed_stk, places=tol_places)
 
             # Hydrogen bonding
             computed_hb = ith_subterms[4]
             gt_hb = row.c_hbondEnergy
             print(f"- |H.B. diff|: {onp.abs(gt_hb - computed_hb)}")
+            self.assertAlmostEqual(gt_hb, computed_hb, places=tol_places)
 
             # Cross stack
             computed_xstk = ith_subterms[5]
             gt_xstk = row.c_xstkEnergy
             print(f"- |X Stack diff|: {onp.abs(gt_xstk - computed_xstk)}")
+            self.assertAlmostEqual(gt_xstk, computed_xstk, places=tol_places)
 
             # Coaxial stack
             computed_coaxstk = ith_subterms[6]
             gt_coaxstk = row.c_coaxstkEnergy
             coax_diff = onp.abs(gt_coaxstk - computed_coaxstk)
-            if coax_diff > 0.0:
-                pdb.set_trace()
             print(f"- |Coax. Stack diff|: {coax_diff}")
+            self.assertAlmostEqual(gt_coaxstk, computed_coaxstk, places=tol_places)
 
             # Debye-Huckel
             computed_dh = ith_subterms[7]
             gt_dh = row.c_dhEnergy
             print(f"- |Debye diff|: {onp.abs(gt_dh - computed_dh)}")
+            self.assertAlmostEqual(gt_dh, computed_dh, places=tol_places)
 
         return
 
@@ -467,8 +477,8 @@ class TestDna2(unittest.TestCase):
                 print(f"\t\t|Difference|: {onp.abs(ith_computed_subterms - ith_oxdna_subterms)}")
                 print(f"\t\t|HB Difference|: {onp.abs(ith_computed_subterms[4] - ith_oxdna_subterms[4])}")
 
-            # for oxdna_subterm, computed_subterm in zip(ith_oxdna_subterms, ith_computed_subterms):
-            #     self.assertAlmostEqual(oxdna_subterm, computed_subterm, places=tol_places)
+            for oxdna_subterm, computed_subterm in zip(ith_oxdna_subterms, ith_computed_subterms):
+                self.assertAlmostEqual(oxdna_subterm, computed_subterm, places=tol_places)
 
     def test_subterms(self):
         print(utils.bcolors.WARNING + "\nWARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file\n" + utils.bcolors.ENDC)
