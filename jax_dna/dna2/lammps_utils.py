@@ -1,9 +1,39 @@
 import pdb
 import numpy as onp
 from textwrap import dedent
+import pandas as pd
+from pathlib import Path
+from io import StringIO
 
 from jax_dna.dna1.load_params import load
 from jax_dna.common import utils
+
+
+
+def read_log(log_path):
+    with open(log_path, "r") as f:
+        log_lines = f.readlines()
+
+    start_line_idx = -1
+    end_line_idx = -1
+    check_start_str = "v_tns Temp"
+    check_end_str = "Loop time of"
+    n_check_end_str = 0
+    for idx, line in enumerate(log_lines):
+        if line[:len(check_start_str)] == check_start_str:
+            assert(start_line_idx == -1)
+            start_line_idx = idx
+
+        if line[:len(check_end_str)] == check_end_str:
+            n_check_end_str += 1
+            end_line_idx = idx
+    assert(n_check_end_str <= 2)
+
+
+    log_df_lines = log_lines[start_line_idx:end_line_idx]
+    log_df = pd.read_csv(StringIO(''.join(log_df_lines)), delim_whitespace=True)
+
+    return log_df
 
 
 def get_excv_cmd(params):
@@ -58,7 +88,7 @@ def stretch_tors_constructor(
         force_pn=2, torque_pnnm=10,
         k_restore=1217.58,
         save_every=660, n_steps=6600660,
-        seq_avg=True
+        seq_avg=True, seed=30362
 ):
 
     assert(n_steps % save_every == 0)
@@ -121,7 +151,7 @@ def stretch_tors_constructor(
     ## Integration
     integrate_str = f"""
 
-    fix 1 all nve/dotc/langevin {kT} {kT} 100.0 30362 angmom 1000
+    fix 1 all nve/dotc/langevin {kT} {kT} 100.0 {seed} angmom 1000
 
     timestep 0.01
 

@@ -20,6 +20,7 @@ from jax_dna.common.interactions import v_fene_smooth, stacking, exc_vol_bonded,
     coaxial_stacking2
 from jax_dna.common import utils, topology, trajectory
 from jax_dna.dna1.load_params import load, _process
+from jax_dna.dna2 import lammps_utils
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -83,15 +84,20 @@ def get_full_base_params(override_base_params):
     add_coupling(base_params)
     return base_params
 
-
+com_to_backbone_x = -0.3400
+com_to_backbone_y = 0.3408
+com_to_stacking = 0.34
+com_to_hb = 0.4
 class EnergyModel:
     def __init__(self, displacement_fn, override_base_params=OVERRIDE_PARAMS,
                  t_kelvin=DEFAULT_TEMP, ss_hb_weights=utils.HB_WEIGHTS_SA,
-                 ss_stack_weights=utils.STACK_WEIGHTS_SA, salt_conc=0.5
+                 ss_stack_weights=utils.STACK_WEIGHTS_SA,
+                 salt_conc=0.5, q_eff=0.815
     ):
         self.displacement_fn = displacement_fn
         self.displacement_mapped = jit(space.map_bond(partial(displacement_fn)))
         self.t_kelvin = t_kelvin
+        kT = utils.get_kt(self.t_kelvin)
 
         self.ss_hb_weights = ss_hb_weights
         self.ss_hb_weights_flat = self.ss_hb_weights.flatten()
@@ -101,14 +107,6 @@ class EnergyModel:
 
         self.base_params = get_full_base_params(override_base_params)
         self.params = _process(self.base_params, self.t_kelvin)
-
-        # Add Debye-Huckel parameters
-        self.params['debye'] = dict()
-        db_lambda_factor = 0.3616455
-        kT = utils.get_kt(self.t_kelvin)
-        db_lambda = db_lambda_factor * onp.sqrt(kT / 0.1) / onp.sqrt(salt_conc)
-        self.params['debye']['minus_kappa'] = -1.0 / db_lambda
-        self.params['debye']['r_high'] = 3.0 * db_lambda
 
         # Process coaxial stacking terms
         del self.params['coaxial_stacking']['a_coax_3p']
@@ -120,8 +118,15 @@ class EnergyModel:
         del self.params['coaxial_stacking']['b_cos_phi4_coax']
         del self.params['coaxial_stacking']['cos_phi4_c_coax']
 
+        # Add Debye-Huckel parameters
+        self.params['debye'] = dict()
+        db_lambda_factor = 0.3616455075438555
+        db_lambda = db_lambda_factor * onp.sqrt(kT / 0.1) / onp.sqrt(salt_conc)
+        self.params['debye']['minus_kappa'] = -1.0 / db_lambda
+        self.params['debye']['r_high'] = 3.0 * db_lambda
 
-        db_prefactor = 0.0543
+        # db_prefactor = 0.0543
+        db_prefactor =  0.08173808693529228*q_eff**2
         self.params['debye']['prefactor'] = db_prefactor
 
         x = self.params['debye']['r_high']
@@ -147,12 +152,8 @@ class EnergyModel:
         base_normals = Q_to_base_normal(Q) # space frame, normalized
         cross_prods = Q_to_cross_prod(Q) # space frame, normalized
 
-        com_to_backbone_x = -0.3400
-        com_to_backbone_y = 0.3408
         back_sites = body.center + com_to_backbone_x*back_base_vectors + com_to_backbone_y*cross_prods
-        com_to_stacking = 0.34
         stack_sites = body.center + com_to_stacking * back_base_vectors
-        com_to_hb = 0.4
         base_sites = body.center + com_to_hb * back_base_vectors
 
         ## Fene variables
@@ -285,6 +286,9 @@ class TestDna2(unittest.TestCase):
         basedir = Path("data/test-data/lammps-oxdna2-40bp/")
         log_path = basedir / "log.lammps"
 
+        log_df = lammps_utils.read_log(log_path)
+
+        """
         with open(log_path, "r") as f:
             log_lines = f.readlines()
 
@@ -303,11 +307,11 @@ class TestDna2(unittest.TestCase):
                 end_line_idx = idx
         assert(n_check_end_str <= 2)
 
-
         log_df_lines = log_lines[start_line_idx:end_line_idx]
         log_df = pd.read_csv(StringIO(''.join(log_df_lines)), delim_whitespace=True)
         # df = pd.read_csv(StringIO(lines.join('\n')))
         # df = pd.read_csv(StringIO('\n'.join([l.strip() for l in log_df_lines]))
+        """
 
         top_path = basedir / "data.top"
         if not top_path.exists():
@@ -332,7 +336,9 @@ class TestDna2(unittest.TestCase):
         neighbors_idx = top_info.unbonded_nbrs.T
 
         compute_subterms_fn = jit(model.compute_subterms)
+        energy_fn = jit(model.energy_fn)
         computed_subterms = list()
+        computed_pot_energies = list()
         for state in tqdm(traj_states):
 
             dgs = compute_subterms_fn(
@@ -340,13 +346,17 @@ class TestDna2(unittest.TestCase):
             avg_subterms = onp.array(dgs) / top_info.n # average per nucleotide
             computed_subterms.append(avg_subterms)
 
-        computed_subterms = onp.array(computed_subterms)
+            pot_energy = energy_fn(state, seq_oh, top_info.bonded_nbrs, neighbors_idx)
+            computed_pot_energies.append(pot_energy)
 
-        pdb.set_trace()
+        computed_subterms = onp.array(computed_subterms)
+        computed_pot_energies = onp.array(computed_pot_energies)
+
 
         for idx in range(len(traj_states)):
             print(f"\nState {idx}:")
             ith_subterms = computed_subterms[idx]
+            ith_pot_energy = computed_pot_energies[idx]
             row = log_df.iloc[idx]
 
             # FENE
@@ -483,17 +493,17 @@ class TestDna2(unittest.TestCase):
                 print(f"\tState {i}:")
                 print(f"\t\tComputed subterms: {ith_computed_subterms}")
                 print(f"\t\toxDNA subterms: {ith_oxdna_subterms}")
-                print(f"\t\t|FENE Diff.|: {onp.abs(ith_computed_subterms[0] - ith_oxdna_subterms[0])}")
-                print(f"\t\t|Exc. Vol. Bonded Diff.|: {onp.abs(ith_computed_subterms[1] - ith_oxdna_subterms[1])}")
-                print(f"\t\t|Stack Diff.|: {onp.abs(ith_computed_subterms[2] - ith_oxdna_subterms[2])}")
-                print(f"\t\t|Exc. Vol. Non-bonded Diff.|: {onp.abs(ith_computed_subterms[3] - ith_oxdna_subterms[3])}")
-                print(f"\t\t|H.B. Diff.|: {onp.abs(ith_computed_subterms[4] - ith_oxdna_subterms[4])}")
-                print(f"\t\t|Cr. Stack Diff.|: {onp.abs(ith_computed_subterms[5] - ith_oxdna_subterms[5])}")
-                coax_diff = onp.abs(ith_computed_subterms[6] - ith_oxdna_subterms[6])
-                print(f"\t\t|Cx. Stack Diff.|: {coax_diff}")
-                print(f"\t\t|Debye Diff.|: {onp.abs(ith_computed_subterms[7] - ith_oxdna_subterms[7])}")
-                # print(f"\t\t|Difference|: {onp.abs(ith_computed_subterms - ith_oxdna_subterms)}")
-                # print(f"\t\t|HB Difference|: {onp.abs(ith_computed_subterms[4] - ith_oxdna_subterms[4])}")
+                # print(f"\t\t|FENE Diff.|: {onp.abs(ith_computed_subterms[0] - ith_oxdna_subterms[0])}")
+                # print(f"\t\t|Exc. Vol. Bonded Diff.|: {onp.abs(ith_computed_subterms[1] - ith_oxdna_subterms[1])}")
+                # print(f"\t\t|Stack Diff.|: {onp.abs(ith_computed_subterms[2] - ith_oxdna_subterms[2])}")
+                # print(f"\t\t|Exc. Vol. Non-bonded Diff.|: {onp.abs(ith_computed_subterms[3] - ith_oxdna_subterms[3])}")
+                # print(f"\t\t|H.B. Diff.|: {onp.abs(ith_computed_subterms[4] - ith_oxdna_subterms[4])}")
+                # print(f"\t\t|Cr. Stack Diff.|: {onp.abs(ith_computed_subterms[5] - ith_oxdna_subterms[5])}")
+                # coax_diff = onp.abs(ith_computed_subterms[6] - ith_oxdna_subterms[6])
+                # print(f"\t\t|Cx. Stack Diff.|: {coax_diff}")
+                # print(f"\t\t|Debye Diff.|: {onp.abs(ith_computed_subterms[7] - ith_oxdna_subterms[7])}")
+                print(f"\t\t|Difference|: {onp.abs(ith_computed_subterms - ith_oxdna_subterms)}")
+                print(f"\t\t|HB Difference|: {onp.abs(ith_computed_subterms[4] - ith_oxdna_subterms[4])}")
 
             # for oxdna_subterm, computed_subterm in zip(ith_oxdna_subterms, ith_computed_subterms):
             #     self.assertAlmostEqual(oxdna_subterm, computed_subterm, places=tol_places)
