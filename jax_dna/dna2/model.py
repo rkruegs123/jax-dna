@@ -19,30 +19,25 @@ from jax_dna.common.interactions import v_fene_smooth, stacking, exc_vol_bonded,
     exc_vol_unbonded, cross_stacking, coaxial_stacking, hydrogen_bonding, \
     coaxial_stacking2
 from jax_dna.common import utils, topology, trajectory
-from jax_dna.dna1.load_params import load, _process
+from jax_dna.dna2.load_params import load, _process
 from jax_dna.dna2 import lammps_utils
 
 from jax.config import config
 config.update("jax_enable_x64", True)
 
 
-DEFAULT_BASE_PARAMS = load(process=False) # Note: only processing depends on temperature
-OVERRIDE_PARAMS = {
+default_base_params_seq_avg = load(seq_avg=True, process=False)
+default_base_params_seq_dep = load(seq_avg=False, process=False)
+
+EMPTY_BASE_PARAMS = {
     "fene": dict(),
     "excluded_volume": dict(),
     "stacking": dict(),
     "hydrogen_bonding": dict(),
     "cross_stacking": dict(),
-    "coaxial_stacking": dict()
+    "coaxial_stacking": dict(),
+    "debye": dict()
 }
-OVERRIDE_PARAMS['fene']['r0_backbone'] = 0.7564
-OVERRIDE_PARAMS['stacking']['eps_stack_base'] = 1.3523
-OVERRIDE_PARAMS['stacking']['eps_stack_kt_coeff'] = 2.6717
-OVERRIDE_PARAMS['hydrogen_bonding']['eps_hb'] = 1.0678
-OVERRIDE_PARAMS['coaxial_stacking']['k_coax'] = 58.5
-OVERRIDE_PARAMS['coaxial_stacking']['theta0_coax_1'] = onp.pi - 0.25
-OVERRIDE_PARAMS['coaxial_stacking']['A_coax_1_f6'] = 40.0
-OVERRIDE_PARAMS['coaxial_stacking']['B_coax_1_f6'] = onp.pi - 0.025
 
 
 """
@@ -65,13 +60,19 @@ def add_coupling(base_params):
     base_params["hydrogen_bonding"]["theta0_hb_8"] = base_params["hydrogen_bonding"]["theta0_hb_7"]
     base_params["hydrogen_bonding"]["delta_theta_star_hb_8"] = base_params["hydrogen_bonding"]["delta_theta_star_hb_7"]
 
-def get_full_base_params(override_base_params):
-    fene_params = DEFAULT_BASE_PARAMS["fene"] | override_base_params["fene"]
-    exc_vol_params = DEFAULT_BASE_PARAMS["excluded_volume"] | override_base_params["excluded_volume"]
-    stacking_params = DEFAULT_BASE_PARAMS["stacking"] | override_base_params["stacking"]
-    hb_params = DEFAULT_BASE_PARAMS["hydrogen_bonding"] | override_base_params["hydrogen_bonding"]
-    cr_params = DEFAULT_BASE_PARAMS["cross_stacking"] | override_base_params["cross_stacking"]
-    cx_params = DEFAULT_BASE_PARAMS["coaxial_stacking"] | override_base_params["coaxial_stacking"]
+def get_full_base_params(override_base_params, seq_avg=True):
+    if seq_avg:
+        default_base_params = default_base_params_seq_avg
+    else:
+        default_base_params = default_base_params_seq_dep
+
+    fene_params = default_base_params["fene"] | override_base_params["fene"]
+    exc_vol_params = default_base_params["excluded_volume"] | override_base_params["excluded_volume"]
+    stacking_params = default_base_params["stacking"] | override_base_params["stacking"]
+    hb_params = default_base_params["hydrogen_bonding"] | override_base_params["hydrogen_bonding"]
+    cr_params = default_base_params["cross_stacking"] | override_base_params["cross_stacking"]
+    cx_params = default_base_params["coaxial_stacking"] | override_base_params["coaxial_stacking"]
+    debye_params = default_base_params["debye"] | override_base_params["debye"]
 
     base_params = {
         "fene": fene_params,
@@ -79,7 +80,8 @@ def get_full_base_params(override_base_params):
         "stacking": stacking_params,
         "hydrogen_bonding": hb_params,
         "cross_stacking": cr_params,
-        "coaxial_stacking": cx_params
+        "coaxial_stacking": cx_params,
+        "debye": debye_params
     }
     add_coupling(base_params)
     return base_params
@@ -89,14 +91,15 @@ com_to_backbone_y = 0.3408
 com_to_stacking = 0.34
 com_to_hb = 0.4
 class EnergyModel:
-    def __init__(self, displacement_fn, override_base_params=OVERRIDE_PARAMS,
+    def __init__(self, displacement_fn, override_base_params=EMPTY_BASE_PARAMS,
                  t_kelvin=DEFAULT_TEMP, ss_hb_weights=utils.HB_WEIGHTS_SA,
                  ss_stack_weights=utils.STACK_WEIGHTS_SA,
-                 salt_conc=0.5, q_eff=0.815
+                 salt_conc=0.5, q_eff=0.815, seq_avg=True
     ):
         self.displacement_fn = displacement_fn
         self.displacement_mapped = jit(space.map_bond(partial(displacement_fn)))
         self.t_kelvin = t_kelvin
+        self.salt_conc = salt_conc
         kT = utils.get_kt(self.t_kelvin)
 
         self.ss_hb_weights = ss_hb_weights
@@ -105,38 +108,8 @@ class EnergyModel:
         self.ss_stack_weights = ss_stack_weights
         self.ss_stack_weights_flat = self.ss_stack_weights.flatten()
 
-        self.base_params = get_full_base_params(override_base_params)
-        self.params = _process(self.base_params, self.t_kelvin)
-
-        # Process coaxial stacking terms
-        del self.params['coaxial_stacking']['a_coax_3p']
-        del self.params['coaxial_stacking']['cos_phi3_star_coax']
-        del self.params['coaxial_stacking']['b_cos_phi3_coax']
-        del self.params['coaxial_stacking']['cos_phi3_c_coax']
-        del self.params['coaxial_stacking']['a_coax_4p']
-        del self.params['coaxial_stacking']['cos_phi4_star_coax']
-        del self.params['coaxial_stacking']['b_cos_phi4_coax']
-        del self.params['coaxial_stacking']['cos_phi4_c_coax']
-
-        # Add Debye-Huckel parameters
-        self.params['debye'] = dict()
-        db_lambda_factor = 0.3616455075438555
-        db_lambda = db_lambda_factor * onp.sqrt(kT / 0.1) / onp.sqrt(salt_conc)
-        self.params['debye']['minus_kappa'] = -1.0 / db_lambda
-        self.params['debye']['r_high'] = 3.0 * db_lambda
-
-        # db_prefactor = 0.0543
-        db_prefactor =  0.08173808693529228*q_eff**2
-        self.params['debye']['prefactor'] = db_prefactor
-
-        x = self.params['debye']['r_high']
-        q = db_prefactor
-        l = db_lambda
-        db_B = -(onp.exp(-x / l) * q * q * (x + l) * (x + l)) \
-                          / (-4. * x * x * x * l * l * q)
-        self.params['debye']['B'] = db_B
-        db_rcut = x * (q * x + 3. * q * l) / (q * (x + l))
-        self.params['debye']['rcut'] = db_rcut
+        self.base_params = get_full_base_params(override_base_params, seq_avg)
+        self.params = _process(self.base_params, self.t_kelvin, self.salt_conc)
 
     def compute_subterms(self, body, seq, bonded_nbrs, unbonded_nbrs):
         nn_i = bonded_nbrs[:, 0]
@@ -266,17 +239,12 @@ class TestDna2(unittest.TestCase):
     def test_lammps(self):
         t_kelvin = 300.0
 
-        override_params = deepcopy(OVERRIDE_PARAMS)
-        del override_params['stacking']['eps_stack_base']
-        del override_params['stacking']['eps_stack_kt_coeff']
-        del override_params['hydrogen_bonding']['eps_hb']
-
         ss_path = "data/seq-specific/seq_oxdna2.txt"
         ss_hb_weights, ss_stack_weights = read_ss_oxdna(
             ss_path,
-            # OVERRIDE_PARAMS['hydrogen_bonding']['eps_hb'],
-            # OVERRIDE_PARAMS['stacking']['eps_stack_base'],
-            # OVERRIDE_PARAMS['stacking']['eps_stack_kt_coeff'],
+            default_base_params_seq_dep['hydrogen_bonding']['eps_hb'],
+            default_base_params_seq_dep['stacking']['eps_stack_base'],
+            default_base_params_seq_dep['stacking']['eps_stack_kt_coeff'],
             enforce_symmetry=False,
             t_kelvin=t_kelvin
         )
@@ -329,9 +297,8 @@ class TestDna2(unittest.TestCase):
 
         displacement_fn, shift_fn = space.periodic(traj_info.box_size)
         model = EnergyModel(displacement_fn, t_kelvin=t_kelvin,
-                            override_base_params=override_params,
                             ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights,
-                            salt_conc=0.15)
+                            salt_conc=0.15, seq_avg=False)
 
         neighbors_idx = top_info.unbonded_nbrs.T
 
@@ -405,23 +372,18 @@ class TestDna2(unittest.TestCase):
                               r_cutoff=10.0, dr_threshold=0.2,
                               tol_places=4, verbose=True, avg_seq=True):
 
-        override_params = deepcopy(OVERRIDE_PARAMS)
 
         if avg_seq:
             ss_hb_weights = utils.HB_WEIGHTS_SA
             ss_stack_weights = utils.STACK_WEIGHTS_SA
         else:
 
-            del override_params['stacking']['eps_stack_base']
-            del override_params['stacking']['eps_stack_kt_coeff']
-            del override_params['hydrogen_bonding']['eps_hb']
-
             ss_path = "data/seq-specific/seq_oxdna2.txt"
             ss_hb_weights, ss_stack_weights = read_ss_oxdna(
                 ss_path,
-                # OVERRIDE_PARAMS['hydrogen_bonding']['eps_hb'],
-                # OVERRIDE_PARAMS['stacking']['eps_stack_base'],
-                # OVERRIDE_PARAMS['stacking']['eps_stack_kt_coeff'],
+                default_base_params_seq_dep['hydrogen_bonding']['eps_hb'],
+                default_base_params_seq_dep['stacking']['eps_stack_base'],
+                default_base_params_seq_dep['stacking']['eps_stack_kt_coeff'],
                 enforce_symmetry=False,
                 t_kelvin=t_kelvin
             )
@@ -461,8 +423,8 @@ class TestDna2(unittest.TestCase):
 
         displacement_fn, shift_fn = space.periodic(traj_info.box_size)
         model = EnergyModel(displacement_fn, t_kelvin=t_kelvin, salt_conc=salt_conc,
-                            override_base_params=override_params,
-                            ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
+                            ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights,
+                            seq_avg=avg_seq)
 
         ## setup neighbors, if necessary
         neighbors_idx = top_info.unbonded_nbrs.T
@@ -512,9 +474,9 @@ class TestDna2(unittest.TestCase):
         print(utils.bcolors.WARNING + "\nWARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file\n" + utils.bcolors.ENDC)
 
         subterm_tests = [
-            # (self.test_data_basedir / "simple-helix-oxdna2", "generated.top", "output.dat", 296.15, 0.5, True),
-            # (self.test_data_basedir / "simple-helix-oxdna2-ss", "generated.top", "output.dat", 296.15, 0.5, False),
-            # (self.test_data_basedir / "simple-coax-oxdna2", "generated.top", "output.dat", 296.15, 0.5, True)
+            (self.test_data_basedir / "simple-helix-oxdna2", "generated.top", "output.dat", 296.15, 0.5, True),
+            (self.test_data_basedir / "simple-helix-oxdna2-ss", "generated.top", "output.dat", 296.15, 0.5, False),
+            (self.test_data_basedir / "simple-coax-oxdna2", "generated.top", "output.dat", 296.15, 0.5, True),
             (self.test_data_basedir / "simple-coax-oxdna2-rev", "generated.top", "output.dat", 296.15, 0.5, True)
         ]
 
