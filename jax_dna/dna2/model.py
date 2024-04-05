@@ -261,31 +261,6 @@ class TestDna2(unittest.TestCase):
 
         log_df = lammps_utils.read_log(log_path)
 
-        """
-        with open(log_path, "r") as f:
-            log_lines = f.readlines()
-
-        start_line_idx = -1
-        end_line_idx = -1
-        check_start_str = "v_tns Temp"
-        check_end_str = "Loop time of"
-        n_check_end_str = 0
-        for idx, line in enumerate(log_lines):
-            if line[:len(check_start_str)] == check_start_str:
-                assert(start_line_idx == -1)
-                start_line_idx = idx
-
-            if line[:len(check_end_str)] == check_end_str:
-                n_check_end_str += 1
-                end_line_idx = idx
-        assert(n_check_end_str <= 2)
-
-        log_df_lines = log_lines[start_line_idx:end_line_idx]
-        log_df = pd.read_csv(StringIO(''.join(log_df_lines)), delim_whitespace=True)
-        # df = pd.read_csv(StringIO(lines.join('\n')))
-        # df = pd.read_csv(StringIO('\n'.join([l.strip() for l in log_df_lines]))
-        """
-
         top_path = basedir / "data.top"
         if not top_path.exists():
             raise RuntimeError(f"No topology file at location: {top_path}")

@@ -4,9 +4,30 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 from tqdm import tqdm
+import argparse
+import subprocess
+import pdb
+from copy import deepcopy
+import time
+import functools
+import numpy as onp
+import pprint
+
+from jax import jit, vmap, lax
+import jax.numpy as jnp
+from jax_md import space
 
 from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.dna2 import model, lammps_utils
+
+
+checkpoint_every = 10
+if checkpoint_every is None:
+    scan = lax.scan
+else:
+    scan = functools.partial(checkpoint.checkpoint_scan,
+                             checkpoint_every=checkpoint_every)
+
 
 def get_bp_pos(body, bp):
     return (body.center[bp[0]] + body.center[bp[1]]) / 2
@@ -23,8 +44,8 @@ def run(args):
     sample_every = args['sample_every']
 
     n_eq_steps = args['n_eq_steps']
-    assert(n_eq_steps % eq_every == 0)
-    n_eq_states = n_eq_steps // eq_every
+    assert(n_eq_steps % sample_every == 0)
+    n_eq_states = n_eq_steps // sample_every
 
     n_sample_steps = args['n_sample_steps']
     assert(n_sample_steps % sample_every == 0)
@@ -41,6 +62,8 @@ def run(args):
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
     force_pn = args['force_pn']
+    seq_avg = not args['seq_dep']
+    assert(seq_avg)
 
 
     # Setup the logging directory
@@ -73,9 +96,10 @@ def run(args):
 
     # Load the system
     sys_basedir = Path("data/templates/lammps-stretch-tors")
-    lammps_data_path = sys_basedir / "data"
+    lammps_data_rel_path = sys_basedir / "data"
+    lammps_data_abs_path = os.getcwd() / lammps_data_rel_path
 
-    p = subprocess.Popen([tacoxdna_basedir / "src/LAMMPS_oxDNA.py", lammps_data_path], cwd=run_dir)
+    p = subprocess.Popen([tacoxdna_basedir / "src/LAMMPS_oxDNA.py", lammps_data_abs_path], cwd=run_dir)
     p.wait()
     rc = p.returncode
     if rc != 0:
@@ -83,13 +107,14 @@ def run(args):
 
     init_conf_fpath = run_dir / "data.oxdna"
     assert(init_conf_fpath.exists())
-    os.rename(init_conf_path, run_dir / "init.conf")
+    os.rename(init_conf_fpath, run_dir / "init.conf")
 
     top_fpath = run_dir / "data.top"
     assert(top_fpath.exists())
     os.rename(top_fpath, run_dir / "sys.top")
+    top_fpath = run_dir / "sys.top"
 
-    top_info = topology.TopologyInfo(top_path, reverse_direction=False)
+    top_info = topology.TopologyInfo(top_fpath, reverse_direction=False)
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
     n = seq_oh.shape[0]
     assert(n % 2 == 0)
@@ -111,7 +136,6 @@ def run(args):
     beta = 1 / kT
     salt_conc = 0.15
     q_eff = 0.815
-    seq_avg = True
 
     def get_ref_states(params, i, seed):
         iter_dir = ref_traj_dir / f"iter{i}"
@@ -120,16 +144,18 @@ def run(args):
         sim_dir = iter_dir / f"sim"
         sim_dir.mkdir(parents=False, exist_ok=False)
 
-        shutil.copy(lammps_data_path, sim_dir / "data")
+        base_params = model.get_full_base_params(params, seq_avg=seq_avg)
+        
+        shutil.copy(lammps_data_abs_path, sim_dir / "data")
         lammps_in_fpath = sim_dir / "in"
         lammps_utils.stretch_tors_constructor(
-            params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, q_eff=q_eff,
-            force_pn=FIXME, torque_pnnm=0.0,
+            base_params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
+            force_pn=force_pn, torque_pnnm=0.0,
             save_every=sample_every, n_steps=n_total_steps,
             seq_avg=seq_avg, seed=seed)
 
         sim_start = time.time()
-        p = subprocess.Popen([lammps_exec_path, "-in", lammps_in_fpath], cwd=sim_dir)
+        p = subprocess.Popen([lammps_exec_path, "-in", lammps_in_fpath.stem], cwd=sim_dir)
         p.wait()
         rc = p.returncode
         if rc != 0:
@@ -160,6 +186,7 @@ def run(args):
             # reverse_direction=True)
             reverse_direction=False)
         traj_states = traj_info.get_states()
+        traj_states = traj_states[1:] # ignore the initial state
         n_traj_states = len(traj_states)
         assert(n_traj_states == n_total_states)
         traj_states = traj_states[n_eq_states:] # Remove the states freom the equlibration period
@@ -175,7 +202,7 @@ def run(args):
 
         ## Generate an energy function
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin,
-                               salt_conc=salt_conc, q_eff=q_eff)
+                               salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq-avg)
         energy_fn = lambda body: em.energy_fn(
             body,
             seq=seq_oh,
@@ -243,9 +270,12 @@ def run(args):
 
     # FIXME: do a single call to get_ref_states. Then test. Don't forget to add arugment for force in pN. Will need to somehow initialize override base params that we want to optimize over.
     params = deepcopy(model.EMPTY_BASE_PARAMS)
-    params["stacking"] = model.default_base_params_seq_avg["stacking"]
+    if seq_avg:
+        params["stacking"] = model.default_base_params_seq_avg["stacking"]
+    else:
+        params["stacking"] = model.default_base_params_seq_dep["stacking"]
 
-    ref_states, ref_energies, ref_distances = get_ref_states(params, i=0, seed=0)
+    ref_states, ref_energies, ref_distances = get_ref_states(params, i=0, seed=30362)
 
 
 
@@ -280,6 +310,7 @@ def get_parser():
 
     parser.add_argument('--force-pn', type=float, default=10.0,
                         help="Total pulling force in pN")
+    parser.add_argument('--seq-dep', action='store_true')
 
     return parser
 

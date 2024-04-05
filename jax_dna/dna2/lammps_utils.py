@@ -55,7 +55,7 @@ def get_stk_cmd(params, seq_avg, kT):
 
 def get_hb_cmd(params, seq_avg):
     hb_p = params['hydrogen_bonding']
-    hb_suffix = f"{hb_p['a_hb']} {hb_p['dr0_hb']} {hb_p['dr_c_hb']} {hb_p['dr_c_hb']} {hb_p['dr_low_hb']} {hb_p['dr_high_hb']} {hb_p['a_hb_1']} {hb_p['theta0_hb_1']} {hb_p['delta_theta_star_hb_1']} {hb_p['a_hb_2']} {hb_p['theta0_hb_2']} {hb_p['delta_theta_star_hb_2']} {hb_p['a_hb_3']} {hb_p['theta0_hb_3']} {hb_p['delta_theta_star_hb_3']} {hb_p['a_hb_4']} {hb_p['theta0_hb_4']} {hb_p['delta_theta_star_hb_4']} {hb_p['a_hb_7']} {hb_p['theta0_hb_7']} {hb_p['delta_theta_star_hb_7']} {hb_p['a_hb_8']} {hb_p['theta0_hb_8']} {hb_p['delta_theta_star_hb_8']}" # Note: suffix doesn't include first parameter
+    hb_suffix = f"{hb_p['a_hb']} {hb_p['dr0_hb']} {hb_p['dr_c_hb']} {hb_p['dr_low_hb']} {hb_p['dr_high_hb']} {hb_p['a_hb_1']} {hb_p['theta0_hb_1']} {hb_p['delta_theta_star_hb_1']} {hb_p['a_hb_2']} {hb_p['theta0_hb_2']} {hb_p['delta_theta_star_hb_2']} {hb_p['a_hb_3']} {hb_p['theta0_hb_3']} {hb_p['delta_theta_star_hb_3']} {hb_p['a_hb_4']} {hb_p['theta0_hb_4']} {hb_p['delta_theta_star_hb_4']} {hb_p['a_hb_7']} {hb_p['theta0_hb_7']} {hb_p['delta_theta_star_hb_7']} {hb_p['a_hb_8']} {hb_p['theta0_hb_8']} {hb_p['delta_theta_star_hb_8']}" # Note: suffix doesn't include first parameter
 
     if seq_avg:
         seq_dep_str = "seqav"
@@ -90,6 +90,9 @@ def stretch_tors_constructor(
         save_every=660, n_steps=6600660,
         seq_avg=True, seed=30362
 ):
+
+    if seed <= 0:
+        raise RuntimeError(f"LAMMPS seed must be a nonzero positive integer")
 
     assert(n_steps % save_every == 0)
     force_oxdna_per_nuc = (force_pn / utils.oxdna_force_to_pn) / 2
@@ -128,6 +131,7 @@ def stretch_tors_constructor(
     special_bonds lj 0 1 1
 
     # oxDNA pair interactions
+    pair_style hybrid/overlay oxdna2/excv oxdna2/stk oxdna2/hbond oxdna2/xstk oxdna2/coaxstk oxdna2/dh
     """
 
     excv_str = get_excv_cmd(params)
@@ -155,6 +159,17 @@ def stretch_tors_constructor(
 
     timestep 0.01
 
+
+    # Added by RK
+    compute hbondEnergy all pair oxdna2/hbond
+    compute excvEnergy all pair oxdna2/excv
+    compute stkEnergy all pair oxdna2/stk
+    compute xstkEnergy all pair oxdna2/xstk
+    compute coaxstkEnergy all pair oxdna2/coaxstk
+    compute dhEnergy all pair oxdna2/dh
+    compute quat all property/atom quatw quati quatj quatk
+    # End: added by RK
+
     compute         xu all property/atom xu
     compute         yu all property/atom yu
     variable        dx equal -0.5*(c_xu[39]+c_xu[42])
@@ -177,12 +192,25 @@ def stretch_tors_constructor(
 
     variable        tns equal time*3.03e-3
     variable        cpuh equal cpuremain/3600
-    thermo_style    custom v_tns temp evdwl ecoul ebond eangle edihed pe v_cpuh
+    thermo_style    custom v_tns temp evdwl ecoul ebond eangle edihed pe v_cpuh c_hbondEnergy c_excvEnergy c_stkEnergy c_xstkEnergy c_coaxstkEnergy c_dhEnergy
     thermo          {save_every}
 
     timestep        0.01
     dump            coord all custom {save_every} dump.lammpstrj id type xu yu zu
     dump_modify coord sort id
+
+
+    dump 4 all custom {save_every} filename.dat & 
+        id mol type x y z ix iy iz vx vy vz &
+        c_quat[1] c_quat[2] c_quat[3] c_quat[4] &
+        angmomx angmomy angmomz
+    dump_modify 4 sort id
+    dump_modify 4 format line "&
+        %d %d %d %22.15le %22.15le %22.15le &
+        %d %d %d %22.15le %22.15le %22.15le &
+        %22.15le %22.15le %22.15le %22.15le &
+        %22.15le %22.15le %22.15le"
+
     run             {n_steps}
 
     shell           touch end
