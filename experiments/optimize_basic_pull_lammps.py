@@ -40,6 +40,7 @@ def run(args):
     target_dist = args['target_dist']
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
+    force_pn = args['force_pn']
 
 
     # Setup the logging directory
@@ -103,7 +104,7 @@ def run(args):
     bp2_meas = [strand1_end-4, strand2_start+4]
 
 
-    displacement_fn, shift_fn = FIXME
+    displacement_fn, shift_fn = space.free() # FIXME: could use box size from top_info, but not sure how the centering works.
 
     t_kelvin = 300.0
     kT = utils.get_kt(t_kelvin)
@@ -241,6 +242,11 @@ def run(args):
         return traj_states, calc_energies, all_distances
 
     # FIXME: do a single call to get_ref_states. Then test. Don't forget to add arugment for force in pN. Will need to somehow initialize override base params that we want to optimize over.
+    params = deepcopy(model.EMPTY_BASE_PARAMS)
+    params["stacking"] = model.default_base_params_seq_avg["stacking"]
+
+    ref_states, ref_energies, ref_distances = get_ref_states(params, i=0, seed=0)
+
 
 
 
@@ -271,6 +277,9 @@ def get_parser():
                         help="Target persistence length in nanometers")
     parser.add_argument('--min-neff-factor', type=float, default=0.95,
                         help="Factor for determining min Neff")
+
+    parser.add_argument('--force-pn', type=float, default=10.0,
+                        help="Total pulling force in pN")
 
     return parser
 
