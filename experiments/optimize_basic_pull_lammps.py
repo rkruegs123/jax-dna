@@ -199,10 +199,14 @@ def run(args):
         ## Load the LAMMPS energies
         log_path = sim_dir / "log.lammps"
         log_df = lammps_utils.read_log(log_path)
+        assert(log_df.shape[0] == n_total_states+1)
+        log_df = log_df[1+n_eq_states:]
 
         ## Generate an energy function
-        em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin,
-                               salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq-avg)
+        em = model.EnergyModel(displacement_fn,
+                               params,
+                               t_kelvin=t_kelvin,
+                               salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq_avg)
         energy_fn = lambda body: em.energy_fn(
             body,
             seq=seq_oh,
@@ -219,11 +223,12 @@ def run(args):
             f.write(f"- Calculating energies took {calc_end - calc_start} seconds\n")
 
         ## Check energies
-        gt_energies = log_df.PotEng * seq_oh.shape[0]
+        gt_energies = (log_df.PotEng * seq_oh.shape[0]).to_numpy()
         energy_diffs = list()
         for calc, gt in zip(calc_energies, gt_energies):
             diff = onp.abs(calc - gt)
             energy_diffs.append(diff)
+
 
         ## Compute the mean distance
         all_distances = list()

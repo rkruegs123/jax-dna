@@ -241,24 +241,22 @@ class EnergyModel:
 class TestDna2(unittest.TestCase):
     test_data_basedir = Path("data/test-data")
 
-    def test_lammps(self, tol_places=4):
-        t_kelvin = 300.0
+    def check_subterms_lammps(self, basedir, t_kelvin, salt_conc, seq_avg, tol_places):
+        if seq_avg:
+            ss_hb_weights = utils.HB_WEIGHTS_SA
+            ss_stack_weights = utils.STACK_WEIGHTS_SA
+        else:
+            ss_path = "data/seq-specific/seq_oxdna2.txt"
+            ss_hb_weights, ss_stack_weights = read_ss_oxdna(
+                ss_path,
+                default_base_params_seq_dep['hydrogen_bonding']['eps_hb'],
+                default_base_params_seq_dep['stacking']['eps_stack_base'],
+                default_base_params_seq_dep['stacking']['eps_stack_kt_coeff'],
+                enforce_symmetry=False,
+                t_kelvin=t_kelvin
+            )
 
-        ss_path = "data/seq-specific/seq_oxdna2.txt"
-        ss_hb_weights, ss_stack_weights = read_ss_oxdna(
-            ss_path,
-            default_base_params_seq_dep['hydrogen_bonding']['eps_hb'],
-            default_base_params_seq_dep['stacking']['eps_stack_base'],
-            default_base_params_seq_dep['stacking']['eps_stack_kt_coeff'],
-            enforce_symmetry=False,
-            t_kelvin=t_kelvin
-        )
-        # ss_hb_weights = utils.HB_WEIGHTS_SA
-        # ss_stack_weights = utils.STACK_WEIGHTS_SA
-
-        basedir = Path("data/test-data/lammps-oxdna2-40bp/")
         log_path = basedir / "log.lammps"
-
         log_df = lammps_utils.read_log(log_path)
 
         top_path = basedir / "data.top"
@@ -278,7 +276,7 @@ class TestDna2(unittest.TestCase):
         displacement_fn, shift_fn = space.periodic(traj_info.box_size)
         model = EnergyModel(displacement_fn, t_kelvin=t_kelvin,
                             ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights,
-                            salt_conc=0.15, seq_avg=False)
+                            salt_conc=salt_conc, seq_avg=seq_avg)
 
         neighbors_idx = top_info.unbonded_nbrs.T
 
@@ -305,6 +303,8 @@ class TestDna2(unittest.TestCase):
             ith_subterms = computed_subterms[idx]
             ith_pot_energy = computed_pot_energies[idx]
             row = log_df.iloc[idx]
+
+            pdb.set_trace()
 
             # FENE
             computed_fene = ith_subterms[0]
@@ -356,6 +356,14 @@ class TestDna2(unittest.TestCase):
 
         return
 
+    def test_lammps(self, tol_places=4):
+        basedir = Path("data/test-data/lammps-oxdna2-40bp/")
+        t_kelvin = 300.0
+        salt_conc = 0.15
+        # self.check_subterms_lammps(basedir, t_kelvin, salt_conc, False, tol_places)
+
+        basedir = Path("data/test-data/lammps-oxdna2-40bp-sa/")
+        self.check_subterms_lammps(basedir, t_kelvin, salt_conc, True, tol_places)
 
     def check_energy_subterms(self, basedir, top_fname, traj_fname,
                               t_kelvin, salt_conc,
