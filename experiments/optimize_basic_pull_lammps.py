@@ -13,9 +13,10 @@ import functools
 import numpy as onp
 import pprint
 
-from jax import jit, vmap, lax
+from jax import jit, vmap, lax, value_and_grad
 import jax.numpy as jnp
 from jax_md import space
+import optax
 
 from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.dna2 import model, lammps_utils
@@ -76,15 +77,18 @@ def run(args):
     img_dir = run_dir / "img"
     img_dir.mkdir(parents=False, exist_ok=False)
 
+    log_dir = run_dir / "log"
+    log_dir.mkdir(parents=False, exist_ok=False)
+
     ref_traj_dir = run_dir / "ref_traj"
     ref_traj_dir.mkdir(parents=False, exist_ok=False)
 
-    loss_path = run_dir / "loss.txt"
-    times_path = run_dir / "times.txt"
-    grads_path = run_dir / "grads.txt"
-    neff_path = run_dir / "neff.txt"
-    dist_path = run_dir / "dist.txt"
-    resample_log_path = run_dir / "resample_log.txt"
+    loss_path = log_dir / "loss.txt"
+    times_path = log_dir / "times.txt"
+    grads_path = log_dir / "grads.txt"
+    neff_path = log_dir / "neff.txt"
+    dist_path = log_dir / "dist.txt"
+    resample_log_path = log_dir / "resample_log.txt"
 
     params_str = ""
     params_str += f"n_sample_states: {n_sample_states}\n"
@@ -284,17 +288,136 @@ def run(args):
 
         return traj_states, calc_energies, all_distances
 
-    # FIXME: do a single call to get_ref_states. Then test. Don't forget to add arugment for force in pN. Will need to somehow initialize override base params that we want to optimize over.
+
+    @jit
+    def loss_fn(params, ref_states, ref_energies, ref_distances):
+
+        em = model.EnergyModel(displacement_fn,
+                               params,
+                               t_kelvin=t_kelvin,
+                               salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq_avg,
+                               ignore_exc_vol_bonded=True # Because we're in LAMMPS
+        )
+        energy_fn = lambda body: em.energy_fn(
+            body,
+            seq=seq_oh,
+            bonded_nbrs=top_info.bonded_nbrs,
+            unbonded_nbrs=top_info.unbonded_nbrs.T)
+        energy_fn = jit(energy_fn)
+
+        energy_scan_fn = lambda state, rs: (None, energy_fn(rs))
+        _, new_energies = scan(energy_scan_fn, None, ref_states)
+
+        diffs = new_energies - ref_energies # element-wise subtraction
+        boltzs = jnp.exp(-beta * diffs)
+        denom = jnp.sum(boltzs)
+        weights = boltzs / denom
+
+        expected_dist = jnp.dot(weights, ref_distances)
+        n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
+
+        mse = (expected_dist - target_dist)**2
+        rmse = jnp.sqrt(mse)
+
+        return rmse, (n_eff, expected_dist)
+
+    grad_fn = value_and_grad(loss_fn, has_aux=True)
+    grad_fn = jit(grad_fn)
+        
     params = deepcopy(model.EMPTY_BASE_PARAMS)
     if seq_avg:
         params["stacking"] = model.default_base_params_seq_avg["stacking"]
     else:
         params["stacking"] = model.default_base_params_seq_dep["stacking"]
 
+    optimizer = optax.adam(learning_rate=lr)
+    opt_state = optimizer.init(params)
+
+    min_n_eff = int(n_sample_states * min_neff_factor)
+
+    all_losses = list()
+    all_distances = list()
+    all_n_effs = list()
+    all_ref_losses = list()
+    all_ref_distances = list()
+    all_ref_times = list()
+
+    with open(resample_log_path, "a") as f:
+        f.write(f"Generating initial reference states and energies...\n")
+
+    start = time.time()
     ref_states, ref_energies, ref_distances = get_ref_states(params, i=0, seed=30362)
+    end = time.time()
+    with open(resample_log_path, "a") as f:
+        f.write(f"Finished generating initial reference states. Took {end - start} seconds.\n\n")
+
+    num_resample_iters = 0
+    for i in tqdm(range(n_iters)):
+        iter_start = time.time()
+
+        (loss, (n_eff, curr_dist)), grads = grad_fn(params, ref_states, ref_energies, ref_distances)
+        num_resample_iters += 1
+
+        if i == 0:
+            all_ref_losses.append(loss)
+            all_ref_times.append(i)
+            all_ref_distances.append(curr_dist)
+
+        if n_eff < min_n_eff or num_resample_iters >= max_approx_iters:
+            num_resample_iters = 0
+            with open(resample_log_path, "a") as f:
+                f.write(f"Iteration {i}\n")
+                f.write(f"- n_eff was {n_eff}. Resampling...\n")
+
+            start = time.time()
+            ref_states, ref_energies, ref_distances = get_ref_states(params, i=i, seed=i)
+            end = time.time()
+            with open(resample_log_path, "a") as f:
+                f.write(f"- time to resample: {end - start} seconds\n\n")
+
+            (loss, (n_eff, curr_dist)), grads = grad_fn(params, ref_states, ref_energies, ref_distances)
+
+            all_ref_losses.append(loss)
+            all_ref_times.append(i)
+            all_ref_distances.append(curr_dist)
 
 
+            # Plot every time we resample
+            plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
+            plt.legend()
+            plt.ylabel("Loss")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"losses_iter{i}.png")
+            plt.clf()
 
+
+            plt.plot(onp.arange(i+1), all_distances, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_distances, marker='o', label="Resample points", color="blue")
+            plt.axhline(y=target_dist, linestyle='--', label="Target Dist.", color='red')
+            plt.legend()
+            plt.ylabel("Expected Dist (oxDNA units)")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"distances_iter{i}.png")
+            plt.clf()
+
+        iter_end = time.time()
+
+        with open(loss_path, "a") as f:
+            f.write(f"{loss}\n")
+        with open(neff_path, "a") as f:
+            f.write(f"{n_eff}\n")
+        with open(dist_path, "a") as f:
+            f.write(f"{curr_dist}\n")
+        with open(times_path, "a") as f:
+            f.write(f"{iter_end - iter_start}\n")
+
+        all_losses.append(loss)
+        all_n_effs.append(n_eff)
+        all_distances.append(curr_dist)
+
+        updates, opt_state = optimizer.update(grads, opt_state, params)
+        params = optax.apply_updates(params, updates)
 
 def get_parser():
 
@@ -319,7 +442,7 @@ def get_parser():
     parser.add_argument('--n-iters', type=int, default=200,
                         help="Number of iterations of gradient descent")
     parser.add_argument('--lr', type=float, default=0.001, help="Learning rate")
-    parser.add_argument('--target-dist', type=float,
+    parser.add_argument('--target-dist', type=float, default=15.0,
                         help="Target persistence length in nanometers")
     parser.add_argument('--min-neff-factor', type=float, default=0.95,
                         help="Factor for determining min Neff")
