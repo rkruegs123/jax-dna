@@ -31,21 +31,6 @@ else:
                              checkpoint_every=checkpoint_every)
 
 
-def get_all_quartets(n_nucs_per_strand):
-    s1_nucs = list(range(n_nucs_per_strand))
-    s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
-    s2_nucs.reverse()
-
-    bps = list(zip(s1_nucs, s2_nucs))
-    n_bps = len(s1_nucs)
-    all_quartets = list()
-    for i in range(n_bps-1):
-        bp1 = bps[i]
-        bp2 = bps[i+1]
-        all_quartets.append(bp1 + bp2)
-    return jnp.array(all_quartets, dtype=jnp.int32)
-
-
 def run(args):
 
     # Load arguments
@@ -128,7 +113,7 @@ def run(args):
     n_ref_states_per_batch = n_steps_per_batch // sample_every
     n_ref_states = n_ref_states_per_batch * n_devices
 
-    quartets = get_all_quartets(n_nucs_per_strand=init_body.center.shape[0] // 2)
+    quartets = utils.get_all_quartets(n_nucs_per_strand=init_body.center.shape[0] // 2)
     quartets = quartets[skipped_quartets_per_end:]
     quartets = quartets[:-skipped_quartets_per_end]
     base_site = jnp.array([model.com_to_hb, 0.0, 0.0])

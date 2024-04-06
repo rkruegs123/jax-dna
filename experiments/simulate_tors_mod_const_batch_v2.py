@@ -30,21 +30,6 @@ else:
     scan = functools.partial(checkpoint.checkpoint_scan,
                              checkpoint_every=checkpoint_every)
 
-def get_all_quartets(n_nucs_per_strand):
-    s1_nucs = list(range(n_nucs_per_strand))
-    s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
-    s2_nucs.reverse()
-
-    bps = list(zip(s1_nucs, s2_nucs))
-    n_bps = len(s1_nucs)
-    all_quartets = list()
-    for i in range(n_bps-1):
-        bp1 = bps[i]
-        bp2 = bps[i+1]
-        all_quartets.append(bp1 + bp2)
-    return jnp.array(all_quartets, dtype=jnp.int32)
-
-
 
 def run(args):
 
@@ -87,7 +72,7 @@ def run(args):
     bps2 = onp.array([onp.arange(strand1_end-offset, strand1_end+1),
                       onp.arange(strand2_start+offset, strand2_start-1, -1)]).T
 
-    quartets = get_all_quartets(n_nucs_per_strand=n_bp)
+    quartets = utils.get_all_quartets(n_nucs_per_strand=n_bp)
     quartets = quartets[offset:n_bp-1-offset] # Restrict to central n_bp-10 bp
 
     rise_per_bp = 3.4 / utils.ang_per_oxdna_length # oxDNA length units
@@ -195,7 +180,7 @@ def run(args):
 
 
 
-    
+
 
 
     # Setup the logging directoroy

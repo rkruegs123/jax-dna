@@ -37,20 +37,6 @@ else:
 compute_all_curves = vmap(persistence_length.get_correlation_curve, (0, None, None))
 
 # Compute the average persistence length
-def get_all_quartets(n_nucs_per_strand):
-    s1_nucs = list(range(n_nucs_per_strand))
-    s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
-    s2_nucs.reverse()
-
-    bps = list(zip(s1_nucs, s2_nucs))
-    n_bps = len(s1_nucs)
-    all_quartets = list()
-    for i in range(n_bps-1):
-        bp1 = bps[i]
-        bp2 = bps[i+1]
-        all_quartets.append(bp1 + bp2)
-    return jnp.array(all_quartets, dtype=jnp.int32)
-
 
 def run(args):
     # Load parameters
@@ -98,7 +84,7 @@ def run(args):
     top_info = topology.TopologyInfo(top_path, reverse_direction=False)
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
-    quartets = get_all_quartets(n_nucs_per_strand=seq_oh.shape[0] // 2)
+    quartets = utils.get_all_quartets(n_nucs_per_strand=seq_oh.shape[0] // 2)
     quartets = quartets[n_skipped_quartets:]
     quartets = quartets[:-n_skipped_quartets]
     base_site = jnp.array([model.com_to_hb, 0.0, 0.0])
@@ -231,7 +217,7 @@ def run(args):
         energy_scan_fn = lambda state, ts: (None, energy_fn(ts))
         _, calc_energies = scan(energy_scan_fn, None, traj_states)
 
-        
+
         # gt_energies = energy_df.iloc[1:, :].potential_energy.to_numpy() * seq_oh.shape[0]
         gt_energies = energy_df.potential_energy.to_numpy() * seq_oh.shape[0]
 
@@ -374,7 +360,7 @@ def run(args):
     params['stacking']['theta0_stack_5'] = 0.001
     params['stacking']['theta0_stack_6'] = 0.001
     params['stacking']['theta0_stack_6'] = 0.0
-    
+
 
     start = time.time()
     ref_states, ref_energies, unweighted_corr_curves, unweighted_l0s = get_ref_states(params, i=0, seed=0)

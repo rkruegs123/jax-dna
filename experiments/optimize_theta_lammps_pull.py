@@ -64,20 +64,6 @@ def compute_pitches(body, quartets, displacement_fn, com_to_hb):
     return all_pitches
 
 
-def get_all_quartets(n_nucs_per_strand):
-    s1_nucs = list(range(n_nucs_per_strand))
-    s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
-    s2_nucs.reverse()
-
-    bps = list(zip(s1_nucs, s2_nucs))
-    n_bps = len(s1_nucs)
-    all_quartets = list()
-    for i in range(n_bps-1):
-        bp1 = bps[i]
-        bp2 = bps[i+1]
-        all_quartets.append(bp1 + bp2)
-    return jnp.array(all_quartets, dtype=jnp.int32)
-
 def get_bp_pos(body, bp):
     return (body.center[bp[0]] + body.center[bp[1]]) / 2
 
@@ -179,7 +165,7 @@ def run(args):
     strand2_end = n_bp*2-1
 
     ## The region for which theta and distance are measured
-    quartets = get_all_quartets(n_nucs_per_strand=n_bp)
+    quartets = utils.get_all_quartets(n_nucs_per_strand=n_bp)
     quartets = quartets[4:n_bp-5]
 
     bp1_meas = [4, strand2_end-4]

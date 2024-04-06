@@ -20,7 +20,6 @@ from utils import back_site, stack_site, base_site
 from utils import get_one_hot
 from utils import clamp
 
-
 from loader.trajectory import TrajectoryInfo
 from loader.topology import TopologyInfo
 from loader.get_params import get_default_params
@@ -38,6 +37,21 @@ f64 = util.f64
 DTYPE = [f32]
 if FLAGS.jax_enable_x64:
     DTYPE += [f64]
+
+
+def get_all_quartets(n_nucs_per_strand):
+    s1_nucs = list(range(n_nucs_per_strand))
+    s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
+    s2_nucs.reverse()
+
+    bps = list(zip(s1_nucs, s2_nucs))
+    n_bps = len(s1_nucs)
+    all_quartets = list()
+    for i in range(n_bps-1):
+        bp1 = bps[i]
+        bp2 = bps[i+1]
+        all_quartets.append(bp1 + bp2)
+    return jnp.array(all_quartets, dtype=jnp.int32)
 
 def vector_autocorrelate(arr):
     n_vectors = arr.shape[0]
@@ -119,20 +133,6 @@ if __name__ == "__main__":
     seq_oh = jnp.array(get_one_hot(config_info.top_info.seq), dtype=f64)
 
     body = config_info.states[0]
-
-    def get_all_quartets(n_nucs_per_strand):
-        s1_nucs = list(range(n_nucs_per_strand))
-        s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
-        s2_nucs.reverse()
-
-        bps = list(zip(s1_nucs, s2_nucs))
-        n_bps = len(s1_nucs)
-        all_quartets = list()
-        for i in range(n_bps-1):
-            bp1 = bps[i]
-            bp2 = bps[i+1]
-            all_quartets.append(bp1 + bp2)
-        return jnp.array(all_quartets, dtype=jnp.int32)
 
     quartets = get_all_quartets(n_nucs_per_strand=body.center.shape[0] // 2)
 

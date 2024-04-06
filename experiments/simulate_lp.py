@@ -336,21 +336,8 @@ if __name__ == "__main__":
         f.write(f"Time to generate trajectory: {end - start} seconds\n")
 
     # Compute the average persistence length
-    def get_all_quartets(n_nucs_per_strand):
-        s1_nucs = list(range(n_nucs_per_strand))
-        s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
-        s2_nucs.reverse()
 
-        bps = list(zip(s1_nucs, s2_nucs))
-        n_bps = len(s1_nucs)
-        all_quartets = list()
-        for i in range(n_bps-1):
-            bp1 = bps[i]
-            bp2 = bps[i+1]
-            all_quartets.append(bp1 + bp2)
-        return jnp.array(all_quartets, dtype=jnp.int32)
-
-    quartets = get_all_quartets(n_nucs_per_strand=traj[0].center.shape[0] // 2)
+    quartets = utils.get_all_quartets(n_nucs_per_strand=traj[0].center.shape[0] // 2)
     # quartets = quartets[25:]
     # quartets = quartets[:-25]
     quartets = quartets[5:]

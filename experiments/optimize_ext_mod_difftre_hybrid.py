@@ -128,20 +128,6 @@ def WLC_lp_fixed(coeffs, x_data, force_data, kT, lp):
 
 
 # Compute the average persistence length
-def get_all_quartets(n_nucs_per_strand):
-    s1_nucs = list(range(n_nucs_per_strand))
-    s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
-    s2_nucs.reverse()
-
-    bps = list(zip(s1_nucs, s2_nucs))
-    n_bps = len(s1_nucs)
-    all_quartets = list()
-    for i in range(n_bps-1):
-        bp1 = bps[i]
-        bp2 = bps[i+1]
-        all_quartets.append(bp1 + bp2)
-    return jnp.array(all_quartets, dtype=jnp.int32)
-
 
 def run(args):
     # Load parameters
@@ -306,7 +292,7 @@ def run(args):
     top_info_lp = topology.TopologyInfo(top_path_lp, reverse_direction=False)
     seq_oh_lp = jnp.array(utils.get_one_hot(top_info_lp.seq), dtype=jnp.float64)
 
-    quartets = get_all_quartets(n_nucs_per_strand=seq_oh_lp.shape[0] // 2)
+    quartets = utils.get_all_quartets(n_nucs_per_strand=seq_oh_lp.shape[0] // 2)
     quartets = quartets[n_skipped_quartets:]
     quartets = quartets[:-n_skipped_quartets]
     base_site = jnp.array([model.com_to_hb, 0.0, 0.0])

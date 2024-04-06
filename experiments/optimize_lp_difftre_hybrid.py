@@ -43,19 +43,6 @@ else:
 compute_all_curves = vmap(persistence_length.get_correlation_curve, (0, None, None))
 
 # Compute the average persistence length
-def get_all_quartets(n_nucs_per_strand):
-    s1_nucs = list(range(n_nucs_per_strand))
-    s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
-    s2_nucs.reverse()
-
-    bps = list(zip(s1_nucs, s2_nucs))
-    n_bps = len(s1_nucs)
-    all_quartets = list()
-    for i in range(n_bps-1):
-        bp1 = bps[i]
-        bp2 = bps[i+1]
-        all_quartets.append(bp1 + bp2)
-    return jnp.array(all_quartets, dtype=jnp.int32)
 
 
 def run(args):
@@ -132,7 +119,7 @@ def run(args):
     top_info = topology.TopologyInfo(top_path, reverse_direction=False)
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
-    quartets = get_all_quartets(n_nucs_per_strand=seq_oh.shape[0] // 2)
+    quartets = utils.get_all_quartets(n_nucs_per_strand=seq_oh.shape[0] // 2)
     quartets = quartets[n_skipped_quartets:]
     quartets = quartets[:-n_skipped_quartets]
     base_site = jnp.array([model.com_to_hb, 0.0, 0.0])
@@ -195,7 +182,7 @@ def run(args):
                 )
                 init_conf_info = center_configuration.center_conf(
                     top_info, prev_lastconf_info)
-                
+
             init_conf_info.traj_df.t = onp.full(seq_oh.shape[0], r*n_steps_per_sim)
             init_conf_info.write(repeat_dir / "init.conf", reverse=False, write_topology=False)
 
@@ -301,7 +288,7 @@ def run(args):
         with open(resample_log_path, "a") as f:
             f.write(f"- Calculating energies took {calc_end - calc_start} seconds\n")
 
-        
+
         # gt_energies = energy_df.iloc[1:, :].potential_energy.to_numpy() * seq_oh.shape[0]
         gt_energies = energy_df.potential_energy.to_numpy() * seq_oh.shape[0]
 
@@ -468,7 +455,7 @@ def run(args):
     all_ref_lps = list()
     all_ref_l0s = list()
     all_ref_times = list()
-    
+
 
     with open(resample_log_path, "a") as f:
         f.write(f"Generating initial reference states and energies...\n")
@@ -484,7 +471,7 @@ def run(args):
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
-        
+
         (loss, (n_eff, curr_lp, expected_corr_curve, curr_l0_avg, curr_offset)), grads = grad_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs)
         num_resample_iters += 1
 

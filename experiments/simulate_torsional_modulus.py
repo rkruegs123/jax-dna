@@ -34,19 +34,6 @@ else:
                              checkpoint_every=checkpoint_every)
 
 
-def get_all_quartets(n_nucs_per_strand):
-    s1_nucs = list(range(n_nucs_per_strand))
-    s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
-    s2_nucs.reverse()
-
-    bps = list(zip(s1_nucs, s2_nucs))
-    n_bps = len(s1_nucs)
-    all_quartets = list()
-    for i in range(n_bps-1):
-        bp1 = bps[i]
-        bp2 = bps[i+1]
-        all_quartets.append(bp1 + bp2)
-    return jnp.array(all_quartets, dtype=jnp.int32)
 
 def run(args):
     # Load parameters
@@ -90,7 +77,7 @@ def run(args):
     assert(seq_oh.shape[0] == n_bp*2) # 20 bp or 30 bp duplex
     n = seq_oh.shape[0]
 
-    quartets = get_all_quartets(n_nucs_per_strand=n_bp)
+    quartets = utils.get_all_quartets(n_nucs_per_strand=n_bp)
     quartets = quartets[5:n_bp-6] # Restrict to central n_bp-10 bp
 
     rise_per_bp = 3.4 / utils.ang_per_oxdna_length # oxDNA length units

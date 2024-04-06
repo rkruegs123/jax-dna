@@ -54,7 +54,7 @@ def single_pitch(quartet, base_sites, displacement_fn):
     bb2 = bb2 / jnp.linalg.norm(bb2)
 
     theta = jnp.arccos(utils.clamp(jnp.dot(bb1, bb2)))
-    
+
     return theta
 
 def compute_pitches(body, quartets, displacement_fn, com_to_hb):
@@ -70,20 +70,6 @@ def compute_pitches(body, quartets, displacement_fn, com_to_hb):
         quartets, base_sites, displacement_fn)
 
     return all_pitches
-
-def get_all_quartets(n_nucs_per_strand):
-    s1_nucs = list(range(n_nucs_per_strand))
-    s2_nucs = list(range(n_nucs_per_strand, n_nucs_per_strand*2))
-    s2_nucs.reverse()
-
-    bps = list(zip(s1_nucs, s2_nucs))
-    n_bps = len(s1_nucs)
-    all_quartets = list()
-    for i in range(n_bps-1):
-        bp1 = bps[i]
-        bp2 = bps[i+1]
-        all_quartets.append(bp1 + bp2)
-    return jnp.array(all_quartets, dtype=jnp.int32)
 
 
 displacement_fn, shift_fn = space.free()
@@ -119,7 +105,7 @@ nts1_harm = jnp.array(bps1_harm.flatten())
 bp2_harm = jnp.array([strand1_end-1, strand2_start+1])
 
 # The region for which theta and distance are measured
-quartets = get_all_quartets(n_nucs_per_strand=n_bp)
+quartets = utils.get_all_quartets(n_nucs_per_strand=n_bp)
 quartets = quartets[4:n_bp-5]
 
 bp1_meas = [4, strand2_end-4]
