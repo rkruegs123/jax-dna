@@ -15,7 +15,7 @@ import pprint
 
 from jax import jit, vmap, lax, value_and_grad
 import jax.numpy as jnp
-from jax_md import space
+from jax_md import space, rigid_body
 import optax
 
 from jax_dna.common import utils, topology, trajectory, checkpoint

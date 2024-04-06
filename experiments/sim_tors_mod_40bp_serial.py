@@ -99,7 +99,12 @@ mass = rigid_body.RigidBody(center=jnp.array([utils.nucleotide_mass], dtype=jnp.
 # params = deepcopy(model.EMPTY_BASE_PARAMS)
 # em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
 # em = model.EnergyModel(displacement_fn, t_kelvin=t_kelvin)
-em = model2.EnergyModel(displacement_fn, t_kelvin=t_kelvin)
+# em = model2.EnergyModel(displacement_fn, t_kelvin=t_kelvin)
+model = model2.EnergyModel(
+    displacement_fn, t_kelvin=t_kelvin,
+    salt_conc=0.15, seq_avg=True,
+    ignore_exc_vol_bonded=False # Because we're in LAMMPS
+)
 
 n_bp = 40
 strand1_start = 0
