@@ -444,8 +444,6 @@ def run(args):
         # Compute effective sample size
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
 
-        print(f"\nFinised computing reference states.\n")
-
         mse = (expected_lp - target_lp)**2
         rmse = jnp.sqrt(mse)
 
