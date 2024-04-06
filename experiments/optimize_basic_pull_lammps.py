@@ -382,25 +382,6 @@ def run(args):
             all_ref_distances.append(curr_dist)
 
 
-            # Plot every time we resample
-            plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
-            plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
-            plt.legend()
-            plt.ylabel("Loss")
-            plt.xlabel("Iteration")
-            plt.savefig(img_dir / f"losses_iter{i}.png")
-            plt.clf()
-
-
-            plt.plot(onp.arange(i+1), all_distances, linestyle="--", color="blue")
-            plt.scatter(all_ref_times, all_ref_distances, marker='o', label="Resample points", color="blue")
-            plt.axhline(y=target_dist, linestyle='--', label="Target Dist.", color='red')
-            plt.legend()
-            plt.ylabel("Expected Dist (oxDNA units)")
-            plt.xlabel("Iteration")
-            plt.savefig(img_dir / f"distances_iter{i}.png")
-            plt.clf()
-
         iter_end = time.time()
 
         with open(loss_path, "a") as f:
@@ -418,6 +399,25 @@ def run(args):
 
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
+
+
+        plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
+        plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
+        plt.legend()
+        plt.ylabel("Loss")
+        plt.xlabel("Iteration")
+        plt.savefig(img_dir / f"losses_iter{i}.png")
+        plt.clf()
+
+
+        plt.plot(onp.arange(i+1), all_distances, linestyle="--", color="blue")
+        plt.scatter(all_ref_times, all_ref_distances, marker='o', label="Resample points", color="blue")
+        plt.axhline(y=target_dist, linestyle='--', label="Target Dist.", color='red')
+        plt.legend()
+        plt.ylabel("Expected Dist (oxDNA units)")
+        plt.xlabel("Iteration")
+        plt.savefig(img_dir / f"distances_iter{i}.png")
+        plt.clf()
 
 def get_parser():
 
