@@ -95,13 +95,15 @@ class EnergyModel:
     def __init__(self, displacement_fn, override_base_params=EMPTY_BASE_PARAMS,
                  t_kelvin=DEFAULT_TEMP, ss_hb_weights=utils.HB_WEIGHTS_SA,
                  ss_stack_weights=utils.STACK_WEIGHTS_SA,
-                 salt_conc=0.5, q_eff=0.815, seq_avg=True
+                 salt_conc=0.5, q_eff=0.815, seq_avg=True,
+                 ignore_exc_vol_bonded=False
     ):
         self.displacement_fn = displacement_fn
         self.displacement_mapped = jit(space.map_bond(partial(displacement_fn)))
         self.t_kelvin = t_kelvin
         self.salt_conc = salt_conc
         kT = utils.get_kt(self.t_kelvin)
+        self.ignore_exc_vol_bonded = ignore_exc_vol_bonded
 
         self.ss_hb_weights = ss_hb_weights
         self.ss_hb_weights_flat = self.ss_hb_weights.flatten()
@@ -235,7 +237,10 @@ class EnergyModel:
     def energy_fn(self, body, seq, bonded_nbrs, unbonded_nbrs):
         dgs = self.compute_subterms(body, seq, bonded_nbrs, unbonded_nbrs)
         fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg = dgs
-        return fene_dg + exc_vol_bonded_dg + stack_dg + exc_vol_unbonded_dg + hb_dg + cr_stack_dg + cx_stack_dg + db_dg
+        val = fene_dg + stack_dg + exc_vol_unbonded_dg + hb_dg + cr_stack_dg + cx_stack_dg + db_dg
+        if not self.ignore_exc_vol_bonded:
+            val += exc_vol_bonded_dg
+        return val
 
 
 class TestDna2(unittest.TestCase):
@@ -276,7 +281,9 @@ class TestDna2(unittest.TestCase):
         displacement_fn, shift_fn = space.periodic(traj_info.box_size)
         model = EnergyModel(displacement_fn, t_kelvin=t_kelvin,
                             ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights,
-                            salt_conc=salt_conc, seq_avg=seq_avg)
+                            salt_conc=salt_conc, seq_avg=seq_avg,
+                            ignore_exc_vol_bonded=True # Because we're in LAMMPS
+        )
 
         neighbors_idx = top_info.unbonded_nbrs.T
 
@@ -303,8 +310,7 @@ class TestDna2(unittest.TestCase):
             ith_subterms = computed_subterms[idx]
             ith_pot_energy = computed_pot_energies[idx]
             row = log_df.iloc[idx]
-
-            pdb.set_trace()
+            self.assertAlmostEqual(ith_pot_energy / seq_oh.shape[0], row.PotEng, places=tol_places)
 
             # FENE
             computed_fene = ith_subterms[0]

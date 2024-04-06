@@ -206,7 +206,9 @@ def run(args):
         em = model.EnergyModel(displacement_fn,
                                params,
                                t_kelvin=t_kelvin,
-                               salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq_avg)
+                               salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq_avg,
+                               ignore_exc_vol_bonded=True # Because we're in LAMMPS
+        )
         energy_fn = lambda body: em.energy_fn(
             body,
             seq=seq_oh,
@@ -214,10 +216,19 @@ def run(args):
             unbonded_nbrs=top_info.unbonded_nbrs.T)
         energy_fn = jit(energy_fn)
 
+        subterms_fn = lambda body: em.compute_subterms(
+            body,
+            seq=seq_oh,
+            bonded_nbrs=top_info.bonded_nbrs,
+            unbonded_nbrs=top_info.unbonded_nbrs.T)
+        subterms_fn = jit(subterms_fn)
+
         ## Compute the energies via our energy function
         calc_start = time.time()
         energy_scan_fn = lambda state, ts: (None, energy_fn(ts))
         _, calc_energies = scan(energy_scan_fn, None, traj_states)
+        subterms_scan_fn = lambda state, ts: (None, subterms_fn(ts))
+        _, calc_subterms = scan(subterms_scan_fn, None, traj_states)
         calc_end = time.time()
         with open(resample_log_path, "a") as f:
             f.write(f"- Calculating energies took {calc_end - calc_start} seconds\n")
@@ -225,7 +236,7 @@ def run(args):
         ## Check energies
         gt_energies = (log_df.PotEng * seq_oh.shape[0]).to_numpy()
         energy_diffs = list()
-        for calc, gt in zip(calc_energies, gt_energies):
+        for idx, (calc, gt) in enumerate(zip(calc_energies, gt_energies)):
             diff = onp.abs(calc - gt)
             energy_diffs.append(diff)
 
