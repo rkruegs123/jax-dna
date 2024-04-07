@@ -152,6 +152,7 @@ def run(args):
     init_bp2 = get_bp_pos(init_body, bp2_harm)
 
 
+    params = deepcopy(model.EMPTY_BASE_PARAMS)
     em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
     """
     em = model2.EnergyModel(
@@ -379,10 +380,8 @@ def get_parser():
     parser.add_argument('--sample-every', type=int, default=int(5e2),
                         help="Frequency of sampling reference states.")
     parser.add_argument('--key-seed', type=int, default=0, help="Integer seed for key")
-    parser.add_argument('--spring-k', type=float, default=10.0,
+    parser.add_argument('--spring-k', type=float, default=1250.0,
                         help="Spring constant for the harmonic bias")
-    parser.add_argument('--dt', type=float, default=5e-3,
-                        help="Timestep")
 
     return parser
 
