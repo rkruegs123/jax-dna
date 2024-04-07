@@ -93,6 +93,7 @@ def run(args):
     run_name = args['run_name']
     n_iters = args['n_iters']
     lr = args['lr']
+    rmse_coeff = args['rmse_coeff']
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
     seq_avg = not args['seq_dep']
@@ -189,7 +190,7 @@ def run(args):
     q_eff = 0.815
 
 
-    def run_sim(sim_dir, base_params, force_pn):
+    def run_sim(sim_dir, base_params, force_pn, seed):
 
         shutil.copy(lammps_data_abs_path, sim_dir / "data")
         lammps_in_fpath = sim_dir / "in"
@@ -336,18 +337,18 @@ def run(args):
 
         sim_lo_dir = iter_dir / f"sim-lo"
         sim_lo_dir.mkdir(parents=False, exist_ok=False)
-        traj_states_lo, calc_energies_lo, all_thetas_lo = run_sim(sim_lo_dir, base_params, force_low_pn)
+        traj_states_lo, calc_energies_lo, all_thetas_lo = run_sim(sim_lo_dir, base_params, force_low_pn, seed)
 
         sim_hi_dir = iter_dir / f"sim-hi"
         sim_hi_dir.mkdir(parents=False, exist_ok=False)
-        traj_states_hi, calc_energies_hi, all_thetas_hi = run_sim(sim_hi_dir, base_params, force_high_pn)
+        traj_states_hi, calc_energies_hi, all_thetas_hi = run_sim(sim_hi_dir, base_params, force_high_pn, seed)
 
 
         running_avg_lo = onp.cumsum(all_thetas_lo) / onp.arange(1, n_sample_states+1)
         running_avg_hi = onp.cumsum(all_thetas_hi) / onp.arange(1, n_sample_states+1)
 
         # slope is (theta0_hi - theta0_low) / (force_hi - force_low)
-        running_avg_diff = running_avg_hi - running_avg_lo
+        running_avg_diff = (running_avg_hi - running_avg_lo) * (1000 / 36)
         running_avg_slope = running_avg_diff / (force_high_pn - force_low_pn)
         plt.plot(running_avg_slope)
         plt.savefig(iter_dir / "running_avg_slope.png")
@@ -355,9 +356,10 @@ def run(args):
 
         theta0_lo = onp.mean(all_thetas_lo)
         theta0_hi = onp.mean(all_thetas_hi)
-        fin_slope = (theta0_hi - theta0_lo) / (force_high_pn - force_low_pn)
+        theta0_diff = (theta0_hi - theta0_lo) * (1000 / 36)
+        fin_slope = theta0_diff / (force_high_pn - force_low_pn)
 
-        with open(sim_dir / "summary.txt", "w+") as f:
+        with open(iter_dir / "summary.txt", "w+") as f:
             f.write(f"Final slope: {fin_slope}\n")
 
         return traj_states_lo, calc_energies_lo, all_thetas_lo, traj_states_hi, calc_energies_hi, all_thetas_hi
@@ -402,14 +404,15 @@ def run(args):
         expected_theta_hi = jnp.dot(weights_hi, ref_thetas_hi)
 
         # Get final loss
-        expected_slope = (expected_theta_hi - expected_theta_lo) / (force_high_pn - force_low_pn)
+        expected_theta_diff = (expected_theta_hi - expected_theta_lo) * (1000 / 36)
+        expected_slope = expected_theta_diff / (force_high_pn - force_low_pn)
         mse = (expected_slope - target_slope)**2
         rmse = jnp.sqrt(mse)
 
         weights = jnp.concatenate([weights_lo, weights_hi])
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
 
-        return rmse, (n_eff, expected_slope)
+        return rmse_coeff*rmse, (n_eff, expected_slope)
 
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
@@ -417,8 +420,10 @@ def run(args):
     params = deepcopy(model.EMPTY_BASE_PARAMS)
     if seq_avg:
         params["stacking"] = model.default_base_params_seq_avg["stacking"]
+        params["hydrogen_bonding"] = model.default_base_params_seq_avg["hydrogen_bonding"]
     else:
         params["stacking"] = model.default_base_params_seq_dep["stacking"]
+        params["hydrogen_bonding"] = model.default_base_params_seq_dep["hydrogen_bonding"]
 
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
@@ -543,10 +548,12 @@ def get_parser():
 
     parser.add_argument('--force-low-pn', type=float, default=2.5,
                         help="Total low pulling force in pN")
-    parser.add_argument('--force-high pn', type=float, default=10,
+    parser.add_argument('--force-high-pn', type=float, default=10,
                         help="Total high pulling force in pN")
     parser.add_argument('--target-slope', type=float, default=-0.05,
                         help="Target slope")
+    parser.add_argument('--rmse-coeff', type=float, default=100.0,
+                        help="Coefficient for the RMSE")
     parser.add_argument('--seq-dep', action='store_true')
 
     return parser
