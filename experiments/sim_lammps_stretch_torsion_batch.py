@@ -12,6 +12,7 @@ import time
 import functools
 import numpy as onp
 import pprint
+import random
 
 from jax import jit, vmap, lax, value_and_grad
 import jax.numpy as jnp
@@ -68,6 +69,8 @@ def get_bp_pos(body, bp):
     return (body.center[bp[0]] + body.center[bp[1]]) / 2
 
 def run(args):
+    random.seed(args['seed'])
+
     lammps_basedir = Path(args['lammps_basedir'])
     assert(lammps_basedir.exists())
     lammps_exec_path = lammps_basedir / "build/lmp"
@@ -77,6 +80,7 @@ def run(args):
     assert(tacoxdna_basedir.exists())
 
     sample_every = args['sample_every']
+    n_sims = args['n_sims']
 
     n_eq_steps = args['n_eq_steps']
     assert(n_eq_steps % sample_every == 0)
@@ -167,41 +171,57 @@ def run(args):
     salt_conc = 0.15
     q_eff = 0.815
 
-    def stretch_torsion(params, i, seed):
+    def stretch_torsion(params):
 
         sim_dir = run_dir / f"sim"
         sim_dir.mkdir(parents=False, exist_ok=False)
 
         base_params = model.get_full_base_params(params, seq_avg=seq_avg)
 
+        procs = list()
+        for r in range(n_sims):
+            repeat_dir = sim_dir / f"r{r}"
+            repeat_dir.mkdir(parents=False, exist_ok=False)
 
-        shutil.copy(lammps_data_abs_path, sim_dir / "data")
-        lammps_in_fpath = sim_dir / "in"
-        lammps_utils.stretch_tors_constructor(
-            base_params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
-            force_pn=force_pn, torque_pnnm=torque_pnnm,
-            save_every=sample_every, n_steps=n_total_steps,
-            seq_avg=seq_avg, seed=seed)
+            repeat_seed = random.randrange(100)
 
-        sim_start = time.time()
-        p = subprocess.Popen([lammps_exec_path, "-in", lammps_in_fpath.stem], cwd=sim_dir)
-        p.wait()
-        rc = p.returncode
-        if rc != 0:
-            raise RuntimeError(f"LAMMPS simulation failed with error code: {rc}")
-        sim_end = time.time()
+            shutil.copy(lammps_data_abs_path, repeat_dir / "data")
+            lammps_in_fpath = repeat_dir / "in"
+            lammps_utils.stretch_tors_constructor(
+                base_params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
+                force_pn=force_pn, torque_pnnm=torque_pnnm,
+                save_every=sample_every, n_steps=n_total_steps,
+                seq_avg=seq_avg, seed=repeat_seed)
+
+            procs.append(subprocess.Popen([lammps_exec_path, "-in", lammps_in_fpath.stem], cwd=repeat_dir))
+
+        for p in procs:
+            p.wait()
+
+        for p in procs:
+            rc = p.returncode
+            if rc != 0:
+                raise RuntimeError(f"LAMMPS simulation failed with error code: {rc}")
 
         # Convert via TaxoxDNA
-        p = subprocess.Popen([tacoxdna_basedir / "src/LAMMPS_oxDNA.py", "data", "filename.dat"], cwd=sim_dir)
-        p.wait()
-        rc = p.returncode
-        if rc != 0:
-            raise RuntimeError(f"tacoxDNA conversion failed with error code: {rc}")
+        for r in range(n_sims):
+            repeat_dir = sim_dir / f"r{r}"
+            p = subprocess.Popen([tacoxdna_basedir / "src/LAMMPS_oxDNA.py", "data", "filename.dat"], cwd=repeat_dir)
+            p.wait()
+            rc = p.returncode
+            if rc != 0:
+                raise RuntimeError(f"tacoxDNA conversion failed with error code: {rc}")
 
-        traj_path = sim_dir / "data.oxdna"
-        assert(traj_path.exists())
-        top_path = sim_dir / "data.top"
-        assert(top_path.exists())
+
+        combine_cmd = "cat "
+        for r in range(n_sims):
+            repeat_dir = sim_dir / f"r{r}"
+            combine_cmd += f"{repeat_dir}/data.oxdna "
+        combine_cmd += f"> {sim_dir}/output.dat"
+        combine_proc = subprocess.run(combine_cmd, shell=True)
+        if combine_proc.returncode != 0:
+            raise RuntimeError(f"Combining trajectories failed with error code: {combine_proc.returncode}")
+
 
         # Analyze
 
@@ -209,23 +229,32 @@ def run(args):
         load_start = time.time()
         traj_info = trajectory.TrajectoryInfo(
             top_info, read_from_file=True,
-            traj_path=sim_dir / "data.oxdna",
+            traj_path=sim_dir / "output.dat",
             # reverse_direction=True)
             reverse_direction=False)
-        traj_states = traj_info.get_states()
-        traj_states = traj_states[1:] # ignore the initial state
-        n_traj_states = len(traj_states)
-        assert(n_traj_states == n_total_states)
-        traj_states = traj_states[n_eq_states:] # Remove the states freom the equlibration period
-        assert(len(traj_states) == n_sample_states)
+        full_traj_states = traj_info.get_states()
+        assert(len(full_traj_states) == (1+n_total_states)*n_sims)
+        sim_freq = 1+n_total_states
+        traj_states = list()
+        for r in range(n_sims):
+            sim_states = full_traj_states[r*sim_freq:(r+1)*sim_freq]
+            sampled_sim_states = sim_states[1+n_eq_states:]
+            assert(len(sampled_sim_states) == n_sample_states)
+            traj_states.append(sampled_sim_states)
+        assert(len(traj_states) == n_sample_states*n_sims)
         traj_states = utils.tree_stack(traj_states)
         load_end = time.time()
 
         ## Load the LAMMPS energies
-        log_path = sim_dir / "log.lammps"
-        log_df = lammps_utils.read_log(log_path)
-        assert(log_df.shape[0] == n_total_states+1)
-        log_df = log_df[1+n_eq_states:]
+        log_dfs = list()
+        for r in range(n_sims):
+            repeat_dir = sim_dir / f"r{r}"
+            log_path = repeat_dir / "log.lammps"
+            rpt_log_df = lammps_utils.read_log(log_path)
+            assert(rpt_log_df.shape[0] == n_total_states+1)
+            rpt_log_df = rpt_log_df[1+n_eq_states:]
+            log_dfs.append(rpt_log_df)
+        log_df = pd.concat(log_dfs, ignore_index=True)
 
         ## Generate an energy function
         em = model.EnergyModel(displacement_fn,
@@ -323,97 +352,9 @@ def run(args):
 
         return
 
-    broken_hb = {
-        'a_hb': 7.970159150635577,
-        'a_hb_1': 1.5079461916426353,
-        'a_hb_2': 1.5283265147299099,
-        'a_hb_3': 1.5283265147299099,
-        'a_hb_4': 0.43237757026552776,
-        'a_hb_7': 3.9889513188121284,
-        'a_hb_8': 4.,
-        'delta_theta_star_hb_1': 0.6613341297749521,
-        'delta_theta_star_hb_2': 0.7205006795443899,
-        'delta_theta_star_hb_3': 0.7205006795443899,
-        'delta_theta_star_hb_4': 0.7300151794116861,
-        'delta_theta_star_hb_7': 0.47783756,
-        'delta_theta_star_hb_8': 0.45,
-        'dr0_hb': 0.4126684741187398,
-        'dr_c_hb': 0.769592630643982,
-        'dr_high_hb': 0.7424138493790637,
-        'dr_low_hb': 0.37198652010697586,
-        'eps_hb': 1.0840363977133736,
-        'theta0_hb_1': -0.006878755518420017,
-        'theta0_hb_2': 0.008904771140613523,
-        'theta0_hb_3': 0.008904771140613523,
-        'theta0_hb_4': 3.113701107802724,
-        'theta0_hb_7': 1.59150464,
-        'theta0_hb_8': 1.57079633
-    }
-    broken_cross = {
-        'a_cross_1': 2.44014803,
-        'a_cross_2': 1.47784696,
-        'a_cross_3': 1.53180218,
-        'a_cross_4': 1.50328919,
-        'a_cross_7': 1.54135167,
-        'a_cross_8': 1.79642147,
-        'delta_theta_star_cross_1': 0.59856018,
-        'delta_theta_star_cross_2': 0.83909825,
-        'delta_theta_star_cross_3': 0.68284451,
-        'delta_theta_star_cross_4': 0.70123336,
-        'delta_theta_star_cross_7': 0.68048415,
-        'delta_theta_star_cross_8': 0.73230915,
-        'dr_c_cross': 0.72762405,
-        'dr_high_cross': 0.74435034,
-        'dr_low_cross': 0.39017476,
-        'k_cross': 47.65627499,
-        'r0_cross': 0.55514459,
-        'theta0_cross_1': 0.83859634,
-        'theta0_cross_2': 0.92904047,
-        'theta0_cross_3': 0.90951825,
-        'theta0_cross_4': 0.03413192,
-        'theta0_cross_7': 0.8736833,
-        'theta0_cross_8': 0.91158186
-    }
-    broken_stack = {
-        'a_stack': 6.048146645808571,
-        'a_stack_1': 1.968742289860051,
-        'a_stack_2': 2.0045065095474492,
-        'a_stack_4': 1.2538097327234479,
-        'a_stack_5': 0.8974215615327519,
-        'a_stack_6': 0.8974215615327519,
-        'delta_theta_star_stack_4': 0.8108991205232058,
-        'delta_theta_star_stack_5': 0.9497858612607184,
-        'delta_theta_star_stack_6': 0.95,
-        'dr0_stack': 0.38327058255543583,
-        'dr_c_stack': 0.9095648025773204,
-        'dr_high_stack': 0.7428033970398432,
-        'dr_low_stack': 0.29029093732566763,
-        'eps_stack_base': 1.3859168732235818,
-        'eps_stack_kt_coeff': 2.705316872793202,
-        'neg_cos_phi1_star_stack': -0.6445451900903784,
-        'neg_cos_phi2_star_stack': -0.65,
-        'theta0_stack_4': 0.047134936890393914,
-        'theta0_stack_5': 0.013246086230422657,
-        'theta0_stack_6': 0.013246086230422657}
     params = deepcopy(model.EMPTY_BASE_PARAMS)
-    # params['stacking'] = broken_stack
-    # params['hydrogen_bonding'] = broken_hb
-    failing_cross_keys = [
-        'dr_c_cross', 'dr_high_cross', 'dr_low_cross', 'k_cross', 'r0_cross', # 0-4
-        'a_cross_1', 'delta_theta_star_cross_1', 'theta0_cross_1', # 5-7
-        'a_cross_2', 'delta_theta_star_cross_2', 'theta0_cross_2', # 8-10
-        'a_cross_3', 'delta_theta_star_cross_3', 'theta0_cross_3', # 11-13
-        'a_cross_4', 'delta_theta_star_cross_4', 'theta0_cross_4', # 14-16
-        'a_cross_7', 'delta_theta_star_cross_7', 'theta0_cross_7', # 17-19
-        'a_cross_8', 'delta_theta_star_cross_8', 'theta0_cross_8' # 20-22
-    ]
-    for k in failing_cross_keys[4:]:
-    # for k in []:
-        params['cross_stacking'][k] = broken_cross[k]
-    # params['cross_stacking'] = broken_cross
-
     start = time.time()
-    stretch_torsion(params, i=0, seed=5)
+    stretch_torsion(params)
     end = time.time()
     print(f"\nSimulation took {end - start} seconds\n")
 
@@ -429,6 +370,10 @@ def get_parser():
                         help="Number of equilibration steps")
     parser.add_argument('--sample-every', type=int, default=500,
                         help="Frequency of sampling reference states.")
+    parser.add_argument('--seed', type=int, default=0,
+                        help="Random seed")
+    parser.add_argument('--n-sims', type=int, default=2,
+                        help="Number of simulations")
     parser.add_argument('--run-name', type=str, help='Run name')
     parser.add_argument('--lammps-basedir', type=str,
                         default="/n/brenner_lab/Lab/software/lammps-stable_29Sep2021",
