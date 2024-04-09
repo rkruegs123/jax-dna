@@ -4,6 +4,7 @@ from textwrap import dedent
 import pandas as pd
 from pathlib import Path
 from io import StringIO
+from copy import deepcopy
 
 from jax_dna.dna1.load_params import load
 from jax_dna.common import utils
@@ -82,14 +83,66 @@ def get_dh_cmd(kT, salt_conc, qeff):
     return f"""
     pair_coeff * * oxdna2/dh {kT} {salt_conc} {qeff}"""
 
+
+def lammpsify_params(base_params):
+    
+    tmp7 = base_params['hydrogen_bonding']['theta0_hb_7']
+    tmp8 = base_params['hydrogen_bonding']['theta0_hb_8']
+    base_params['hydrogen_bonding']['theta0_hb_8'] = tmp7
+    base_params['hydrogen_bonding']['theta0_hb_7'] = onp.pi - tmp8
+    
+    tmp7 = base_params['hydrogen_bonding']['delta_theta_star_hb_7']
+    tmp8 = base_params['hydrogen_bonding']['delta_theta_star_hb_8']
+    base_params['hydrogen_bonding']['delta_theta_star_hb_8'] = tmp7
+    base_params['hydrogen_bonding']['delta_theta_star_hb_7'] = tmp8
+    
+    tmp7 = base_params['hydrogen_bonding']['a_hb_7']
+    tmp8 = base_params['hydrogen_bonding']['a_hb_8']
+    base_params['hydrogen_bonding']['a_hb_8'] = tmp7
+    base_params['hydrogen_bonding']['a_hb_7'] = tmp8
+
+    # Note: we don't know if this is just a LAMMPS thing or if we have them swapped
+    tmp7 = base_params['cross_stacking']['theta0_cross_7']
+    tmp8 = base_params['cross_stacking']['theta0_cross_8']
+    base_params['cross_stacking']['theta0_cross_7'] = tmp8
+    base_params['cross_stacking']['theta0_cross_8'] = tmp7
+
+    tmp7 = base_params['cross_stacking']['a_cross_7']
+    tmp8 = base_params['cross_stacking']['a_cross_8']
+    base_params['cross_stacking']['a_cross_7'] = tmp8
+    base_params['cross_stacking']['a_cross_8'] = tmp7
+
+    tmp7 = base_params['cross_stacking']['delta_theta_star_cross_7']
+    tmp8 = base_params['cross_stacking']['delta_theta_star_cross_8']
+    base_params['cross_stacking']['delta_theta_star_cross_7'] = tmp8
+    base_params['cross_stacking']['delta_theta_star_cross_8'] = tmp7
+
+    tmp3 = base_params['cross_stacking']['theta0_cross_3']
+    tmp2 = base_params['cross_stacking']['theta0_cross_2']
+    base_params['cross_stacking']['theta0_cross_3'] = tmp2
+    base_params['cross_stacking']['theta0_cross_2'] = tmp3
+
+    tmp3 = base_params['cross_stacking']['a_cross_3']
+    tmp2 = base_params['cross_stacking']['a_cross_2']
+    base_params['cross_stacking']['a_cross_3'] = tmp2
+    base_params['cross_stacking']['a_cross_2'] = tmp3
+
+    tmp3 = base_params['cross_stacking']['delta_theta_star_cross_3']
+    tmp2 = base_params['cross_stacking']['delta_theta_star_cross_2']
+    base_params['cross_stacking']['delta_theta_star_cross_3'] = tmp2
+    base_params['cross_stacking']['delta_theta_star_cross_2'] = tmp3
+
+
 def stretch_tors_constructor(
-        params, fname,
+        base_params, fname,
         kT=0.1, salt_conc=0.15, qeff=0.815,
         force_pn=2, torque_pnnm=10,
         k_restore=1217.58,
         save_every=660, n_steps=6600660,
         seq_avg=True, seed=30362
 ):
+    params = deepcopy(base_params)
+    lammpsify_params(params)
 
     if seed <= 0:
         raise RuntimeError(f"LAMMPS seed must be a nonzero positive integer")

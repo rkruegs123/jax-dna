@@ -123,7 +123,8 @@ def run(args):
     loss_path = log_dir / "loss.txt"
     times_path = log_dir / "times.txt"
     grads_path = log_dir / "grads.txt"
-    neff_path = log_dir / "neff.txt"
+    neff_lo_path = log_dir / "neff_lo.txt"
+    neff_hi_path = log_dir / "neff_hi.txt"
     slope_path = log_dir / "slope.txt"
     resample_log_path = log_dir / "resample_log.txt"
     iter_params_path = log_dir / "iter_params.txt"
@@ -190,7 +191,8 @@ def run(args):
     q_eff = 0.815
 
 
-    def run_sim(sim_dir, base_params, force_pn, seed):
+    def run_sim(sim_dir, params, force_pn, seed):
+        base_params = model.get_full_base_params(params, seq_avg=seq_avg)
 
         shutil.copy(lammps_data_abs_path, sim_dir / "data")
         lammps_in_fpath = sim_dir / "in"
@@ -333,15 +335,13 @@ def run(args):
         with open(iter_dir / "params.txt", "w+") as f:
             f.write(f"{pprint.pformat(params)}\n")
 
-        base_params = model.get_full_base_params(params, seq_avg=seq_avg)
-
         sim_lo_dir = iter_dir / f"sim-lo"
         sim_lo_dir.mkdir(parents=False, exist_ok=False)
-        traj_states_lo, calc_energies_lo, all_thetas_lo = run_sim(sim_lo_dir, base_params, force_low_pn, seed)
+        traj_states_lo, calc_energies_lo, all_thetas_lo = run_sim(sim_lo_dir, params, force_low_pn, seed)
 
         sim_hi_dir = iter_dir / f"sim-hi"
         sim_hi_dir.mkdir(parents=False, exist_ok=False)
-        traj_states_hi, calc_energies_hi, all_thetas_hi = run_sim(sim_hi_dir, base_params, force_high_pn, seed)
+        traj_states_hi, calc_energies_hi, all_thetas_hi = run_sim(sim_hi_dir, params, force_high_pn, seed)
 
 
         running_avg_lo = onp.cumsum(all_thetas_lo) / onp.arange(1, n_sample_states+1)
@@ -409,30 +409,41 @@ def run(args):
         mse = (expected_slope - target_slope)**2
         rmse = jnp.sqrt(mse)
 
-        weights = jnp.concatenate([weights_lo, weights_hi])
-        n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
+        # weights = jnp.concatenate([weights_lo, weights_hi])
+        n_eff_lo = jnp.exp(-jnp.sum(weights_lo * jnp.log(weights_lo)))
+        n_eff_hi = jnp.exp(-jnp.sum(weights_hi * jnp.log(weights_hi)))
 
-        return rmse_coeff*rmse, (n_eff, expected_slope)
+        return rmse_coeff*rmse, (n_eff_lo, n_eff_hi, expected_slope)
 
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
     params = deepcopy(model.EMPTY_BASE_PARAMS)
     if seq_avg:
-        params["stacking"] = model.default_base_params_seq_avg["stacking"]
-        params["hydrogen_bonding"] = model.default_base_params_seq_avg["hydrogen_bonding"]
+        params["stacking"] = deepcopy(model.default_base_params_seq_avg["stacking"])
+        params["hydrogen_bonding"] = deepcopy(model.default_base_params_seq_avg["hydrogen_bonding"])
+        params["cross_stacking"] = deepcopy(model.default_base_params_seq_avg["cross_stacking"])
+        del params["cross_stacking"]["dr_c_cross"]
+        del params["cross_stacking"]["dr_low_cross"]
+        del params["cross_stacking"]["dr_high_cross"]
     else:
-        params["stacking"] = model.default_base_params_seq_dep["stacking"]
-        params["hydrogen_bonding"] = model.default_base_params_seq_dep["hydrogen_bonding"]
+        params["stacking"] = deepcopy(model.default_base_params_seq_dep["stacking"])
+        params["hydrogen_bonding"] = deepcopy(model.default_base_params_seq_dep["hydrogen_bonding"])
+        params["cross_stacking"] = deepcopy(model.default_base_params_seq_dep["cross_stacking"])
+        del params["cross_stacking"]["dr_c_cross"]
+        del params["cross_stacking"]["dr_low_cross"]
+        del params["cross_stacking"]["dr_high_cross"]
 
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
 
-    min_n_eff = int(2*n_sample_states * min_neff_factor) # 2x because we simulate at two different forces
+    # min_n_eff = int(2*n_sample_states * min_neff_factor) # 2x because we simulate at two different forces
+    min_n_eff = int(n_sample_states * min_neff_factor) # 2x because we simulate at two different forces
 
     all_losses = list()
     all_slopes = list()
-    all_n_effs = list()
+    all_n_effs_lo = list()
+    all_n_effs_hi = list()
     all_ref_losses = list()
     all_ref_slopes = list()
     all_ref_times = list()
@@ -450,7 +461,7 @@ def run(args):
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
 
-        (loss, (n_eff, curr_slope)), grads = grad_fn(
+        (loss, (n_eff_lo, n_eff_hi, curr_slope)), grads = grad_fn(
             params, ref_states_lo, ref_energies_lo, ref_thetas_lo,
             ref_states_hi, ref_energies_hi, ref_thetas_hi)
         num_resample_iters += 1
@@ -460,11 +471,12 @@ def run(args):
             all_ref_times.append(i)
             all_ref_slopes.append(curr_slope)
 
-        if n_eff < min_n_eff or num_resample_iters >= max_approx_iters:
+        if n_eff_lo < min_n_eff or n_eff_hi < min_n_eff or num_resample_iters >= max_approx_iters:
             num_resample_iters = 0
             with open(resample_log_path, "a") as f:
                 f.write(f"Iteration {i}\n")
-                f.write(f"- n_eff was {n_eff}. Resampling...\n")
+                f.write(f"- n_eff_hi was {n_eff_hi}...")
+                f.write(f"- n_eff_lo was {n_eff_lo}. Resampling...\n")
 
             start = time.time()
             ref_states_lo, ref_energies_lo, ref_thetas_lo, ref_states_hi, ref_energies_hi, ref_thetas_hi = get_ref_states(params, i=i, seed=i)
@@ -472,7 +484,7 @@ def run(args):
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
 
-            (loss, (n_eff, curr_slope)), grads = grad_fn(
+            (loss, (n_eff_lo, n_eff_hi, curr_slope)), grads = grad_fn(
                 params, ref_states_lo, ref_energies_lo, ref_thetas_lo,
                 ref_states_hi, ref_energies_hi, ref_thetas_hi)
 
@@ -485,8 +497,10 @@ def run(args):
 
         with open(loss_path, "a") as f:
             f.write(f"{loss}\n")
-        with open(neff_path, "a") as f:
-            f.write(f"{n_eff}\n")
+        with open(neff_lo_path, "a") as f:
+            f.write(f"{n_eff_lo}\n")
+        with open(neff_hi_path, "a") as f:
+            f.write(f"{n_eff_hi}\n")
         with open(slope_path, "a") as f:
             f.write(f"{curr_slope}\n")
         with open(times_path, "a") as f:
@@ -495,7 +509,8 @@ def run(args):
             f.write(f"{pprint.pformat(params)}\n")
 
         all_losses.append(loss)
-        all_n_effs.append(n_eff)
+        all_n_effs_lo.append(n_eff_lo)
+        all_n_effs_hi.append(n_eff_hi)
         all_slopes.append(curr_slope)
 
         updates, opt_state = optimizer.update(grads, opt_state, params)
