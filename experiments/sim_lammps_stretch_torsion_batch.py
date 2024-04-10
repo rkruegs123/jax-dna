@@ -13,6 +13,7 @@ import functools
 import numpy as onp
 import pprint
 import random
+import pandas as pd
 
 from jax import jit, vmap, lax, value_and_grad
 import jax.numpy as jnp
@@ -228,7 +229,7 @@ def run(args):
         ## Load states from oxDNA simulation
         load_start = time.time()
         traj_info = trajectory.TrajectoryInfo(
-            top_info, read_from_file=True,
+            top_info, read_from_file=True, reindex=True,
             traj_path=sim_dir / "output.dat",
             # reverse_direction=True)
             reverse_direction=False)
@@ -240,7 +241,7 @@ def run(args):
             sim_states = full_traj_states[r*sim_freq:(r+1)*sim_freq]
             sampled_sim_states = sim_states[1+n_eq_states:]
             assert(len(sampled_sim_states) == n_sample_states)
-            traj_states.append(sampled_sim_states)
+            traj_states += sampled_sim_states
         assert(len(traj_states) == n_sample_states*n_sims)
         traj_states = utils.tree_stack(traj_states)
         load_end = time.time()

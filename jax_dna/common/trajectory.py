@@ -48,7 +48,7 @@ class TrajectoryInfo:
             read_from_states=False, states=None, box_size=None,
 
             # Constructor 2: Read from file (3'->5' or 5'->3')
-            read_from_file=False, traj_path=None, reverse_direction=None
+            read_from_file=False, traj_path=None, reverse_direction=None, reindex=False
     ):
 
         self.top_info = top_info
@@ -81,7 +81,7 @@ class TrajectoryInfo:
 
         # Construct 5'->3' traj_df from either states or file
         if read_from_file:
-            traj_df, box_size = self.load_from_file(traj_path, reverse_direction)
+            traj_df, box_size = self.load_from_file(traj_path, reverse_direction, reindex)
         else:
             traj_df, box_size = self.load_from_states(states, box_size)
         self.traj_df = traj_df
@@ -111,7 +111,7 @@ class TrajectoryInfo:
         return rev_traj_df
 
 
-    def load_from_file(self, traj_path, reverse_direction):
+    def load_from_file(self, traj_path, reverse_direction, reindex):
         """
         One of two constructors. This constructor accepts a filepath,
         as well as metadata specifying whether or not the file is
@@ -135,8 +135,13 @@ class TrajectoryInfo:
         bs = list()
         Es = list()
         ts = list()
+        idx = 0
         for state_lines in tqdm(all_state_lines, desc="Loading trajectory from file"):
-            t = float(state_lines[0].split('=')[1].strip())
+            if reindex:
+                t = idx
+                idx += 1
+            else:
+                t = float(state_lines[0].split('=')[1].strip())
             ts.append(t)
 
             b = state_lines[1].split('=')[1].strip().split(' ')
