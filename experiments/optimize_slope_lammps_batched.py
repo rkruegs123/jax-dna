@@ -13,12 +13,14 @@ import functools
 import numpy as onp
 import pprint
 import random
+import pandas as pd
 
 from jax import jit, vmap, lax, value_and_grad
 import jax.numpy as jnp
 from jax_md import space, rigid_body
 import optax
 
+from jax_dna.common.read_seq_specific import read_ss_oxdna
 from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.dna2 import model, lammps_utils
 
@@ -99,10 +101,15 @@ def run(args):
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
     seq_avg = not args['seq_dep']
-    assert(seq_avg)
+    # assert(seq_avg)
 
-    forces_pn = jnp.array([0.0, 2.0, 10.0, 15.0])
-    target_deltas = jnp.array([0.0, 0.1, 0.5, 0.75]) # per kb
+    # forces_pn = jnp.array([0.0, 2.0, 10.0, 15.0])
+    # target_deltas = jnp.array([0.0, 0.1, 0.5, 0.75]) # per kb
+    # force_colors = ["blue", "red", "green", "purple"]
+
+    forces_pn = jnp.array([0.0, 2.0, 10.0])
+    target_deltas = jnp.array([0.0, 0.1, 0.5]) # per kb
+    force_colors = ["blue", "red", "green"]
 
 
     # Setup the logging directory
@@ -259,6 +266,7 @@ def run(args):
         all_traj_states = list()
         all_calc_energies = list()
         all_thetas = list()
+        all_running_avg = list()
         for force_pn in forces_pn:
             sim_dir = iter_dir / f"sim-f{force_pn}"
 
@@ -292,9 +300,23 @@ def run(args):
             log_df = pd.concat(log_dfs, ignore_index=True)
 
             ## Generate an energy function
+            if seq_avg:
+                ss_hb_weights = utils.HB_WEIGHTS_SA
+                ss_stack_weights = utils.STACK_WEIGHTS_SA
+            else:
+                ss_path = "data/seq-specific/seq_oxdna2.txt"
+                ss_hb_weights, ss_stack_weights = read_ss_oxdna(
+                    ss_path,
+                    model.default_base_params_seq_dep['hydrogen_bonding']['eps_hb'],
+                    model.default_base_params_seq_dep['stacking']['eps_stack_base'],
+                    model.default_base_params_seq_dep['stacking']['eps_stack_kt_coeff'],
+                    enforce_symmetry=False,
+                    t_kelvin=t_kelvin
+                )
             em = model.EnergyModel(displacement_fn,
                                    params,
                                    t_kelvin=t_kelvin,
+                                   ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights,
                                    salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq_avg,
                                    ignore_exc_vol_bonded=True # Because we're in LAMMPS
             )
@@ -319,7 +341,7 @@ def run(args):
 
             ## Compute the mean theta
             traj_thetas = list()
-            for rs_idx in range(n_sample_states):
+            for rs_idx in range(n_sample_states*n_sims):
                 ref_state = traj_states[rs_idx]
                 theta = compute_theta(ref_state)
                 traj_thetas.append(theta)
@@ -331,10 +353,11 @@ def run(args):
             plt.savefig(sim_dir / "theta_traj.png")
             plt.clf()
 
-            running_avg = onp.cumsum(traj_thetas) / onp.arange(1, n_sample_states+1)
+            running_avg = onp.cumsum(traj_thetas) / onp.arange(1, (n_sample_states*n_sims)+1)
             plt.plot(running_avg)
             plt.savefig(sim_dir / "running_avg.png")
             plt.clf()
+            all_running_avg.append(running_avg)
 
             sns.distplot(calc_energies, label="Calculated", color="red")
             sns.distplot(gt_energies, label="Reference", color="green")
@@ -357,36 +380,72 @@ def run(args):
             all_calc_energies.append(calc_energies)
             all_thetas.append(traj_thetas)
 
-        pdb.set_trace()
-
+        
         all_traj_states = utils.tree_stack(all_traj_states)
         all_calc_energies = utils.tree_stack(all_calc_energies)
         all_thetas = utils.tree_stack(all_thetas)
 
+        # Compute slope running average
+        all_running_avg = utils.tree_stack(all_running_avg)
+        n_running_avg_points = all_running_avg.shape[1]
+
+        def get_slope(thetas):
+            thetas_per_kb = thetas * (1000 / 36)
+            theta_diffs = thetas_per_kb - thetas_per_kb[0]
+
+            # Fit with a flexible offset
+            xs_to_fit = jnp.stack([jnp.ones_like(forces_pn), forces_pn], axis=1)
+            fit_ = jnp.linalg.lstsq(xs_to_fit, theta_diffs)
+            slope = fit_[0][1]
+            offset = fit_[0][0]
+
+            # Fit with offset=0
+            xs_to_fit = forces_pn[:, onp.newaxis]
+            fit_ = jnp.linalg.lstsq(xs_to_fit, theta_diffs)
+            slope_offset0 = fit_[0][1]
+
+            return slope, offset, slope_offset0, theta_diffs
+
+        all_slopes, all_offsets, all_slope_offset0s, all_theta_diffs = vmap(get_slope, 1)(all_running_avg)
+
+        min_idx = 50
+        for f_idx in range(len(forces_pn)):
+            color = force_colors[f_idx]
+            force_pn = forces_pn[f_idx]
+            plt.plot(onp.arange(n_running_avg_points)[min_idx:],
+                     all_theta_diffs[:, f_idx][min_idx:],
+                     label=f"{force_pn} pN", color=color)
+            plt.axhline(y=target_deltas[f_idx], linestyle="--", color=color)
+        plt.legend()
+        plt.savefig(iter_dir / "deltas_running_avg.png")
+        plt.clf()
+    
+        test_forces = onp.linspace(forces_pn[0], forces_pn[-1], 100)
+        
+        fit_fn = lambda val: val*all_slopes[-1] + all_offsets[-1]
+        plt.plot(test_forces, fit_fn(test_forces))
+        plt.scatter(forces_pn, all_theta_diffs[-1])
+        plt.xlabel("Force (pN)")
+        plt.ylabel("dTheta per kb (rad)")
+        plt.title(f"dTheta = force*{onp.round(all_slopes[-1], 4)} + {onp.round(all_offsets[-1], 4)}")
+        plt.savefig(iter_dir / "fit.png")
+        plt.clf()
+
+        fit_fn = lambda val: val*all_slope_offset0s[-1]
+        plt.plot(test_forces, fit_fn(test_forces))
+        plt.scatter(forces_pn, all_theta_diffs[-1])
+        plt.xlabel("Force (pN)")
+        plt.ylabel("dTheta per kb (rad)")
+        plt.title(f"dTheta = force*{onp.round(all_slope_offset0s[-1], 4)} + 0.0")
+        plt.savefig(iter_dir / "fit_offset0.png")
+        plt.clf()
+                 
+        
+
 
         # Note: the deltas we've specified are per kb
-        # FIXME: should have a slope function that depends on the number of forces
-        # FIXME: call the slope_fn correctly to get the running averages
-
-        # FIXME: should put everything in pytrees
-        # FIXME: will also want to add a theta0. Then compute the slope from there... Will want to use that as reference.
         # Note: could also do a post doc wit harmando and combine difftre with probabilistic programming
         # note: could always compute slope and differences, then decide how we want to do the loss.
-
-        """
-        xs_to_fit = jnp.stack([jnp.ones_like(all_intervals), all_intervals], axis=1)
-        fit_ = jnp.linalg.lstsq(xs_to_fit, all_means)
-        slope = fit_[0][1]
-        offset = fit_[0][0]
-        fit_fn = lambda val: val*slope + offset
-
-        xs_to_fit = all_intervals[:, onp.newaxis]
-        fit_ = jnp.linalg.lstsq(xs_to_fit, all_means)
-        slope = fit_[0][1]
-        offset = 0.0
-        fit_fn = lambda val: val*slope + offset
-        """
-
 
         return all_traj_states, all_calc_energies, all_thetas
 

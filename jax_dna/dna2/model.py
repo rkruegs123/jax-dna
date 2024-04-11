@@ -280,6 +280,7 @@ class TestDna2(unittest.TestCase):
         traj_states = traj_info.get_states()
 
         displacement_fn, shift_fn = space.periodic(traj_info.box_size)
+        # displacement_fn, shift_fn = space.free()
         model = EnergyModel(displacement_fn, t_kelvin=t_kelvin,
                             ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights,
                             salt_conc=salt_conc, seq_avg=seq_avg,
@@ -367,10 +368,10 @@ class TestDna2(unittest.TestCase):
         basedir = Path("data/test-data/lammps-oxdna2-40bp/")
         t_kelvin = 300.0
         salt_conc = 0.15
-        # self.check_subterms_lammps(basedir, t_kelvin, salt_conc, False, tol_places)
+        self.check_subterms_lammps(basedir, t_kelvin, salt_conc, False, tol_places)
 
-        basedir = Path("data/test-data/lammps-oxdna2-40bp-sa/")
-        self.check_subterms_lammps(basedir, t_kelvin, salt_conc, True, tol_places)
+        # basedir = Path("data/test-data/lammps-oxdna2-40bp-sa/")
+        # self.check_subterms_lammps(basedir, t_kelvin, salt_conc, True, tol_places)
 
     def check_energy_subterms(self, basedir, top_fname, traj_fname,
                               t_kelvin, salt_conc,

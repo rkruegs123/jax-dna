@@ -8,6 +8,7 @@ from copy import deepcopy
 
 from jax_dna.dna1.load_params import load
 from jax_dna.common import utils
+from jax_dna.dna2 import model
 
 
 
@@ -134,13 +135,14 @@ def lammpsify_params(base_params):
 
 
 def stretch_tors_constructor(
-        base_params, fname,
+        override_base_params, fname,
         kT=0.1, salt_conc=0.15, qeff=0.815,
         force_pn=2, torque_pnnm=10,
         k_restore=1217.58,
         save_every=660, n_steps=6600660,
         seq_avg=True, seed=30362
 ):
+    base_params = model.get_full_base_params(override_base_params, seq_avg=True) # Note: seq_avg is always true for base parameter construction
     params = deepcopy(base_params)
     lammpsify_params(params)
 

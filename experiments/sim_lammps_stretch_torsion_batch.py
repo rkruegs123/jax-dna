@@ -20,6 +20,7 @@ import jax.numpy as jnp
 from jax_md import space, rigid_body
 import optax
 
+from jax_dna.common.read_seq_specific import read_ss_oxdna
 from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.dna2 import model, lammps_utils
 
@@ -97,7 +98,7 @@ def run(args):
 
     run_name = args['run_name']
     seq_avg = not args['seq_dep']
-    assert(seq_avg)
+    # assert(seq_avg)
 
     force_pn = args['force_pn']
     torque_pnnm = args['torque_pnnm']
@@ -177,8 +178,6 @@ def run(args):
         sim_dir = run_dir / f"sim"
         sim_dir.mkdir(parents=False, exist_ok=False)
 
-        base_params = model.get_full_base_params(params, seq_avg=seq_avg)
-
         procs = list()
         for r in range(n_sims):
             repeat_dir = sim_dir / f"r{r}"
@@ -189,7 +188,7 @@ def run(args):
             shutil.copy(lammps_data_abs_path, repeat_dir / "data")
             lammps_in_fpath = repeat_dir / "in"
             lammps_utils.stretch_tors_constructor(
-                base_params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
+                params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
                 force_pn=force_pn, torque_pnnm=torque_pnnm,
                 save_every=sample_every, n_steps=n_total_steps,
                 seq_avg=seq_avg, seed=repeat_seed)
@@ -258,9 +257,23 @@ def run(args):
         log_df = pd.concat(log_dfs, ignore_index=True)
 
         ## Generate an energy function
+        if seq_avg:
+            ss_hb_weights = utils.HB_WEIGHTS_SA
+            ss_stack_weights = utils.STACK_WEIGHTS_SA
+        else:
+            ss_path = "data/seq-specific/seq_oxdna2.txt"
+            ss_hb_weights, ss_stack_weights = read_ss_oxdna(
+                ss_path,
+                model.default_base_params_seq_dep['hydrogen_bonding']['eps_hb'],
+                model.default_base_params_seq_dep['stacking']['eps_stack_base'],
+                model.default_base_params_seq_dep['stacking']['eps_stack_kt_coeff'],
+                enforce_symmetry=False,
+                t_kelvin=t_kelvin
+            )
         em = model.EnergyModel(displacement_fn,
                                params,
                                t_kelvin=t_kelvin,
+                               ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights,
                                salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq_avg,
                                ignore_exc_vol_bonded=True # Because we're in LAMMPS
         )
@@ -297,7 +310,7 @@ def run(args):
         ## Compute the mean theta and distance
         all_thetas = list()
         all_distances = list()
-        for rs_idx in range(n_sample_states):
+        for rs_idx in range(n_sample_states*n_sims):
             ref_state = traj_states[rs_idx]
 
             theta = compute_theta(ref_state)
@@ -317,7 +330,7 @@ def run(args):
         plt.savefig(run_dir / "distances_traj.png")
         plt.clf()
 
-        running_avg = onp.cumsum(all_distances) / onp.arange(1, n_sample_states+1)
+        running_avg = onp.cumsum(all_distances) / onp.arange(1, n_sample_states*n_sims+1)
         plt.plot(running_avg)
         plt.savefig(run_dir / "running_avg_distance.png")
         plt.clf()
@@ -326,7 +339,7 @@ def run(args):
         plt.savefig(run_dir / "theta_traj.png")
         plt.clf()
 
-        running_avg = onp.cumsum(all_thetas) / onp.arange(1, n_sample_states+1)
+        running_avg = onp.cumsum(all_thetas) / onp.arange(1, n_sample_states*n_sims+1)
         plt.plot(running_avg)
         plt.savefig(run_dir / "running_avg_theta.png")
         plt.clf()
