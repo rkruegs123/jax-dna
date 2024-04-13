@@ -192,12 +192,11 @@ def run(args):
 
 
     def run_sim(sim_dir, params, force_pn, seed):
-        base_params = model.get_full_base_params(params, seq_avg=seq_avg)
 
         shutil.copy(lammps_data_abs_path, sim_dir / "data")
         lammps_in_fpath = sim_dir / "in"
         lammps_utils.stretch_tors_constructor(
-            base_params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
+            params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
             force_pn=force_pn, torque_pnnm=0.0,
             save_every=sample_every, n_steps=n_total_steps,
             seq_avg=seq_avg, seed=seed)

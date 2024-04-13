@@ -101,15 +101,22 @@ def run(args):
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
     seq_avg = not args['seq_dep']
+    delta_loss = args['delta_loss']
     # assert(seq_avg)
 
     # forces_pn = jnp.array([0.0, 2.0, 10.0, 15.0])
     # target_deltas = jnp.array([0.0, 0.1, 0.5, 0.75]) # per kb
     # force_colors = ["blue", "red", "green", "purple"]
 
-    forces_pn = jnp.array([0.0, 2.0, 10.0])
-    target_deltas = jnp.array([0.0, 0.1, 0.5]) # per kb
-    force_colors = ["blue", "red", "green"]
+    # forces_pn = jnp.array([0.0, 2.0, 10.0])
+    # target_deltas = jnp.array([0.0, 0.1, 0.5]) # per kb
+    # force_colors = ["blue", "red", "green"]
+
+    forces_pn = jnp.array([0.0, 2.0, 6.0, 10.0])
+    target_deltas = jnp.array([0.0, 0.1, 0.3, 0.5])
+    force_colors = ["blue", "red", "green", "purple"]
+
+    target_slope = 0.05
 
 
     # Setup the logging directory
@@ -131,9 +138,9 @@ def run(args):
     loss_path = log_dir / "loss.txt"
     times_path = log_dir / "times.txt"
     grads_path = log_dir / "grads.txt"
-    neff_lo_path = log_dir / "neff_lo.txt"
-    neff_hi_path = log_dir / "neff_hi.txt"
+    neffs_path = log_dir / "neffs.txt"
     slope_path = log_dir / "slope.txt"
+    diffs_path = log_dir / "diffs.txt"
     resample_log_path = log_dir / "resample_log.txt"
     iter_params_path = log_dir / "iter_params.txt"
 
@@ -209,7 +216,6 @@ def run(args):
 
         # Run the simulations
         procs = list()
-        base_params = model.get_full_base_params(params, seq_avg=seq_avg)
         for force_pn in forces_pn:
             sim_dir = iter_dir / f"sim-f{force_pn}"
             sim_dir.mkdir(parents=False, exist_ok=False)
@@ -223,7 +229,7 @@ def run(args):
                 shutil.copy(lammps_data_abs_path, repeat_dir / "data")
                 lammps_in_fpath = repeat_dir / "in"
                 lammps_utils.stretch_tors_constructor(
-                    base_params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
+                    params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
                     force_pn=force_pn, torque_pnnm=0,
                     save_every=sample_every, n_steps=n_total_steps,
                     seq_avg=seq_avg, seed=repeat_seed)
@@ -359,6 +365,11 @@ def run(args):
             plt.clf()
             all_running_avg.append(running_avg)
 
+            last_half = int((n_sample_states * n_sims) // 2)
+            plt.plot(running_avg[-last_half:])
+            plt.savefig(sim_dir / "running_avg_second_half.png")
+            plt.clf()
+
             sns.distplot(calc_energies, label="Calculated", color="red")
             sns.distplot(gt_energies, label="Reference", color="green")
             plt.legend()
@@ -419,6 +430,18 @@ def run(args):
         plt.legend()
         plt.savefig(iter_dir / "deltas_running_avg.png")
         plt.clf()
+
+        last_half = int((n_sample_states * n_sims) // 2)
+        for f_idx in range(len(forces_pn)):
+            color = force_colors[f_idx]
+            force_pn = forces_pn[f_idx]
+            plt.plot(onp.arange(n_running_avg_points)[-last_half:],
+                     all_theta_diffs[:, f_idx][-last_half:],
+                     label=f"{force_pn} pN", color=color)
+            plt.axhline(y=target_deltas[f_idx], linestyle="--", color=color)
+        plt.legend()
+        plt.savefig(iter_dir / "deltas_running_avg_last_half.png")
+        plt.clf()
     
         test_forces = onp.linspace(forces_pn[0], forces_pn[-1], 100)
         
@@ -450,22 +473,71 @@ def run(args):
         return all_traj_states, all_calc_energies, all_thetas
 
 
+    @jit
+    def loss_fn(params, all_ref_states, all_ref_energies, all_ref_thetas):
+
+        # Setup energy function
+        em = model.EnergyModel(displacement_fn,
+                               params,
+                               t_kelvin=t_kelvin,
+                               salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq_avg,
+                               ignore_exc_vol_bonded=True # Because we're in LAMMPS
+        )
+        energy_fn = lambda body: em.energy_fn(
+            body,
+            seq=seq_oh,
+            bonded_nbrs=top_info.bonded_nbrs,
+            unbonded_nbrs=top_info.unbonded_nbrs.T)
+        energy_fn = jit(energy_fn)
+        energy_scan_fn = lambda state, rs: (None, energy_fn(rs))
+
+        def get_expected_force_theta(ref_states, ref_energies, ref_thetas):
+            _, new_energies = scan(energy_scan_fn, None, ref_states)
+
+            diffs = new_energies - ref_energies
+            boltzs = jnp.exp(-beta * diffs)
+            denom = jnp.sum(boltzs)
+            weights = boltzs / denom
+
+            expected_theta = jnp.dot(weights, ref_thetas)
+            n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
+            return expected_theta, n_eff
+
+        thetas, n_effs = vmap(get_expected_force_theta, (0, 0, 0))(all_ref_states, all_ref_energies, all_ref_thetas)
+
+        theta_diffs = (thetas - thetas[0]) * (1000 / 36)
+
+        # Fit with a flexible offset
+        xs_to_fit = jnp.stack([jnp.ones_like(forces_pn), forces_pn], axis=1)
+        fit_ = jnp.linalg.lstsq(xs_to_fit, theta_diffs)
+        expected_slope = fit_[0][1]
+        expected_offset = fit_[0][0]
+
+        if delta_loss:
+            mse = (theta_diffs - target_deltas)**2
+            rmse = jnp.sqrt(jnp.mean(mse))
+        else:
+            rmse = jnp.sqrt((target_slope - expected_slope)**2)
+        return rmse_coeff*rmse, (n_effs, expected_slope, theta_diffs)
+        
+    grad_fn = value_and_grad(loss_fn, has_aux=True)
+    grad_fn = jit(grad_fn)
 
     params = deepcopy(model.EMPTY_BASE_PARAMS)
     if seq_avg:
         params["stacking"] = deepcopy(model.default_base_params_seq_avg["stacking"])
         params["hydrogen_bonding"] = deepcopy(model.default_base_params_seq_avg["hydrogen_bonding"])
-        params["cross_stacking"] = deepcopy(model.default_base_params_seq_avg["cross_stacking"])
-        del params["cross_stacking"]["dr_c_cross"]
-        del params["cross_stacking"]["dr_low_cross"]
-        del params["cross_stacking"]["dr_high_cross"]
+        # params["cross_stacking"] = deepcopy(model.default_base_params_seq_avg["cross_stacking"])
+        # del params["cross_stacking"]["dr_c_cross"]
+        # del params["cross_stacking"]["dr_low_cross"]
+        # del params["cross_stacking"]["dr_high_cross"]
     else:
         params["stacking"] = deepcopy(model.default_base_params_seq_dep["stacking"])
         params["hydrogen_bonding"] = deepcopy(model.default_base_params_seq_dep["hydrogen_bonding"])
-        params["cross_stacking"] = deepcopy(model.default_base_params_seq_dep["cross_stacking"])
-        del params["cross_stacking"]["dr_c_cross"]
-        del params["cross_stacking"]["dr_low_cross"]
-        del params["cross_stacking"]["dr_high_cross"]
+        # params["cross_stacking"] = deepcopy(model.default_base_params_seq_dep["cross_stacking"])
+        # del params["cross_stacking"]["dr_c_cross"]
+        # del params["cross_stacking"]["dr_low_cross"]
+        # del params["cross_stacking"]["dr_high_cross"]
 
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
@@ -489,7 +561,87 @@ def run(args):
     with open(resample_log_path, "a") as f:
         f.write(f"Finished generating initial reference states. Took {end - start} seconds.\n\n")
 
+        
+    num_resample_iters = 0
+    for i in tqdm(range(n_iters)):
+        iter_start = time.time()
 
+        (loss, (n_effs, curr_slope, curr_diffs)), grads = grad_fn(
+            params, all_ref_states, all_ref_energies, all_ref_thetas)
+        num_resample_iters += 1
+
+        if i == 0:
+            all_ref_losses.append(loss)
+            all_ref_times.append(i)
+            all_ref_slopes.append(curr_slope)
+
+        resample = False
+        for n_eff in n_effs:
+            if n_eff < min_n_eff:
+                resample = True
+                break
+
+        if resample or num_resample_iters >= max_approx_iters:
+            num_resample_iters = 0
+            with open(resample_log_path, "a") as f:
+                f.write(f"Iteration {i}\n")
+                f.write(f"- min n_eff was {n_effs.min()}...")
+
+            start = time.time()
+            all_ref_states, all_ref_energies, all_ref_thetas = get_ref_states(params, i=i, seed=i)
+            end = time.time()
+            with open(resample_log_path, "a") as f:
+                f.write(f"- time to resample: {end - start} seconds\n\n")
+
+            (loss, (n_effs, curr_slope, curr_diffs)), grads = grad_fn(
+                params, all_ref_states, all_ref_energies, all_ref_thetas)
+
+            all_ref_losses.append(loss)
+            all_ref_times.append(i)
+            all_ref_slopes.append(curr_slope)
+
+
+        iter_end = time.time()
+
+        with open(loss_path, "a") as f:
+            f.write(f"{loss}\n")
+        with open(diffs_path, "a") as f:
+            f.write(f"{curr_diffs}\n")
+        with open(neffs_path, "a") as f:
+            f.write(f"{n_effs}\n")
+        with open(slope_path, "a") as f:
+            f.write(f"{curr_slope}\n")
+        with open(times_path, "a") as f:
+            f.write(f"{iter_end - iter_start}\n")
+        with open(iter_params_path, "a") as f:
+            f.write(f"{pprint.pformat(params)}\n")
+
+        all_losses.append(loss)
+        all_n_effs.append(n_effs)
+
+        all_slopes.append(curr_slope)
+
+        updates, opt_state = optimizer.update(grads, opt_state, params)
+        params = optax.apply_updates(params, updates)
+
+
+        plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
+        plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
+        plt.legend()
+        plt.ylabel("Loss")
+        plt.xlabel("Iteration")
+        plt.savefig(img_dir / f"losses_iter{i}.png")
+        plt.clf()
+
+
+        plt.plot(onp.arange(i+1), all_slopes, linestyle="--", color="blue")
+        plt.scatter(all_ref_times, all_ref_slopes, marker='o', label="Resample points", color="blue")
+        plt.axhline(y=target_slope, linestyle='--', label="Target Slope", color='red')
+        plt.legend()
+        plt.ylabel("Expected Slope")
+        plt.xlabel("Iteration")
+        plt.savefig(img_dir / f"slopes_iter{i}.png")
+        plt.clf()
 
 
 def get_parser():
@@ -523,6 +675,8 @@ def get_parser():
     parser.add_argument('--rmse-coeff', type=float, default=100.0,
                         help="Coefficient for the RMSE")
     parser.add_argument('--seq-dep', action='store_true')
+
+    parser.add_argument('--delta-loss', action='store_true')
 
     return parser
 
