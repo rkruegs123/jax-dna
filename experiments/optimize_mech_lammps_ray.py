@@ -14,6 +14,9 @@ import numpy as onp
 import pprint
 import random
 import pandas as pd
+import socket
+import ray
+from collections import Counter
 
 from jax import jit, vmap, lax, value_and_grad
 import jax.numpy as jnp
@@ -23,6 +26,27 @@ import optax
 from jax_dna.common.read_seq_specific import read_ss_oxdna
 from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.dna2 import model, lammps_utils
+
+
+
+if "ip_head" in os.environ:
+    ray.init(address=os.environ["ip_head"])
+else:
+    ray.init()
+
+@ray.remote
+def run_lammps_ray(lammps_exec_path, sim_dir):
+    time.sleep(1)
+
+    hostname = socket.gethostbyname(socket.gethostname())
+
+    start = time.time()
+    p = subprocess.Popen([lammps_exec_path, "-in", "in"], cwd=sim_dir)
+    p.wait()
+    end = time.time()
+
+    rc = p.returncode
+    return rc, end-start, hostname
 
 
 checkpoint_every = 10
@@ -216,6 +240,8 @@ def run(args):
 
         # Run the simulations
         procs = list()
+        all_sim_dirs = list()
+        repeat_seeds = [random.randrange(100) for _ in range(n_sims)]
         for force_pn in forces_pn:
             sim_dir = iter_dir / f"sim-f{force_pn}"
             sim_dir.mkdir(parents=False, exist_ok=False)
@@ -224,7 +250,10 @@ def run(args):
                 repeat_dir = sim_dir / f"r{r}"
                 repeat_dir.mkdir(parents=False, exist_ok=False)
 
-                repeat_seed = random.randrange(100)
+                all_sim_dirs.append(repeat_dir)
+
+                # repeat_seed = random.randrange(100)
+                repeat_seed = repeat_seeds[r]
 
                 shutil.copy(lammps_data_abs_path, repeat_dir / "data")
                 lammps_in_fpath = repeat_dir / "in"
@@ -234,15 +263,30 @@ def run(args):
                     save_every=sample_every, n_steps=n_total_steps,
                     seq_avg=seq_avg, seed=repeat_seed)
 
-                procs.append(subprocess.Popen([lammps_exec_path, "-in", lammps_in_fpath.stem], cwd=repeat_dir))
 
-        for p in procs:
-            p.wait()
+        all_ret_info = ray.get([run_lammps_ray.remote(lammps_exec_path, rdir) for rdir in all_sim_dirs])
+        all_rcs = [ret_info[0] for ret_info in all_ret_info]
+        all_times = [ret_info[1] for ret_info in all_ret_info]
+        all_hostnames = [ret_info[2] for ret_info in all_ret_info]
 
-        for p in procs:
-            rc = p.returncode
+        # sns.distplot(all_lp_times, label="Lp", color="green")
+        # sns.distplot(all_fe_times, label="Force ext.", color="blue")
+        sns.distplot(all_times, label="Lp", color="green")
+        plt.legend()
+        plt.savefig(iter_dir / f"sim_times.png")
+        plt.clf()
+
+        with open(resample_log_path, "a") as f:
+            f.write(f"Performed {len(all_input_paths)} simulations with Ray...\n")
+            f.write(f"Hostname distribution:\n{pprint.pformat(Counter(all_hostnames))}\n")
+            f.write(f"Min. Lp time: {onp.min(all_lp_times)}\n")
+            f.write(f"Max. Lp time: {onp.max(all_lp_times)}\n")
+            f.write(f"Min. force ext. time: {onp.min(all_fe_times)}\n")
+            f.write(f"Max. force ext. time: {onp.max(all_fe_times)}\n")
+
+        for rdir, rc in zip(all_sim_dirs, all_rcs):
             if rc != 0:
-                raise RuntimeError(f"LAMMPS simulation failed with error code: {rc}")
+                raise RuntimeError(f"oxDNA simulation at path {rdir} failed with error code: {rc}")
 
         # Convert via TacoxDNA
         for force_pn in forces_pn:
@@ -420,20 +464,6 @@ def run(args):
         all_slopes, all_offsets, all_slope_offset0s, all_theta_diffs = vmap(get_slope, 1)(all_running_avg)
 
         min_idx = 50
-        last_half = int((n_sample_states * n_sims) // 2)
-
-        plt.plot(all_slopes[min_idx:])
-        plt.savefig(iter_dir / "slope_running_avg.png")
-        plt.clf()
-
-        plt.plot(all_slopes[-last_half:])
-        plt.savefig(iter_dir / "slope_running_avg_last_half.png")
-        plt.clf()
-
-        plt.plot(all_slopes_offset0s[min_idx:])
-        plt.savefig(iter_dir / "slope_offset0_running_avg.png")
-        plt.clf()
-
         for f_idx in range(len(forces_pn)):
             color = force_colors[f_idx]
             force_pn = forces_pn[f_idx]
@@ -445,6 +475,7 @@ def run(args):
         plt.savefig(iter_dir / "deltas_running_avg.png")
         plt.clf()
 
+        last_half = int((n_sample_states * n_sims) // 2)
         for f_idx in range(len(forces_pn)):
             color = force_colors[f_idx]
             force_pn = forces_pn[f_idx]
