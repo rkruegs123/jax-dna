@@ -136,9 +136,9 @@ def run(args):
     # target_deltas = jnp.array([0.0, 0.1, 0.5]) # per kb
     # force_colors = ["blue", "red", "green"]
 
-    forces_pn = jnp.array([0.0, 2.0, 6.0, 10.0])
-    target_deltas = jnp.array([0.0, 0.1, 0.3, 0.5])
-    force_colors = ["blue", "red", "green", "purple"]
+    forces_pn = jnp.array([0.0, 2.0, 4.0, 6.0, 10.0])
+    target_deltas = jnp.array([0.0, 0.1, 0.2, 0.3, 0.5])
+    force_colors = ["blue", "red", "green", "purple", "orange"]
 
     target_slope = 0.05
 
@@ -277,12 +277,10 @@ def run(args):
         plt.clf()
 
         with open(resample_log_path, "a") as f:
-            f.write(f"Performed {len(all_input_paths)} simulations with Ray...\n")
+            f.write(f"Performed {len(all_sim_dirs)} simulations with Ray...\n")
             f.write(f"Hostname distribution:\n{pprint.pformat(Counter(all_hostnames))}\n")
-            f.write(f"Min. Lp time: {onp.min(all_lp_times)}\n")
-            f.write(f"Max. Lp time: {onp.max(all_lp_times)}\n")
-            f.write(f"Min. force ext. time: {onp.min(all_fe_times)}\n")
-            f.write(f"Max. force ext. time: {onp.max(all_fe_times)}\n")
+            f.write(f"Min. time: {onp.min(all_times)}\n")
+            f.write(f"Max. time: {onp.max(all_times)}\n")
 
         for rdir, rc in zip(all_sim_dirs, all_rcs):
             if rc != 0:
