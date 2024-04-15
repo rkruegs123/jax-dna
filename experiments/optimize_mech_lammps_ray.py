@@ -506,7 +506,18 @@ def run(args):
         plt.clf()
 
 
+        for r in range(n_sims):
+            r_start_idx = n_sample_states*r
+            r_end_idx = n_sample_states*(r+1)
+            r_means = list()
+            for f_idx, force_pn in enumerate(forces_pn):
+                force_r_thetas = all_thetas[f_idx][r_start_idx:r_end_idx]
+                r_means.append(force_r_thetas.mean())
 
+            plt.scatter(forces_pn, r_means, label=f"r{r}")
+
+        plg.legend()
+        plt.savefig(iter_dir / "repeat_scatter.png")
 
         # Note: the deltas we've specified are per kb
         # Note: could also do a post doc wit harmando and combine difftre with probabilistic programming
@@ -514,7 +525,64 @@ def run(args):
 
         return all_traj_states, all_calc_energies, all_thetas
 
+    """
+    @jit
+    def loss_fn(params, all_ref_states, all_ref_energies, all_ref_thetas):
+        # Setup energy function
+        em = model.EnergyModel(displacement_fn,
+                               params,
+                               t_kelvin=t_kelvin,
+                               salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq_avg,
+                               ignore_exc_vol_bonded=True # Because we're in LAMMPS
+        )
+        energy_fn = lambda body: em.energy_fn(
+            body,
+            seq=seq_oh,
+            bonded_nbrs=top_info.bonded_nbrs,
+            unbonded_nbrs=top_info.unbonded_nbrs.T)
+        energy_fn = jit(energy_fn)
+        energy_scan_fn = lambda state, rs: (None, energy_fn(rs))
 
+        def get_expected_force_theta(ref_states, ref_energies, ref_thetas):
+            _, new_energies = scan(energy_scan_fn, None, ref_states)
+
+            diffs = new_energies - ref_energies
+            boltzs = jnp.exp(-beta * diffs)
+            denom = jnp.sum(boltzs)
+            weights = boltzs / denom
+
+            expected_theta = jnp.dot(weights, ref_thetas)
+            n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
+            return expected_theta, n_eff
+
+        def get_expected_repeat_slope(r_idx):
+            r_start_idx = n_sample_states*r
+            r_end_idx = n_sample_states*(r+1)
+            r_ref_states = all_ref_states[:, r_start_idx:r_end_idx]
+            r_ref_energies = all_ref_energies[:, r_start_idx:r_end_idx]
+            r_ref_thetas = all_ref_thetas[:, r_start_idx:r_end_idx]
+            thetas, n_effs = vmap(get_expected_force_theta, (0, 0, 0))(r_ref_states, r_ref_energies, r_ref_thetas)
+
+            theta_diffs = (thetas - thetas[0]) * (1000 / 36)
+
+            # Fit with a flexible offset
+            xs_to_fit = jnp.stack([jnp.ones_like(forces_pn), forces_pn], axis=1)
+            fit_ = jnp.linalg.lstsq(xs_to_fit, theta_diffs)
+            expected_slope = fit_[0][1]
+            expected_offset = fit_[0][0]
+
+            return expected_slope, n_effs, theta_diffs
+
+        expected_slopes, all_n_effs, all_theta_diffs = vmap(get_expected_repeat_slope)(jnp.arange(n_sims))
+        
+        n_effs = jnp.sum(all_n_effs, axis=0)
+        theta_diffs = jnp.sum(all_theta_diffs, axis=0)
+        expected_slope = jnp.mean(expected_slopes)
+
+        rmse = jnp.sqrt((target_slope - expected_slope)**2)
+        return rmse_coeff*rmse, (n_effs, expected_slope, theta_diffs)
+    """
+    
     @jit
     def loss_fn(params, all_ref_states, all_ref_energies, all_ref_thetas):
 
