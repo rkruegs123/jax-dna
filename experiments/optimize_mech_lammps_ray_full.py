@@ -131,7 +131,10 @@ def run(args):
     # assert(seq_avg)
 
 
-    forces_pn = jnp.array([0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0])
+    # forces_pn = jnp.array([0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0])
+    # torques_pnnm = jnp.array([0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0])
+
+    forces_pn = jnp.array([0.0, 2.0, 6.0, 10.0, 15.0, 20.0, 25.0, 30.0])
     torques_pnnm = jnp.array([0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0])
 
 
@@ -215,9 +218,6 @@ def run(args):
         dist = jnp.abs(bp1_meas_pos[2] - bp2_meas_pos[2])
         return dist
 
-    rise_per_bp = 3.4 / utils.ang_per_oxdna_length # oxDNA length units
-    contour_length = quartets.shape[0] * rise_per_bp # oxDNA length units
-
 
     def compute_theta(body):
         pitches = compute_pitches(body, quartets, displacement_fn, model.com_to_hb)
@@ -289,10 +289,7 @@ def run(args):
         all_times = [ret_info[1] for ret_info in all_ret_info]
         all_hostnames = [ret_info[2] for ret_info in all_ret_info]
 
-        # sns.distplot(all_lp_times, label="Lp", color="green")
-        # sns.distplot(all_fe_times, label="Force ext.", color="blue")
-        sns.distplot(all_times, label="Lp", color="green")
-        plt.legend()
+        sns.distplot(all_times, color="green")
         plt.savefig(iter_dir / f"sim_times.png")
         plt.clf()
 
@@ -659,10 +656,10 @@ def run(args):
         mean_force_t0_distances_nm = mean_force_t0_distances * utils.nm_per_oxdna_length
         l0 = mean_force_t0_distances_nm[0]
         theta0 = all_force_t0_thetas[0].mean()
-        force_t0_delta_ls = mean_force_t0_distances_nm - l0
+        force_t0_delta_ls = mean_force_t0_distances_nm - l0 # in nm
 
         ## For A1, we assume an offset of 0
-        xs_to_fit = forces_pn[:, onp.newaxis]
+        xs_to_fit = jnp.stack([jnp.zeros_like(forces_pn), forces_pn], axis=1)
         fit_ = jnp.linalg.lstsq(xs_to_fit, force_t0_delta_ls)
         a1 = fit_[0][1]
 
@@ -678,7 +675,7 @@ def run(args):
         ## Compute A3 -- fit with an unrestricted offset
         mean_f2_torque_distances = [all_f2_torque_distances[f_idx].mean() for f_idx in range(len(forces_pn))]
         mean_f2_torque_distances_nm = mean_f2_torque_distances * utils.nm_per_oxdna_length
-        f2_torque_delta_ls = mean_f2_torque_distances_nm - l0
+        f2_torque_delta_ls = mean_f2_torque_distances_nm - l0 # in nm
 
         xs_to_fit = jnp.stack([jnp.ones_like(torques_pnnm), torques_pnnm], axis=1)
         fit_ = jnp.linalg.lstsq(xs_to_fit, f2_torque_delta_ls)
@@ -758,7 +755,7 @@ def run(args):
         f.write(f"Generating initial reference states and energies...\n")
 
     start = time.time()
-    all_ref_states, all_ref_energies, all_ref_thetas = get_ref_states(params, i=0, seed=30362)
+    all_ref_states_f, all_ref_energies_f, all_ref_dist_f, all_ref_states_t, all_ref_energies_t, all_ref_dist_t, all_ref_thetas_t = get_ref_states(params, i=0, seed=30362)
     end = time.time()
     with open(resample_log_path, "a") as f:
         f.write(f"Finished generating initial reference states. Took {end - start} seconds.\n\n")
