@@ -15,7 +15,6 @@ import pprint
 import random
 import pandas as pd
 import socket
-import ray
 from collections import Counter
 
 from jax import jit, vmap, lax, value_and_grad
@@ -28,26 +27,6 @@ from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.dna2 import model, lammps_utils
 
 
-
-if "ip_head" in os.environ:
-    ray.init(address=os.environ["ip_head"])
-else:
-    ray.init()
-
-
-@ray.remote
-def run_lammps_ray(lammps_exec_path, sim_dir):
-    time.sleep(1)
-
-    hostname = socket.gethostbyname(socket.gethostname())
-
-    start = time.time()
-    p = subprocess.Popen([lammps_exec_path, "-in", "in"], cwd=sim_dir)
-    p.wait()
-    end = time.time()
-
-    rc = p.returncode
-    return rc, end-start, hostname
 
 
 checkpoint_every = 10
@@ -263,25 +242,15 @@ def run(args):
                     save_every=sample_every, n_steps=n_total_steps,
                     seq_avg=seq_avg, seed=repeat_seed)
 
+                procs.append(subprocess.Popen([lammps_exec_path, "-in", "in"], cwd=repeat_dir))
 
-        all_ret_info = ray.get([run_lammps_ray.remote(lammps_exec_path, rdir) for rdir in all_sim_dirs])
-        all_rcs = [ret_info[0] for ret_info in all_ret_info]
-        all_times = [ret_info[1] for ret_info in all_ret_info]
-        all_hostnames = [ret_info[2] for ret_info in all_ret_info]
+        for p in procs:
+            p.wait()
 
-        sns.distplot(all_times, color="green")
-        plt.savefig(iter_dir / f"sim_times.png")
-        plt.clf()
-
-        with open(resample_log_path, "a") as f:
-            f.write(f"Performed {len(all_sim_dirs)} simulations with Ray...\n")
-            f.write(f"Hostname distribution:\n{pprint.pformat(Counter(all_hostnames))}\n")
-            f.write(f"Min. time: {onp.min(all_times)}\n")
-            f.write(f"Max. time: {onp.max(all_times)}\n")
-
-        for rdir, rc in zip(all_sim_dirs, all_rcs):
+        for p in procs:
+            rc = p.returncode
             if rc != 0:
-                raise RuntimeError(f"oxDNA simulation at path {rdir} failed with error code: {rc}")
+                raise RuntimeError(f"LAMMPS simulation failed with error code: {rc}")
 
         # Convert via TacoxDNA
         for force_pn in forces_pn:
@@ -433,6 +402,7 @@ def run(args):
                 repeat_slopes.append(slope)
 
                 # Fit with offset=0
+                # xs_to_fit = forces_pn[:, onp.newaxis]
                 xs_to_fit = jnp.stack([jnp.zeros_like(forces_pn), forces_pn], axis=1)
                 fit_ = jnp.linalg.lstsq(xs_to_fit, theta_diffs)
                 slope_offset0 = fit_[0][1]
@@ -476,7 +446,7 @@ def run(args):
             slope_offset0 = fit_[0][1]
 
             repeat_slopes.append(slope_offset0)
-            plt.scatter(forces_pn, theta_diffs, label=f"r{r}, slope={onp.round(slope_offset0, 4)}")
+            plt.scatter(forces_pn, theta_diffs, label=f"r{r}, slope={onp.round(slope_offset0, 3)}")
         plt.legend()
         plt.savefig(iter_dir / "repeat_scatter_norm.png")
         plt.clf()
@@ -484,7 +454,6 @@ def run(args):
         with open(iter_dir / "summary.txt", "w+") as f:
             f.write(f"Avg slope: {onp.mean(repeat_slopes)}\n")
 
-            
         return all_traj_states, all_calc_energies, all_thetas
 
     @jit
@@ -524,9 +493,17 @@ def run(args):
 
             theta_diffs = (thetas - thetas[0]) * (1000 / 36)
 
+            """
+            xs_to_fit = forces_pn[:, jnp.newaxis]
+            fit_ = jnp.linalg.lstsq(xs_to_fit, theta_diffs)
+            expected_slope = fit_[0][1]
+            """
+
+            # xs_to_fit = jnp.stack([jnp.ones_like(forces_pn), forces_pn], axis=1)
             xs_to_fit = jnp.stack([jnp.zeros_like(forces_pn), forces_pn], axis=1)
             fit_ = jnp.linalg.lstsq(xs_to_fit, theta_diffs)
             expected_slope = fit_[0][1]
+            expected_offset = fit_[0][0]
 
             return expected_slope, n_effs, theta_diffs
 
