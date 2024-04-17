@@ -1,4 +1,4 @@
-# jaxmd-oxdna
+# jax-dna
 
 A playground for implementing oxDNA in JAX-MD. Apologies for the naming -- I only wanted one hyphen
 
