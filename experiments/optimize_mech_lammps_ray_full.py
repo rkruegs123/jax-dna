@@ -124,11 +124,18 @@ def run(args):
     run_name = args['run_name']
     n_iters = args['n_iters']
     lr = args['lr']
-    rmse_coeff = args['rmse_coeff']
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
     seq_avg = not args['seq_dep']
     # assert(seq_avg)
+
+    s_eff_coeff = args['s_eff_coeff']
+    c_coeff = args['c_coeff']
+    g_coeff = args['g_coeff']
+    target_s_eff = args['target_s_eff']
+    target_c = args['target_c']
+    target_g = args['target_g']
+    
 
 
     # forces_pn = jnp.array([0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0])
@@ -159,8 +166,12 @@ def run(args):
     times_path = log_dir / "times.txt"
     grads_path = log_dir / "grads.txt"
     neffs_path = log_dir / "neffs.txt"
-    slope_path = log_dir / "slope.txt"
-    diffs_path = log_dir / "diffs.txt"
+    a1_path = log_dir / "a1.txt"
+    a3_path = log_dir / "a3.txt"
+    a4_path = log_dir / "a4.txt"
+    s_eff_path = log_dir / "s_eff.txt"
+    c_path = log_dir / "c.txt"
+    g_path = log_dir / "g.txt"
     resample_log_path = log_dir / "resample_log.txt"
     iter_params_path = log_dir / "iter_params.txt"
 
@@ -212,13 +223,14 @@ def run(args):
 
     displacement_fn, shift_fn = space.free() # FIXME: could use box size from top_info, but not sure how the centering works.
 
+    @jit
     def compute_distance(body):
-        bp1_meas_pos = get_bp_pos(ref_state, bp1_meas)
-        bp2_meas_pos = get_bp_pos(ref_state, bp2_meas)
+        bp1_meas_pos = get_bp_pos(body, bp1_meas)
+        bp2_meas_pos = get_bp_pos(body, bp2_meas)
         dist = jnp.abs(bp1_meas_pos[2] - bp2_meas_pos[2])
         return dist
 
-
+    @jit
     def compute_theta(body):
         pitches = compute_pitches(body, quartets, displacement_fn, model.com_to_hb)
         return pitches.sum()
@@ -241,7 +253,7 @@ def run(args):
         # Run the simulations
         procs = list()
         all_sim_dirs = list()
-        repeat_seeds = [random.randrange(100) for _ in range(n_sims)]
+        repeat_seeds = [random.randrange(1, 100) for _ in range(n_sims)]
         for force_pn in forces_pn:
             sim_dir = iter_dir / f"sim-f{force_pn}"
             sim_dir.mkdir(parents=False, exist_ok=False)
@@ -336,8 +348,9 @@ def run(args):
             if combine_proc.returncode != 0:
                 raise RuntimeError(f"Combining trajectories failed with error code: {combine_proc.returncode}")
 
+
         for torque_pnnm in torques_pnnm:
-            sim_dir = iter_dir / f"sim-t{force_pn}"
+            sim_dir = iter_dir / f"sim-t{torque_pnnm}"
             combine_cmd = "cat "
             for r in range(n_sims):
                 repeat_dir = sim_dir / f"r{r}"
@@ -346,6 +359,24 @@ def run(args):
             combine_proc = subprocess.run(combine_cmd, shell=True)
             if combine_proc.returncode != 0:
                 raise RuntimeError(f"Combining trajectories failed with error code: {combine_proc.returncode}")
+
+        # Remove unnecessary files
+        files_to_remove = ["filename.dat", "data.oxdna", "dump.lammpstrj"]
+        for force_pn in forces_pn:
+            sim_dir = iter_dir / f"sim-f{force_pn}"
+            for r in range(n_sims):
+                repeat_dir = sim_dir / f"r{r}"
+                for f_stem in files_to_remove:
+                    file_to_rem = repeat_dir / f_stem
+                    file_to_rem.unlink()
+
+        for torque_pnnm in torques_pnnm:
+            sim_dir = iter_dir / f"sim-t{torque_pnnm}"
+            for r in range(n_sims):
+                repeat_dir = sim_dir / f"r{r}"
+                for f_stem in files_to_remove:
+                    file_to_rem = repeat_dir / f_stem
+                    file_to_rem.unlink()
 
         # Analyze
         all_force_t0_traj_states = list()
@@ -504,7 +535,7 @@ def run(args):
         all_f2_torque_calc_energies = list()
         all_f2_torque_distances = list()
         all_f2_torque_thetas = list()
-        for torque_pnnm in torque_pnnm:
+        for torque_pnnm in torques_pnnm:
             sim_dir = iter_dir / f"sim-t{torque_pnnm}"
 
             ## Load states from oxDNA simulation
@@ -652,7 +683,7 @@ def run(args):
         all_f2_torque_thetas = utils.tree_stack(all_f2_torque_thetas)
 
         # Compute constants
-        mean_force_t0_distances = [all_force_t0_distances[f_idx].mean() for f_idx in range(len(forces_pn))]
+        mean_force_t0_distances = onp.array([all_force_t0_distances[f_idx].mean() for f_idx in range(len(forces_pn))])
         mean_force_t0_distances_nm = mean_force_t0_distances * utils.nm_per_oxdna_length
         l0 = mean_force_t0_distances_nm[0]
         theta0 = all_force_t0_thetas[0].mean()
@@ -666,14 +697,15 @@ def run(args):
         test_forces = onp.linspace(0, forces_pn.max(), 100)
         fit_fn = lambda val: a1*val
         plt.plot(test_forces, fit_fn(test_forces))
-        plt.scatter(forces_pn, forces_t0_delta_ls)
+        plt.scatter(forces_pn, force_t0_delta_ls)
         plt.xlabel("Force (pN)")
         plt.ylabel("deltaL (nm)")
         plt.title(f"A1={a1}")
         plt.savefig(iter_dir / "a1_fit.png")
+        plt.clf()
 
         ## Compute A3 -- fit with an unrestricted offset
-        mean_f2_torque_distances = [all_f2_torque_distances[f_idx].mean() for f_idx in range(len(forces_pn))]
+        mean_f2_torque_distances = onp.array([all_f2_torque_distances[t_idx].mean() for t_idx in range(len(torques_pnnm))])
         mean_f2_torque_distances_nm = mean_f2_torque_distances * utils.nm_per_oxdna_length
         f2_torque_delta_ls = mean_f2_torque_distances_nm - l0 # in nm
 
@@ -690,9 +722,10 @@ def run(args):
         plt.ylabel("deltaL (nm)")
         plt.title(f"A3={a3}")
         plt.savefig(iter_dir / "a3_fit.png")
+        plt.clf()
 
         ## Compute A4 -- fit with an unrestricted offset
-        mean_f2_torque_thetas = [all_f2_torque_thetas[f_idx].mean() for f_idx in range(len(forces_pn))]
+        mean_f2_torque_thetas = onp.array([all_f2_torque_thetas[t_idx].mean() for t_idx in range(len(torques_pnnm))])
         f2_torque_delta_thetas = mean_f2_torque_thetas - theta0
 
         xs_to_fit = jnp.stack([jnp.ones_like(torques_pnnm), torques_pnnm], axis=1)
@@ -707,6 +740,7 @@ def run(args):
         plt.ylabel("deltaTheta (rad)")
         plt.title(f"A4={a4}")
         plt.savefig(iter_dir / "a4_fit.png")
+        plt.clf()
 
         s_eff = l0 / a1
         c = a1 * l0 / (a4*a1 - a3**2)
@@ -720,8 +754,83 @@ def run(args):
             f.write(f"C: {c}\n")
             f.write(f"g: {g}\n")
 
-        return all_force_t0_traj_states, all_force_t0_calc_energies, all_force_t0_distances, all_f2_torque_traj_states, all_f2_torque_calc_energies, all_f2_torque_distances, all_f2_torque_thetas
+        # Archive the iteration directory and delete the unzipped version
+        shutil.make_archive(iter_dir, 'zip', iter_dir)
+        shutil.rmtree(iter_dir)
+        
 
+        return all_force_t0_traj_states, all_force_t0_calc_energies, all_force_t0_distances, all_force_t0_thetas, all_f2_torque_traj_states, all_f2_torque_calc_energies, all_f2_torque_distances, all_f2_torque_thetas
+
+    @jit
+    def loss_fn(params, all_ref_states_f, all_ref_energies_f, all_ref_dists_f, all_ref_thetas_f,
+                all_ref_states_t, all_ref_energies_t, all_ref_dists_t, all_ref_thetas_t
+    ):
+        # Setup energy function
+        em = model.EnergyModel(displacement_fn,
+                               params,
+                               t_kelvin=t_kelvin,
+                               salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq_avg,
+                               ignore_exc_vol_bonded=True # Because we're in LAMMPS
+        )
+        energy_fn = lambda body: em.energy_fn(
+            body,
+            seq=seq_oh,
+            bonded_nbrs=top_info.bonded_nbrs,
+            unbonded_nbrs=top_info.unbonded_nbrs.T)
+        energy_fn = jit(energy_fn)
+        energy_scan_fn = lambda state, rs: (None, energy_fn(rs))
+
+        def get_expected_vals(ref_states, ref_energies, ref_dists, ref_thetas):
+            _, new_energies = scan(energy_scan_fn, None, ref_states)
+
+            diffs = new_energies - ref_energies
+            boltzs = jnp.exp(-beta * diffs)
+            denom = jnp.sum(boltzs)
+            weights = boltzs / denom
+
+            expected_dist = jnp.dot(weights, ref_dists)
+            expected_theta = jnp.dot(weights, ref_thetas)
+            n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
+            return expected_dist, expected_theta, n_eff
+
+        expected_dists_f, expected_thetas_f, n_effs_f = vmap(get_expected_vals, (0, 0, 0, 0))(all_ref_states_f, all_ref_energies_f, all_ref_dists_f, all_ref_thetas_f)
+        expected_dists_f_nm = expected_dists_f * utils.nm_per_oxdna_length
+        l0 = expected_dists_f_nm[0]
+        theta0 = expected_thetas_f[0]
+        delta_ls_f = expected_dists_f_nm - l0
+
+        xs_to_fit = jnp.stack([jnp.zeros_like(forces_pn), forces_pn], axis=1)
+        fit_ = jnp.linalg.lstsq(xs_to_fit, delta_ls_f)
+        a1 = fit_[0][1]
+
+        expected_dists_t, expected_thetas_t, n_effs_t = vmap(get_expected_vals, (0, 0, 0, 0))(all_ref_states_t, all_ref_energies_t, all_ref_dists_t, all_ref_thetas_t)
+        expected_dists_t_nm = expected_dists_t * utils.nm_per_oxdna_length
+        delta_ls_t = expected_dists_t_nm - l0
+
+        xs_to_fit = jnp.stack([jnp.ones_like(torques_pnnm), torques_pnnm], axis=1)
+        fit_ = jnp.linalg.lstsq(xs_to_fit, delta_ls_t)
+        a3 = fit_[0][1]
+
+        delta_thetas_t = expected_thetas_t - theta0
+        fit_ = jnp.linalg.lstsq(xs_to_fit, delta_thetas_t)
+        a4 = fit_[0][1]
+
+        s_eff = l0 / a1
+        c = a1 * l0 / (a4*a1 - a3**2)
+        g = -(a3 * l0) / (a4 * a1 - a3**2)
+
+        mse_s_eff = (s_eff - target_s_eff)**2
+        rmse_s_eff = jnp.sqrt(mse_s_eff)
+        mse_c = (c - target_c)**2
+        rmse_c = jnp.sqrt(mse_c)
+        mse_g = (g - target_g)**2
+        rmse_g = jnp.sqrt(mse_g)
+
+        rmse = s_eff_coeff*rmse_s_eff + c_coeff*rmse_c + g_coeff*rmse_g
+
+        return rmse, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g)
+    grad_fn = value_and_grad(loss_fn, has_aux=True)
+    grad_fn = jit(grad_fn)
 
 
     params = deepcopy(model.EMPTY_BASE_PARAMS)
@@ -743,8 +852,7 @@ def run(args):
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
 
-    # min_n_eff = int(2*n_sample_states * min_neff_factor) # 2x because we simulate at two different forces
-    min_n_eff = int(n_sample_states * min_neff_factor) # 2x because we simulate at two different forces
+    min_n_eff = int(n_sample_states*n_sims * min_neff_factor)
 
     all_losses = list()
     all_n_effs = list()
@@ -755,12 +863,87 @@ def run(args):
         f.write(f"Generating initial reference states and energies...\n")
 
     start = time.time()
-    all_ref_states_f, all_ref_energies_f, all_ref_dist_f, all_ref_states_t, all_ref_energies_t, all_ref_dist_t, all_ref_thetas_t = get_ref_states(params, i=0, seed=30362)
+    all_ref_states_f, all_ref_energies_f, all_ref_dist_f, all_ref_thetas_f, all_ref_states_t, all_ref_energies_t, all_ref_dist_t, all_ref_thetas_t = get_ref_states(params, i=0, seed=30362)
     end = time.time()
     with open(resample_log_path, "a") as f:
         f.write(f"Finished generating initial reference states. Took {end - start} seconds.\n\n")
 
+    num_resample_iters = 0
+    for i in tqdm(range(n_iters)):
+        iter_start = time.time()
+        (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g)), grads = grad_fn(params, all_ref_states_f, all_ref_energies_f, all_ref_dist_f, all_ref_thetas_f, all_ref_states_t, all_ref_energies_t, all_ref_dist_t, all_ref_thetas_t)
+        num_resample_iters += 1
 
+        if i == 0:
+            all_ref_losses.append(loss)
+            all_ref_times.append(i)
+
+        resample = False
+        n_effs = jnp.concatenate([n_effs_f, n_effs_t])
+        for n_eff in n_effs:
+            if n_eff < min_n_eff:
+                resample = True
+                break
+
+        if resample or num_resample_iters >= max_approx_iters:
+            num_resample_iters = 0
+            with open(resample_log_path, "a") as f:
+                f.write(f"Iteration {i}\n")
+                f.write(f"- min n_eff was {n_effs.min()}...")
+
+            start = time.time()
+            all_ref_states_f, all_ref_energies_f, all_ref_dist_f, all_ref_thetas_f, all_ref_states_t, all_ref_energies_t, all_ref_dist_t, all_ref_thetas_t = get_ref_states(params, i=i, seed=i)
+            end = time.time()
+            with open(resample_log_path, "a") as f:
+                f.write(f"- time to resample: {end - start} seconds\n\n")
+
+            (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g)), grads = grad_fn(params, all_ref_states_f, all_ref_energies_f, all_ref_dist_f, all_ref_thetas_f, all_ref_states_t, all_ref_energies_t, all_ref_dist_t, all_ref_thetas_t)
+
+            all_ref_losses.append(loss)
+            all_ref_times.append(i)
+
+        iter_end = time.time()
+
+
+        with open(g_path, "a") as f:
+            f.write(f"{g}\n")
+        with open(s_eff_path, "a") as f:
+            f.write(f"{s_eff}\n")
+        with open(c_path, "a") as f:
+            f.write(f"{c}\n")
+        with open(a1_path, "a") as f:
+            f.write(f"{a1}\n")
+        with open(a3_path, "a") as f:
+            f.write(f"{a3}\n")
+        with open(a4_path, "a") as f:
+            f.write(f"{a4}\n")
+        with open(loss_path, "a") as f:
+            f.write(f"{loss}\n")
+        with open(neffs_path, "a") as f:
+            f.write(f"{n_effs}\n")
+        with open(times_path, "a") as f:
+            f.write(f"{iter_end - iter_start}\n")
+        with open(iter_params_path, "a") as f:
+            f.write(f"{pprint.pformat(params)}\n")
+
+        all_losses.append(loss)
+        all_n_effs.append(n_effs)
+
+        updates, opt_state = optimizer.update(grads, opt_state, params)
+        params = optax.apply_updates(params, updates)
+
+
+        plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
+        plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
+        plt.legend()
+        plt.ylabel("Loss")
+        plt.xlabel("Iteration")
+        plt.savefig(img_dir / f"losses_iter{i}.png")
+        plt.clf()
+
+
+        
+        
 
 def get_parser():
 
@@ -790,10 +973,23 @@ def get_parser():
     parser.add_argument('--min-neff-factor', type=float, default=0.95,
                         help="Factor for determining min Neff")
 
-    parser.add_argument('--rmse-coeff', type=float, default=100.0,
-                        help="Coefficient for the RMSE")
     parser.add_argument('--seq-dep', action='store_true')
 
+
+    parser.add_argument('--s-eff-coeff', type=float, default=1.0,
+                        help="Coefficient for S_eff component")
+    parser.add_argument('--c-coeff', type=float, default=0.0,
+                        help="Coefficient for C component")
+    parser.add_argument('--g-coeff', type=float, default=0.0,
+                        help="Coefficient for g component")
+
+    parser.add_argument('--target-s-eff', type=float, default=1000,
+                        help="Target S_eff")
+    parser.add_argument('--target-c', type=float, default=400,
+                        help="Target C")
+    parser.add_argument('--target-g', type=float, default=-100.0,
+                        help="Target g")
+    
 
     return parser
 
