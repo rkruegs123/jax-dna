@@ -856,8 +856,15 @@ def run(args):
 
     all_losses = list()
     all_n_effs = list()
+    all_seffs = list()
+    all_cs = list()
+    all_gs = list()
+    
     all_ref_losses = list()
     all_ref_times = list()
+    all_ref_seffs = list()
+    all_ref_cs = list()
+    all_ref_gs = list()
 
     with open(resample_log_path, "a") as f:
         f.write(f"Generating initial reference states and energies...\n")
@@ -877,6 +884,9 @@ def run(args):
         if i == 0:
             all_ref_losses.append(loss)
             all_ref_times.append(i)
+            all_ref_seffs.append(s_eff)
+            all_ref_cs.append(c)
+            all_ref_gs.append(g)
 
         resample = False
         n_effs = jnp.concatenate([n_effs_f, n_effs_t])
@@ -901,6 +911,9 @@ def run(args):
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
+            all_ref_seffs.append(s_eff)
+            all_ref_cs.append(c)
+            all_ref_gs.append(g)
 
         iter_end = time.time()
 
@@ -927,6 +940,9 @@ def run(args):
             f.write(f"{pprint.pformat(params)}\n")
 
         all_losses.append(loss)
+        all_seffs.append(s_eff)
+        all_cs.append(c)
+        all_gs.append(g)
         all_n_effs.append(n_effs)
 
         updates, opt_state = optimizer.update(grads, opt_state, params)
@@ -939,6 +955,30 @@ def run(args):
         plt.ylabel("Loss")
         plt.xlabel("Iteration")
         plt.savefig(img_dir / f"losses_iter{i}.png")
+        plt.clf()
+
+        plt.plot(onp.arange(i+1), all_cs, linestyle="--", color="blue")
+        plt.scatter(all_ref_times, all_ref_cs, marker='o', label="Resample points", color="blue")
+        plt.legend()
+        plt.ylabel("C (pn*nm^2)")
+        plt.xlabel("Iteration")
+        plt.savefig(img_dir / f"c_iter{i}.png")
+        plt.clf()
+
+        plt.plot(onp.arange(i+1), all_gs, linestyle="--", color="blue")
+        plt.scatter(all_ref_times, all_ref_gs, marker='o', label="Resample points", color="blue")
+        plt.legend()
+        plt.ylabel("g (pn*nm)")
+        plt.xlabel("Iteration")
+        plt.savefig(img_dir / f"g_iter{i}.png")
+        plt.clf()
+
+        plt.plot(onp.arange(i+1), all_seffs, linestyle="--", color="blue")
+        plt.scatter(all_ref_times, all_ref_seffs, marker='o', label="Resample points", color="blue")
+        plt.legend()
+        plt.ylabel("S_eff pN")
+        plt.xlabel("Iteration")
+        plt.savefig(img_dir / f"seff_iter{i}.png")
         plt.clf()
 
 
