@@ -127,7 +127,7 @@ def run(args):
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
     seq_avg = not args['seq_dep']
-    # assert(seq_avg)
+    assert(seq_avg)
 
     s_eff_coeff = args['s_eff_coeff']
     c_coeff = args['c_coeff']
@@ -138,6 +138,11 @@ def run(args):
 
     no_archive = args['no_archive']
     no_delete = args['no_delete']
+
+    opt_stk = args['opt_stk']
+    opt_hb = args['opt_hb']
+    opt_xstk = args['opt_xstk']
+    assert(int(opt_stk) + int(opt_hb) + int(opt_xstk))
 
 
 
@@ -859,6 +864,23 @@ def run(args):
 
 
     params = deepcopy(model.EMPTY_BASE_PARAMS)
+
+    if seq_avg:
+        default_base_params = deepcopy(model.default_base_params_seq_avg)
+    else:
+        default_base_params = deepcopy(model.default_base_params_seq_dep)
+
+    if opt_stk:
+        params["stacking"] = deepcopy(model.default_base_params["stacking"])
+    if opt_hb:
+        params["hydrogen_bonding"] = deepcopy(model.default_base_params["hydrogen_bonding"])
+    if opt_xstk:
+        params["cross_stacking"] = deepcopy(model.default_base_params["cross_stacking"])
+        del params["cross_stacking"]["dr_c_cross"]
+        del params["cross_stacking"]["dr_low_cross"]
+        del params["cross_stacking"]["dr_high_cross"]
+
+    """
     if seq_avg:
         params["stacking"] = deepcopy(model.default_base_params_seq_avg["stacking"])
         params["hydrogen_bonding"] = deepcopy(model.default_base_params_seq_avg["hydrogen_bonding"])
@@ -873,6 +895,7 @@ def run(args):
         # del params["cross_stacking"]["dr_c_cross"]
         # del params["cross_stacking"]["dr_low_cross"]
         # del params["cross_stacking"]["dr_high_cross"]
+    """
 
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
@@ -1057,6 +1080,10 @@ def get_parser():
 
     parser.add_argument('--no-archive', action='store_true')
     parser.add_argument('--no-delete', action='store_true')
+
+    parser.add_argument('--opt-stk', action='store_true')
+    parser.add_argument('--opt-hb', action='store_true')
+    parser.add_argument('--opt-xstk', action='store_true')
 
 
     return parser
