@@ -135,7 +135,9 @@ def run(args):
     target_s_eff = args['target_s_eff']
     target_c = args['target_c']
     target_g = args['target_g']
-    
+
+    no_archive = args['no_archive']
+
 
 
     # forces_pn = jnp.array([0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0])
@@ -205,6 +207,7 @@ def run(args):
 
     top_info = topology.TopologyInfo(top_fpath, reverse_direction=False)
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
+    seq = top_info.seq
     n = seq_oh.shape[0]
     assert(n % 2 == 0)
     n_bp = n // 2
@@ -242,7 +245,7 @@ def run(args):
     q_eff = 0.815
 
 
-    def get_ref_states(params, i, seed):
+    def get_ref_states(params, i, seed, prev_states_force, prev_states_torque):
         random.seed(seed)
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
@@ -254,7 +257,7 @@ def run(args):
         procs = list()
         all_sim_dirs = list()
         repeat_seeds = [random.randrange(1, 100) for _ in range(n_sims)]
-        for force_pn in forces_pn:
+        for f_idx, force_pn in enumerate(forces_pn):
             sim_dir = iter_dir / f"sim-f{force_pn}"
             sim_dir.mkdir(parents=False, exist_ok=False)
 
@@ -267,7 +270,10 @@ def run(args):
                 # repeat_seed = random.randrange(100)
                 repeat_seed = repeat_seeds[r]
 
-                shutil.copy(lammps_data_abs_path, repeat_dir / "data")
+                if prev_states_force is None:
+                    shutil.copy(lammps_data_abs_path, repeat_dir / "data")
+                else:
+                    lammps_utils.stretch_tors_data_constructor(prev_states_force[f_idx][r], seq, repeat_dir / "data")
                 lammps_in_fpath = repeat_dir / "in"
                 lammps_utils.stretch_tors_constructor(
                     params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
@@ -275,7 +281,7 @@ def run(args):
                     save_every=sample_every, n_steps=n_total_steps,
                     seq_avg=seq_avg, seed=repeat_seed)
 
-        for torque_pnnm in torques_pnnm:
+        for t_idx, torque_pnnm in enumerate(torques_pnnm):
             sim_dir = iter_dir / f"sim-t{torque_pnnm}"
             sim_dir.mkdir(parents=False, exist_ok=False)
 
@@ -287,7 +293,10 @@ def run(args):
 
                 repeat_seed = repeat_seeds[r]
 
-                shutil.copy(lammps_data_abs_path, repeat_dir / "data")
+                if prev_states_torque is None:
+                    shutil.copy(lammps_data_abs_path, repeat_dir / "data")
+                else:
+                    lammps_utils.stretch_tors_data_constructor(prev_states_torque[t_idx][r], seq, repeat_dir / "data")
                 lammps_in_fpath = repeat_dir / "in"
                 lammps_utils.stretch_tors_constructor(
                     params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
@@ -383,6 +392,7 @@ def run(args):
         all_force_t0_calc_energies = list()
         all_force_t0_distances = list()
         all_force_t0_thetas = list()
+        all_force_t0_last_states = list()
         for force_pn in forces_pn:
             sim_dir = iter_dir / f"sim-f{force_pn}"
 
@@ -396,11 +406,13 @@ def run(args):
             assert(len(full_traj_states) == (1+n_total_states)*n_sims)
             sim_freq = 1+n_total_states
             traj_states = list()
+            force_last_states = list()
             for r in range(n_sims):
                 sim_states = full_traj_states[r*sim_freq:(r+1)*sim_freq]
                 sampled_sim_states = sim_states[1+n_eq_states:]
                 assert(len(sampled_sim_states) == n_sample_states)
                 traj_states += sampled_sim_states
+                force_last_states.append(sampled_sim_states[-1])
             assert(len(traj_states) == n_sample_states*n_sims)
             traj_states = utils.tree_stack(traj_states)
 
@@ -523,6 +535,7 @@ def run(args):
             all_force_t0_calc_energies.append(calc_energies)
             all_force_t0_distances.append(traj_distances)
             all_force_t0_thetas.append(traj_thetas)
+            all_force_t0_last_states.append(force_last_states)
 
 
         all_force_t0_traj_states = utils.tree_stack(all_force_t0_traj_states)
@@ -535,6 +548,7 @@ def run(args):
         all_f2_torque_calc_energies = list()
         all_f2_torque_distances = list()
         all_f2_torque_thetas = list()
+        all_f2_torque_last_states = list()
         for torque_pnnm in torques_pnnm:
             sim_dir = iter_dir / f"sim-t{torque_pnnm}"
 
@@ -548,11 +562,13 @@ def run(args):
             assert(len(full_traj_states) == (1+n_total_states)*n_sims)
             sim_freq = 1+n_total_states
             traj_states = list()
+            torque_last_states = list()
             for r in range(n_sims):
                 sim_states = full_traj_states[r*sim_freq:(r+1)*sim_freq]
                 sampled_sim_states = sim_states[1+n_eq_states:]
                 assert(len(sampled_sim_states) == n_sample_states)
                 traj_states += sampled_sim_states
+                torque_last_states.append(sampled_sim_states[-1])
             assert(len(traj_states) == n_sample_states*n_sims)
             traj_states = utils.tree_stack(traj_states)
 
@@ -676,6 +692,7 @@ def run(args):
             all_f2_torque_calc_energies.append(calc_energies)
             all_f2_torque_distances.append(traj_distances)
             all_f2_torque_thetas.append(traj_thetas)
+            all_f2_torque_last_states.append(torque_last_states)
 
         all_f2_torque_traj_states = utils.tree_stack(all_f2_torque_traj_states)
         all_f2_torque_calc_energies = utils.tree_stack(all_f2_torque_calc_energies)
@@ -755,11 +772,12 @@ def run(args):
             f.write(f"g: {g}\n")
 
         # Archive the iteration directory and delete the unzipped version
-        shutil.make_archive(iter_dir, 'zip', iter_dir)
-        shutil.rmtree(iter_dir)
-        
+        if not no_archive:
+            shutil.make_archive(iter_dir, 'zip', iter_dir)
+            shutil.rmtree(iter_dir)
 
-        return all_force_t0_traj_states, all_force_t0_calc_energies, all_force_t0_distances, all_force_t0_thetas, all_f2_torque_traj_states, all_f2_torque_calc_energies, all_f2_torque_distances, all_f2_torque_thetas
+
+        return all_force_t0_traj_states, all_force_t0_calc_energies, all_force_t0_distances, all_force_t0_thetas, all_f2_torque_traj_states, all_f2_torque_calc_energies, all_f2_torque_distances, all_f2_torque_thetas, all_force_t0_last_states, all_f2_torque_last_states
 
     @jit
     def loss_fn(params, all_ref_states_f, all_ref_energies_f, all_ref_dists_f, all_ref_thetas_f,
@@ -859,7 +877,7 @@ def run(args):
     all_seffs = list()
     all_cs = list()
     all_gs = list()
-    
+
     all_ref_losses = list()
     all_ref_times = list()
     all_ref_seffs = list()
@@ -870,7 +888,7 @@ def run(args):
         f.write(f"Generating initial reference states and energies...\n")
 
     start = time.time()
-    all_ref_states_f, all_ref_energies_f, all_ref_dist_f, all_ref_thetas_f, all_ref_states_t, all_ref_energies_t, all_ref_dist_t, all_ref_thetas_t = get_ref_states(params, i=0, seed=30362)
+    all_ref_states_f, all_ref_energies_f, all_ref_dist_f, all_ref_thetas_f, all_ref_states_t, all_ref_energies_t, all_ref_dist_t, all_ref_thetas_t, prev_last_states_force, prev_last_states_torque = get_ref_states(params, i=0, seed=30362, prev_states_force=None, prev_states_torque=None)
     end = time.time()
     with open(resample_log_path, "a") as f:
         f.write(f"Finished generating initial reference states. Took {end - start} seconds.\n\n")
@@ -902,7 +920,7 @@ def run(args):
                 f.write(f"- min n_eff was {n_effs.min()}...")
 
             start = time.time()
-            all_ref_states_f, all_ref_energies_f, all_ref_dist_f, all_ref_thetas_f, all_ref_states_t, all_ref_energies_t, all_ref_dist_t, all_ref_thetas_t = get_ref_states(params, i=i, seed=i)
+            all_ref_states_f, all_ref_energies_f, all_ref_dist_f, all_ref_thetas_f, all_ref_states_t, all_ref_energies_t, all_ref_dist_t, all_ref_thetas_t, prev_last_states_force, prev_last_states_torque = get_ref_states(params, i=i, seed=i, prev_states_force=prev_last_states_force, prev_states_torque=prev_last_states_torque)
             end = time.time()
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
@@ -982,8 +1000,8 @@ def run(args):
         plt.clf()
 
 
-        
-        
+
+
 
 def get_parser():
 
@@ -1029,7 +1047,9 @@ def get_parser():
                         help="Target C")
     parser.add_argument('--target-g', type=float, default=-100.0,
                         help="Target g")
-    
+
+    parser.add_argument('--no-archive', action='store_true')
+
 
     return parser
 
