@@ -503,7 +503,6 @@ def stretch_tors_data_constructor(body, seq, fname):
     78  1  79  80
     """
 
-    pdb.set_trace()
     data_str_dedent = '\n'.join([line.lstrip() for line in data_str.split('\n')])
     with open(fname, "w") as f:
         f.write(data_str_dedent)
