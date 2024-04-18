@@ -871,11 +871,11 @@ def run(args):
         default_base_params = deepcopy(model.default_base_params_seq_dep)
 
     if opt_stk:
-        params["stacking"] = deepcopy(model.default_base_params["stacking"])
+        params["stacking"] = deepcopy(default_base_params["stacking"])
     if opt_hb:
-        params["hydrogen_bonding"] = deepcopy(model.default_base_params["hydrogen_bonding"])
+        params["hydrogen_bonding"] = deepcopy(default_base_params["hydrogen_bonding"])
     if opt_xstk:
-        params["cross_stacking"] = deepcopy(model.default_base_params["cross_stacking"])
+        params["cross_stacking"] = deepcopy(default_base_params["cross_stacking"])
         del params["cross_stacking"]["dr_c_cross"]
         del params["cross_stacking"]["dr_low_cross"]
         del params["cross_stacking"]["dr_high_cross"]
