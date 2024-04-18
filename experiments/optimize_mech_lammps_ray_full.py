@@ -137,6 +137,7 @@ def run(args):
     target_g = args['target_g']
 
     no_archive = args['no_archive']
+    no_delete = args['no_delete']
 
 
 
@@ -273,6 +274,11 @@ def run(args):
                 if prev_states_force is None:
                     shutil.copy(lammps_data_abs_path, repeat_dir / "data")
                 else:
+                    print(type(prev_states_force))
+                    print(len(prev_states_force))
+                    print(type(prev_states_force[f_idx]))
+                    print(len(prev_states_force[f_idx]))
+                    print(type(prev_states_force[f_idx][r]))
                     lammps_utils.stretch_tors_data_constructor(prev_states_force[f_idx][r], seq, repeat_dir / "data")
                 lammps_in_fpath = repeat_dir / "in"
                 lammps_utils.stretch_tors_constructor(
@@ -370,22 +376,23 @@ def run(args):
                 raise RuntimeError(f"Combining trajectories failed with error code: {combine_proc.returncode}")
 
         # Remove unnecessary files
-        files_to_remove = ["filename.dat", "data.oxdna", "dump.lammpstrj"]
-        for force_pn in forces_pn:
-            sim_dir = iter_dir / f"sim-f{force_pn}"
-            for r in range(n_sims):
-                repeat_dir = sim_dir / f"r{r}"
-                for f_stem in files_to_remove:
-                    file_to_rem = repeat_dir / f_stem
-                    file_to_rem.unlink()
+        if not no_delete:
+            files_to_remove = ["filename.dat", "data.oxdna", "dump.lammpstrj"]
+            for force_pn in forces_pn:
+                sim_dir = iter_dir / f"sim-f{force_pn}"
+                for r in range(n_sims):
+                    repeat_dir = sim_dir / f"r{r}"
+                    for f_stem in files_to_remove:
+                        file_to_rem = repeat_dir / f_stem
+                        file_to_rem.unlink()
 
-        for torque_pnnm in torques_pnnm:
-            sim_dir = iter_dir / f"sim-t{torque_pnnm}"
-            for r in range(n_sims):
-                repeat_dir = sim_dir / f"r{r}"
-                for f_stem in files_to_remove:
-                    file_to_rem = repeat_dir / f_stem
-                    file_to_rem.unlink()
+            for torque_pnnm in torques_pnnm:
+                sim_dir = iter_dir / f"sim-t{torque_pnnm}"
+                for r in range(n_sims):
+                    repeat_dir = sim_dir / f"r{r}"
+                    for f_stem in files_to_remove:
+                        file_to_rem = repeat_dir / f_stem
+                        file_to_rem.unlink()
 
         # Analyze
         all_force_t0_traj_states = list()
@@ -1049,6 +1056,7 @@ def get_parser():
                         help="Target g")
 
     parser.add_argument('--no-archive', action='store_true')
+    parser.add_argument('--no-delete', action='store_true')
 
 
     return parser
