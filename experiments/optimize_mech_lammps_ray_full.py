@@ -144,6 +144,9 @@ def run(args):
     opt_xstk = args['opt_xstk']
     assert(int(opt_stk) + int(opt_hb) + int(opt_xstk))
 
+    timestep = args['timestep']
+    ignore_warnings = args['ignore_warnings']
+
 
 
     # forces_pn = jnp.array([0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0])
@@ -182,6 +185,7 @@ def run(args):
     g_path = log_dir / "g.txt"
     resample_log_path = log_dir / "resample_log.txt"
     iter_params_path = log_dir / "iter_params.txt"
+    warnings_path = log_dir / "warnings.txt"
 
     params_str = ""
     params_str += f"n_sample_states: {n_sample_states}\n"
@@ -290,7 +294,7 @@ def run(args):
                     params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
                     force_pn=force_pn, torque_pnnm=0,
                     save_every=sample_every, n_steps=n_total_steps,
-                    seq_avg=seq_avg, seed=repeat_seed)
+                    seq_avg=seq_avg, seed=repeat_seed, timestep=timestep)
 
         for t_idx, torque_pnnm in enumerate(torques_pnnm):
             sim_dir = iter_dir / f"sim-t{torque_pnnm}"
@@ -434,6 +438,14 @@ def run(args):
                 repeat_dir = sim_dir / f"r{r}"
                 log_path = repeat_dir / "log.lammps"
                 rpt_log_df = lammps_utils.read_log(log_path)
+                if ignore_warnings:
+                    n_row_full = rpt_log_df.shape[0]
+                    rpt_log_df = rpt_log_df[rpt_log_df.v_tns != "WARNING:"]
+                    n_row_no_warnings = rpt_log_df.shape[0]
+                    n_warnings = n_row_full - n_row_no_warnings
+                    if n_warnings > 0:
+                        with open(warnings_path, "a") as f:
+                            f.write(f"Ignored {n_warnings} at the {i}th iteration, force {force_pn}, repeat {r}...\n")
                 assert(rpt_log_df.shape[0] == n_total_states+1)
                 rpt_log_df = rpt_log_df[1+n_eq_states:]
                 log_dfs.append(rpt_log_df)
@@ -590,6 +602,14 @@ def run(args):
                 repeat_dir = sim_dir / f"r{r}"
                 log_path = repeat_dir / "log.lammps"
                 rpt_log_df = lammps_utils.read_log(log_path)
+                if ignore_warnings:
+                    n_row_full = rpt_log_df.shape[0]
+                    rpt_log_df = rpt_log_df[rpt_log_df.v_tns != "WARNING:"]
+                    n_row_no_warnings = rpt_log_df.shape[0]
+                    n_warnings = n_row_full - n_row_no_warnings
+                    if n_warnings > 0:
+                        with open(warnings_path, "a") as f:
+                            f.write(f"Ignored {n_warnings} at the {i}th iteration, torque {torque_pnnm}, repeat {r}...\n")
                 assert(rpt_log_df.shape[0] == n_total_states+1)
                 rpt_log_df = rpt_log_df[1+n_eq_states:]
                 log_dfs.append(rpt_log_df)
@@ -1080,10 +1100,14 @@ def get_parser():
 
     parser.add_argument('--no-archive', action='store_true')
     parser.add_argument('--no-delete', action='store_true')
+    parser.add_argument('--ignore-warnings', action='store_true')
 
     parser.add_argument('--opt-stk', action='store_true')
     parser.add_argument('--opt-hb', action='store_true')
     parser.add_argument('--opt-xstk', action='store_true')
+
+    parser.add_argument('--timestep', type=float, default=0.01,
+                        help="Timestep for nve/dotc/langevin integrator")
 
 
     return parser

@@ -140,7 +140,8 @@ def stretch_tors_constructor(
         force_pn=2, torque_pnnm=10,
         k_restore=1217.58,
         save_every=660, n_steps=6600660,
-        seq_avg=True, seed=30362
+        seq_avg=True, seed=30362,
+        timestep=0.01
 ):
     base_params = model.get_full_base_params(override_base_params, seq_avg=True) # Note: seq_avg is always true for base parameter construction
     params = deepcopy(base_params)
@@ -212,7 +213,7 @@ def stretch_tors_constructor(
 
     fix 1 all nve/dotc/langevin {kT} {kT} 100.0 {seed} angmom 1000
 
-    timestep 0.01
+    timestep {timestep}
 
 
     # Added by RK
