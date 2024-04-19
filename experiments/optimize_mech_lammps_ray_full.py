@@ -1027,6 +1027,7 @@ def run(args):
 
         plt.plot(onp.arange(i+1), all_cs, linestyle="--", color="blue")
         plt.scatter(all_ref_times, all_ref_cs, marker='o', label="Resample points", color="blue")
+        plt.axhline(y=target_c, linestyle='--', label="Target C", color='red')
         plt.legend()
         plt.ylabel("C (pn*nm^2)")
         plt.xlabel("Iteration")
@@ -1035,6 +1036,7 @@ def run(args):
 
         plt.plot(onp.arange(i+1), all_gs, linestyle="--", color="blue")
         plt.scatter(all_ref_times, all_ref_gs, marker='o', label="Resample points", color="blue")
+        plt.axhline(y=target_g, linestyle='--', label="Target g", color='red')
         plt.legend()
         plt.ylabel("g (pn*nm)")
         plt.xlabel("Iteration")
@@ -1043,6 +1045,7 @@ def run(args):
 
         plt.plot(onp.arange(i+1), all_seffs, linestyle="--", color="blue")
         plt.scatter(all_ref_times, all_ref_seffs, marker='o', label="Resample points", color="blue")
+        plt.axhline(y=target_s_eff, linestyle='--', label="Target S_eff", color='red')
         plt.legend()
         plt.ylabel("S_eff pN")
         plt.xlabel("Iteration")
