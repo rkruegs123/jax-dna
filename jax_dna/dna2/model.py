@@ -1,3 +1,5 @@
+# ruff: noqa
+# fmt: off
 import pdb
 import unittest
 from functools import partial
@@ -60,7 +62,7 @@ def add_coupling(base_params):
     base_params["hydrogen_bonding"]["theta0_hb_8"] = base_params["hydrogen_bonding"]["theta0_hb_7"]
     base_params["hydrogen_bonding"]["delta_theta_star_hb_8"] = base_params["hydrogen_bonding"]["delta_theta_star_hb_7"]
 
-    
+
 def get_full_base_params(override_base_params, seq_avg=True):
     if seq_avg:
         default_base_params = default_base_params_seq_avg

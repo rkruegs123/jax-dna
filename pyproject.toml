@@ -1,0 +1,131 @@
+[project]
+name = "jax_dna"
+dynamic = ["version"]
+authors = [
+    {name = "Ryan Kreuger", email = "ryan_krueger@g.harvard.edu"},
+    {name = "Scientifc Software Engineering Center at JHU", email = "ssec@jhu.edu"},
+]
+description = ""
+readme = "README.md"
+license = {file = "LICENSE"}
+
+requires-python = ">=3.11"
+dependencies = [
+    "jax_md",
+    "jax",
+    "numpy",
+    "jaxtyping",
+]
+
+[project.optional-dependencies]
+dev = [
+    "bandit>=1.7",
+    "build",
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "setuptools>=61.2",
+    "setuptools_scm[toml]>=8.0",
+    "tox"
+]
+docs = [
+    "sphinx",
+    "sphinx_rtd_theme",
+    "sphinx_book_theme",
+    "sphinx-automodapi",
+    "nbsphinx"
+]
+
+[project.urls]
+homepage = "https://github.com/rkruegs123/jax-dna"
+documentation = "https://github.com/rkruegs123/jax-dna"
+repository = "https://github.com/rkruegs123/jax-dna"
+
+[build-system]
+requires = ["setuptools>=61.2", "setuptools_scm[toml]>=8.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["jax_dna"]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools_scm]
+write_to = "jax_dna/_version.py"
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+
+[tool.ruff]
+line-length = 120
+lint.select = ["ALL"]
+lint.ignore = [
+    "ANN002",  # https://docs.astral.sh/ruff/rules/missing-type-args/
+    "ANN003",  # https://docs.astral.sh/ruff/rules/missing-type-kwargs/
+    "ANN101",  # https://docs.astral.sh/ruff/rules/missing-type-self/
+    "ANN102",  # https://docs.astral.sh/ruff/rules/missing-type-cls/
+    "ANN401",  # https://docs.astral.sh/ruff/rules/any-type/
+    "PLR0913",  # https://docs.astral.sh/ruff/rules/too-many-arguments/
+    "EM101",  # https://docs.astral.sh/ruff/rules/raw-string-in-exception/
+    "EM102",  # https://docs.astral.sh/ruff/rules/f-string-in-exception/
+    "TRY003",  # https://docs.astral.sh/ruff/rules/raise-vanilla-args/
+    "D407",  # https://docs.astral.sh/ruff/rules/dashed-underline-after-section/
+    # added for ruff formatter compatability
+    "ISC001", # https://docs.astral.sh/ruff/rules/single-line-implicit-string-concatenation/
+    "COM812", # https://docs.astral.sh/ruff/rules/missing-trailing-comma/
+    # added for jax_dna
+    "FIX002", # https://docs.astral.sh/ruff/rules/line-contains-todo/
+
+]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "docs",
+    "node_modules",
+    "venv",
+    "_version.py"
+]
+target-version = "py311"
+src=["jax_dna"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/test{s,}/*.py" = [
+    "S101",  # https://docs.astral.sh/ruff/rules/assert/
+    "D",  # https://docs.astral.sh/ruff/rules/#pydocstyle-d
+    "ARG001",  # https://docs.astral.sh/ruff/rules/unused-function-argument/
+    "INP",  # https://docs.astral.sh/ruff/rules/#flake8-no-pep420-inp
+    "ANN",  # https://docs.astral.sh/ruff/rules/#flake8-annotations-ann
+]
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"  # https://docs.astral.sh/ruff/settings/#lint_flake8-quotes_docstring-quotes
+inline-quotes = "double"  # https://docs.astral.sh/ruff/settings/#lint_flake8-quotes_inline-quotes
+multiline-quotes = "double"  # https://docs.astral.sh/ruff/settings/#lint_flake8-quotes_multiline-quotes
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = [
+    "jax_dna",
+]
+python_files = [
+    "test_*.py",
+]
