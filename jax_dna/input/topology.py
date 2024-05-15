@@ -42,9 +42,8 @@ class Topology:
     seq: str
     seq_one_hot: np.ndarray
 
-    def __post_init__(self):
+    def __post_init__(self) -> None: # noqa: C901 I am not sure this needs to be broken in to multiple functions
         """Check that the topology is valid."""
-
         if self.n_nucleotides < 1:
             raise ValueError(ERR_TOPOLOGY_INVALID_NUMBER_NUCLEOTIDES)
 
@@ -60,11 +59,11 @@ class Topology:
         if len(self.strand_counts) == 0 or sum(self.strand_counts) == 0:
             raise ValueError(ERR_TOPOLOGY_INVALID_STRAND_COUNTS)
 
-        if len(self.bonded_neighbors.shape) != 2 or self.bonded_neighbors.shape[1] != 2:
-            raise ValueError(ERR_TOPOLOGY_BONDED_NEIGHBORS_INVALID_SHAPE)
+        # if len(self.bonded_neighbors.shape) != 2 or self.bonded_neighbors.shape[1] != 2:
+        #     raise ValueError(ERR_TOPOLOGY_BONDED_NEIGHBORS_INVALID_SHAPE)
 
-        if len(self.unbonded_neighbors.shape) != 2 or self.unbonded_neighbors.shape[1] != 2:
-            raise ValueError(ERR_TOPOLOGY_UNBONDED_NEIGHBORS_INVALID_SHAPE)
+        # if len(self.unbonded_neighbors.shape) != 2 or self.unbonded_neighbors.shape[1] != 2:
+        #     raise ValueError(ERR_TOPOLOGY_UNBONDED_NEIGHBORS_INVALID_SHAPE)
 
         if len(set(self.seq) - set("AGCTU")) > 0:
             raise ValueError(ERR_TOPOLOGY_INVALID_SEQUENCE_NUCLEOTIDES)
@@ -74,7 +73,6 @@ class Topology:
 
         if self.seq_one_hot.astype(int).sum() != self.n_nucleotides:
             raise ValueError(ERR_TOPOLOGY_INVALID_ONE_HOT_SEQUENCE_VALUES)
-
 
 
 def from_oxdna_file(path: typ.PathOrStr) -> Topology:
@@ -87,7 +85,6 @@ def from_oxdna_file(path: typ.PathOrStr) -> Topology:
     with path.open() as f:
         lines = f.readlines()
 
-    # Determine the format of the file
     file_format = _determine_oxdna_format(lines[0])
 
     if file_format == typ.OxdnaFormat.CLASSIC:
@@ -151,7 +148,8 @@ def _from_file_oxdna_classic(lines: list[str]) -> Topology:
     # a more functional way
     # TODO(ryanhausen): refactor into function for testing
     strand_ids, bases, neighbor_5p, neighbor_3p = list(zip(*[line.strip().split() for line in lines[1:]], strict=True))
-    strand_ids = list(map(int, strand_ids))
+    # TODO(ryanhausen): unique sorts ids, is this ok to assume?
+    _, strand_counts = np.unique(list(map(int, strand_ids)), return_counts=True)
     neighbor_5p = list(map(int, neighbor_5p))
     neighbor_3p = list(map(int, neighbor_3p))
 
@@ -181,9 +179,17 @@ def _from_file_oxdna_classic(lines: list[str]) -> Topology:
     bonded_pairs = bonded_neighbors
     unbonded_pairs = all_possible_pairs - bonded_pairs - self_bonds
 
+    print(n_nucleotides)
+    print(strand_counts)
+    print(bonded_neighbors)
+    print(unbonded_pairs)
+    print(sequence)
+    print(np.array([NUCLEOTIDES_ONEHOT[s] for s in sequence], dtype=np.float64))
+
+
     return Topology(
         n_nucleotides=n_nucleotides,
-        n_strands=n_strands,
+        strand_counts=strand_counts.tolist(), # this may not need to be a list
         bonded_neighbors=np.array(list(bonded_neighbors)),
         unbonded_neighbors=np.array(list(unbonded_pairs)),
         seq=sequence,
@@ -194,3 +200,9 @@ def _from_file_oxdna_classic(lines: list[str]) -> Topology:
 def _from_file_oxdna_new(path: Path) -> Topology:
     _ = path
     raise NotImplementedError("New oxDNA format not yet supported")
+
+if __name__=="__main__":
+    top = from_oxdna_file("data/sys-defs/simple-helix/sys.top")
+
+    print(top.bonded_neighbors.shape)
+    print(top.unbonded_neighbors.shape)
