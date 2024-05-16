@@ -111,6 +111,8 @@ src=["jax_dna"]
     "ARG001",  # https://docs.astral.sh/ruff/rules/unused-function-argument/
     "INP",  # https://docs.astral.sh/ruff/rules/#flake8-no-pep420-inp
     "ANN",  # https://docs.astral.sh/ruff/rules/#flake8-annotations-ann
+    "SLF001", # https://docs.astral.sh/ruff/rules/private-member-access/
+    "E731", # https://docs.astral.sh/ruff/rules/lambda-assignment/
 ]
 
 [tool.ruff.lint.flake8-quotes]

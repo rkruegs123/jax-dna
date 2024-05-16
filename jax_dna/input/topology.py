@@ -2,8 +2,8 @@
 
 import dataclasses as dc
 import itertools
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import numpy as np
 
@@ -31,7 +31,12 @@ ERR_TOPOLOGY_INVALID_SEQUENCE_LENGTH = "Invalid sequence length"
 ERR_TOPOLOGY_INVALID_SEQUENCE_NUCLEOTIDES = "Invalid sequence nucleotides"
 ERR_TOPOLOGY_INVALID_ONE_HOT_SEQUENCE_SHAPE = "Invalid one-hot sequence shape"
 ERR_TOPOLOGY_INVALID_ONE_HOT_SEQUENCE_VALUES = "Invalid one-hot sequence values, must be 0 or 1 and sum to 1"
-ERR_INVALID_OXDNA_FORMAT = "Invalid oxDNA topology format. See https://lorenzo-rovigatti.github.io/oxDNA/configurations.html#topology-file for more information."
+ERR_INVALID_OXDNA_FORMAT = (
+    "Invalid oxDNA topology format. See "
+    "https://lorenzo-rovigatti.github.io/oxDNA/configurations.html#topology-file for more information."
+)
+ERR_STRAND_COUNTS_CIRCULAR_MISMATCH = "Strand counts and cicularity do not match"
+ERR_FILE_NOT_FOUND = "Topology file not found"
 
 
 @dc.dataclass(frozen=True)
@@ -86,7 +91,7 @@ def from_oxdna_file(path: typ.PathOrStr) -> Topology:
     path = Path(path)
 
     if not path.exists():
-        raise FileNotFoundError(f"Topology file not found: {path}")
+        raise FileNotFoundError(ERR_FILE_NOT_FOUND)
 
     with path.open() as f:
         lines = f.readlines()
@@ -112,6 +117,33 @@ def _determine_oxdna_format(first_line: str) -> tuple[typ.OxdnaFormat, Callable[
     return fmt, func
 
 
+def _get_bonded_neighbors(
+    strand_lengths: list[int],
+    is_circular: list[bool],
+) -> list[tuple[int, int]]:
+    """Convert 5' neighbors to bonded neighbors by index."""
+    if len(strand_lengths) != len(is_circular):
+        raise ValueError(ERR_STRAND_COUNTS_CIRCULAR_MISMATCH)
+
+    bonded_neighbors = []
+    init_idx = 0
+    for i, length in enumerate(strand_lengths):
+        pairs = list(itertools.pairwise(range(init_idx, init_idx + length)))
+        if is_circular[i]:
+            # the ordering here in intentional
+            pairs.append((init_idx, init_idx + length - 1))
+        bonded_neighbors.extend(pairs)
+        init_idx += length
+    return bonded_neighbors
+
+
+def _get_unbonded_neighbors(n_nucleotides: int, bonded_neighbors: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """Get unbonded neighbors."""
+    all_possible_pairs = set(itertools.combinations(range(n_nucleotides), 2))
+    self_bonds = {(i, i) for i in range(n_nucleotides)}
+    return list(all_possible_pairs - set(bonded_neighbors) - self_bonds)
+
+
 def _from_file_oxdna_classic(lines: list[str]) -> Topology:
     """Read topology information from a file in the classix oxDNA format.
 
@@ -129,64 +161,84 @@ def _from_file_oxdna_classic(lines: list[str]) -> Topology:
 
     # after the first line the topology files are space delimited with the
     # following columns:
-    # - strand id (1 - indexed)
+    # - strand id (1 indexed)
     # - nucleotide base (A=0, G=1, C=2, T=3, U=3), use char for now
     #   TODO(ryanhausen): support integers and special nucleotides
     #         https://lorenzo-rovigatti.github.io/oxDNA/configurations.html#special-nucleotides
-    # - 3' neighbor (0-indexed), -1 if none
+    # - 3' neighbor (0-indexed), -1 if none, -1 indicates the stand isn't circular
     # - 5' neighbor (0-indexed), -1 if none
     #
     # A more common convention is to store the nucleotides in the 5' -> 3' direction
     # so we need to reverse the order, which seems to be as easy as reversing the
     # order of the nucleotides per strand.
-    # TODO(ryanhausen): confirm with @rkruegs123
 
-    # splitting the lines and converting to the correct types could be done in
-    # a more functional way
-    # TODO(ryanhausen): refactor into function for testing
-    strand_ids, bases, neighbor_5p, neighbor_3p = list(zip(*[line.strip().split() for line in lines[1:]], strict=True))
+    strand_ids, bases, _, neighbor_5p = list(zip(*[line.strip().split() for line in lines[1:]], strict=True))
     strand_ids = list(map(int, strand_ids))
     # TODO(ryanhausen): unique sorts ids, is this ok to assume?
     _, strand_counts = np.unique(strand_ids, return_counts=True)
     neighbor_5p = list(map(int, neighbor_5p))
-    neighbor_3p = list(map(int, neighbor_3p))
 
-    # TODO(ryanhausen): this could be more clever, not sure if it's worth it
-    # reverse the order of the nucleotides per strand
-    # TODO(ryanhausen): refactor into function for testing
     reversed_bases = []
+    is_circular = []
     for i in range(1, n_strands + 1):
-        strand_bases = [
-            id_nucleotide[1] for id_nucleotide in zip(strand_ids, bases, strict=True) if id_nucleotide[0] == i
-        ]
+        strand_bases, strand_5p = zip(
+            *[
+                id_nucleotide[1:]
+                for id_nucleotide in zip(strand_ids, bases, neighbor_5p, strict=True)
+                if id_nucleotide[0] == i
+            ],
+            strict=True,
+        )
+        is_circular.append(strand_5p[-1] != -1)
         reversed_bases.extend(strand_bases[::-1])
     sequence = "".join(reversed_bases)
 
-    # TODO: refactor into function for testing
-    bonded_neighbors = set(
-        filter(
-            lambda nid_n3: nid_n3[1] != -1,
-            enumerate(neighbor_3p),
-        )
-    )
+    bonded_neighbors = _get_bonded_neighbors(strand_counts, is_circular)
 
-    # get unbonded neighbors
-    # TODO: refactor into function for testing
-    all_possible_pairs = set(itertools.combinations(range(n_nucleotides), 2))
-    self_bonds = {(i, i) for i in range(n_nucleotides)}
-    bonded_pairs = bonded_neighbors
-    unbonded_pairs = all_possible_pairs - bonded_pairs - self_bonds
+    unbonded_neighbors = _get_unbonded_neighbors(n_nucleotides, bonded_neighbors)
 
     return Topology(
         n_nucleotides=n_nucleotides,
         strand_counts=strand_counts,
         bonded_neighbors=np.array(list(bonded_neighbors)),
-        unbonded_neighbors=np.array(list(unbonded_pairs)),
+        unbonded_neighbors=np.array(list(unbonded_neighbors)),
         seq=sequence,
         seq_one_hot=np.array([NUCLEOTIDES_ONEHOT[s] for s in sequence], dtype=np.float64),
     )
 
 
-def _from_file_oxdna_new(path: Path) -> Topology:
-    _ = path
-    raise NotImplementedError("New oxDNA format not yet supported")
+def _from_file_oxdna_new(lines: list[str]) -> Topology:
+    # the first line of the new oxDNA format is:
+    # n_nucleotides n_strands 5->3
+    # we don't need the 5->3, so we'll just ignore it
+    n_nucleotides, n_strands = list(map(int, lines[0].strip().split()[:-1]))
+
+    # the rest of the new oxDNA file format is laid out as follows:
+    # nucleotides k=v
+    # ...
+    # nucleotides k=v
+    # Where `nuclotides` is a string of ACTG and `k=v` is a set of key value pairs
+    # the lines are repeated n_stand times
+
+    sequence = []
+    strand_counts = []
+    is_circular = []
+    for line in lines[1:]:
+        nucleotides = line.strip().split()[0]
+        sequence.append(nucleotides)
+        strand_counts.append(len(nucleotides))
+        is_circular.append("circular=true" in line)
+
+    sequence = "".join(sequence)
+
+    bonded_neighbors = _get_bonded_neighbors(strand_counts, is_circular)
+    unbonded_neighbors = _get_unbonded_neighbors(n_nucleotides, bonded_neighbors)
+
+    return Topology(
+        n_nucleotides=n_nucleotides,
+        strand_counts=np.array(strand_counts),
+        bonded_neighbors=np.array(bonded_neighbors),
+        unbonded_neighbors=np.array(unbonded_neighbors),
+        seq=sequence,
+        seq_one_hot=np.array([NUCLEOTIDES_ONEHOT[s] for s in sequence], dtype=np.float64),
+    )
