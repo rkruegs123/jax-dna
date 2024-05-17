@@ -9,6 +9,10 @@ from copy import deepcopy
 import subprocess
 import pandas as pd
 import functools
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pprint
+from tqdm import tqdm
 
 import jax.numpy as jnp
 from jax import jit, value_and_grad, vmap
@@ -16,7 +20,7 @@ from jax_md import space
 import optax
 
 from jax_dna.common import utils, trajectory, topology, checkpoint, center_configuration
-from jax_dna.common.loss import pitch
+from jax_dna.loss import pitch
 from jax_dna.dna1.oxdna_utils import rewrite_input_file
 from jax_dna.dna2.oxdna_utils import recompile_oxdna
 from jax_dna.dna2 import model
@@ -61,8 +65,18 @@ def run(args):
     img_dir = run_dir / "img"
     img_dir.mkdir(parents=False, exist_ok=False)
 
+    log_dir = run_dir / "log"
+    log_dir.mkdir(parents=False, exist_ok=False)
+
     ref_traj_dir = run_dir / "ref_traj"
     ref_traj_dir.mkdir(parents=False, exist_ok=False)
+
+    loss_path = log_dir / "loss.txt"
+    times_path = log_dir / "times.txt"
+    grads_path = log_dir / "grads.txt"
+    neff_path = log_dir / "neff.txt"
+    pitch_path = log_dir / "pitch.txt"
+    resample_log_path = log_dir / "resample_log.txt"
 
     params_str = ""
     params_str += f"n_ref_states: {n_ref_states}\n"
@@ -89,6 +103,7 @@ def run(args):
         # reverse_direction=True
         reverse_direction=False
     )
+    centered_conf_info = center_configuration.center_conf(top_info, conf_info)
     box_size = conf_info.box_size
 
     displacement_fn, shift_fn = space.free()
@@ -146,8 +161,9 @@ def run(args):
                 top_path=str(repeat_dir / "sys.top"),
                 save_interval=sample_every, seed=random.randrange(100),
                 equilibration_steps=n_eq_steps, dt=dt,
-                no_stdout_energy=0, backend=backend,
+                no_stdout_energy=0, backend="CPU",
                 log_file=str(repeat_dir / "sim.log"),
+                interaction_type="DNA2_nomesh"
             )
 
             procs.append(subprocess.Popen([oxdna_exec_path, repeat_dir / "input"]))
@@ -306,8 +322,8 @@ def run(args):
 
     # Setup the optimization
 
-    ## FIXME: get the params via the DNA2 default params
-    params = FIXME
+    params = deepcopy(model.EMPTY_BASE_PARAMS)
+    params["stacking"] = model.default_base_params_seq_avg["stacking"]
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
 
@@ -320,6 +336,89 @@ def run(args):
     end = time.time()
     with open(resample_log_path, "a") as f:
         f.write(f"Finished generating initial reference states. Took {end - start} seconds.\n\n")
+
+
+    min_n_eff = int(n_ref_states * min_neff_factor)
+
+    all_losses = list()
+    all_pitches = list()
+    all_n_effs = list()
+    
+    all_ref_losses = list()
+    all_ref_pitches = list()
+    all_ref_times = list()
+        
+    num_resample_iters = 0
+    plot_every = 10
+    for i in tqdm(range(n_iters)):
+        iter_start = time.time()
+        (loss, (n_eff, curr_pitch)), grads = grad_fn(params, ref_states, ref_energies, ref_pitches)
+
+        num_resample_iters += 1
+
+        if i == 0:
+            all_ref_losses.append(loss)
+            all_ref_times.append(i)
+            all_ref_pitches.append(curr_pitch)
+
+        if n_eff < min_n_eff or num_resample_iters >= max_approx_iters:
+            num_resample_iters = 0
+
+            with open(resample_log_path, "a") as f:
+                f.write(f"Iteration {i}\n")
+                f.write(f"- n_eff was {n_eff}. Resampling...\n")
+
+            start = time.time()
+            
+            ref_states, ref_energies, ref_pitches, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_basedir=prev_ref_basedir)
+            end = time.time()
+            prev_ref_basedir = deepcopy(ref_iter_dir)
+            with open(resample_log_path, "a") as f:
+                f.write(f"- time to resample: {end - start} seconds\n\n")
+
+            (loss, (n_eff, curr_pitch)), grads = grad_fn(params, ref_states, ref_energies, ref_pitches)
+
+            all_ref_losses.append(loss)
+            all_ref_times.append(i)
+            all_ref_pitches.append(curr_pitch)
+            
+        iter_end = time.time()
+
+        with open(loss_path, "a") as f:
+            f.write(f"{loss}\n")
+        with open(neff_path, "a") as f:
+            f.write(f"{n_eff}\n")
+        with open(pitch_path, "a") as f:
+            f.write(f"{curr_pitch}\n")
+        with open(times_path, "a") as f:
+            f.write(f"{iter_end - iter_start}\n")
+
+        all_losses.append(loss)
+        all_n_effs.append(n_eff)
+        all_pitches.append(curr_pitch)
+
+        if i % plot_every == 0 and i:
+
+            plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
+
+            plt.legend()
+            plt.ylabel("Loss")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"losses_iter{i}.png")
+            plt.clf()
+
+            plt.plot(onp.arange(i+1), all_pitches, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_pitches, marker='o', label="Resample points", color="blue")
+            plt.axhline(y=target_pitch, linestyle='--', label="Target pitch", color='red')
+            plt.legend()
+            plt.ylabel("Expected Pitch")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"pitches_iter{i}.png")
+            plt.clf()
+            
+        updates, opt_state = optimizer.update(grads, opt_state, params)
+        params = optax.apply_updates(params, updates)
 
 
 def get_parser():
@@ -338,7 +437,7 @@ def get_parser():
     parser.add_argument('--n-sims', type=int, default=1,
                         help="Number of individual simulations")
 
-    parser.add_argument('--target-pitch', type=float, default=pitch.TARGET_PITCH,
+    parser.add_argument('--target-pitch', type=float, default=pitch.TARGET_AVG_PITCH,
                         help="Target pitch in number of bps")
     parser.add_argument('--n-iters', type=int, default=200,
                         help="Number of iterations of gradient descent")
@@ -361,4 +460,4 @@ if __name__ == "__main__":
     parser = get_parser()
     args = vars(parser.parse_args())
 
-    run(args, oxdna_path)
+    run(args)
