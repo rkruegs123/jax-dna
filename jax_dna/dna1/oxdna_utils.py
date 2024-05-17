@@ -18,7 +18,7 @@ from jax_dna.common import topology, trajectory
 
 MODEL_TEMPLATE_PATH = Path("data/templates/model_template.h")
 
-variable_mapper = {
+DEFAULT_VARIABLE_MAPPER = {
     "fene": {
         "eps_backbone": "FENE_EPS",
         "delta_backbone": "FENE_DELTA",
@@ -290,7 +290,7 @@ variable_mapper = {
 
 
 
-def recompile_oxdna(override_base_params, oxdna_path, t_kelvin, num_threads=4):
+def recompile_oxdna(override_base_params, oxdna_path, t_kelvin, num_threads=4, variable_mapper=DEFAULT_VARIABLE_MAPPER):
     if not oxdna_path.exists():
         raise RuntimeError(f"No oxDNA package at path: {oxdna_path}")
 
