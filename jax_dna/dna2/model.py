@@ -60,7 +60,7 @@ def add_coupling(base_params):
     base_params["hydrogen_bonding"]["theta0_hb_8"] = base_params["hydrogen_bonding"]["theta0_hb_7"]
     base_params["hydrogen_bonding"]["delta_theta_star_hb_8"] = base_params["hydrogen_bonding"]["delta_theta_star_hb_7"]
 
-    
+
 def get_full_base_params(override_base_params, seq_avg=True):
     if seq_avg:
         default_base_params = default_base_params_seq_avg
@@ -428,7 +428,9 @@ class TestDna2(unittest.TestCase):
         traj_states = traj_info.get_states()
 
         displacement_fn, shift_fn = space.periodic(traj_info.box_size)
-        model = EnergyModel(displacement_fn, t_kelvin=t_kelvin, salt_conc=salt_conc,
+        params = deepcopy(EMPTY_BASE_PARAMS)
+        # params["stacking"] = default_base_params_seq_avg["stacking"]
+        model = EnergyModel(displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_conc,
                             ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights,
                             seq_avg=avg_seq)
 

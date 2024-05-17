@@ -6,6 +6,9 @@
 **/**/__pycache__/
 **/**/**/__pycache__/
 
+*.pyc
+**/*.pyc
+
 v2/data/output
 bak/v2/data/output
 
