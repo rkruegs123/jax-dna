@@ -6,6 +6,7 @@ import pprint
 from tqdm import tqdm
 import time
 import argparse
+import numpy as onp
 
 import optax
 import jax.numpy as jnp
@@ -29,6 +30,7 @@ def run(args):
     n_skip_quartets = args['n_skip_quartets']
     init_hi = args['hi']
     init_lo = args['lo']
+    sample_every = args['sample_every']
 
     # Setup the logging directory
     if run_name is None:
@@ -52,21 +54,24 @@ def run(args):
 
 
     # Load the system
-    sys_basedir = Path("data/sys-defs/simple-helix")
+    # sys_basedir = Path("data/sys-defs/simple-helix")
+    # top_path = sys_basedir / "sys.top"
+    # conf_path = sys_basedir / "bound_relaxed.conf"
 
+    sys_basedir = Path("data/templates/simple-helix-12bp")
     top_path = sys_basedir / "sys.top"
+    conf_path = sys_basedir / "init.conf"
+    
+    
     top_info = topology.TopologyInfo(top_path, reverse_direction=False)
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
+    n_bp = (seq_oh.shape[0] // 2)
+    simple_helix_quartets = utils.get_all_quartets(n_bp)[1:-1]
 
-    simple_helix_quartets = jnp.array([
-        [1, 14, 2, 13], [2, 13, 3, 12],
-        [3, 12, 4, 11], [4, 11, 5, 10],
-        [5, 10, 6, 9]])
     compute_avg_pitch, pitch_loss_fn = pitch.get_pitch_loss_fn(
         simple_helix_quartets, displacement_fn, model.com_to_hb)
 
-    conf_path = sys_basedir / "bound_relaxed.conf"
     conf_info = trajectory.TrajectoryInfo(
         top_info,
         read_from_file=True, traj_path=conf_path,
@@ -100,7 +105,6 @@ def run(args):
                                  checkpoint_every=checkpoint_every)
 
     
-    sample_every = 1000
     def body_metadata_fn(body):
         mean_pitch = compute_avg_pitch(body)
         return mean_pitch
@@ -148,7 +152,7 @@ def run(args):
         def loss_fn(params, eq_body, key):
             fin_pos, traj = sim_fn(params, eq_body, n_steps, key, gamma)
             loss, metadata = traj_loss_fn(traj)
-            return loss, metadata
+            return loss, traj
         grad_fn = value_and_grad(loss_fn, has_aux=True)
         grad_fn = jit(grad_fn)
             
@@ -160,24 +164,32 @@ def run(args):
         key = random.PRNGKey(0)
         try:
             start = time.time()
-            (loss, metadata), grads = grad_fn(params, init_body, key)
+            (loss, traj), grads = grad_fn(params, init_body, key)
             end = time.time()
-            first_eval_time = end - start
+            first_grad_time = end - start
 
-            pdb.set_trace()
-            
-            grad_vals = [float(v) for v in grads['stacking'].values()]
-
-            pdb.set_trace()
+            grad_vals = onp.array([float(v) for v in grads['stacking'].values()])
+            grad_vals_abs = onp.abs(grad_vals)
+            mean_grad_abs = grad_vals_abs.mean()
             
             traj_info = trajectory.TrajectoryInfo(
-                top_info, read_from_states=True, states=traj, box_size=conf_info.box_size)
+                top_info, read_from_states=True, states=traj[::sample_every], box_size=conf_info.box_size)
             traj_info.write(trajs_dir / f"traj_c{checkpoint_every}_n{n_steps}.dat", reverse=True)
 
             start = time.time()
             (loss, traj), grads = grad_fn(params, init_body, key)
             end = time.time()
-            second_eval_time = end - start
+            second_grad_time = end - start
+
+            start = time.time()
+            loss, traj = loss_fn(params, init_body, key)
+            end =  time.time()
+            first_loss_time = end - start
+
+            start = time.time()
+            loss, traj = loss_fn(params, init_body, key)
+            end =  time.time()
+            second_loss_time = end - start
             
             print("success")
             
@@ -186,11 +198,14 @@ def run(args):
             print(e)
             print("failed")
 
-            first_eval_time = -1
-            second_eval_time = -1
+            first_grad_time = -1
+            second_grad_time = -1
+            first_loss_time = -1
+            second_loss_time = -1
+            mean_grad_abs = -1
 
             failed = True
-        return failed, first_eval_time, second_eval_time
+        return failed, first_grad_time, second_grad_time, first_loss_time, second_loss_time, mean_grad_abs
             
 
     with open(log_path, "a") as f:
@@ -207,14 +222,16 @@ def run(args):
         print(f"lo: {lo}")
         print(f"hi: {hi}")
 
-        failed, first_eval_time, second_eval_time = check_oom(curr*sample_every, checkpoint_every)
+        failed, first_grad_time, second_grad_time, first_loss_time, second_loss_time, mean_grad_abs = check_oom(curr*sample_every, checkpoint_every)
         with open(log_path, "a") as f:
-            f.write(f"- # 1000 steps: {curr}\n")
+            f.write(f"- # steps: {sample_every*curr}\n")
             f.write(f"\t- failed: {failed}\n")
-            f.write(f"\t- 1st eval time: {first_eval_time}\n")
-            f.write(f"\t- 2nd eval time: {second_eval_time}\n")
+            f.write(f"\t- 1st grad time: {first_grad_time}\n")
+            f.write(f"\t- 2nd grad time: {second_grad_time}\n")
+            f.write(f"\t- 1st loss time: {first_loss_time}\n")
+            f.write(f"\t- 2nd loss time: {second_loss_time}\n")
+            f.write(f"\t- Mean grad abs.: {mean_grad_abs}\n")
         if failed:
-            pdb.set_trace()
             hi = curr
             curr = lo + (hi - lo) // 2
         else:
@@ -233,12 +250,16 @@ def get_parser():
     parser = argparse.ArgumentParser(description="Check OOM for oxDNA simulations in JAX-MD")
 
     parser.add_argument('--run-name', type=str, help='Run name')
+
+    parser.add_argument('--sample-every', type=int, default=1000,
+                        help="Sampling frequency for trajectories")
     parser.add_argument('--n-skip-quartets', type=int, default=1,
                         help="Number of quartets to skip on either end of the duplex")
     parser.add_argument('--hi', type=int, default=500,
-                        help="Maximum # thousand steps for binary search")
+                        help="Maximum multiplier of sample_every for binary search")
     parser.add_argument('--lo', type=int, default=0,
-                        help="Minimum # thousand steps for binary search")
+                        help="Minimum multiplier of sample_every for binary search")
+    
 
     return parser
 
