@@ -11,7 +11,8 @@ from jax_dna.common import utils
 # Table 1.3, Pg 27
 TARGET_HELICAL_DIAMETER = utils.angstroms_to_oxdna_length(20.0)
 
-def get_helical_diameter_loss_fn(bp_pairs, displacement_fn, com_to_backbone,
+def get_helical_diameter_loss_fn(bp_pairs, displacement_fn, com_to_backbone_x,
+                                 com_to_backbone_y=0.0,
                                  target_distance=TARGET_HELICAL_DIAMETER):
     """
     Constructs two functions:
@@ -38,7 +39,8 @@ def get_helical_diameter_loss_fn(bp_pairs, displacement_fn, com_to_backbone,
     def compute_helical_diameters(body, backbone_radius=0.675):
         Q = body.orientation
         back_base_vectors = utils.Q_to_back_base(Q)
-        back_sites = body.center + com_to_backbone * back_base_vectors
+        cross_prods = utils.Q_to_cross_prod(Q)
+        back_sites = body.center + com_to_backbone_x*back_base_vectors + com_to_backbone_y*cross_prods
         dr_back = d(back_sites[bp_i], back_sites[bp_j])
         r_back = jnp.linalg.norm(dr_back, axis=1)
         return r_back + 2*backbone_radius
@@ -54,7 +56,8 @@ def get_helical_diameter_loss_fn(bp_pairs, displacement_fn, com_to_backbone,
 # Table 1.3, Pg 27
 TARGET_PHOS_PHOS_DIST = utils.angstroms_to_oxdna_length(7.0)
 
-def get_backbone_distance_loss_fn(bonded_nbrs, displacement_fn, com_to_backbone,
+def get_backbone_distance_loss_fn(bonded_nbrs, displacement_fn, com_to_backbone_x,
+                                  com_to_backbone_y=0.0,
                                   target_distance=TARGET_PHOS_PHOS_DIST):
 
     d = space.map_bond(partial(displacement_fn))
@@ -64,7 +67,8 @@ def get_backbone_distance_loss_fn(bonded_nbrs, displacement_fn, com_to_backbone,
     def compute_backbone_distances(body):
         Q = body.orientation
         back_base_vectors = utils.Q_to_back_base(Q)
-        back_sites = body.center + com_to_backbone * back_base_vectors
+        cross_prods = utils.Q_to_cross_prod(Q)
+        back_sites = body.center + com_to_backbone_x*back_base_vectors + com_to_backbone_y*cross_prods
         dr_back = d(back_sites[bonded_nbrs_i], back_sites[bonded_nbrs_j])
         r_back = jnp.linalg.norm(dr_back, axis=1)
         return r_back

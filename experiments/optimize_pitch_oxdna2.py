@@ -44,6 +44,7 @@ def run(args):
     assert(n_steps_per_sim % sample_every == 0)
     n_ref_states_per_sim = n_steps_per_sim // sample_every
     n_ref_states = n_ref_states_per_sim * n_sims
+    n_skip_quartets = args['n_skip_quartets']
 
     run_name = args['run_name']
     oxdna_path = Path(args['oxdna_path'])
@@ -94,7 +95,7 @@ def run(args):
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
     quartets = utils.get_all_quartets(n_nucs_per_strand=seq_oh.shape[0] // 2)
-    # FIXME: need to skip some quartets
+    quartets = quartets[n_skip_quartets:-n_skip_quartets]
 
     conf_path = sys_basedir / "init.conf"
     conf_info = trajectory.TrajectoryInfo(
@@ -446,6 +447,8 @@ def get_parser():
                         help="Factor for determining min Neff")
     parser.add_argument('--max-approx-iters', type=int, default=5,
                         help="Maximum number of iterations before resampling")
+    parser.add_argument('--n-skip-quartets', type=int, default=1,
+                        help="Number of quartets to skip on either end of the duplex")
 
 
     parser.add_argument('--plot-every', type=int, default=10,

@@ -17,6 +17,7 @@ from jax_dna.common import utils, topology, trajectory
 
 def recompile_oxdna(override_base_params, oxdna_path, t_kelvin, num_threads=4, seq_avg=True):
     variable_mapper = deepcopy(dna1_utils.DEFAULT_VARIABLE_MAPPER)
+    override_base_params_copy = deepcopy(override_base_params)
     if seq_avg:
 
         # The variable mapper should always be correct
@@ -25,14 +26,14 @@ def recompile_oxdna(override_base_params, oxdna_path, t_kelvin, num_threads=4, s
         variable_mapper["hydrogen_bonding"]["eps_hb"] = "HYDR_EPS_OXDNA2"
 
         # However, since we're using dna1 to compile, we also have to supply the correct default values if we aren't overriding them manually
-        if "eps_stack_base" not in override_base_params["stacking"]:
-            override_base_params["stacking"]["eps_stack_base"] = model.default_base_params_seq_avg["stacking"]["eps_stack_base"]
-        if "eps_stack_kt_coeff" not in override_base_params["stacking"]:
-            override_base_params["stacking"]["eps_stack_kt_coeff"] = model.default_base_params_seq_avg["stacking"]["eps_stack_kt_coeff"]
-        if "eps_hb" not in override_base_params["hydrogen_bonding"]:
-            override_base_params["hydrogen_bonding"]["eps_hb"] = model.default_base_params_seq_avg["hydrogen_bonding"]["eps_hb"]
+        if "eps_stack_base" not in override_base_params_copy["stacking"]:
+            override_base_params_copy["stacking"]["eps_stack_base"] = model.default_base_params_seq_avg["stacking"]["eps_stack_base"]
+        if "eps_stack_kt_coeff" not in override_base_params_copy["stacking"]:
+            override_base_params_copy["stacking"]["eps_stack_kt_coeff"] = model.default_base_params_seq_avg["stacking"]["eps_stack_kt_coeff"]
+        if "eps_hb" not in override_base_params_copy["hydrogen_bonding"]:
+            override_base_params_copy["hydrogen_bonding"]["eps_hb"] = model.default_base_params_seq_avg["hydrogen_bonding"]["eps_hb"]
 
-    return dna1_utils.recompile_oxdna(override_base_params, oxdna_path, t_kelvin, num_threads=num_threads, variable_mapper=variable_mapper)
+    return dna1_utils.recompile_oxdna(override_base_params_copy, oxdna_path, t_kelvin, num_threads=num_threads, variable_mapper=variable_mapper)
 
 
 class TestOxdnaUtils(unittest.TestCase):
