@@ -31,6 +31,8 @@ def run(args):
     init_hi = args['hi']
     init_lo = args['lo']
     sample_every = args['sample_every']
+    checkpoint_every = args['checkpoint_every']
+
 
     # Setup the logging directory
     if run_name is None:
@@ -97,7 +99,6 @@ def run(args):
     mass = rigid_body.RigidBody(center=jnp.array([utils.nucleotide_mass], dtype=jnp.float64),
                                 orientation=jnp.array([utils.moment_of_inertia], dtype=jnp.float64))
 
-    checkpoint_every = None
     if checkpoint_every is None:
         scan = lax.scan
     else:
@@ -259,6 +260,9 @@ def get_parser():
                         help="Maximum multiplier of sample_every for binary search")
     parser.add_argument('--lo', type=int, default=0,
                         help="Minimum multiplier of sample_every for binary search")
+
+    parser.add_argument('--checkpoint-every', type=int, required=False,
+                        help="Checkpoint frequency")
     
 
     return parser
