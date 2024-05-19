@@ -58,11 +58,6 @@ def run(args):
     top_info = topology.TopologyInfo(top_path, reverse_direction=False)
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
-    compute_helical_diameters, helical_diam_loss_fn = geometry.get_helical_diameter_loss_fn(
-        top_info.bonded_nbrs[1:-1], displacement_fn, model.com_to_backbone_x, model.com_to_backbone_y)
-
-    compute_bb_distances, bb_dist_loss_fn = geometry.get_backbone_distance_loss_fn(
-        top_info.bonded_nbrs, displacement_fn, model.com_to_backbone_x, model.com_to_backbone_y)
 
     simple_helix_quartets = jnp.array([
         [1, 14, 2, 13], [2, 13, 3, 12],
@@ -70,10 +65,6 @@ def run(args):
         [5, 10, 6, 9]])
     compute_avg_pitch, pitch_loss_fn = pitch.get_pitch_loss_fn(
         simple_helix_quartets, displacement_fn, model.com_to_hb)
-
-    simple_helix_bps = jnp.array([[1, 14], [2, 13], [3, 12],
-                                  [4, 11], [5, 10], [6, 9]])
-    compute_avg_p_twist, p_twist_loss_fn = propeller.get_propeller_loss_fn(simple_helix_bps)
 
     conf_path = sys_basedir / "bound_relaxed.conf"
     conf_info = trajectory.TrajectoryInfo(
@@ -111,23 +102,13 @@ def run(args):
     
     sample_every = 1000
     def body_metadata_fn(body):
-        helical_diams = compute_helical_diameters(body)
-        mean_helical_diam = jnp.mean(helical_diams)
-
-        bb_dists = compute_bb_distances(body)
-        mean_bb_dist = jnp.mean(bb_dists)
-
         mean_pitch = compute_avg_pitch(body)
-
-        mean_p_twist = compute_avg_p_twist(body)
-
-        return (mean_helical_diam, mean_bb_dist, mean_pitch, mean_p_twist)
+        return mean_pitch
 
 
     @jit
     def body_loss_fn(body):
-        loss = helical_diam_loss_fn(body) + bb_dist_loss_fn(body) \
-               + pitch_loss_fn(body) + p_twist_loss_fn(body)
+        loss = pitch_loss_fn(body)
         return loss, body_metadata_fn(body)
 
     @jit
@@ -173,7 +154,7 @@ def run(args):
             
         params = deepcopy(model.EMPTY_BASE_PARAMS)
         default_base_params = model.default_base_params_seq_avg
-        params["fene"] = default_base_params["fene"]
+        # params["fene"] = default_base_params["fene"]
         params["stacking"] = default_base_params["stacking"]
 
         key = random.PRNGKey(0)
