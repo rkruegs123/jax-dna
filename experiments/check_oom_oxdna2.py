@@ -173,9 +173,9 @@ def run(args):
             grad_vals_abs = onp.abs(grad_vals)
             mean_grad_abs = grad_vals_abs.mean()
             
-            traj_info = trajectory.TrajectoryInfo(
-                top_info, read_from_states=True, states=traj[::sample_every], box_size=conf_info.box_size)
-            traj_info.write(trajs_dir / f"traj_c{checkpoint_every}_n{n_steps}.dat", reverse=True)
+            # traj_info = trajectory.TrajectoryInfo(
+            #     top_info, read_from_states=True, states=traj[::sample_every], box_size=conf_info.box_size)
+            # traj_info.write(trajs_dir / f"traj_c{checkpoint_every}_n{n_steps}.dat", reverse=True)
 
             start = time.time()
             (loss, traj), grads = grad_fn(params, init_body, key)
