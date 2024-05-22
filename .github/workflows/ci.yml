@@ -39,6 +39,7 @@ jobs:
 
   test:
     name: pytests on Python ${{ matrix.python-version }} and ${{ matrix.os }}
+    timeout-minutes: 5
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
