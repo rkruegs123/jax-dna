@@ -430,7 +430,9 @@ class TestDna2(unittest.TestCase):
         traj_states = traj_info.get_states()
 
         displacement_fn, shift_fn = space.periodic(traj_info.box_size)
-        model = EnergyModel(displacement_fn, t_kelvin=t_kelvin, salt_conc=salt_conc,
+        params = deepcopy(EMPTY_BASE_PARAMS)
+        # params["stacking"] = default_base_params_seq_avg["stacking"]
+        model = EnergyModel(displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_conc,
                             ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights,
                             seq_avg=avg_seq)
 
@@ -463,15 +465,6 @@ class TestDna2(unittest.TestCase):
                 print(f"\tState {i}:")
                 print(f"\t\tComputed subterms: {ith_computed_subterms}")
                 print(f"\t\toxDNA subterms: {ith_oxdna_subterms}")
-                # print(f"\t\t|FENE Diff.|: {onp.abs(ith_computed_subterms[0] - ith_oxdna_subterms[0])}")
-                # print(f"\t\t|Exc. Vol. Bonded Diff.|: {onp.abs(ith_computed_subterms[1] - ith_oxdna_subterms[1])}")
-                # print(f"\t\t|Stack Diff.|: {onp.abs(ith_computed_subterms[2] - ith_oxdna_subterms[2])}")
-                # print(f"\t\t|Exc. Vol. Non-bonded Diff.|: {onp.abs(ith_computed_subterms[3] - ith_oxdna_subterms[3])}")
-                # print(f"\t\t|H.B. Diff.|: {onp.abs(ith_computed_subterms[4] - ith_oxdna_subterms[4])}")
-                # print(f"\t\t|Cr. Stack Diff.|: {onp.abs(ith_computed_subterms[5] - ith_oxdna_subterms[5])}")
-                # coax_diff = onp.abs(ith_computed_subterms[6] - ith_oxdna_subterms[6])
-                # print(f"\t\t|Cx. Stack Diff.|: {coax_diff}")
-                # print(f"\t\t|Debye Diff.|: {onp.abs(ith_computed_subterms[7] - ith_oxdna_subterms[7])}")
                 print(f"\t\t|Difference|: {onp.abs(ith_computed_subterms - ith_oxdna_subterms)}")
                 print(f"\t\t|HB Difference|: {onp.abs(ith_computed_subterms[4] - ith_oxdna_subterms[4])}")
 

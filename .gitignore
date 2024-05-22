@@ -26,6 +26,11 @@ share/python-wheels/
 *.egg
 MANIFEST
 _version.py
+*.pyc
+**/*.pyc
+
+v2/data/output
+bak/v2/data/output
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

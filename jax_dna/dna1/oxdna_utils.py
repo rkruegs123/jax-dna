@@ -20,7 +20,7 @@ from jax_dna.common import topology, trajectory
 
 MODEL_TEMPLATE_PATH = Path("data/templates/model_template.h")
 
-variable_mapper = {
+DEFAULT_VARIABLE_MAPPER = {
     "fene": {
         "eps_backbone": "FENE_EPS",
         "delta_backbone": "FENE_DELTA",
@@ -292,7 +292,7 @@ variable_mapper = {
 
 
 
-def recompile_oxdna(override_base_params, oxdna_path, t_kelvin, num_threads=4):
+def recompile_oxdna(override_base_params, oxdna_path, t_kelvin, num_threads=4, variable_mapper=DEFAULT_VARIABLE_MAPPER):
     if not oxdna_path.exists():
         raise RuntimeError(f"No oxDNA package at path: {oxdna_path}")
 
@@ -383,7 +383,8 @@ def rewrite_input_file(template_path, output_dir,
                        extrapolate_hist=None, # Pre-formatted string
                        weights_file=None, op_file=None,
                        external_forces_file=None,
-                       restart_step_counter=None
+                       restart_step_counter=None,
+                       interaction_type=None
 ):
     with open(template_path, "r") as f:
         input_template_lines = f.readlines()
@@ -484,6 +485,9 @@ def rewrite_input_file(template_path, output_dir,
             input_lines.append(f"{new_line}\n")
         elif tokens[0] == "restart_step_counter" and restart_step_counter is not None:
             new_line = gen_new_line(tokens, restart_step_counter, int)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "interaction_type" and interaction_type is not None:
+            new_line = gen_new_line(tokens, interaction_type, str)
             input_lines.append(f"{new_line}\n")
         else:
             input_lines.append(it_line)
