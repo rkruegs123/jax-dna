@@ -163,8 +163,6 @@ def _from_file_oxdna_classic(lines: list[str]) -> Topology:
     # following columns:
     # - strand id (1 indexed)
     # - nucleotide base (A=0, G=1, C=2, T=3, U=3), use char for now
-    #   TODO(ryanhausen): support integers and special nucleotides
-    #         https://lorenzo-rovigatti.github.io/oxDNA/configurations.html#special-nucleotides
     # - 3' neighbor (0-indexed), -1 if none, -1 indicates the stand isn't circular
     # - 5' neighbor (0-indexed), -1 if none
     #
@@ -174,7 +172,6 @@ def _from_file_oxdna_classic(lines: list[str]) -> Topology:
 
     strand_ids, bases, _, neighbor_5p = list(zip(*[line.strip().split() for line in lines[1:]], strict=True))
     strand_ids = list(map(int, strand_ids))
-    # TODO(ryanhausen): unique sorts ids, is this ok to assume?
     _, strand_counts = np.unique(strand_ids, return_counts=True)
     neighbor_5p = list(map(int, neighbor_5p))
 
