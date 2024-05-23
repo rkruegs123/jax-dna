@@ -1,6 +1,6 @@
 """Math utilities for DNA sequence analysis."""
 
-import jax.numpy as jnp
+import numpy as np
 
 import jax_dna.utils.types as typ
 
@@ -30,17 +30,17 @@ def principal_axes_to_euler_angles(
 
     Note that Tait-Bryan (i.e. Cardan) angles are *not* proper euler angles
     """
-    psi = jnp.arctan2(x[:, 1], x[:, 0])
-    theta = jnp.arcsin(-jnp.clip(x[:, 2], -1, 1))
-    phi = jnp.arctan2(y[:, 2], z[:, 2])
+    psi = np.arctan2(x[:, 1], x[:, 0])
+    theta = np.arcsin(-np.clip(x[:, 2], -1, 1))
+    phi = np.arctan2(y[:, 2], z[:, 2])
 
     return (psi, theta, phi)
 
 
 def euler_angles_to_quaternion(
-    t1: typ.Arr_Nucleotide,
-    t2: typ.Arr_Nucleotide,
-    t3: typ.Arr_Nucleotide,
+    psi: typ.Arr_Nucleotide,
+    theta: typ.Arr_Nucleotide,
+    phi: typ.Arr_Nucleotide,
 ) -> typ.Arr_Nucleotide_4:
     """Convert Euler angles to quaternions.
 
@@ -52,13 +52,13 @@ def euler_angles_to_quaternion(
     from the following set of documentation:
     https://ntrs.nasa.gov/citations/19770024290
     """
-    sin_t1, cos_t1 = jnp.sin(0.5 * t1), jnp.cos(0.5 * t1)
-    sin_t2, cos_t2 = jnp.sin(0.5 * t2), jnp.cos(0.5 * t2)
-    sin_t3, cos_t3 = jnp.sin(0.5 * t3), jnp.cos(0.5 * t3)
+    sin_psi, cos_psi = np.sin(0.5 * psi), np.cos(0.5 * psi)
+    sin_theta, cos_theta = np.sin(0.5 * theta), np.cos(0.5 * theta)
+    sin_phi, cos_phi = np.sin(0.5 * phi), np.cos(0.5 * phi)
 
-    q0 = sin_t1 * sin_t2 * sin_t3 + cos_t1 * cos_t2 * cos_t3
-    q1 = -sin_t1 * sin_t2 * cos_t3 + sin_t3 * cos_t1 * cos_t2
-    q2 = sin_t1 * cos_t2 * sin_t3 + cos_t1 * sin_t2 * cos_t3
-    q3 = sin_t1 * cos_t2 * cos_t3 - cos_t1 * sin_t2 * sin_t3
+    q0 = sin_psi * sin_theta * sin_phi + cos_psi * cos_theta * cos_phi
+    q1 = -sin_psi * sin_theta * cos_phi + sin_phi * cos_psi * cos_theta
+    q2 = sin_psi * cos_theta * sin_phi + cos_psi * sin_theta * cos_phi
+    q3 = sin_psi * cos_theta * cos_phi - cos_psi * sin_theta * sin_phi
 
-    return jnp.array([q0, q1, q2, q3]).T
+    return np.array([q0, q1, q2, q3]).T
