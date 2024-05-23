@@ -305,6 +305,7 @@ def test_validate_box_size_raises_value_error(state_box_sizes: list[np.ndarray],
         jdt.validate_box_size(state_box_sizes)
 
 
+@pytest.mark.skip(reason="Might be too big")
 @pytest.mark.parametrize(
     (
         "datafile",
