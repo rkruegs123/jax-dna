@@ -1,0 +1,19 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 90%
+        threshold: 1%
+    patch:
+      default:
+        target: 80%
+        threshold: 1%
+
+github_checks:
+    annotations: false
+
+ignore:
+  - "**/_*.py"
+  - "setup.py"
+  - "**/test_*.py"
+  - "_version.py"

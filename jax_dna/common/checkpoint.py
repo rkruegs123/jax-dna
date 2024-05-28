@@ -1,3 +1,5 @@
+# ruff: noqa
+# fmt: off
 """Control flow functions."""
 import jax
 from jax import tree_util, lax

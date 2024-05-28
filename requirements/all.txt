@@ -1,0 +1,4 @@
+-r prd.txt
+-r build.txt
+-r test.txt
+-r docs.txt
