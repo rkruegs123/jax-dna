@@ -136,7 +136,7 @@ def from_file(
     path: typ.PathOrStr,
     strand_lengths: list[int],
     *,
-    is_oxdna: bool = False,
+    is_oxdna: bool = True,
     n_processes: int = 1,
 ) -> Trajectory:
     """Parse a trajectory file.
