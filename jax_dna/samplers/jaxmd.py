@@ -1,5 +1,7 @@
 from typing import Any
 
+import jax
+import jax.numpy as jnp
 import jax_md
 
 import jax_dna.input.trajectory as jd_traj
@@ -17,7 +19,10 @@ def run(
     input_config: dict[str, Any],
     meta:dict[str, Any],
     params: dict[str, Any]
-) -> tuple[jd_traj.Trajectory, dict[str, Any]]:
+) -> tuple[
+    jd_traj.Trajectory|list[jax_md.rigid_body.RigidBody],
+    dict[str, Any]
+]:
 
     _validate_input_config(input_config)
 
@@ -39,7 +44,7 @@ def run(
         input_config["gamma"],
     )
 
-    intit_state = init_fn(
+    init_state = init_fn(
         random_key,
         body,
         mass=mass,
@@ -48,7 +53,7 @@ def run(
         unbonded_nbrs=topology.unbonded_neighbors.T,
     )
 
-    def scan_fn(state, step):
+    def simulation_step_fn(state, _):
         state = step_fn(
             state,
             seq=topology.seq_one_hot,
@@ -58,7 +63,11 @@ def run(
         return state, state.position
 
 
-    trajectory = None
+    _, trajectory = input_config["scan_fn"](
+        simulation_step_fn,
+        init_state,
+        jnp.arange(input_config["n_steps"])
+    )
 
     return (trajectory, meta)
 
