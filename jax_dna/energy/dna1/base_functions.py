@@ -8,13 +8,13 @@ def f1(
     r_low,
     r_high,
     r_c_low,
-    r_c_high,  # thresholding/smoothing parameters
+    r_c_high,
     eps,
     a,
     r0,
-    r_c,  # morse parameters
+    r_c,
     b_low,
-    b_high,  # smoothing parameters
+    b_high,
 ):
     oob = jnp.where(
         (r_c_low < r) & (r < r_low),
@@ -31,12 +31,12 @@ def f2(
     r_low,
     r_high,
     r_c_low,
-    r_c_high,  # thresholding/smoothing parameters
+    r_c_high,
     k,
     r0,
-    r_c,  # harmonic parameters
+    r_c,
     b_low,
-    b_high,  # smoothing parameters
+    b_high,
 ):
     oob = jnp.where(
         (r_c_low < r) & (r < r_low),
@@ -49,14 +49,11 @@ def f2(
 
 
 def f3(
-    # thresholding/smoothing parameters
     r,
     r_star,
     r_c,
-    # lj parameters
     eps,
     sigma,
-    # smoothing parameters
     b,
 ):
     oob = jnp.where((r_star < r) & (r < r_c), eps * jd_potentials.v_smooth(r, b, r_c), 0.0)
@@ -67,9 +64,9 @@ def f4(
     theta,
     theta0,
     delta_theta_star,
-    delta_theta_c,  # thresholding/smoothing parameters
-    a,  # mod parameters
-    b,  # smoothing parameters
+    delta_theta_c,
+    a,
+    b,
 ):
     oob = jnp.where(
         (theta0 - delta_theta_c < theta) & (theta < theta0 - delta_theta_star),
@@ -90,9 +87,9 @@ def f4(
 def f5(
     x,
     x_star,
-    x_c,  # thresholding/smoothing parameters
-    a,  # mod parameters
-    b,  # smoothing parameters
+    x_c,
+    a,
+    b,
 ):
     return jnp.where(
         x > 0.0,

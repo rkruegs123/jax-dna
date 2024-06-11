@@ -168,4 +168,45 @@ COAXIAL_STACKING_DG = {
     "b_cos_phi4_coax": -1,
 }
 
-HB_DG = {}
+HB_DG = {
+    "dr_low_hb": 0.34,
+    "dr_high_hb": 0.70,
+    "dr_c_low_hb": -1,
+    "dr_c_high_hb": -1,
+    "eps_hb": 1.077,
+    "a_hb": 8.0,
+    "dr0_hb": 0.4,
+    "dr_c_hb": 0.75,
+    "b_low_hb": -1,
+    "b_high_hb": -1,
+    "theta0_hb_1": 0.0,
+    "delta_theta_star_hb_1": 0.70,
+    "a_hb_1": 1.50,
+    "delta_theta_hb_1_c": -1,
+    "b_hb_1": -1,
+    "theta0_hb_2": 0.0,
+    "delta_theta_star_hb_2": 0.70,
+    "a_hb_2": 1.50,
+    "delta_theta_hb_2_c": -1,
+    "b_hb_2": -1,
+    "theta0_hb_3": 0.0,
+    "delta_theta_star_hb_3": 0.70,
+    "a_hb_3": 1.50,
+    "delta_theta_hb_3_c": -1,
+    "b_hb_3": -1,
+    "theta0_hb_4": 3.141592653589,  # FIXME: pi
+    "delta_theta_star_hb_4": 0.70,
+    "a_hb_4": 0.46,
+    "delta_theta_hb_4_c": -1,
+    "b_hb_4": -1,
+    "theta0_hb_7": 1.57079632679,  # FIXME: pi / 2
+    "delta_theta_star_hb_7": 0.45,
+    "a_hb_7": 4.0,
+    "delta_theta_hb_7_c": -1,
+    "b_hb_7": -1,
+    "theta0_hb_8": 1.57079632679,  # FIXME: pi / 2
+    "delta_theta_star_hb_8": 0.45,
+    "a_hb_8": 4.0,
+    "delta_theta_hb_8_c": -1,
+    "b_hb_8": -1,
+}
