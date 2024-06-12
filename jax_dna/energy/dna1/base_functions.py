@@ -106,3 +106,5 @@ def f6(theta, a, b):
     cond = theta >= b
     val = a / 2 * (theta - b) ** 2
     return jnp.where(cond, val, 0.0)
+
+
