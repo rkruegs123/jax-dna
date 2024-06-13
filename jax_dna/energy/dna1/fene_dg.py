@@ -13,10 +13,14 @@ import jax_dna.utils.types as typ
 
 
 class Fene_DG(je_base.BaseEnergyFunction):
-    def __init__(self, displacement_fn: Callable, params: dict[str, float], opt_params: dict[str, float]):
+    def __init__(
+        self,
+        displacement_fn: Callable,
+        params: dict[str, float] = dna1_defaults.V_FENE,
+        opt_params: dict[str, float] = {},
+    ):
         super().__init__(displacement_fn, dna1_defaults.V_FENE | params, opt_params)
 
-    @typing.override
     def __call__(
         self,
         body: jax_md.rigid_body.RigidBody,

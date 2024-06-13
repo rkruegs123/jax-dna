@@ -12,7 +12,12 @@ import jax_dna.utils.types as typ
 
 
 class Stacking_DG(je_base.BaseEnergyFunction):
-    def __init__(self, displacement_fn: Callable, params: dict[str, float], opt_params: dict[str, float]):
+    def __init__(
+        self,
+        displacement_fn: Callable,
+        params: dict[str, float] = dna1_defaults.STACKING_DG,
+        opt_params: dict[str, float] = {},
+    ):
         super().__init__(displacement_fn, dna1_defaults.STACKING_DG | params, opt_params)
 
     def __call__(
@@ -106,7 +111,12 @@ class Stacking_DG(je_base.BaseEnergyFunction):
 
 
 class CrossStacking_DG(je_base.BaseEnergyFunction):
-    def __init__(self, displacement_fn: Callable, params: dict[str, float], opt_params: dict[str, float]):
+    def __init__(
+        self,
+        displacement_fn: Callable,
+        params: dict[str, float] = dna1_defaults.CROSS_STACKING_DG,
+        opt_params: dict[str, float] = {},
+    ):
         super().__init__(displacement_fn, dna1_defaults.CROSS_STACKING_DG | params, opt_params)
 
     def __call__(
@@ -198,7 +208,12 @@ class CrossStacking_DG(je_base.BaseEnergyFunction):
 
 
 class CoaxialStacking_DG(je_base.BaseEnergyFunction):
-    def __init__(self, displacement_fn: Callable, params: dict[str, float], opt_params: dict[str, float]):
+    def __init__(
+        self,
+        displacement_fn: Callable,
+        params: dict[str, float] = dna1_defaults.COAXIAL_STACKING_DG,
+        opt_params: dict[str, float] = {},
+    ):
         super().__init__(displacement_fn, dna1_defaults.COAXIAL_STACKING_DG | params, opt_params)
 
     def __call__(

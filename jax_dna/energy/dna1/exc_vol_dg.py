@@ -11,7 +11,12 @@ import jax_dna.utils.types as typ
 
 
 class Bonded_DG(je_base.BaseEnergyFunction):
-    def __init__(self, displacement_fn: Callable, params: dict[str, float], opt_params: dict[str, float]):
+    def __init__(
+        self,
+        displacement_fn: Callable,
+        params: dict[str, float] = dna1_defaults.BONDED_DG,
+        opt_params: dict[str, float] = {},
+    ):
         super().__init__(displacement_fn, dna1_defaults.BONDED_DG | params, opt_params)
 
     def __call__(
@@ -63,7 +68,12 @@ class Bonded_DG(je_base.BaseEnergyFunction):
 
 
 class Unbonded_DG(je_base.BaseEnergyFunction):
-    def __init__(self, displacement_fn: Callable, params: dict[str, float], opt_params: dict[str, float]):
+    def __init__(
+        self,
+        displacement_fn: Callable,
+        params: dict[str, float] = dna1_defaults.UNBONDED_DG,
+        opt_params: dict[str, float] = {},
+    ):
         super().__init__(displacement_fn, dna1_defaults.UNBONDED_DG | params, opt_params)
 
     def __call__(

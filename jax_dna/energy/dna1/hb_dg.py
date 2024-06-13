@@ -12,7 +12,12 @@ import jax_dna.utils.types as typ
 
 
 class HB_DG(je_base.BaseEnergyFunction):
-    def __init__(self, displacement_fn: Callable, params: dict[str, float], opt_params: dict[str, float]):
+    def __init__(
+        self,
+        displacement_fn: Callable,
+        params: dict[str, float] = dna1_defaults.HB_DG,
+        opt_params: dict[str, float] = {},
+    ):
         super().__init__(displacement_fn, dna1_defaults.HB_DG | params, opt_params)
 
     def __call__(

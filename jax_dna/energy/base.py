@@ -1,43 +1,48 @@
 import dataclasses as dc
 import functools
-from typing import Any, Callable
+from typing import Any, Callable, Union
 
 import jax.numpy as jnp
 import jax_md
 
 import jax_dna.utils.types as typ
 
+ERR_PARAM_NOT_FOUND = "Parameter '{key}' not found in {class_name}"
 ERR_CALL_NOT_IMPLEMENTED = "Subclasses must implement this method"
+ERR_COMPOSED_ENERGY_FN_LEN_MISMATCH = "Weights must have the same length as energy functions"
+ERR_COMPOSED_ENERGY_FN_TYPE_ENERGY_FNS = "energy_fns must be a list of energy functions"
+ERR_UNSUPPORTED_OPERATION = "unsupported operand type(s) for {op}: '{left}' and '{right}'"
 
 
-dc.dataclass(frozen=True)
-
-
+@dc.dataclass(frozen=True)
 class BaseEnergyFunction:
     displacement_fn: Callable
     params: dict[str, Any]
     opt_params: dict[str, Any]
 
     def __post_init__(self):
-        self.displacement_mapped = jax_md.space.map_bond(functools.partial(self.displacement_fn))
-
-    def __init__(
-        self,
-        displacement_fn: Callable,
-        params: dict[str, Any],
-        opt_params: dict[str, Any],
-    ):
-        self.displacement_fn = displacement_fn
-        self.params = params
-        self.opt_params = opt_params
-
-        self.displacement_mapped = jax_md.space.map_bond(functools.partial(displacement_fn))
+        self.displacement_mapped = jax_md.space.map_bond(self.displacement_fn)
 
     def get_param(self, key: str) -> typ.Scalar:
-        return self.opt_params.get(key, self.params[key])
+        try:
+            return self.opt_params.get(key, self.params[key])
+        except KeyError:
+            raise KeyError(ERR_PARAM_NOT_FOUND.format(key=key, class_name=self.__class__.__name__))
 
     def get_params(self, keys: list[str]) -> dict[str, typ.Scalar]:
         return {key: self.get_param(key) for key in keys}
+
+    def __add__(self, other: "BaseEnergyFunction") -> "ComposedEnergyFunction":
+        if isinstance(other, BaseEnergyFunction):
+            return ComposedEnergyFunction([self, other])
+        else:
+            raise TypeError(ERR_UNSUPPORTED_OPERATION.format(op="+", left=type(self), right=type(other)))
+
+    def __mul__(self, other: float) -> "ComposedEnergyFunction":
+        if isinstance(other, float) or isinstance(other, int):
+            return ComposedEnergyFunction([self], jnp.array([other], dtype=float))
+        else:
+            raise TypeError(ERR_UNSUPPORTED_OPERATION.format(op="*", left=type(self), right=type(other)))
 
     def __call__(
         self,
@@ -47,3 +52,71 @@ class BaseEnergyFunction:
         unbounded_neghbors: typ.Arr_Unbonded_Neighbors,
     ) -> float:
         raise NotImplementedError(ERR_CALL_NOT_IMPLEMENTED)
+
+
+@dc.dataclass(frozen=True)
+class ComposedEnergyFunction:
+    energy_fns: list[BaseEnergyFunction]
+    weights: jnp.ndarray | None = None
+
+    def __post_init__(self):
+        if type(self.energy_fns) != list or not all(isinstance(fn, BaseEnergyFunction) for fn in self.energy_fns):
+            raise TypeError(ERR_COMPOSED_ENERGY_FN_TYPE_ENERGY_FNS)
+
+        if self.weights is not None and len(self.weights) != len(self.energy_fns):
+            raise ValueError(ERR_COMPOSED_ENERGY_FN_LEN_MISMATCH)
+
+    def __call__(
+        self,
+        body: jax_md.rigid_body.RigidBody,
+        seq: jnp.ndarray,
+        bonded_neghbors: typ.Arr_Bonded_Neighbors,
+        unbounded_neghbors: typ.Arr_Unbonded_Neighbors,
+    ) -> float:
+        energy_vals = jnp.array([fn(body, seq, bonded_neghbors, unbounded_neghbors) for fn in self.energy_fns])
+        if self.weights is None:
+            return jnp.sum(energy_vals)
+        else:
+            return jnp.dot(self.weights, energy_vals)
+
+    def add_energy_fn(self, energy_fn: BaseEnergyFunction, weight: float = 1.0) -> "ComposedEnergyFunction":
+        if self.weights is None:
+            if weight == 1.0:
+                weights = None
+            else:
+                weights = jnp.array([1.0] * len(self.energy_fns) + [weight])
+        else:
+            weights = jnp.concatenate([self.weights, jnp.array([weight])])
+
+        return ComposedEnergyFunction(
+            self.energy_fns + [energy_fn],
+            weights,
+        )
+
+    def add_composable_energy_fn(self, energy_fn: "ComposedEnergyFunction") -> "ComposedEnergyFunction":
+        other_weights = energy_fn.weights
+        weights = None
+        if self.weights is None:
+            if other_weights is None:
+                weights = None
+            else:
+                weights = jnp.concatenate([jnp.ones(len(self.energy_fns)), other_weights])
+        else:
+            if other_weights is None:
+                weights = jnp.concatenate([self.weights, jnp.ones(len(energy_fn.energy_fns))])
+            else:
+                weights = jnp.concatenate([self.weights, other_weights])
+
+        return ComposedEnergyFunction(
+            self.energy_fns + energy_fn.energy_fns,
+            weights,
+        )
+
+    def __add__(self, other: Union[BaseEnergyFunction, "ComposedEnergyFunction"]) -> "ComposedEnergyFunction":
+        if isinstance(other, BaseEnergyFunction):
+            return self.add_energy_fn(other)
+        elif isinstance(other, ComposedEnergyFunction):
+            return self.add_composable_energy_fn(other)
+
+    def __radd__(self, other: Union[BaseEnergyFunction, "ComposedEnergyFunction"]) -> "ComposedEnergyFunction":
+        return self.__add__(other)
