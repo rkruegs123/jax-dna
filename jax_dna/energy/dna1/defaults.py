@@ -385,48 +385,108 @@ def _init_coaxial_stacking(params:dict[str, float]) -> dict[str, float]:
 
     return calculated_params | params
 
+COAXIAL_STACKING_DG = _init_coaxial_stacking(COAXIAL_STACKING_DG)
+
 
 HB_DG = {
     "dr_low_hb": 0.34,
     "dr_high_hb": 0.70,
-    "dr_c_low_hb": np.nan,
-    "dr_c_high_hb": np.nan,
     "eps_hb": 1.077,
     "a_hb": 8.0,
     "dr0_hb": 0.4,
     "dr_c_hb": 0.75,
-    "b_low_hb": np.nan,
-    "b_high_hb": np.nan,
     "theta0_hb_1": 0.0,
     "delta_theta_star_hb_1": 0.70,
     "a_hb_1": 1.50,
-    "delta_theta_hb_1_c": np.nan,
-    "b_hb_1": np.nan,
     "theta0_hb_2": 0.0,
     "delta_theta_star_hb_2": 0.70,
     "a_hb_2": 1.50,
-    "delta_theta_hb_2_c": np.nan,
-    "b_hb_2": np.nan,
     "theta0_hb_3": 0.0,
     "delta_theta_star_hb_3": 0.70,
     "a_hb_3": 1.50,
-    "delta_theta_hb_3_c": np.nan,
-    "b_hb_3": np.nan,
     "theta0_hb_4": np.pi,
     "delta_theta_star_hb_4": 0.70,
     "a_hb_4": 0.46,
-    "delta_theta_hb_4_c": np.nan,
-    "b_hb_4": np.nan,
     "theta0_hb_7": np.pi/2,
     "delta_theta_star_hb_7": 0.45,
     "a_hb_7": 4.0,
-    "delta_theta_hb_7_c": np.nan,
-    "b_hb_7": np.nan,
     "theta0_hb_8": np.pi/2,
     "delta_theta_star_hb_8": 0.45,
     "a_hb_8": 4.0,
-    "delta_theta_hb_8_c": np.nan,
-    "b_hb_8": np.nan,
 }
 
+def _init_hb(params:dict[str, float]) -> dict[str, float]:
+    calculated_params = {}
 
+    ## f1(dr_hb)
+    b_low_hb, dr_c_low_hb, b_high_hb, dr_c_high_hb = bsf.get_f1_smoothing_params(
+        params['eps_hb'],
+        params['dr0_hb'],
+        params['a_hb'],
+        params['dr_c_hb'],
+        params['dr_low_hb'],
+        params['dr_high_hb'],
+    )
+    calculated_params['b_low_hb'] = b_low_hb
+    calculated_params['b_high_hb'] = b_high_hb
+    calculated_params['dr_c_low_hb'] = dr_c_low_hb
+    calculated_params['dr_c_high_hb'] = dr_c_high_hb
+
+    ## f4(theta_1)
+    b_hb_1, delta_theta_hb_1_c = bsf.get_f4_smoothing_params(
+        params['a_hb_1'],
+        params['theta0_hb_1'],
+        params['delta_theta_star_hb_1'],
+    )
+
+    calculated_params['b_hb_1'] = b_hb_1
+    calculated_params['delta_theta_hb_1_c'] = delta_theta_hb_1_c
+
+    ## f4(theta_2)
+    b_hb_2, delta_theta_hb_2_c = bsf.get_f4_smoothing_params(
+        params['a_hb_2'],
+        params['theta0_hb_2'],
+        params['delta_theta_star_hb_2'],
+    )
+    calculated_params['b_hb_2'] = b_hb_2
+    calculated_params['delta_theta_hb_2_c'] = delta_theta_hb_2_c
+
+    ## f4(theta_3)
+    b_hb_3, delta_theta_hb_3_c = bsf.get_f4_smoothing_params(
+        params['a_hb_3'],
+        params['theta0_hb_3'],
+        params['delta_theta_star_hb_3'],
+    )
+    calculated_params['b_hb_3'] = b_hb_3
+    calculated_params['delta_theta_hb_3_c'] = delta_theta_hb_3_c
+
+    ## f4(theta_4)
+    b_hb_4, delta_theta_hb_4_c = bsf.get_f4_smoothing_params(
+        params['a_hb_4'],
+        params['theta0_hb_4'],
+        params['delta_theta_star_hb_4'],
+    )
+    calculated_params['b_hb_4'] = b_hb_4
+    calculated_params['delta_theta_hb_4_c'] = delta_theta_hb_4_c
+
+    ## f4(theta_7)
+    b_hb_7, delta_theta_hb_7_c = bsf.get_f4_smoothing_params(
+        params['a_hb_7'],
+        params['theta0_hb_7'],
+        params['delta_theta_star_hb_7'],
+    )
+    calculated_params['b_hb_7'] = b_hb_7
+    calculated_params['delta_theta_hb_7_c'] = delta_theta_hb_7_c
+
+    ## f4(theta_8)
+    b_hb_8, delta_theta_hb_8_c = bsf.get_f4_smoothing_params(
+        params['a_hb_8'],
+        params['theta0_hb_8'],
+        params['delta_theta_star_hb_8']
+    )
+    calculated_params['b_hb_8'] = b_hb_8
+    calculated_params['delta_theta_hb_8_c'] = delta_theta_hb_8_c
+
+    return calculated_params | params
+
+HB_DG = _init_hb(HB_DG)
