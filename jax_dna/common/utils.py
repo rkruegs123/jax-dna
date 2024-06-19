@@ -9,12 +9,19 @@ config.update("jax_enable_x64", True)
 
 
 DNA_ALPHA = "ACGT"
+RNA_ALPHA = "ACGU"
 
 DNA_MAPPER = dict()
 for b_idx, base in enumerate(DNA_ALPHA):
     base_oh = [0, 0, 0, 0]
     base_oh[b_idx] = 1
     DNA_MAPPER[base] = base_oh
+
+RNA_MAPPER = dict()
+for b_idx, base in enumerate(RNA_ALPHA):
+    base_oh = [0, 0, 0, 0]
+    base_oh[b_idx] = 1
+    RNA_MAPPER[base] = base_oh
 
 # Flattened HB/stack weights yield the correct Kron. product
 # Kron: AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT
@@ -32,11 +39,19 @@ STACK_WEIGHTS_SA = jnp.array([
 ])
 get_pair_probs = vmap(lambda seq, i, j: jnp.kron(seq[i], seq[j]), in_axes=(None, 0, 0), out_axes=0)
 
-def get_one_hot(seq: str):
+def get_one_hot(seq: str, is_rna=False):
+
+    if is_rna:
+        alphabet = RNA_ALPHA
+        mapper = RNA_MAPPER
+    else:
+        alphabet = DNA_ALPHA
+        mapper = DNA_MAPPER
+
     seq = seq.upper()
-    if not set(seq).issubset(set(DNA_ALPHA)):
+    if not set(seq).issubset(set(alphabet)):
         raise RuntimeError(f"Sequence contains bases other than ACGT: {seq}")
-    seq_one_hot = [DNA_MAPPER[b] for b in seq]
+    seq_one_hot = [mapper[b] for b in seq]
     return onp.array(seq_one_hot, dtype=onp.float64) # float so they can become probabilistic
 
 DEFAULT_TEMP = 296.15 # Kelvin

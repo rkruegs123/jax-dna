@@ -167,6 +167,83 @@ def stacking(
         * f5_neg_cosphi1_stack * f5_neg_cosphi2_stack
 
 @jit
+def stacking2(
+        r_stack, theta5, theta6, theta9, theta10, cosphi1, cosphi2, # observables
+        dr_low_stack, dr_high_stack, eps_stack, a_stack, dr0_stack, dr_c_stack,
+        dr_c_low_stack, dr_c_high_stack, b_low_stack, b_high_stack,
+        theta0_stack_5, delta_theta_star_stack_5, a_stack_5, delta_theta_stack_5_c, b_stack_5,
+        theta0_stack_6, delta_theta_star_stack_6, a_stack_6, delta_theta_stack_6_c, b_stack_6,
+        theta0_stack_9, delta_theta_star_stack_9, a_stack_9, delta_theta_stack_9_c, b_stack_9,
+        theta0_stack_10, delta_theta_star_stack_10, a_stack_10, delta_theta_stack_10_c, b_stack_10,
+        neg_cos_phi1_star_stack, a_stack_1, neg_cos_phi1_c_stack, b_neg_cos_phi1_stack,
+        neg_cos_phi2_star_stack, a_stack_2, neg_cos_phi2_c_stack, b_neg_cos_phi2_stack
+):
+
+    f1_dr_stack = f1(r_stack,
+                     r_low=dr_low_stack,
+                     r_high=dr_high_stack,
+                     r_c_low=dr_c_low_stack,
+                     r_c_high=dr_c_high_stack,
+                     eps=eps_stack,
+                     a=a_stack,
+                     r0=dr0_stack,
+                     r_c=dr_c_stack,
+                     b_low=b_low_stack,
+                     b_high=b_high_stack)
+
+    f4_theta_5p_stack = f4(theta5,
+                           theta0=theta0_stack_5,
+                           delta_theta_star=delta_theta_star_stack_5,
+                           delta_theta_c=delta_theta_stack_5_c,
+                           a=a_stack_5,
+                           b=b_stack_5)
+
+    f4_theta_6p_stack = f4(theta6,
+                           theta0=theta0_stack_6,
+                           delta_theta_star=delta_theta_star_stack_6,
+                           delta_theta_c=delta_theta_stack_6_c,
+                           a=a_stack_6,
+                           b=b_stack_6)
+
+    f4_theta_9_stack = f4(theta9,
+                          theta0=theta0_stack_9,
+                          delta_theta_star=delta_theta_star_stack_9,
+                          delta_theta_c=delta_theta_stack_9_c,
+                          a=a_stack_9,
+                          b=b_stack_9)
+
+    f4_theta_10_stack = f4(theta10,
+                          theta0=theta0_stack_10,
+                          delta_theta_star=delta_theta_star_stack_10,
+                          delta_theta_c=delta_theta_stack_10_c,
+                          a=a_stack_10,
+                          b=b_stack_10)
+
+    f5_neg_cosphi1_stack = f5(-cosphi1,
+                              x_star=neg_cos_phi1_star_stack,
+                              x_c=neg_cos_phi1_c_stack,
+                              a=a_stack_1,
+                              b=b_neg_cos_phi1_stack)
+
+    f5_neg_cosphi2_stack = f5(-cosphi2,
+                              x_star=neg_cos_phi2_star_stack,
+                              x_c=neg_cos_phi2_c_stack,
+                              a=a_stack_2,
+                              b=b_neg_cos_phi2_stack)
+
+    return f1_dr_stack \
+        * f4_theta_5p_stack * f4_theta_6p_stack \
+        * f4_theta_9_stack * f4_theta_10_stack \
+        * f5_neg_cosphi1_stack * f5_neg_cosphi2_stack
+    # return jnp.zeros(r_stack.shape[0])
+    # return f1_dr_stack * f4_theta_5p_stack * f4_theta_6p_stack * f5_neg_cosphi1_stack * f5_neg_cosphi2_stack # * f4_theta_9_stack * f4_theta_10_stack
+    # return f4_theta_9_stack * f4_theta_10_stack
+    # return f4_theta_9_stack
+    # return f4_theta_10_stack
+
+
+
+@jit
 def hydrogen_bonding(
         dr_hb, theta1, theta2, theta3, theta4, theta7, theta8, # observables
         dr_low_hb, dr_high_hb, dr_c_low_hb, dr_c_high_hb, eps_hb, a_hb, # f1_dr_hb
@@ -299,6 +376,63 @@ def cross_stacking(r_hb, theta1, theta2, theta3, theta4, theta7, theta8,
         * (f4_theta_4_cross_fn(theta4) + f4_theta_4_cross_fn(jnp.pi - theta4)) \
         * (f4_theta_7_cross_fn(theta7) + f4_theta_7_cross_fn(jnp.pi - theta7)) \
         * (f4_theta_8_cross_fn(theta8) + f4_theta_8_cross_fn(jnp.pi - theta8))
+
+
+@jit
+def cross_stacking2(r_hb, theta1, theta2, theta3, theta7, theta8,
+                   dr_low_cross, dr_high_cross, dr_c_low_cross, dr_c_high_cross, # f2_dr_cross
+                   k_cross, r0_cross, dr_c_cross, b_low_cross, b_high_cross, # f2_dr_cross (cont.)
+                   theta0_cross_1, delta_theta_star_cross_1, delta_theta_cross_1_c, a_cross_1, b_cross_1, # f4(theta1)
+                   theta0_cross_2, delta_theta_star_cross_2, delta_theta_cross_2_c, a_cross_2, b_cross_2, #f4(theta2)
+                   theta0_cross_3, delta_theta_star_cross_3, delta_theta_cross_3_c, a_cross_3, b_cross_3, #f4(theta3)
+                   theta0_cross_7, delta_theta_star_cross_7, delta_theta_cross_7_c, a_cross_7, b_cross_7, #f7(theta7)
+                   theta0_cross_8, delta_theta_star_cross_8, delta_theta_cross_8_c, a_cross_8, b_cross_8 #f8(theta8)
+):
+    f2_dr_cross = f2(r_hb,
+                     r_low=dr_low_cross,
+                     r_high=dr_high_cross,
+                     r_c_low=dr_c_low_cross,
+                     r_c_high=dr_c_high_cross,
+                     k=k_cross,
+                     r0=r0_cross,
+                     r_c=dr_c_cross,
+                     b_low=b_low_cross,
+                     b_high=b_high_cross)
+
+    f4_theta_1_cross = f4(theta1,
+                          theta0=theta0_cross_1,
+                          delta_theta_star=delta_theta_star_cross_1,
+                          delta_theta_c=delta_theta_cross_1_c,
+                          a=a_cross_1,
+                          b=b_cross_1)
+    f4_theta_2_cross = f4(theta2,
+                          theta0=theta0_cross_2,
+                          delta_theta_star=delta_theta_star_cross_2,
+                          delta_theta_c=delta_theta_cross_2_c,
+                          a=a_cross_2,
+                          b=b_cross_2)
+    f4_theta_3_cross = f4(theta3,
+                          theta0=theta0_cross_3,
+                          delta_theta_star=delta_theta_star_cross_3,
+                          delta_theta_c=delta_theta_cross_3_c,
+                          a=a_cross_3,
+                          b=b_cross_3)
+    f4_theta_7_cross_fn = Partial(f4,
+                               theta0=theta0_cross_7,
+                               delta_theta_star=delta_theta_star_cross_7,
+                               delta_theta_c=delta_theta_cross_7_c,
+                               a=a_cross_7,
+                               b=b_cross_7)
+    f4_theta_8_cross_fn = Partial(f4,
+                                  theta0=theta0_cross_8,
+                                  delta_theta_star=delta_theta_star_cross_8,
+                                  delta_theta_c=delta_theta_cross_8_c,
+                                  a=a_cross_8,
+                                  b=b_cross_8)
+    return f2_dr_cross * f4_theta_1_cross * f4_theta_2_cross * f4_theta_3_cross \
+        * (f4_theta_7_cross_fn(theta7) + f4_theta_7_cross_fn(jnp.pi - theta7)) \
+        * (f4_theta_8_cross_fn(theta8) + f4_theta_8_cross_fn(jnp.pi - theta8))
+
 
 @jit
 def coaxial_stacking(dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4, # observables

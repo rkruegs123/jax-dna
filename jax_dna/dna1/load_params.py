@@ -265,9 +265,8 @@ def add_smoothing(params):
 
     return params
 
-
-def clean_stacking_keys(params):
-    keys_to_remove = set(['eps_stack_kt_coeff', 'eps_stack_base'])
+default_stacking_keys_to_remove = set(['eps_stack_kt_coeff', 'eps_stack_base'])
+def clean_stacking_keys(params, keys_to_remove=default_stacking_keys_to_remove):
     params['stacking'] = {
         k: params['stacking'][k] for k in params['stacking'].keys() if k not in keys_to_remove
     }
