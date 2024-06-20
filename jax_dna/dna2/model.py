@@ -221,7 +221,7 @@ class EnergyModel:
 
 
         # Compute debye_dg
-        r_base_op = jnp.linalg.norm(dr_backbone_op, axis=1)
+        r_back_op = jnp.linalg.norm(dr_backbone_op, axis=1)
         def db_term(r):
             energy_full = jnp.exp(r * self.params['debye']['minus_kappa']) \
                           * (self.params['debye']['prefactor'] / r)
@@ -230,7 +230,7 @@ class EnergyModel:
             cond = r < self.params['debye']['r_high']
             energy = jnp.where(cond, energy_full, energy_smooth)
             return jnp.where(r < self.params['debye']['rcut'], energy, 0.0)
-        db_dg = vmap(db_term)(r_base_op).sum()
+        db_dg = vmap(db_term)(r_back_op).sum()
 
         return fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg
 

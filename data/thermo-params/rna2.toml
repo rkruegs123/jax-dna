@@ -123,17 +123,17 @@ delta_theta_star_hb_3 = 0.70
 
 ## f4(theta_4)
 a_hb_4 = 0.46
-theta0_hb_4 = 3.141592653589 # FIXME: pi
+theta0_hb_4 = 3.141592653589793 # FIXME: pi
 delta_theta_star_hb_4 = 0.70
 
 ## f4(theta_7)
 a_hb_7 = 4.0
-theta0_hb_7 = 1.57079632679 # FIXME: pi / 2
+theta0_hb_7 = 1.5707963267948966 # FIXME: pi / 2
 delta_theta_star_hb_7 = 0.45
 
 ## f4(theta_8)
 a_hb_8 = 4.0
-theta0_hb_8 = 1.57079632679 # FIXME: pi / 2
+theta0_hb_8 = 1.5707963267948966 # FIXME: pi / 2
 delta_theta_star_hb_8 = 0.45
 
 

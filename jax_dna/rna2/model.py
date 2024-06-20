@@ -253,7 +253,7 @@ class EnergyModel:
         cx_stack_dg = jnp.where(mask, cx_stack_dg, 0.0).sum() # Mask for neighbors
 
         # Compute debye_dg
-        r_base_op = jnp.linalg.norm(dr_backbone_op, axis=1)
+        r_back_op = jnp.linalg.norm(dr_backbone_op, axis=1)
         def db_term(r):
             energy_full = jnp.exp(r * self.params['debye']['minus_kappa']) \
                           * (self.params['debye']['prefactor'] / r)
@@ -262,7 +262,7 @@ class EnergyModel:
             cond = r < self.params['debye']['r_high']
             energy = jnp.where(cond, energy_full, energy_smooth)
             return jnp.where(r < self.params['debye']['rcut'], energy, 0.0)
-        db_dg = vmap(db_term)(r_base_op).sum()
+        db_dg = vmap(db_term)(r_back_op).sum()
 
         return fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg
 
@@ -280,7 +280,8 @@ class TestRna2(unittest.TestCase):
     def check_energy_subterms(self, basedir, top_fname, traj_fname,
                               t_kelvin, salt_conc,
                               r_cutoff=10.0, dr_threshold=0.2,
-                              tol_places=4, verbose=True, avg_seq=True):
+                              tol_places=4, verbose=True, avg_seq=True,
+                              hb_tol_places=3):
 
 
         if avg_seq:
@@ -302,8 +303,8 @@ class TestRna2(unittest.TestCase):
         split_energy_df = pd.read_csv(
             split_energy_fname,
             names=["t", "fene", "b_exc", "stack", "n_exc", "hb",
-                   # "cr_stack", "cx_stack", "debye"],
-                   "cr_stack", "cx_stack"],
+                   "cr_stack", "cx_stack", "debye"],
+                   # "cr_stack", "cx_stack"],
             delim_whitespace=True)
         oxdna_subterms = split_energy_df.iloc[1:, :]
 
@@ -338,8 +339,8 @@ class TestRna2(unittest.TestCase):
             dgs = compute_subterms_fn(
                 state, seq_oh, top_info.bonded_nbrs, neighbors_idx)
             avg_subterms = onp.array(dgs) / top_info.n # average per nucleotide
-            # computed_subterms.append(avg_subterms)
-            computed_subterms.append(avg_subterms[:-1])
+            computed_subterms.append(avg_subterms)
+            # computed_subterms.append(avg_subterms[:-1])
 
         computed_subterms = onp.array(computed_subterms)
 
@@ -361,15 +362,17 @@ class TestRna2(unittest.TestCase):
                 print(f"\t\t|Difference|: {onp.abs(ith_computed_subterms - ith_oxdna_subterms)}")
                 print(f"\t\t|HB Difference|: {onp.abs(ith_computed_subterms[4] - ith_oxdna_subterms[4])}")
 
-            for oxdna_subterm, computed_subterm in zip(ith_oxdna_subterms, ith_computed_subterms):
-                pass
-                # self.assertAlmostEqual(oxdna_subterm, computed_subterm, places=tol_places)
+            for subterm_idx, (oxdna_subterm, computed_subterm) in enumerate(zip(ith_oxdna_subterms, ith_computed_subterms)):
+                if subterm_idx == 4:
+                    self.assertAlmostEqual(oxdna_subterm, computed_subterm, places=hb_tol_places)
+                else:
+                    self.assertAlmostEqual(oxdna_subterm, computed_subterm, places=tol_places)
 
     def test_subterms(self):
         print(utils.bcolors.WARNING + "\nWARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file\n" + utils.bcolors.ENDC)
 
         subterm_tests = [
-            (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 0.5, True)
+            (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 1.0, True)
         ]
 
         for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq in subterm_tests:

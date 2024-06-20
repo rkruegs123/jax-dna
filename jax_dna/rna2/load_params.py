@@ -66,13 +66,14 @@ def _process(params, t_kelvin, salt_conc):
     # Process the debye-huckel parameters
     kT = utils.get_kt(t_kelvin)
 
-    db_lambda_factor = 0.3616455075438555
+    # db_lambda_factor = 0.3616455075438555
+    db_lambda_factor = 0.3667258
     db_lambda = db_lambda_factor * jnp.sqrt(kT / 0.1) / jnp.sqrt(salt_conc)
     proc_params['debye'] = dict()
     proc_params['debye']['minus_kappa'] = -1.0 / db_lambda
     proc_params['debye']['r_high'] = 3.0 * db_lambda
 
-    db_prefactor =  0.08173808693529228*(params['debye']['q_eff']**2)
+    db_prefactor =  0.05404383975812547*(params['debye']['q_eff']**2)
     proc_params['debye']['prefactor'] = db_prefactor
 
     x = proc_params['debye']['r_high']
@@ -89,7 +90,7 @@ def _process(params, t_kelvin, salt_conc):
     return proc_params
 
 def load(seq_avg, params_path="data/thermo-params/rna2.toml",
-         t_kelvin=utils.DEFAULT_TEMP, salt_conc=0.5, q_eff=0.815,
+         t_kelvin=utils.DEFAULT_TEMP, salt_conc=0.5, q_eff=1.26,
          process=True):
 
     if not seq_avg:
