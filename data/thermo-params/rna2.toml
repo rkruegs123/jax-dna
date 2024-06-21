@@ -13,10 +13,6 @@ pos_back_a1 = -0.4
 pos_back_a3 = 0.2
 pos_back_a2 = 0.0
 
-inclination = 0.0
-base_size_r = 0.01
-rot_sugar = 0.0
-
 p5_x = -0.104402
 p5_y = -0.841783
 p5_z = 0.529624
@@ -24,7 +20,6 @@ p3_x = -0.462510
 p3_y = -0.528218
 p3_z = 0.712089
 
-gamma = 0.74
 
 # FENE
 [fene]

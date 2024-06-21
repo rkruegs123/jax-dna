@@ -16,7 +16,6 @@ restart_step_counter = 0
 energy_file = energy.dat
 equilibration_steps = 0
 dh_half_charged_ends = False # Note: set to *True* for full testing!
-# external_model = override.txt
 
 # Molecular dynamics options
 sim_type = MD

@@ -382,7 +382,8 @@ def rewrite_input_file(template_path, output_dir,
                        weights_file=None, op_file=None,
                        external_forces_file=None,
                        restart_step_counter=None,
-                       interaction_type=None
+                       interaction_type=None,
+                       external_model=None
 ):
     with open(template_path, "r") as f:
         input_template_lines = f.readlines()
@@ -486,6 +487,9 @@ def rewrite_input_file(template_path, output_dir,
             input_lines.append(f"{new_line}\n")
         elif tokens[0] == "interaction_type" and interaction_type is not None:
             new_line = gen_new_line(tokens, interaction_type, str)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "external_model" and external_model is not None:
+            new_line = gen_new_line(tokens, external_model, str)
             input_lines.append(f"{new_line}\n")
         else:
             input_lines.append(it_line)
