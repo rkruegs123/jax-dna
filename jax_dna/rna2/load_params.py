@@ -1,11 +1,13 @@
 import pdb
 import toml
 from pathlib import Path
+import numpy as onp
 
 import jax.numpy as jnp
 
 from jax_dna.common.smoothing import get_f4_smoothing_params
 from jax_dna.common import utils
+from jax_dna.common.utils import RNA_ALPHA
 from jax_dna.dna1 import load_params as load_params_dna1
 
 
@@ -89,12 +91,9 @@ def _process(params, t_kelvin, salt_conc):
 
     return proc_params
 
-def load(seq_avg, params_path="data/thermo-params/rna2.toml",
+def load(params_path="data/thermo-params/rna2.toml",
          t_kelvin=utils.DEFAULT_TEMP, salt_conc=0.5, q_eff=1.26,
          process=True):
-
-    if not seq_avg:
-        raise NotImplementedError(f"Sequence dependence not implemented for RNA model")
 
     params = toml.load(params_path)
     params['debye'] = dict()
@@ -102,6 +101,124 @@ def load(seq_avg, params_path="data/thermo-params/rna2.toml",
     if process:
         params = _process(params, t_kelvin, salt_conc)
     return params
+
+
+DEFAULT_SS_PATH = "data/seq-specific/seq_rna.txt"
+def read_seq_specific(base_params, ss_path=DEFAULT_SS_PATH,
+                      t_kelvin=utils.DEFAULT_TEMP,
+                      enforce_symmetry=True):
+    ss_path = Path(ss_path)
+    assert(ss_path.exists())
+
+    with open(ss_path, "r") as f:
+        lines = f.readlines()
+
+    vals = dict()
+    for unstripped_line in lines:
+        line = unstripped_line.strip()
+        if not line:
+            continue
+        if lines[0] == "#":
+            continue
+
+        tokens = line.split()
+        assert(len(tokens) == 3)
+        assert(tokens[1] == "=")
+        key = tokens[0]
+        val = tokens[2]
+        if val[-1] == "f":
+            val = val[:-1]
+
+        try:
+            val = float(val)
+        except:
+            raise ValueError(f"Invalid float: {val}")
+
+        vals[key] = val
+
+    # Parse HB table
+    hb_mult = onp.zeros((4, 4))
+    default_f1_eps_hb = base_params["hydrogen_bonding"]["eps_hb"]
+
+    hb_au_val = None
+    if "HYDR_A_T" in vals:
+        hb_au_val = vals["HYDR_A_T"]
+    if "HYDR_T_A" in vals:
+        if hb_au_val is not None and enforce_symmetry:
+            assert(hb_au_val == vals["HYDR_T_A"])
+        else:
+            hb_au_val = vals["HYDR_T_A"]
+    assert(hb_au_val is not None)
+    hb_au_mult = hb_au_val / default_f1_eps_hb
+
+    hb_gc_val = None
+    if "HYDR_G_C" in vals:
+        hb_gc_val = vals["HYDR_G_C"]
+    if "HYDR_C_G" in vals:
+        if hb_gc_val is not None and enforce_symmetry:
+            assert(hb_gc_val == vals["HYDR_C_G"])
+        else:
+            hb_gc_val = vals["HYDR_C_G"]
+    assert(hb_gc_val is not None)
+    hb_gc_mult = hb_gc_val / default_f1_eps_hb
+
+    hb_gu_val = None
+    if "HYDR_G_T" in vals:
+        hb_gu_val = vals["HYDR_G_T"]
+    if "HYDR_T_G" in vals:
+        if hb_gu_val is not None and enforce_symmetry:
+            assert(hb_gu_val == vals["HYDR_U_G"])
+        else:
+            hb_gu_val = vals["HYDR_U_G"]
+    assert(hb_gu_val is not None)
+    hb_gu_mult = hb_gu_val / default_f1_eps_hb
+
+    hb_mult[RNA_ALPHA.index("A"), RNA_ALPHA.index("U")] = hb_au_mult
+    hb_mult[RNA_ALPHA.index("U"), RNA_ALPHA.index("A")] = hb_au_mult
+    hb_mult[RNA_ALPHA.index("G"), RNA_ALPHA.index("C")] = hb_gc_mult
+    hb_mult[RNA_ALPHA.index("C"), RNA_ALPHA.index("G")] = hb_gc_mult
+    hb_mult[RNA_ALPHA.index("G"), RNA_ALPHA.index("U")] = hb_gu_mult
+    hb_mult[RNA_ALPHA.index("U"), RNA_ALPHA.index("G")] = hb_gu_mult
+
+
+    # Parse cross stacking table
+    cross_mult = onp.zeros((4, 4))
+    default_cross_k = base_params["cross_stacking"]["k_cross"]
+
+    for nuc1 in utils.RNA_ALPHA:
+        for nuc2 in utils.RNA_ALPHA:
+            nuc1_repr = nuc1 if nuc1 != "U" else "T"
+            nuc2_repr = nuc2 if nuc2 != "U" else "T"
+            key = f"CROSS_{nuc1_repr}_{nuc2_repr}"
+            assert(key in vals)
+            ss_cross_k = vals[key]
+            prefactor = ss_cross_k / default_cross_k
+            cross_mult[RNA_ALPHA.index(nuc1), RNA_ALPHA.index(nuc2)] = prefactor
+
+    # Stacking
+    stack_mult = onp.zeros((4, 4))
+    eps_stack_base = base_params["stacking"]["eps_stack_base"]
+    eps_stack_kt_coeff = base_params["stacking"]["eps_stack_kt_coeff"]
+
+    tol_places = 3
+    eps_stack_prime = vals["ST_T_DEP"]
+    diff = onp.abs(eps_stack_prime - eps_stack_kt_coeff/eps_stack_base)
+    assert(diff < 1*10**(-tol_places))
+
+    for nuc1 in utils.RNA_ALPHA:
+        for nuc2 in utils.RNA_ALPHA:
+            nuc1_repr = nuc1 if nuc1 != "U" else "T"
+            nuc2_repr = nuc2 if nuc2 != "U" else "T"
+            key = f"STCK_{nuc1_repr}_{nuc2_repr}"
+
+            assert(key in vals)
+
+            ss_eps_stack_base = vals[key]
+            prefactor = ss_eps_stack_base / eps_stack_base
+            stack_mult[RNA_ALPHA.index(nuc1), RNA_ALPHA.index(nuc2)] = prefactor
+
+    return hb_mult, stack_mult, cross_mult
+
 
 if __name__ == "__main__":
     params = load(seq_avg=True)

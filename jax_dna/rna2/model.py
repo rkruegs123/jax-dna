@@ -20,13 +20,13 @@ from jax_dna.common.interactions import v_fene_smooth, stacking2, exc_vol_bonded
     exc_vol_unbonded, cross_stacking2, coaxial_stacking, hydrogen_bonding, \
     coaxial_stacking
 from jax_dna.common import utils, topology, trajectory
-from jax_dna.rna2.load_params import load, _process
+from jax_dna.rna2.load_params import load, _process, read_seq_specific
 
 from jax.config import config
 config.update("jax_enable_x64", True)
 
 
-default_base_params_seq_avg = load(seq_avg=True, process=False)
+DEFAULT_BASE_PARAMS = load(process=False)
 
 EMPTY_BASE_PARAMS = {
     "geometry": dict(),
@@ -55,11 +55,9 @@ def add_coupling(base_params):
     base_params["hydrogen_bonding"]["delta_theta_star_hb_8"] = base_params["hydrogen_bonding"]["delta_theta_star_hb_7"]
 
 
-def get_full_base_params(override_base_params, seq_avg=True):
-    if seq_avg:
-        default_base_params = default_base_params_seq_avg
-    else:
-        default_base_params = default_base_params_seq_dep
+def get_full_base_params(override_base_params):
+
+    default_base_params = deepcopy(DEFAULT_BASE_PARAMS)
 
     geometry_params = default_base_params["geometry"] | override_base_params["geometry"]
     fene_params = default_base_params["fene"] | override_base_params["fene"]
@@ -88,7 +86,7 @@ class EnergyModel:
     def __init__(self, displacement_fn, override_base_params=EMPTY_BASE_PARAMS,
                  t_kelvin=DEFAULT_TEMP, ss_hb_weights=utils.HB_WEIGHTS_SA,
                  ss_stack_weights=utils.STACK_WEIGHTS_SA,
-                 salt_conc=0.5, q_eff=0.815, seq_avg=True
+                 salt_conc=0.5, q_eff=0.815
     ):
         self.displacement_fn = displacement_fn
         self.displacement_mapped = jit(space.map_bond(partial(displacement_fn)))
@@ -102,7 +100,7 @@ class EnergyModel:
         self.ss_stack_weights = ss_stack_weights
         self.ss_stack_weights_flat = self.ss_stack_weights.flatten()
 
-        self.base_params = get_full_base_params(override_base_params, seq_avg)
+        self.base_params = get_full_base_params(override_base_params)
         self.params = _process(self.base_params, self.t_kelvin, self.salt_conc)
 
         self.com_to_backbone_x = self.params["geometry"]["pos_back_a1"]
@@ -288,7 +286,7 @@ class TestRna2(unittest.TestCase):
             ss_hb_weights = utils.HB_WEIGHTS_SA
             ss_stack_weights = utils.STACK_WEIGHTS_SA
         else:
-            raise NotImplementedError(f"Sequence-dependent parameters not currently supported for RNA model")
+            ss_hb_weights, ss_stack_weights, ss_cross_weights = read_seq_specific(DEFAULT_BASE_PARAMS, t_kelvin=t_kelvin)
 
         print(f"\n---- Checking energy breakdown agreement for base directory: {basedir} ----")
 
@@ -326,8 +324,7 @@ class TestRna2(unittest.TestCase):
         displacement_fn, shift_fn = space.periodic(traj_info.box_size)
         params = deepcopy(EMPTY_BASE_PARAMS)
         model = EnergyModel(displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_conc,
-                            ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights,
-                            seq_avg=avg_seq)
+                            ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
 
         ## setup neighbors, if necessary
         neighbors_idx = top_info.unbonded_nbrs.T
@@ -372,8 +369,9 @@ class TestRna2(unittest.TestCase):
         print(utils.bcolors.WARNING + "\nWARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file\n" + utils.bcolors.ENDC)
 
         subterm_tests = [
-            # (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 1.0, True)
-            (self.test_data_basedir / "simple-coax-rna2", "generated.top", "output.dat", 296.15, 1.0, True)
+            # (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 1.0, True),
+            (self.test_data_basedir / "simple-helix-rna2-12bp-ss", "sys.top", "output.dat", 296.15, 1.0, False),
+            # (self.test_data_basedir / "simple-coax-rna2", "generated.top", "output.dat", 296.15, 1.0, True)
         ]
 
         for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq in subterm_tests:
