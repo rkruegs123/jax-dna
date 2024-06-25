@@ -385,6 +385,7 @@ def rewrite_input_file(template_path, output_dir,
                        interaction_type=None,
                        external_model=None,
                        seq_dep_file=None,
+                       seq_dep_file_RNA=None,
                        observables_str=None
 ):
     with open(template_path, "r") as f:
@@ -495,6 +496,9 @@ def rewrite_input_file(template_path, output_dir,
             input_lines.append(f"{new_line}\n")
         elif tokens[0] == "seq_dep_file" and seq_dep_file is not None:
             new_line = gen_new_line(tokens, seq_dep_file, str)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "seq_dep_file_RNA" and seq_dep_file_RNA is not None:
+            new_line = gen_new_line(tokens, seq_dep_file_RNA, str)
             input_lines.append(f"{new_line}\n")
         else:
             input_lines.append(it_line)

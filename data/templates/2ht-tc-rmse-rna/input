@@ -11,7 +11,7 @@ max_density_multiplier = 10
 verlet_skin = 0.1
 interaction_type = RNA2
 dh_half_charged_ends = False
-list_type = no
+# list_type = no
 
 # Simulation parameters
 steps = 1e9
@@ -27,6 +27,7 @@ external_model = external_model.txt
 
 use_average_seq = 0
 seq_dep_file = rna_sequence_dependent_parameters.txt
+seq_dep_file_RNA = rna_sequence_dependent_parameters.txt
 
 # Input/output
 topology = sys.top

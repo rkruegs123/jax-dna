@@ -31,7 +31,7 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 
 
-checkpoint_every = None
+checkpoint_every = 50
 if checkpoint_every is None:
     scan = lax.scan
 else:
@@ -71,11 +71,14 @@ def run(args):
     lr = args['lr']
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
+    no_delete = args['no_delete']
 
-    t_kelvin = utils.DEFAULT_TEMP
-    # t_kelvin = 293.15
+    # t_kelvin = utils.DEFAULT_TEMP
+    t_kelvin = 293.15
 
     ss_hb_weights, ss_stack_weights, ss_cross_weights = read_seq_specific(model.DEFAULT_BASE_PARAMS, t_kelvin=t_kelvin)
+    # ss_hb_weights = utils.HB_WEIGHTS_SA
+    # ss_stack_weights = utils.STACK_WEIGHTS_SA
     salt_conc = 1.0
 
 
@@ -89,14 +92,24 @@ def run(args):
     img_dir = run_dir / "img"
     img_dir.mkdir(parents=False, exist_ok=False)
 
+    log_dir = run_dir / "log"
+    log_dir.mkdir(parents=False, exist_ok=False)
+
     ref_traj_dir = run_dir / "ref_traj"
     ref_traj_dir.mkdir(parents=False, exist_ok=False)
 
-    times_path = run_dir / "times.txt"
-    grads_path = run_dir / "grads.txt"
-    neff_path = run_dir / "neff.txt"
-    rmse_path = run_dir / "rmse.txt"
-    resample_log_path = run_dir / "resample_log.txt"
+    times_path = log_dir / "times.txt"
+    params_per_iter_path = log_dir / "params_per_iter.txt"
+    grads_path = log_dir / "grads.txt"
+    neff_path = log_dir / "neff.txt"
+    rmse_path = log_dir / "rmse.txt"
+    resample_log_path = log_dir / "resample_log.txt"
+
+    params_str = ""
+    for k, v in args.items():
+        params_str += f"{k}: {v}\n"
+    with open(run_dir / "params.txt", "w+") as f:
+        f.write(params_str)
 
     # Load the system
     sys_basedir = Path("data/templates/2ht-tc-rmse-rna")
@@ -175,6 +188,7 @@ def run(args):
                 log_file=str(repeat_dir / "sim.log"),
                 external_model=str(external_model_fpath),
                 seq_dep_file=str(seq_dep_path),
+                seq_dep_file_RNA=str(seq_dep_path),
                 observables_str=observables_str
             )
 
@@ -235,6 +249,12 @@ def run(args):
                                   delim_whitespace=True)[1:] for r in range(n_sims)]
         energy_df = pd.concat(energy_dfs, ignore_index=True)
 
+        split_energy_df_columns = ["t", "fene", "b_exc", "stack", "n_exc", "hb",
+                                   "cr_stack", "cx_stack", "debye"]
+        split_energy_dfs = [pd.read_csv(iter_dir / f"r{r}" / "split_energy.dat", names=split_energy_df_columns,
+                                        delim_whitespace=True)[1:] for r in range(n_sims)]
+        split_energy_df = pd.concat(split_energy_dfs, ignore_index=True)
+
         ## Generate an energy function
         em = model.EnergyModel(
             displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_conc,
@@ -245,6 +265,13 @@ def run(args):
             bonded_nbrs=top_info.bonded_nbrs,
             unbonded_nbrs=top_info.unbonded_nbrs.T)
         energy_fn = jit(energy_fn)
+
+        subterms_fn = lambda body: em.compute_subterms(
+            body,
+            seq=seq_oh,
+            bonded_nbrs=top_info.bonded_nbrs,
+            unbonded_nbrs=top_info.unbonded_nbrs.T)
+        subterms_fn = jit(subterms_fn)
 
         ## Check energies
         calc_start = time.time()
@@ -260,6 +287,68 @@ def run(args):
         for i, (calc, gt) in enumerate(zip(calc_energies, gt_energies)):
             diff = onp.abs(calc - gt)
             energy_diffs.append(diff)
+
+        ## Check energy subterms
+        calc_start = time.time()
+        subterms_scan_fn = lambda state, ts: (None, subterms_fn(ts))
+        _, subterms = scan(subterms_scan_fn, None, traj_states)
+        fene_dgs, exc_vol_bonded_dgs, stack_dgs, exc_vol_unbonded_dgs, hb_dgs, cr_stack_dgs, cx_stack_dgs, debye_dgs = subterms
+        calc_end = time.time()
+        with open(resample_log_path, "a") as f:
+            f.write(f"- Calculating subterms took {calc_end - calc_start} seconds\n")
+
+        fene_diffs, exc_vol_bonded_diffs, stack_diffs, exc_vol_unbonded_diffs, hb_diffs, cr_stack_diffs, cx_stack_diffs, debye_diffs = list(), list(), list(), list(), list(), list(), list(), list()
+
+        gt_fenes = split_energy_df["fene"].to_numpy() * seq_oh.shape[0]
+        gt_bexcs = split_energy_df["b_exc"].to_numpy() * seq_oh.shape[0]
+        gt_stacks = split_energy_df["stack"].to_numpy() * seq_oh.shape[0]
+        gt_nexcs = split_energy_df["n_exc"].to_numpy() * seq_oh.shape[0]
+        gt_hbs = split_energy_df["hb"].to_numpy() * seq_oh.shape[0]
+        gt_cr_stacks = split_energy_df["cr_stack"].to_numpy() * seq_oh.shape[0]
+        gt_cx_stacks = split_energy_df["cx_stack"].to_numpy() * seq_oh.shape[0]
+        gt_debyes = split_energy_df["debye"].to_numpy() * seq_oh.shape[0]
+        for i in range(n_ref_states):
+            fene_diffs.append(onp.abs(fene_dgs[i] - gt_fenes[i]))
+            exc_vol_bonded_diffs.append(onp.abs(exc_vol_bonded_dgs[i] - gt_bexcs[i]))
+            stack_diffs.append(onp.abs(stack_dgs[i] - gt_stacks[i]))
+            exc_vol_unbonded_diffs.append(onp.abs(exc_vol_unbonded_dgs[i] - gt_nexcs[i]))
+            hb_diffs.append(onp.abs(hb_dgs[i] - gt_hbs[i]))
+            cr_stack_diffs.append(onp.abs(cr_stack_dgs[i] - gt_cr_stacks[i]))
+            cx_stack_diffs.append(onp.abs(cx_stack_dgs[i] - gt_cx_stacks[i]))
+            debye_diffs.append(onp.abs(debye_dgs[i] - gt_debyes[i]))
+
+
+        plt.hist(fene_diffs, 25, histtype='bar', facecolor='blue')
+        plt.savefig(iter_dir / f"fene_diffs_hist.png")
+        plt.clf()
+
+        plt.hist(exc_vol_bonded_diffs, 25, histtype='bar', facecolor='blue')
+        plt.savefig(iter_dir / f"bexc_diffs_hist.png")
+        plt.clf()
+
+        plt.hist(stack_diffs, 25, histtype='bar', facecolor='blue')
+        plt.savefig(iter_dir / f"stack_diffs_hist.png")
+        plt.clf()
+
+        plt.hist(exc_vol_unbonded_diffs, 25, histtype='bar', facecolor='blue')
+        plt.savefig(iter_dir / f"nexc_diffs_hist.png")
+        plt.clf()
+
+        plt.hist(hb_diffs, 25, histtype='bar', facecolor='blue')
+        plt.savefig(iter_dir / f"hb_diffs_hist.png")
+        plt.clf()
+
+        plt.hist(cr_stack_diffs, 25, histtype='bar', facecolor='blue')
+        plt.savefig(iter_dir / f"cr_stack_diffs_hist.png")
+        plt.clf()
+
+        plt.hist(cx_stack_diffs, 25, histtype='bar', facecolor='blue')
+        plt.savefig(iter_dir / f"cx_stack_diffs_hist.png")
+        plt.clf()
+
+        plt.hist(debye_diffs, 25, histtype='bar', facecolor='blue')
+        plt.savefig(iter_dir / f"debye_diffs_hist.png")
+        plt.clf()
 
         ## Plot logging information
         analyze_start = time.time()
@@ -295,6 +384,30 @@ def run(args):
             f.write(f"Ref. energy var.: {onp.var(gt_energies)}\n")
             f.write(f"Mean RMSD: {mean_rmsd}\n")
 
+            f.write(f"\nFENE diff, mean: {onp.mean(fene_diffs)}\n")
+            f.write(f"FENE diff, var: {onp.var(fene_diffs)}\n")
+
+            f.write(f"\nBonded Exc. Vol diff, mean: {onp.mean(exc_vol_bonded_diffs)}\n")
+            f.write(f"Bonded Exc. Vol diff, var: {onp.var(exc_vol_bonded_diffs)}\n")
+
+            f.write(f"\nStack diff, mean: {onp.mean(stack_diffs)}\n")
+            f.write(f"Stack diff, var: {onp.var(stack_diffs)}\n")
+
+            f.write(f"\nNonbonded Exc. Vol diff, mean: {onp.mean(exc_vol_unbonded_diffs)}\n")
+            f.write(f"Nonbonded Exc. Vol diff, var: {onp.var(exc_vol_unbonded_diffs)}\n")
+
+            f.write(f"\nHB diff, mean: {onp.mean(hb_diffs)}\n")
+            f.write(f"HB diff, var: {onp.var(hb_diffs)}\n")
+
+            f.write(f"\nCr. Stack diff, mean: {onp.mean(cr_stack_diffs)}\n")
+            f.write(f"Cr. Stack diff, var: {onp.var(cr_stack_diffs)}\n")
+
+            f.write(f"\nCx. Stack diff, mean: {onp.mean(cx_stack_diffs)}\n")
+            f.write(f"Cx. Stack diff, var: {onp.var(cx_stack_diffs)}\n")
+
+            f.write(f"\nDebye diff, mean: {onp.mean(debye_diffs)}\n")
+            f.write(f"Debye diff, var: {onp.var(debye_diffs)}\n")
+
         with open(iter_dir / "params.txt", "w+") as f:
             f.write(f"{pprint.pformat(params)}\n")
 
@@ -302,8 +415,16 @@ def run(args):
         with open(resample_log_path, "a") as f:
             f.write(f"- Remaining analysis took {analyze_end - analyze_start} seconds\n")
 
-        return traj_states, calc_energies, jnp.array(RMSDs), iter_dir
+        # Spring cleaning
+        if not no_delete:
+            for r in range(n_sims):
+                repeat_dir = iter_dir / f"r{r}"
+                file_to_rem = repeat_dir / "output.dat"
+                file_to_rem.unlink()
+            file_to_rem = iter_dir / "output.dat"
+            file_to_rem.unlink()
 
+        return traj_states, calc_energies, jnp.array(RMSDs), iter_dir
 
 
     # Construct the loss function
@@ -399,6 +520,10 @@ def run(args):
             f.write(f"{curr_rmse}\n")
         with open(times_path, "a") as f:
             f.write(f"{iter_end - iter_start}\n")
+        with open(grads_path, "a") as f:
+            f.write(f"{pprint.pformat(grads)}\n")
+        with open(params_per_iter_path, "a") as f:
+            f.write(f"{pprint.pformat(params)}\n")
 
         all_n_effs.append(n_eff)
         all_rmses.append(curr_rmse)
@@ -439,6 +564,8 @@ def get_parser():
     parser.add_argument('--lr', type=float, default=0.001, help="Learning rate")
     parser.add_argument('--min-neff-factor', type=float, default=0.95,
                         help="Factor for determining min Neff")
+
+    parser.add_argument('--no-delete', action='store_true')
 
     return parser
 
