@@ -1,0 +1,44 @@
+# Program parameters
+sim_type = MD
+backend = CPU
+CUDA_list = verlet
+CUDA_sort_every = 0
+use_edge = true
+seed = 1
+cells_auto_optimisation = false
+max_density_multiplier = 10
+# verlet_skin = 0.5
+verlet_skin = 0.1
+interaction_type = RNA2
+dh_half_charged_ends = False
+list_type = no
+
+# Simulation parameters
+steps = 1e9
+newtonian_steps = 103
+diff_coeff = 2.5
+thermostat = john
+dt = 0.003
+ensemble = nvt
+# T = 20C
+T = 293.15K
+salt_concentration = 1.0
+external_model = external_model.txt
+
+use_average_seq = 0
+seq_dep_file = rna_sequence_dependent_parameters.txt
+
+# Input/output
+topology = sys.top
+conf_file = init.conf
+lastconf_file = last_conf.dat
+refresh_vel = 1
+log_file = sim.log
+no_stdout_energy = 1
+restart_step_counter = 0
+energy_file = energy.dat
+print_conf_interval = 10000
+print_conf_ppc = 51
+print_energy_every = 10000
+trajectory_file = trajectory.dat
+time_scale = linear

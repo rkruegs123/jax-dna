@@ -383,7 +383,9 @@ def rewrite_input_file(template_path, output_dir,
                        external_forces_file=None,
                        restart_step_counter=None,
                        interaction_type=None,
-                       external_model=None
+                       external_model=None,
+                       seq_dep_file=None,
+                       observables_str=None
 ):
     with open(template_path, "r") as f:
         input_template_lines = f.readlines()
@@ -491,11 +493,18 @@ def rewrite_input_file(template_path, output_dir,
         elif tokens[0] == "external_model" and external_model is not None:
             new_line = gen_new_line(tokens, external_model, str)
             input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "seq_dep_file" and seq_dep_file is not None:
+            new_line = gen_new_line(tokens, seq_dep_file, str)
+            input_lines.append(f"{new_line}\n")
         else:
             input_lines.append(it_line)
 
     with open(output_path, "w") as of:
         of.writelines(input_lines)
+
+    if observables_str is not None:
+        with open(output_path, "a") as of:
+            of.writelines(observables_str)
 
     return
 

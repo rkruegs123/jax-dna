@@ -54,6 +54,11 @@ def add_coupling(base_params):
     base_params["hydrogen_bonding"]["theta0_hb_8"] = base_params["hydrogen_bonding"]["theta0_hb_7"]
     base_params["hydrogen_bonding"]["delta_theta_star_hb_8"] = base_params["hydrogen_bonding"]["delta_theta_star_hb_7"]
 
+    # Coaxial Stacking
+    base_params["coaxial_stacking"]["a_coax_6"] = base_params["coaxial_stacking"]["a_coax_5"]
+    base_params["coaxial_stacking"]["theta0_coax_6"] = base_params["coaxial_stacking"]["theta0_coax_5"]
+    base_params["coaxial_stacking"]["delta_theta_star_coax_6"] = base_params["coaxial_stacking"]["delta_theta_star_coax_5"]
+
 
 def get_full_base_params(override_base_params):
 
@@ -179,7 +184,6 @@ class EnergyModel:
         costB2 = jnp.einsum('ij, ij->i', -bb_p5_sites[nn_i], dr_back_nn) / r_back_nn
         theta10 = jnp.arccos(costB2)
 
-
         cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nn_i], dr_back_nn) / r_back_nn
         cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nn_j], dr_back_nn) / r_back_nn
 
@@ -224,7 +228,6 @@ class EnergyModel:
         stack_probs = utils.get_pair_probs(seq, nn_i, nn_j)
         stack_weights = jnp.dot(stack_probs, self.ss_stack_weights_flat)
         stack_dg = jnp.dot(stack_weights, v_stack)
-        # stack_dg = jnp.arccos(costB1).sum()
 
         exc_vol_unbonded_dg = exc_vol_unbonded(
             dr_base_op, dr_backbone_op, dr_back_base_op, dr_base_back_op,
@@ -371,7 +374,14 @@ class TestRna2(unittest.TestCase):
         subterm_tests = [
             # (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 1.0, True),
             (self.test_data_basedir / "simple-helix-rna2-12bp-ss", "sys.top", "output.dat", 296.15, 1.0, False),
-            # (self.test_data_basedir / "simple-coax-rna2", "generated.top", "output.dat", 296.15, 1.0, True)
+            # (self.test_data_basedir / "simple-coax-rna2", "generated.top", "output.dat", 296.15, 1.0, True),
+
+            # (self.test_data_basedir / "simple-helix-rna2-12bp-ss-290.15", "sys.top", "output.dat", 290.15, 1.0, False),
+
+            # (self.test_data_basedir / "regr-rna2-2ht-293.15-ss", "sys.top", "output.dat", 293.15, 1.0, False),
+            # (self.test_data_basedir / "regr-rna2-2ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True),
+            # (self.test_data_basedir / "regr-rna2-2ht-296.15-ss", "sys.top", "output.dat", 296.15, 1.0, False),
+            # (self.test_data_basedir / "regr-rna2-2ht-296.15-sa", "sys.top", "output.dat", 296.15, 1.0, True)
         ]
 
         for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq in subterm_tests:

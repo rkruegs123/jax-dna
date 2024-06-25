@@ -235,11 +235,7 @@ def stacking2(
         * f4_theta_5p_stack * f4_theta_6p_stack \
         * f4_theta_9_stack * f4_theta_10_stack \
         * f5_neg_cosphi1_stack * f5_neg_cosphi2_stack
-    # return jnp.zeros(r_stack.shape[0])
-    # return f1_dr_stack * f4_theta_5p_stack * f4_theta_6p_stack * f5_neg_cosphi1_stack * f5_neg_cosphi2_stack # * f4_theta_9_stack * f4_theta_10_stack
-    # return f4_theta_9_stack * f4_theta_10_stack
-    # return f4_theta_9_stack
-    # return f4_theta_10_stack
+
 
 
 
@@ -503,6 +499,8 @@ def coaxial_stacking(dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4,
         * (f4_theta_5_coax_fn(theta5) + f4_theta_5_coax_fn(jnp.pi - theta5)) \
         * (f4_theta_6_coax_fn(theta6) + f4_theta_6_coax_fn(jnp.pi - theta6)) \
         * f5_cosphi3_coax * f5_cosphi4_coax
+
+
 
 
 @jit

@@ -28,7 +28,7 @@ DEFAULT_VARIABLE_MAPPER = {
         "p3_x": "p3_x",
         "p3_y": "p3_y",
         "p3_z": "p3_z"
-    ],
+    },
     "fene": {
         "eps_backbone": "RNA_FENE_EPS",
         "delta_backbone": "RNA_FENE_DELTA",
@@ -269,10 +269,13 @@ DEFAULT_VARIABLE_MAPPER = {
 }
 
 
-def write_external_model(override_base_params, t_kelvin, fpath, variable_mapper=DEFAULT_VARIABLE_MAPPER):
+no_round = set(["RNA_POS_STACK_5_a1", "RNA_POS_STACK_5_a2", "RNA_FENE_R0",
+                "RNA_EXCL_B1", "RNA_EXCL_B2", "RNA_EXCL_B3", "RNA_EXCL_B4",
+                "RNA_EXCL_RC1", "RNA_EXCL_RC2", "RNA_EXCL_RC3", "RNA_EXCL_RC4"])
+def write_external_model(override_base_params, t_kelvin, salt_conc, fpath, variable_mapper=DEFAULT_VARIABLE_MAPPER):
     base_params = model.get_full_base_params(override_base_params)
     base_params_to_process = deepcopy(base_params) # they are processed in-place
-    params = load_params._process(base_params_to_process, t_kelvin)
+    params = load_params._process(base_params_to_process, t_kelvin, salt_conc)
 
     ## Add back in eps_stack_base and eps_stack_kt_coeff
     del params['stacking']['eps_stack']
@@ -286,6 +289,12 @@ def write_external_model(override_base_params, t_kelvin, fpath, variable_mapper=
     # Construct dictionary that maps oxRNA variable name to our internal naming
     new_oxrna_vars = dict()
     for t, t_params in params.items():
+        if t == "debye":
+            continue
+
+        if not override_base_params[t]:
+            continue
+
         mapper = variable_mapper[t]
 
         for k, v in t_params.items():
@@ -296,8 +305,12 @@ def write_external_model(override_base_params, t_kelvin, fpath, variable_mapper=
 
     # Construct a new set of lines for external_model.txt
     external_lines = list()
-    for key, val in new_oxdna_vars.items():
-        line = f"{key} = {val}"
+    for key, val in new_oxrna_vars.items():
+        if key not in no_round:
+            rounded_val = onp.round(val, 6)
+        else:
+            rounded_val = val
+        line = f"{key} = {rounded_val}\n"
         external_lines.append(line)
 
     with open(fpath, "w") as of:
@@ -349,14 +362,14 @@ def write_seq_specific(fpath, base_params, hb_mult, stack_mult, cross_mult):
     eps_stack_kt_coeff = base_params["stacking"]["eps_stack_kt_coeff"]
 
     for nuc1 in utils.RNA_ALPHA:
-    for nuc2 in utils.RNA_ALPHA:
-        nuc1_repr = nuc1 if nuc1 != "U" else "T"
-        nuc2_repr = nuc2 if nuc2 != "U" else "T"
+        for nuc2 in utils.RNA_ALPHA:
+            nuc1_repr = nuc1 if nuc1 != "U" else "T"
+            nuc2_repr = nuc2 if nuc2 != "U" else "T"
 
-        prefactor = stack_mult[RNA_ALPHA.index(nuc1), RNA_ALPHA.index(nuc2)]
-        ss_eps_stack_base = prefactor * eps_stack_base
+            prefactor = stack_mult[RNA_ALPHA.index(nuc1), RNA_ALPHA.index(nuc2)]
+            ss_eps_stack_base = prefactor * eps_stack_base
 
-        lines.append(f"STCK_{nuc1_repr}_{nuc2_repr} = {ss_eps_stack_base}")
+            lines.append(f"STCK_{nuc1_repr}_{nuc2_repr} = {ss_eps_stack_base}")
 
     eps_stack_prime = eps_stack_kt_coeff / eps_stack_base
     lines.append(f"ST_T_DEP = {eps_stack_prime}")
