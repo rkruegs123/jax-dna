@@ -42,7 +42,7 @@ else:
 default_observables_str = """
 data_output_1 = {
   name = split_energy.dat
-  print_every = 500
+  print_every = PRINT_EVERY
   col_1 = {
           type = step
           units = MD
@@ -176,6 +176,7 @@ def run(args):
 
             split_energy_path = str(repeat_dir / "split_energy.dat")
             observables_str = default_observables_str.replace("split_energy.dat", split_energy_path)
+            observables_str = observables_str.replace("PRINT_EVERY", str(sample_every))
 
             rewrite_input_file(
                 input_template_path, repeat_dir,
@@ -461,7 +462,9 @@ def run(args):
         if key[0] == "a":
             params["coaxial_stacking"][key] = model.DEFAULT_BASE_PARAMS["coaxial_stacking"][key]
     """
-    params["coaxial_stacking"] = model.DEFAULT_BASE_PARAMS["coaxial_stacking"]
+    # params["coaxial_stacking"] = model.DEFAULT_BASE_PARAMS["coaxial_stacking"]
+    for k in ['dr0_coax', 'dr_c_coax', 'dr_high_coax', 'dr_low_coax', 'k_coax']:
+        params["coaxial_stacking"][k] = model.DEFAULT_BASE_PARAMS["coaxial_stacking"][k]
 
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)

@@ -216,7 +216,7 @@ DEFAULT_VARIABLE_MAPPER = {
     },
     "coaxial_stacking": {
         # f2(dr_coax)
-        "k_coax": "RNA_CXST_K_OXDNA",
+        "k_coax": "RNA_CXST_K",
         "dr0_coax": "RNA_CXST_R0",
         "dr_c_coax": "RNA_CXST_RC",
         "dr_low_coax": "RNA_CXST_RLOW",
@@ -228,7 +228,7 @@ DEFAULT_VARIABLE_MAPPER = {
 
         # f4(theta_1) + f4(2*pi - theta_1)
         "a_coax_1": "RNA_CXST_THETA1_A",
-        "theta0_coax_1": "RNA_CXST_THETA1_T0_OXDNA",
+        "theta0_coax_1": "RNA_CXST_THETA1_T0",
         "delta_theta_star_coax_1": "RNA_CXST_THETA1_TS",
         "b_coax_1": "RNA_CXST_THETA1_B",
         "delta_theta_coax_1_c": "RNA_CXST_THETA1_TC",

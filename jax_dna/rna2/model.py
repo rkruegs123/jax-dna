@@ -291,7 +291,7 @@ class TestRna2(unittest.TestCase):
                               t_kelvin, salt_conc,
                               r_cutoff=10.0, dr_threshold=0.2,
                               tol_places=4, verbose=True, avg_seq=True,
-                              hb_tol_places=3):
+                              hb_tol_places=3, params=None):
 
 
         if avg_seq:
@@ -334,7 +334,8 @@ class TestRna2(unittest.TestCase):
         traj_states = traj_info.get_states()
 
         displacement_fn, shift_fn = space.periodic(traj_info.box_size)
-        params = deepcopy(EMPTY_BASE_PARAMS)
+        if params is None:
+            params = deepcopy(EMPTY_BASE_PARAMS)
         model = EnergyModel(displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_conc,
                             ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
 
@@ -382,20 +383,21 @@ class TestRna2(unittest.TestCase):
 
         subterm_tests = [
             # (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 1.0, True),
-            (self.test_data_basedir / "simple-helix-rna2-12bp-ss", "sys.top", "output.dat", 296.15, 1.0, False),
+            # (self.test_data_basedir / "simple-helix-rna2-12bp-ss", "sys.top", "output.dat", 296.15, 1.0, False),
             # (self.test_data_basedir / "simple-coax-rna2", "generated.top", "output.dat", 296.15, 1.0, True),
 
-            # (self.test_data_basedir / "simple-helix-rna2-12bp-ss-290.15", "sys.top", "output.dat", 290.15, 1.0, False),
+            (self.test_data_basedir / "simple-helix-rna2-12bp-ss-290.15", "sys.top", "output.dat", 290.15, 1.0, False),
 
             # (self.test_data_basedir / "regr-rna2-2ht-293.15-ss", "sys.top", "output.dat", 293.15, 1.0, False),
             # (self.test_data_basedir / "regr-rna2-2ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True),
             # (self.test_data_basedir / "regr-rna2-2ht-296.15-ss", "sys.top", "output.dat", 296.15, 1.0, False),
             # (self.test_data_basedir / "regr-rna2-2ht-296.15-sa", "sys.top", "output.dat", 296.15, 1.0, True)
+
         ]
 
         for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq in subterm_tests:
             self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin, salt_conc,
-                                       avg_seq=avg_seq)
+                                       avg_seq=avg_seq, params=None)
 
 
 if __name__ == "__main__":
