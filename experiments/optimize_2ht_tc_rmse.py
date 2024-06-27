@@ -25,7 +25,8 @@ from jax_md import space, rigid_body
 from jax_dna.common import utils, topology, trajectory, center_configuration, checkpoint
 from jax_dna.rna2 import model, oxrna_utils
 from jax_dna.dna1.oxdna_utils import rewrite_input_file
-from jax_dna.rna2.load_params import read_seq_specific
+from jax_dna.rna2.load_params import read_seq_specific, DEFAULT_BASE_PARAMS, EMPTY_BASE_PARAMS, \
+    write_seq_specific
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -76,7 +77,7 @@ def run(args):
     # t_kelvin = utils.DEFAULT_TEMP
     t_kelvin = 293.15
 
-    ss_hb_weights, ss_stack_weights, ss_cross_weights = read_seq_specific(model.DEFAULT_BASE_PARAMS, t_kelvin=t_kelvin)
+    ss_hb_weights, ss_stack_weights, ss_cross_weights = read_seq_specific(DEFAULT_BASE_PARAMS)
     # ss_hb_weights = utils.HB_WEIGHTS_SA
     # ss_stack_weights = utils.STACK_WEIGHTS_SA
     salt_conc = 1.0
@@ -152,8 +153,10 @@ def run(args):
             repeat_dir.mkdir(parents=False, exist_ok=False)
 
             shutil.copy(top_path, repeat_dir / "sys.top")
+
             seq_dep_path = repeat_dir / "rna_sequence_dependent_parameters.txt"
-            shutil.copy(ss_path, seq_dep_path)
+            # shutil.copy(ss_path, seq_dep_path)
+            write_seq_specific(seq_dep_path, params, ss_hb_weights, ss_stack_weights, ss_cross_weights)
 
             if prev_basedir is None:
                 init_conf_info = deepcopy(centered_conf_info)
@@ -457,17 +460,17 @@ def run(args):
     grad_fn = jit(grad_fn)
 
     # Initialize parameters
-    params = deepcopy(model.EMPTY_BASE_PARAMS)
+    params = deepcopy(EMPTY_BASE_PARAMS)
     """
-    for key in model.DEFAULT_BASE_PARAMS["coaxial_stacking"]:
+    for key in DEFAULT_BASE_PARAMS["coaxial_stacking"]:
         if key[0] == "a":
-            params["coaxial_stacking"][key] = model.DEFAULT_BASE_PARAMS["coaxial_stacking"][key]
+            params["coaxial_stacking"][key] = DEFAULT_BASE_PARAMS["coaxial_stacking"][key]
     """
-    params["coaxial_stacking"] = model.DEFAULT_BASE_PARAMS["coaxial_stacking"]
+    params["coaxial_stacking"] = DEFAULT_BASE_PARAMS["coaxial_stacking"]
     # for k in ['dr0_coax', 'dr_c_coax', 'dr_high_coax', 'dr_low_coax', 'k_coax']:
-    #     params["coaxial_stacking"][k] = model.DEFAULT_BASE_PARAMS["coaxial_stacking"][k]
-    # params["cross_stacking"] = model.DEFAULT_BASE_PARAMS["cross_stacking"]
-    # params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
+    #     params["coaxial_stacking"][k] = DEFAULT_BASE_PARAMS["coaxial_stacking"][k]
+    # params["cross_stacking"] = DEFAULT_BASE_PARAMS["cross_stacking"]
+    # params["stacking"] = DEFAULT_BASE_PARAMS["stacking"]
 
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)

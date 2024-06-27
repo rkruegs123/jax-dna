@@ -319,8 +319,10 @@ def write_external_model(override_base_params, t_kelvin, salt_conc, fpath, varia
     return
 
 
-def write_seq_specific(fpath, base_params, hb_mult, stack_mult, cross_mult):
+def write_seq_specific(fpath, override_base_params, hb_mult, stack_mult, cross_mult,
+                       round_places=7):
     lines = list()
+    base_params = load_params.get_full_base_params(override_base_params)
 
     # Write HB lines
 
@@ -339,9 +341,9 @@ def write_seq_specific(fpath, base_params, hb_mult, stack_mult, cross_mult):
     ug_mult = hb_mult[utils.RNA_ALPHA.index("U")][utils.RNA_ALPHA.index("G")]
     assert(gu_mult == ug_mult)
 
-    lines.append(f"HYDR_A_T = {au_mult * default_f1_eps_hb}")
-    lines.append(f"HYDR_C_G = {cg_mult * default_f1_eps_hb}")
-    lines.append(f"HYDR_G_T = {gu_mult * default_f1_eps_hb}")
+    lines.append(f"HYDR_A_T = {onp.round(au_mult * default_f1_eps_hb, 6)}")
+    lines.append(f"HYDR_C_G = {onp.round(cg_mult * default_f1_eps_hb, 6)}")
+    lines.append(f"HYDR_G_T = {onp.round(gu_mult * default_f1_eps_hb, 6)}")
 
 
     # Write cross stacking lines
@@ -352,10 +354,10 @@ def write_seq_specific(fpath, base_params, hb_mult, stack_mult, cross_mult):
             nuc1_repr = nuc1 if nuc1 != "U" else "T"
             nuc2_repr = nuc2 if nuc2 != "U" else "T"
 
-            prefactor = cross_mult[RNA_ALPHA.index(nuc1), RNA_ALPHA.index(nuc2)]
+            prefactor = cross_mult[utils.RNA_ALPHA.index(nuc1), utils.RNA_ALPHA.index(nuc2)]
             ss_cross_k = prefactor * default_cross_k
 
-            lines.append(f"CROSS_{nuc1_repr}_{nuc2_repr} = {ss_cross_k}")
+            lines.append(f"CROSS_{nuc1_repr}_{nuc2_repr} = {onp.round(ss_cross_k, 6)}")
 
     # Write stacking lines
     eps_stack_base = base_params["stacking"]["eps_stack_base"]
@@ -366,13 +368,13 @@ def write_seq_specific(fpath, base_params, hb_mult, stack_mult, cross_mult):
             nuc1_repr = nuc1 if nuc1 != "U" else "T"
             nuc2_repr = nuc2 if nuc2 != "U" else "T"
 
-            prefactor = stack_mult[RNA_ALPHA.index(nuc1), RNA_ALPHA.index(nuc2)]
+            prefactor = stack_mult[utils.RNA_ALPHA.index(nuc1), utils.RNA_ALPHA.index(nuc2)]
             ss_eps_stack_base = prefactor * eps_stack_base
 
-            lines.append(f"STCK_{nuc1_repr}_{nuc2_repr} = {ss_eps_stack_base}")
+            lines.append(f"STCK_{nuc1_repr}_{nuc2_repr} = {onp.round(ss_eps_stack_base, 6)}")
 
     eps_stack_prime = eps_stack_kt_coeff / eps_stack_base
-    lines.append(f"ST_T_DEP = {eps_stack_prime}")
+    lines.append(f"ST_T_DEP = {onp.round(eps_stack_prime, 6)}")
 
     # Write to path
     fpath = Path(fpath)
@@ -387,14 +389,14 @@ def write_seq_specific(fpath, base_params, hb_mult, stack_mult, cross_mult):
 
 if __name__ == "__main__":
     params = {
-        'coaxial_stacking': {
-            'dr0_coax': 0.64142322,
-            'dr_c_coax': 0.56720243,
-            'dr_high_coax': 0.77947753,
-            'dr_low_coax': 0.39,
-            'k_coax': 90.08695004
+        "coaxial_stacking": {},
+        'cross_stacking': {
+            'dr_c_cross': 0.72205534,
+            'dr_high_cross': 0.70590653,
+            'dr_low_cross': 0.31416068,
+            'k_cross': 60.15358427,
+            'r0_cross': 0.45434091,
         },
-        'cross_stacking': {},
         'debye': {},
         'excluded_volume': {},
         'fene': {},
@@ -403,5 +405,9 @@ if __name__ == "__main__":
         'stacking': {}
     }
 
-    model_path = "/home/ryan/Downloads/r0/external_model.txt"
-    write_external_model(params, 293.15, 1.0, model_path)
+    # model_path = "/home/ryan/Downloads/r0/external_model.txt"
+    # write_external_model(params, 293.15, 1.0, model_path)
+
+    test_path = "/home/ryan/Downloads/r0/test.txt"
+    hb_mult, stack_mult, cross_mult = load_params.read_seq_specific(model.DEFAULT_BASE_PARAMS)
+    write_seq_specific(test_path, params, hb_mult, stack_mult, cross_mult)

@@ -20,80 +20,12 @@ from jax_dna.common.interactions import v_fene_smooth, stacking2, exc_vol_bonded
     exc_vol_unbonded, cross_stacking2, coaxial_stacking, hydrogen_bonding, \
     coaxial_stacking
 from jax_dna.common import utils, topology, trajectory
-from jax_dna.rna2.load_params import load, _process, read_seq_specific
+from jax_dna.rna2.load_params import load, _process, read_seq_specific, \
+    DEFAULT_BASE_PARAMS, EMPTY_BASE_PARAMS, get_full_base_params
 
 from jax.config import config
 config.update("jax_enable_x64", True)
 
-
-DEFAULT_BASE_PARAMS = load(process=False)
-
-EMPTY_BASE_PARAMS = {
-    "geometry": dict(),
-    "fene": dict(),
-    "excluded_volume": dict(),
-    "stacking": dict(),
-    "hydrogen_bonding": dict(),
-    "cross_stacking": dict(),
-    "coaxial_stacking": dict(),
-    "debye": dict()
-}
-
-def add_coupling(base_params):
-    # Stacking
-    base_params["stacking"]["a_stack_6"] = base_params["stacking"]["a_stack_5"]
-    base_params["stacking"]["theta0_stack_6"] = base_params["stacking"]["theta0_stack_5"]
-    base_params["stacking"]["delta_theta_star_stack_6"] = base_params["stacking"]["delta_theta_star_stack_5"]
-
-    # Hydrogen Bonding
-    base_params["hydrogen_bonding"]["a_hb_3"] = base_params["hydrogen_bonding"]["a_hb_2"]
-    base_params["hydrogen_bonding"]["theta0_hb_3"] = base_params["hydrogen_bonding"]["theta0_hb_2"]
-    base_params["hydrogen_bonding"]["delta_theta_star_hb_3"] = base_params["hydrogen_bonding"]["delta_theta_star_hb_2"]
-
-    base_params["hydrogen_bonding"]["a_hb_8"] = base_params["hydrogen_bonding"]["a_hb_7"]
-    base_params["hydrogen_bonding"]["theta0_hb_8"] = base_params["hydrogen_bonding"]["theta0_hb_7"]
-    base_params["hydrogen_bonding"]["delta_theta_star_hb_8"] = base_params["hydrogen_bonding"]["delta_theta_star_hb_7"]
-
-    # Coaxial Stacking
-    base_params["coaxial_stacking"]["a_coax_6"] = base_params["coaxial_stacking"]["a_coax_5"]
-    base_params["coaxial_stacking"]["theta0_coax_6"] = base_params["coaxial_stacking"]["theta0_coax_5"]
-    base_params["coaxial_stacking"]["delta_theta_star_coax_6"] = base_params["coaxial_stacking"]["delta_theta_star_coax_5"]
-
-    # Cross stacking
-    base_params["cross_stacking"]["a_cross_3"] = base_params["cross_stacking"]["a_cross_2"]
-    base_params["cross_stacking"]["theta0_cross_3"] = base_params["cross_stacking"]["theta0_cross_2"]
-    base_params["cross_stacking"]["delta_theta_star_cross_3"] = base_params["cross_stacking"]["delta_theta_star_cross_2"]
-
-    base_params["cross_stacking"]["a_cross_8"] = base_params["cross_stacking"]["a_cross_7"]
-    base_params["cross_stacking"]["theta0_cross_8"] = base_params["cross_stacking"]["theta0_cross_7"]
-    base_params["cross_stacking"]["delta_theta_star_cross_8"] = base_params["cross_stacking"]["delta_theta_star_cross_7"]
-
-
-def get_full_base_params(override_base_params):
-
-    default_base_params = deepcopy(DEFAULT_BASE_PARAMS)
-
-    geometry_params = default_base_params["geometry"] | override_base_params["geometry"]
-    fene_params = default_base_params["fene"] | override_base_params["fene"]
-    exc_vol_params = default_base_params["excluded_volume"] | override_base_params["excluded_volume"]
-    stacking_params = default_base_params["stacking"] | override_base_params["stacking"]
-    hb_params = default_base_params["hydrogen_bonding"] | override_base_params["hydrogen_bonding"]
-    cr_params = default_base_params["cross_stacking"] | override_base_params["cross_stacking"]
-    cx_params = default_base_params["coaxial_stacking"] | override_base_params["coaxial_stacking"]
-    debye_params = default_base_params["debye"] | override_base_params["debye"]
-
-    base_params = {
-        "geometry": geometry_params,
-        "fene": fene_params,
-        "excluded_volume": exc_vol_params,
-        "stacking": stacking_params,
-        "hydrogen_bonding": hb_params,
-        "cross_stacking": cr_params,
-        "coaxial_stacking": cx_params,
-        "debye": debye_params
-    }
-    add_coupling(base_params)
-    return base_params
 
 
 class EnergyModel:
@@ -302,7 +234,7 @@ class TestRna2(unittest.TestCase):
             ss_hb_weights = utils.HB_WEIGHTS_SA
             ss_stack_weights = utils.STACK_WEIGHTS_SA
         else:
-            ss_hb_weights, ss_stack_weights, ss_cross_weights = read_seq_specific(DEFAULT_BASE_PARAMS, t_kelvin=t_kelvin)
+            ss_hb_weights, ss_stack_weights, ss_cross_weights = read_seq_specific(DEFAULT_BASE_PARAMS)
 
         print(f"\n---- Checking energy breakdown agreement for base directory: {basedir} ----")
 
@@ -397,7 +329,6 @@ class TestRna2(unittest.TestCase):
             (self.test_data_basedir / "regr-rna2-2ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True),
             (self.test_data_basedir / "regr-rna2-2ht-296.15-ss", "sys.top", "output.dat", 296.15, 1.0, False),
             (self.test_data_basedir / "regr-rna2-2ht-296.15-sa", "sys.top", "output.dat", 296.15, 1.0, True)
-
         ]
 
 
