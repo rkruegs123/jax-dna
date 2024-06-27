@@ -374,7 +374,8 @@ def run(args):
         plt.savefig(iter_dir / f"energies.png")
         plt.clf()
 
-        sns.histplot(energy_diffs)
+        # sns.histplot(energy_diffs)
+        plt.hist(energy_diffs, 25, histtype='bar', facecolor='blue')
         plt.savefig(iter_dir / f"energy_diffs.png")
         plt.clf()
 
@@ -462,9 +463,11 @@ def run(args):
         if key[0] == "a":
             params["coaxial_stacking"][key] = model.DEFAULT_BASE_PARAMS["coaxial_stacking"][key]
     """
-    # params["coaxial_stacking"] = model.DEFAULT_BASE_PARAMS["coaxial_stacking"]
-    for k in ['dr0_coax', 'dr_c_coax', 'dr_high_coax', 'dr_low_coax', 'k_coax']:
-        params["coaxial_stacking"][k] = model.DEFAULT_BASE_PARAMS["coaxial_stacking"][k]
+    params["coaxial_stacking"] = model.DEFAULT_BASE_PARAMS["coaxial_stacking"]
+    # for k in ['dr0_coax', 'dr_c_coax', 'dr_high_coax', 'dr_low_coax', 'k_coax']:
+    #     params["coaxial_stacking"][k] = model.DEFAULT_BASE_PARAMS["coaxial_stacking"][k]
+    # params["cross_stacking"] = model.DEFAULT_BASE_PARAMS["cross_stacking"]
+    # params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
 
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
