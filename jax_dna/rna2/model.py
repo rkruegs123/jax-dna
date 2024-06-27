@@ -188,10 +188,12 @@ class EnergyModel:
         # costB1 = (dr_back_nn / jnp.expand_dims(r_back_nn, axis=1))[:, 2]
         costB1 = jnp.einsum('ij, ij->i', -bb_p3_sites[nn_j], dr_back_nn) / r_back_nn
         # costB1 = vmap(jnp.dot, (0, 0))(-bb_p3_sites[nn_j], (dr_back_nn / jnp.expand_dims(r_back_nn, axis=1)))
-        theta9 = jnp.arccos(costB1)
+        # theta9 = jnp.arccos(costB1)
+        theta9 = jnp.arccos(clamp(costB1))
         # theta10 = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', bb_p5_sites[nn_j], dr_back_nn) / r_back_nn))
         costB2 = jnp.einsum('ij, ij->i', -bb_p5_sites[nn_i], dr_back_nn) / r_back_nn
-        theta10 = jnp.arccos(costB2)
+        # theta10 = jnp.arccos(costB2)
+        theta10 = jnp.arccos(clamp(costB2))
 
         cosphi1 = -jnp.einsum('ij, ij->i', cross_prods[nn_i], dr_back_nn) / r_back_nn
         cosphi2 = -jnp.einsum('ij, ij->i', cross_prods[nn_j], dr_back_nn) / r_back_nn
@@ -237,6 +239,8 @@ class EnergyModel:
         stack_probs = utils.get_pair_probs(seq, nn_i, nn_j)
         stack_weights = jnp.dot(stack_probs, self.ss_stack_weights_flat)
         stack_dg = jnp.dot(stack_weights, v_stack)
+        # stack_dg = costB1.sum()
+        # stack_dg = v_stack.sum()
 
         exc_vol_unbonded_dg = exc_vol_unbonded(
             dr_base_op, dr_backbone_op, dr_back_base_op, dr_base_back_op,
@@ -342,6 +346,7 @@ class TestRna2(unittest.TestCase):
         ## setup neighbors, if necessary
         neighbors_idx = top_info.unbonded_nbrs.T
 
+        # compute_subterms_fn = model.compute_subterms
         compute_subterms_fn = jit(model.compute_subterms)
         computed_subterms = list()
         for state in tqdm(traj_states):
@@ -382,18 +387,19 @@ class TestRna2(unittest.TestCase):
         print(utils.bcolors.WARNING + "\nWARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file\n" + utils.bcolors.ENDC)
 
         subterm_tests = [
-            # (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 1.0, True),
-            # (self.test_data_basedir / "simple-helix-rna2-12bp-ss", "sys.top", "output.dat", 296.15, 1.0, False),
-            # (self.test_data_basedir / "simple-coax-rna2", "generated.top", "output.dat", 296.15, 1.0, True),
+            (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 1.0, True),
+            (self.test_data_basedir / "simple-helix-rna2-12bp-ss", "sys.top", "output.dat", 296.15, 1.0, False),
+            (self.test_data_basedir / "simple-coax-rna2", "generated.top", "output.dat", 296.15, 1.0, True),
 
             (self.test_data_basedir / "simple-helix-rna2-12bp-ss-290.15", "sys.top", "output.dat", 290.15, 1.0, False),
 
-            # (self.test_data_basedir / "regr-rna2-2ht-293.15-ss", "sys.top", "output.dat", 293.15, 1.0, False),
-            # (self.test_data_basedir / "regr-rna2-2ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True),
-            # (self.test_data_basedir / "regr-rna2-2ht-296.15-ss", "sys.top", "output.dat", 296.15, 1.0, False),
-            # (self.test_data_basedir / "regr-rna2-2ht-296.15-sa", "sys.top", "output.dat", 296.15, 1.0, True)
+            (self.test_data_basedir / "regr-rna2-2ht-293.15-ss", "sys.top", "output.dat", 293.15, 1.0, False),
+            (self.test_data_basedir / "regr-rna2-2ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True),
+            (self.test_data_basedir / "regr-rna2-2ht-296.15-ss", "sys.top", "output.dat", 296.15, 1.0, False),
+            (self.test_data_basedir / "regr-rna2-2ht-296.15-sa", "sys.top", "output.dat", 296.15, 1.0, True)
 
         ]
+
 
         for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq in subterm_tests:
             self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin, salt_conc,

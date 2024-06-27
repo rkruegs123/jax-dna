@@ -25,7 +25,7 @@ refresh_vel = true
 
 # Common options for DNA simulations
 use_average_seq = 0
-seq_dep_file_DNA = oxDNA1_sequence_dependent_parameters.txt
+seq_dep_file = oxDNA1_sequence_dependent_parameters.txt
 
 # confGenerator options
 generate_consider_bonded_interactions = true

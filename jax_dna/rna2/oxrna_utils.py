@@ -386,4 +386,22 @@ def write_seq_specific(fpath, base_params, hb_mult, stack_mult, cross_mult):
 
 
 if __name__ == "__main__":
-    pass
+    params = {
+        'coaxial_stacking': {
+            'dr0_coax': 0.64142322,
+            'dr_c_coax': 0.56720243,
+            'dr_high_coax': 0.77947753,
+            'dr_low_coax': 0.39,
+            'k_coax': 90.08695004
+        },
+        'cross_stacking': {},
+        'debye': {},
+        'excluded_volume': {},
+        'fene': {},
+        'geometry': {},
+        'hydrogen_bonding': {},
+        'stacking': {}
+    }
+
+    model_path = "/home/ryan/Downloads/r0/external_model.txt"
+    write_external_model(params, 293.15, 1.0, model_path)

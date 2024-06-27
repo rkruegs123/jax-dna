@@ -55,6 +55,7 @@ def f1(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
                      v_morse(r, eps, r0, a) - v_morse(r_c, eps, r0, a),
                      oob)
 
+"""
 @jit
 def f2(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
        k, r0, r_c, # harmonic parameters
@@ -68,6 +69,23 @@ def f2(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
     return jnp.where((r_low < r) & (r < r_high),
                      v_harmonic(r, k, r0) - v_harmonic(r_c, k, r0),
                      oob)
+"""
+
+
+@jit
+def f2(r, r_low, r_high, r_c_low, r_c_high, # thresholding/smoothing parameters
+             k, r0, r_c, # harmonic parameters
+             b_low, b_high # smoothing parameters
+):
+
+    val = jnp.where(r > r_high, k * v_smooth(r, b_high, r_c_high),
+                    jnp.where(r > r_low, v_harmonic(r, k, r0) - v_harmonic(r_c, k, r0),
+                              jnp.where(r > r_c_low, k * v_smooth(r, b_low, r_c_low), 0.0)))
+
+    return jnp.where((r >= r_c_high) | (r <= r_c_low), 0.0,
+                     val)
+
+
 
 @jit
 def f3(r, r_star, r_c, # thresholding/smoothing parameters
@@ -81,6 +99,7 @@ def f3(r, r_star, r_c, # thresholding/smoothing parameters
                      v_lj(r, eps, sigma),
                      oob)
 
+"""
 @jit
 def f4(theta, theta0, delta_theta_star, delta_theta_c, # thresholding/smoothing parameters
        a, # mod parameters
@@ -94,6 +113,19 @@ def f4(theta, theta0, delta_theta_star, delta_theta_c, # thresholding/smoothing 
     return jnp.where((theta0 - delta_theta_star < theta) & (theta < theta0 + delta_theta_star),
                      v_mod(theta, a, theta0),
                      oob)
+"""
+
+
+@jit
+def f4(theta, theta0, delta_theta_star, delta_theta_c, # thresholding/smoothing parameters
+       a, # mod parameters
+       b # smoothing parameters
+):
+    theta_diff = theta - theta0
+    theta_diff = jnp.where(theta_diff < 0, -theta_diff, theta_diff)
+
+    val = jnp.where(theta_diff > delta_theta_star, v_smooth(theta_diff, b, delta_theta_c), v_mod(theta_diff, a, 0.0))
+    return jnp.where(theta_diff < delta_theta_c, val, 0.0)
 
 
 # Note: for stacking, e.g. x = cos(phi)

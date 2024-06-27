@@ -239,6 +239,7 @@ def stacking2(
 
 
 
+
 @jit
 def hydrogen_bonding(
         dr_hb, theta1, theta2, theta3, theta4, theta7, theta8, # observables
@@ -499,6 +500,7 @@ def coaxial_stacking(dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4,
         * (f4_theta_5_coax_fn(theta5) + f4_theta_5_coax_fn(jnp.pi - theta5)) \
         * (f4_theta_6_coax_fn(theta6) + f4_theta_6_coax_fn(jnp.pi - theta6)) \
         * f5_cosphi3_coax * f5_cosphi4_coax
+
 
 
 

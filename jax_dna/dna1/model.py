@@ -294,11 +294,12 @@ class TestDna1(unittest.TestCase):
                               tol_places=4, verbose=False, avg_seq=True):
 
         if avg_seq:
-            ss_hb_weights = utils.HB_WEIGHTS_SA,
+            ss_hb_weights = utils.HB_WEIGHTS_SA
             ss_stack_weights = utils.STACK_WEIGHTS_SA
         else:
             ss_path = "data/seq-specific/seq_oxdna1.txt"
             ss_hb_weights, ss_stack_weights = read_ss_oxdna(ss_path)
+
 
         print(f"\n---- Checking energy breakdown agreement for base directory: {basedir} ----")
 
@@ -386,14 +387,15 @@ class TestDna1(unittest.TestCase):
 
         subterm_tests = [
             (self.test_data_basedir / "simple-helix", "generated.top", "output.dat", 296.15, True),
-            (self.test_data_basedir / "simple-coax", "generated.top", "output.dat", 296.15, True)
+            (self.test_data_basedir / "simple-coax", "generated.top", "output.dat", 296.15, True),
             (self.test_data_basedir / "simple-helix-ss", "generated.top", "output.dat", 296.15, False),
         ]
 
         for basedir, top_fname, traj_fname, t_kelvin, avg_seq in subterm_tests:
             for use_neighbors in [False, True]:
-                self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin,
-                                           use_neighbors=use_neighbors, avg_seq=avg_seq)
+                self.check_energy_subterms(
+                    basedir, top_fname, traj_fname, t_kelvin,
+                    use_neighbors=use_neighbors, avg_seq=avg_seq, verbose=True)
 
 
 if __name__ == "__main__":
