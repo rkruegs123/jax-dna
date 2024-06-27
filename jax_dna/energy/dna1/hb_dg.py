@@ -6,12 +6,13 @@ import jax_md
 import jax_dna.energy.base as je_base
 import jax_dna.energy.dna1.defaults as dna1_defaults
 import jax_dna.energy.dna1.interactions as dna1_interactions
+import jax_dna.energy.dna1.nuecleotide as dna1_nucleotide
 import jax_dna.energy.utils as je_utils
 import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as typ
 
 
-class HB_DG(je_base.BaseEnergyFunction):
+class HydrogenBonding(je_base.BaseEnergyFunction):
     def __init__(
         self,
         displacement_fn: Callable,
@@ -22,37 +23,30 @@ class HB_DG(je_base.BaseEnergyFunction):
 
     def __call__(
         self,
-        body: jax_md.rigid_body.RigidBody,
+        body: dna1_nucleotide.Nucleotide,
         seq: jnp.ndarray,
         bonded_neighbors: typ.Arr_Bonded_Neighbors,
         unbonded_neighbors: typ.Arr_Unbonded_Neighbors,
     ) -> typ.Scalar:
-        com_to_hb = self.get_param("com_to_hb")
         op_i = unbonded_neighbors[0]
         op_j = unbonded_neighbors[1]
         mask = jnp.array(op_i < body.center.shape[0], dtype=jnp.float32)
-
-        Q = body.orientation
-        back_base_vectors = je_utils.q_to_back_base(Q)  # space frame, normalized
-        base_normals = je_utils.q_to_base_normal(Q)  # space frame, normalized
-
-        base_sites = body.center + com_to_hb * back_base_vectors
 
         hb_probs = je_utils.get_pair_probs(
             seq, op_i, op_j
         )  # get the probabilities of all possibile hydrogen bonds for all neighbors
         hb_weights = jnp.dot(hb_probs, self.get_param("ss_hb_weights_flat"))
 
-        dr_base_op = self.displacement_mapped(base_sites[op_j], base_sites[op_i])  # Note the flip here
+        dr_base_op = self.displacement_mapped(body.base_sites[op_j], body.base_sites[op_i])  # Note the flip here
         r_base_op = jnp.linalg.norm(dr_base_op, axis=1)
 
-        theta1_op = jnp.arccos(jd_math.clamp(jd_math.mult(-back_base_vectors[op_i], back_base_vectors[op_j])))
-        theta2_op = jnp.arccos(jd_math.clamp(jd_math.mult(-back_base_vectors[op_j], dr_base_op) / r_base_op))
-        theta3_op = jnp.arccos(jd_math.clamp(jd_math.mult(back_base_vectors[op_i], dr_base_op) / r_base_op))
-        theta4_op = jnp.arccos(jd_math.clamp(jd_math.mult(base_normals[op_i], base_normals[op_j])))
+        theta1_op = jnp.arccos(jd_math.clamp(jd_math.mult(-body.back_base_vectors[op_i], body.back_base_vectors[op_j])))
+        theta2_op = jnp.arccos(jd_math.clamp(jd_math.mult(-body.back_base_vectors[op_j], dr_base_op) / r_base_op))
+        theta3_op = jnp.arccos(jd_math.clamp(jd_math.mult(body.back_base_vectors[op_i], dr_base_op) / r_base_op))
+        theta4_op = jnp.arccos(jd_math.clamp(jd_math.mult(body.base_normals[op_i], body.base_normals[op_j])))
         # note: are these swapped in Lorenzo's code?
-        theta7_op = jnp.arccos(jd_math.clamp(jd_math.mult(-base_normals[op_j], dr_base_op) / r_base_op))
-        theta8_op = jnp.pi - jnp.arccos(jd_math.clamp(jd_math.mult(base_normals[op_i], dr_base_op) / r_base_op))
+        theta7_op = jnp.arccos(jd_math.clamp(jd_math.mult(-body.base_normals[op_j], dr_base_op) / r_base_op))
+        theta8_op = jnp.pi - jnp.arccos(jd_math.clamp(jd_math.mult(body.base_normals[op_i], dr_base_op) / r_base_op))
 
         v_hb = dna1_interactions.hydrogen_bonding(
             dr_base_op,
