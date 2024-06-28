@@ -28,3 +28,18 @@ class Nucleotide(jax_md.rigid_body.RigidBody):
         self.back_sites = self.center + com_to_backbone * self.back_base_vectors
         self.base_sites = self.center + com_to_hb * self.back_base_vectors
 
+    @classmethod
+    def from_rigid_body(
+        cls,
+        rigid_body: jax_md.rigid_body.RigidBody,
+        com_to_backbone: typ.Scalar,
+        com_to_hb: typ.Scalar,
+        com_to_stacking: typ.Scalar,
+    ):
+        return cls(
+            rigid_body.center,
+            rigid_body.orientation,
+            com_to_backbone,
+            com_to_hb,
+            com_to_stacking,
+        )

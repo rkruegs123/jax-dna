@@ -5,7 +5,7 @@ import jax.numpy as jnp
 import jax_dna.energy.base as je_base
 import jax_dna.energy.dna1.defaults as dna1_defaults
 import jax_dna.energy.dna1.interactions as dna1_interactions
-import jax_dna.energy.dna1.nuecleotide as dna1_nucleotide
+import jax_dna.energy.dna1.nucleotide as dna1_nucleotide
 import jax_dna.energy.utils as je_utils
 import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as typ
@@ -15,7 +15,7 @@ class ExcludedVolume(je_base.BaseEnergyFunction):
     def __init__(
         self,
         displacement_fn: Callable,
-        params: dict[str, float] = dna1_defaults.UNBONDED_DG,
+        params: dict[str, float] = {},
         opt_params: dict[str, float] = {},
     ):
         super().__init__(displacement_fn, dna1_defaults.UNBONDED_DG | params, opt_params)
@@ -76,7 +76,7 @@ class HydrogenBonding(je_base.BaseEnergyFunction):
     def __init__(
         self,
         displacement_fn: Callable,
-        params: dict[str, float] = dna1_defaults.HB_DG,
+        params: dict[str, float] = {},
         opt_params: dict[str, float] = {},
     ):
         super().__init__(displacement_fn, dna1_defaults.HB_DG | params, opt_params)
@@ -95,7 +95,7 @@ class HydrogenBonding(je_base.BaseEnergyFunction):
         hb_probs = je_utils.get_pair_probs(
             seq, op_i, op_j
         )  # get the probabilities of all possibile hydrogen bonds for all neighbors
-        hb_weights = jnp.dot(hb_probs, self.get_param("ss_hb_weights_flat"))
+        hb_weights = jnp.dot(hb_probs, self.get_param("hb_weights").flatten())
 
         dr_base_op = self.displacement_mapped(body.base_sites[op_j], body.base_sites[op_i])  # Note the flip here
         r_base_op = jnp.linalg.norm(dr_base_op, axis=1)
@@ -174,7 +174,7 @@ class CrossStacking(je_base.BaseEnergyFunction):
     def __init__(
         self,
         displacement_fn: Callable,
-        params: dict[str, float] = dna1_defaults.CROSS_STACKING_DG,
+        params: dict[str, float] = {},
         opt_params: dict[str, float] = {},
     ):
         super().__init__(displacement_fn, dna1_defaults.CROSS_STACKING_DG | params, opt_params)
@@ -264,7 +264,7 @@ class CoaxialStacking(je_base.BaseEnergyFunction):
     def __init__(
         self,
         displacement_fn: Callable,
-        params: dict[str, float] = dna1_defaults.COAXIAL_STACKING_DG,
+        params: dict[str, float] = {},
         opt_params: dict[str, float] = {},
     ):
         super().__init__(displacement_fn, dna1_defaults.COAXIAL_STACKING_DG | params, opt_params)
@@ -304,7 +304,45 @@ class CoaxialStacking(je_base.BaseEnergyFunction):
             theta6_op,
             cosphi3_op,
             cosphi4_op,
-            **self.params["coaxial_stacking"],
+            **self.get_params([
+                "dr_low_coax",
+                "dr_high_coax",
+                "dr_c_low_coax",
+                "dr_c_high_coax",
+                "k_coax",
+                "dr0_coax",
+                "dr_c_coax",
+                "b_low_coax",
+                "b_high_coax",
+                "theta0_coax_4",
+                "delta_theta_star_coax_4",
+                "delta_theta_coax_4_c",
+                "a_coax_4",
+                "b_coax_4",
+                "theta0_coax_1",
+                "delta_theta_star_coax_1",
+                "delta_theta_coax_1_c",
+                "a_coax_1",
+                "b_coax_1",
+                "theta0_coax_5",
+                "delta_theta_star_coax_5",
+                "delta_theta_coax_5_c",
+                "a_coax_5",
+                "b_coax_5",
+                "theta0_coax_6",
+                "delta_theta_star_coax_6",
+                "delta_theta_coax_6_c",
+                "a_coax_6",
+                "b_coax_6",
+                "cos_phi3_star_coax",
+                "cos_phi3_c_coax",
+                "a_coax_3p",
+                "b_cos_phi3_coax",
+                "cos_phi4_star_coax",
+                "cos_phi4_c_coax",
+                "a_coax_4p",
+                "b_cos_phi4_coax",
+            ])
         )
         # cx_stack_dg = jnp.where(mask, cx_stack_dg, 0.0).sum() # Mask for neighbors
         cx_stack_dg = (mask * cx_stack_dg).sum()

@@ -1,14 +1,43 @@
+import jax.numpy as jnp
 import numpy as np
 
 import jax_dna.energy.dna1.base_smoothing_functions as bsf
 
 T_KELVIN = 296.15
 
-COM_TO = {
+STRUCTURE = {
     "com_to_stacking": 0.34,
     "com_to_hb": 0.4,
     "com_to_backbone": -0.4,
+    # Flattened HB/stack weights yield the correct Kron. product
+    # Kron: AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT
+    "hb_weights_sa": jnp.array([
+                        [0.0, 0.0, 0.0, 1.0], # AX
+                        [0.0, 0.0, 1.0, 0.0], # CX
+                        [0.0, 1.0, 0.0, 0.0], # GX
+                        [1.0, 0.0, 0.0, 0.0]  # TX
+                    ]),
+    "stack_weights_sa": jnp.array([
+                            [1.0, 1.0, 1.0, 1.0], # AX
+                            [1.0, 1.0, 1.0, 1.0], # CX
+                            [1.0, 1.0, 1.0, 1.0], # GX
+                            [1.0, 1.0, 1.0, 1.0]  # TX
+                        ]),
 }
+
+HB_WEIGHTS_SA = jnp.array([
+    [0.0, 0.0, 0.0, 1.0], # AX
+    [0.0, 0.0, 1.0, 0.0], # CX
+    [0.0, 1.0, 0.0, 0.0], # GX
+    [1.0, 0.0, 0.0, 0.0]  # TX
+])
+
+STACK_WEIGHTS_SA = jnp.array([
+    [1.0, 1.0, 1.0, 1.0], # AX
+    [1.0, 1.0, 1.0, 1.0], # CX
+    [1.0, 1.0, 1.0, 1.0], # GX
+    [1.0, 1.0, 1.0, 1.0]  # TX
+])
 
 V_FENE = {
     "eps_backbone": 2.0,
@@ -17,7 +46,6 @@ V_FENE = {
     "fmax": 500,
     "finf": 4.0,
 }
-
 
 def _init_fene(params: dict[str, float]) -> dict[str, float]:
     return params

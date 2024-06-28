@@ -5,7 +5,7 @@ import jax.numpy as jnp
 import jax_dna.energy.base as je_base
 import jax_dna.energy.dna1.defaults as dna1_defaults
 import jax_dna.energy.dna1.interactions as dna1_interactions
-import jax_dna.energy.dna1.nuecleotide as dna1_nucleotide
+import jax_dna.energy.dna1.nucleotide as dna1_nucleotide
 import jax_dna.energy.utils as je_utils
 import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as typ
@@ -15,7 +15,7 @@ class ExcludedVolume(je_base.BaseEnergyFunction):
     def __init__(
         self,
         displacement_fn: Callable,
-        params: dict[str, float] = dna1_defaults.BONDED_DG,
+        params: dict[str, float] = {},
         opt_params: dict[str, float] = {},
     ):
         super().__init__(displacement_fn, dna1_defaults.BONDED_DG | params, opt_params)
@@ -64,7 +64,7 @@ class Fene(je_base.BaseEnergyFunction):
     def __init__(
         self,
         displacement_fn: Callable,
-        params: dict[str, float] = dna1_defaults.V_FENE,
+        params: dict[str, float] = {},
         opt_params: dict[str, float] = {},
     ):
         super().__init__(displacement_fn, dna1_defaults.V_FENE | params, opt_params)
@@ -102,7 +102,7 @@ class Stacking(je_base.BaseEnergyFunction):
     def __init__(
         self,
         displacement_fn: Callable,
-        params: dict[str, float] = dna1_defaults.STACKING_DG,
+        params: dict[str, float] = {},
         opt_params: dict[str, float] = {},
     ):
         super().__init__(displacement_fn, dna1_defaults.STACKING_DG | params, opt_params)
@@ -140,7 +140,7 @@ class Stacking(je_base.BaseEnergyFunction):
             theta6,
             cosphi1,
             cosphi2,
-            self.get_params(
+            **self.get_params(
                 [
                     "dr_low_stack",
                     "dr_high_stack",
@@ -180,7 +180,7 @@ class Stacking(je_base.BaseEnergyFunction):
         )
 
         stack_probs = je_utils.get_pair_probs(seq, nn_i, nn_j)
-        stack_weights = jnp.dot(stack_probs, self.get_param("ss_stack_weights_flat"))
+        stack_weights = jnp.dot(stack_probs, self.get_param("ss_stack_weights").flatten())
 
         stack_dg = jnp.dot(stack_weights, v_stack)
 
