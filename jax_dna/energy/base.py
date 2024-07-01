@@ -48,8 +48,8 @@ class BaseEnergyFunction:
         self,
         body: jax_md.rigid_body.RigidBody,
         seq: jnp.ndarray,
-        bonded_neghbors: typ.Arr_Bonded_Neighbors,
-        unbounded_neghbors: typ.Arr_Unbonded_Neighbors,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors,
+        unbounded_neighbors: typ.Arr_Unbonded_Neighbors,
     ) -> float:
         raise NotImplementedError(ERR_CALL_NOT_IMPLEMENTED)
 
@@ -58,6 +58,7 @@ class BaseEnergyFunction:
 class ComposedEnergyFunction:
     energy_fns: list[BaseEnergyFunction]
     weights: jnp.ndarray | None = None
+    rigid_body_transform_fn: Callable[[jax_md.rigid_body.RigidBody], Any] | None = None
 
     def __post_init__(self):
         if type(self.energy_fns) != list or not all(isinstance(fn, BaseEnergyFunction) for fn in self.energy_fns):
@@ -70,10 +71,13 @@ class ComposedEnergyFunction:
         self,
         body: jax_md.rigid_body.RigidBody,
         seq: jnp.ndarray,
-        bonded_neghbors: typ.Arr_Bonded_Neighbors,
-        unbounded_neghbors: typ.Arr_Unbonded_Neighbors,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors,
     ) -> float:
-        energy_vals = jnp.array([fn(body, seq, bonded_neghbors, unbounded_neghbors) for fn in self.energy_fns])
+        if self.rigid_body_transform_fn:
+            body = self.rigid_body_transform_fn(body)
+
+        energy_vals = jnp.array([fn(body, seq, bonded_neighbors, unbonded_neighbors) for fn in self.energy_fns])
         if self.weights is None:
             return jnp.sum(energy_vals)
         else:

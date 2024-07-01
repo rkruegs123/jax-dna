@@ -106,7 +106,6 @@ def exc_vol_unbonded(
     f3_back_exc_vol = jd_base_functions.f3(
         r_back, r_star=dr_star_backbone, r_c=dr_c_backbone, eps=eps_exc, sigma=sigma_backbone, b=b_backbone
     )
-
     return f3_back_exc_vol + exc_vol_bonded(
         dr_base,
         dr_back_base,
