@@ -19,14 +19,14 @@ from oxDNA_analysis_tools.deviations import deviations
 
 import optax
 import jax.numpy as jnp
-from jax import jit, vmap, grad, value_and_grad, lax
+from jax import jit, vmap, grad, value_and_grad, lax, tree_util
 from jax_md import space, rigid_body
 
 from jax_dna.common import utils, topology, trajectory, center_configuration, checkpoint
 from jax_dna.rna2 import model, oxrna_utils
 from jax_dna.dna1.oxdna_utils import rewrite_input_file
-from jax_dna.rna2.load_params import read_seq_specific, DEFAULT_BASE_PARAMS, EMPTY_BASE_PARAMS, \
-    write_seq_specific
+from jax_dna.rna2.load_params import read_seq_specific, DEFAULT_BASE_PARAMS, EMPTY_BASE_PARAMS
+
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -101,6 +101,7 @@ def run(args):
 
     times_path = log_dir / "times.txt"
     params_per_iter_path = log_dir / "params_per_iter.txt"
+    pct_change_path = log_dir / "pct_change.txt"
     grads_path = log_dir / "grads.txt"
     neff_path = log_dir / "neff.txt"
     rmse_path = log_dir / "rmse.txt"
@@ -156,7 +157,7 @@ def run(args):
 
             seq_dep_path = repeat_dir / "rna_sequence_dependent_parameters.txt"
             # shutil.copy(ss_path, seq_dep_path)
-            write_seq_specific(seq_dep_path, params, ss_hb_weights, ss_stack_weights, ss_cross_weights)
+            oxrna_utils.write_seq_specific(seq_dep_path, params, ss_hb_weights, ss_stack_weights, ss_cross_weights)
 
             if prev_basedir is None:
                 init_conf_info = deepcopy(centered_conf_info)
@@ -469,8 +470,10 @@ def run(args):
     params["coaxial_stacking"] = DEFAULT_BASE_PARAMS["coaxial_stacking"]
     # for k in ['dr0_coax', 'dr_c_coax', 'dr_high_coax', 'dr_low_coax', 'k_coax']:
     #     params["coaxial_stacking"][k] = DEFAULT_BASE_PARAMS["coaxial_stacking"][k]
-    # params["cross_stacking"] = DEFAULT_BASE_PARAMS["cross_stacking"]
-    # params["stacking"] = DEFAULT_BASE_PARAMS["stacking"]
+    params["cross_stacking"] = DEFAULT_BASE_PARAMS["cross_stacking"]
+    params["stacking"] = DEFAULT_BASE_PARAMS["stacking"]
+    
+    init_params = deepcopy(params)
 
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
@@ -533,6 +536,9 @@ def run(args):
             f.write(f"{pprint.pformat(grads)}\n")
         with open(params_per_iter_path, "a") as f:
             f.write(f"{pprint.pformat(params)}\n")
+        with open(pct_change_path, "a") as f:
+            pct_changes = tree_util.tree_map(lambda x, y: (y - x) / jnp.abs(x) * 100, init_params, params)
+            f.write(f"{pprint.pformat(pct_changes)}\n")
 
         all_n_effs.append(n_eff)
         all_rmses.append(curr_rmse)
