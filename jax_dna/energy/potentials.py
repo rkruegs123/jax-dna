@@ -1,5 +1,7 @@
 import jax.numpy as jnp
 
+# https://ora.ox.ac.uk/objects/uuid:b2415bb2-7975-4f59-b5e2-8c022b4a3719/files/mdcac62bc9133143fc05070ed20048c50
+# Section 2.4.1
 
 def v_fene(r, eps, r0, delt):
     """
