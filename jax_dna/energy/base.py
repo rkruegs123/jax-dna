@@ -2,9 +2,11 @@ import dataclasses as dc
 import functools
 from typing import Any, Callable, Union
 
+import chex
 import jax.numpy as jnp
 import jax_md
 
+import jax_dna.input.configuration as config
 import jax_dna.utils.types as typ
 
 ERR_PARAM_NOT_FOUND = "Parameter '{key}' not found in {class_name}"
@@ -14,23 +16,13 @@ ERR_COMPOSED_ENERGY_FN_TYPE_ENERGY_FNS = "energy_fns must be a list of energy fu
 ERR_UNSUPPORTED_OPERATION = "unsupported operand type(s) for {op}: '{left}' and '{right}'"
 
 
-@dc.dataclass(frozen=True)
+@chex.dataclass(frozen=True)
 class BaseEnergyFunction:
     displacement_fn: Callable
-    params: dict[str, Any]
-    opt_params: dict[str, Any]
 
-    def __post_init__(self):
-        self.displacement_mapped = jax_md.space.map_bond(self.displacement_fn)
-
-    def get_param(self, key: str) -> typ.Scalar:
-        try:
-            return self.opt_params.get(key, self.params[key])
-        except KeyError:
-            raise KeyError(ERR_PARAM_NOT_FOUND.format(key=key, class_name=self.__class__.__name__))
-
-    def get_params(self, keys: list[str]) -> dict[str, typ.Scalar]:
-        return {key: self.get_param(key) for key in keys}
+    @property
+    def displacement_mapped(self):
+        return jax_md.space.map_bond(self.displacement_fn)
 
     def __add__(self, other: "BaseEnergyFunction") -> "ComposedEnergyFunction":
         if isinstance(other, BaseEnergyFunction):

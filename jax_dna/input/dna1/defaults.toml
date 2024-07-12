@@ -1,0 +1,17 @@
+
+
+[vfene]
+eps_backbone = 2.0
+r0_backbone = 0.7525
+delta_backbone = 0.25
+fmax = 500.0
+finf = 4.0
+
+[excluded_volume]
+eps_exc = 2.0
+dr_star_base = 0.32
+sigma_base = 0.33
+sigma_back_base  = 0.515
+sigma_base_back = 0.515
+dr_star_back_base = 0.50
+dr_star_base_back = 0.50

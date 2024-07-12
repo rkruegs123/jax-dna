@@ -5,7 +5,9 @@ import jax.numpy as jnp
 import jax_md
 import jax_dna.input.topology as topology
 import jax_dna.input.trajectory as trajectory
-import jax_dna.energy.dna1 as dna1
+import jax_dna.input.configuration as config
+import jax_dna.input.dna1.bonded as  dna1_bonded_config
+import jax_dna.energy.dna1 as dna1_energy
 import jax_dna.energy.base as jdna_energy
 
 jax.config.update("jax_enable_x64", True)
@@ -13,8 +15,6 @@ jax.config.update("jax_enable_x64", True)
 if __name__=="__main__":
 
     displacement_fn, shift_fn = jax_md.space.free()
-
-    structure_defaults = dna1.defaults.STRUCTURE
 
     top = topology.from_oxdna_file("data/templates/simple-helix/sys.top")
     seq = jnp.array(top.seq_one_hot)
@@ -42,31 +42,65 @@ if __name__=="__main__":
         orientation=jnp.array([moment_of_inertia], dtype=jnp.float64),
     )
 
-
     init_body = traj.states[0].to_rigid_body()
 
     key = jax.random.PRNGKey(0)
 
     transform_fn = functools.partial(
-        dna1.Nucleotide.from_rigid_body,
-        com_to_backbone=structure_defaults["com_to_backbone"],
-        com_to_hb=structure_defaults["com_to_hb"],
-        com_to_stacking=structure_defaults["com_to_stacking"],
+        dna1_energy.Nucleotide.from_rigid_body,
+        com_to_backbone=-0.4,
+        com_to_hb=0.4,
+        com_to_stacking=0.34,
     )
 
-    def test_energy_fn(
-        opt_params: dict[str, dict[str, float]],
-        params: dict[str, dict[str, float]],
-        energy_fns: list[jdna_energy.BaseEnergyFunction],
-    ) -> float:
-        pass
 
-        lambda fn: fn(displacement_fn, params.get(fn.__name__, {}), opt_params.get(fn.__name__, {}))
+    opt_params = [
+        dna1_bonded_config.VFeneConfiguration(eps_backbone=0.15),
+        dna1_bonded_config.ExcludedVolumeConfiguration(
+            eps_exc=1.0,
+            sigma_base=1.0,
+            sigma_back_base=1.0,
+        ),
+    ]
+
+    params = [
+        dna1_bonded_config.VFeneConfiguration.from_toml(
+            "jax_dna/input/dna1/defaults.toml",
+        ),
+        dna1_bonded_config.ExcludedVolumeConfiguration.from_toml(
+            "jax_dna/input/dna1/defaults.toml",
+        ),
+    ]
+
+
+    energy_fns = [
+        dna1_energy.bonded.Fene,
+        dna1_energy.bonded.ExcludedVolume,
+        # dna1.bonded.Stacking,
+        # dna1.unbonded.ExcludedVolume,
+        # dna1.unbonded.HydrogenBonding,
+        # dna1.unbonded.CrossStacking,
+        # dna1.unbonded.CoaxialStacking,
+    ]
+
+
+
+
+
+
+
+    def test_energy_fn(
+        opt_params: list[config.BaseConfiguration],
+    ) -> float:
 
         transformed_fns = [
-            fn(displacement_fn, params.get(fn.__name__, {}), opt_params.get(fn.__name__, {}))
-            for fn in energy_fns
+            energy_fn(
+                displacement_fn=displacement_fn,
+                params=(param | opt_param).init_params(),
+            )
+            for opt_param, param, energy_fn in zip(opt_params, params, energy_fns)
         ]
+
         energy_fn = jdna_energy.ComposedEnergyFunction(
             transformed_fns,
             rigid_body_transform_fn=transform_fn,
@@ -81,18 +115,18 @@ if __name__=="__main__":
 
         return energy
 
+
     def test_energy_grad_fn(
-        opt_params: dict[str, dict[str, float]],
-        params: dict[str, dict[str, float]],
-        energy_fns: list[jdna_energy.BaseEnergyFunction],
+        opt_params: list[config.BaseConfiguration],
     ) -> float:
-
-        lambda fn: fn(displacement_fn, params.get(fn.__name__, {}), opt_params.get(fn.__name__, {}))
-
         transformed_fns = [
-            fn(displacement_fn, params.get(fn.__name__, {}), opt_params.get(fn.__name__, {}))
-            for fn in energy_fns
+            energy_fn(
+                displacement_fn=displacement_fn,
+                params=(param | opt_param).init_params(),
+            )
+            for opt_param, param, energy_fn in zip(opt_params, params, energy_fns)
         ]
+
         energy_fn = jdna_energy.ComposedEnergyFunction(
             transformed_fns,
             rigid_body_transform_fn=transform_fn,
@@ -124,31 +158,20 @@ if __name__=="__main__":
 
         return next_state.position.center.sum()
 
-    w_defaults = lambda cls: functools.partial(cls, displacement_fn=displacement_fn, params={})
 
-    opt_params = {
-        dna1.bonded.Fene.__name__: {"eps_backbone": 1.0},
-    }
 
-    params = {
-        dna1.bonded.Stacking.__name__: {"ss_stack_weights": dna1.defaults.STRUCTURE["stack_weights_sa"]},
-        dna1.unbonded.HydrogenBonding.__name__: {"hb_weights": dna1.defaults.STRUCTURE["hb_weights_sa"]},
-    }
+    print("jitting test_energy_fn")
+    f = jax.jit(test_energy_fn)
+    print("running test_energy_fn")
+    print(f(opt_params))
 
-    energy_fns = [
-        dna1.bonded.Fene,
-        dna1.bonded.ExcludedVolume,
-        dna1.bonded.Stacking,
-        dna1.unbonded.ExcludedVolume,
-        dna1.unbonded.HydrogenBonding,
-        dna1.unbonded.CrossStacking,
-        dna1.unbonded.CoaxialStacking,
-    ]
+    print("gradding test_energy_grad_fn")
+    f = jax.grad(test_energy_grad_fn)
+    print("jitting test_energy_grad_fn")
+    f = jax.jit(jax.value_and_grad(test_energy_grad_fn))
+    print("running test_energy_grad_fn")
+    print(f(opt_params))
 
-    print(test_energy_fn(opt_params, params, energy_fns))
 
-    f = jax.value_and_grad(test_energy_grad_fn)
-    value, grad = f(opt_params, params, energy_fns)
-    print(value)
-    print(grad)
+
 
