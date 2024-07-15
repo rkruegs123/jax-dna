@@ -5,13 +5,14 @@ import functools
 import pprint
 from tqdm import tqdm
 import time
+import argparse
 
 import optax
 import jax.numpy as jnp
 from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util
 from jax_md import space, simulate, rigid_body
 
-from jax_dna.common import utils, topology, trajectory, checkpoint
+from jax_dna.common import utils, topology, trajectory, checkpoint, center_configuration
 from jax_dna.loss import geometry, pitch, propeller
 from jax_dna.dna2 import model
 from jax_dna import dna2, loss
@@ -68,7 +69,6 @@ def run(args):
     params_path = log_dir / "params.txt"
 
     params_str = ""
-    params_str += f"n_ref_states: {n_ref_states}\n"
     for k, v in args.items():
         params_str += f"{k}: {v}\n"
     with open(run_dir / "params.txt", "w+") as f:
@@ -159,8 +159,8 @@ def run(args):
     batched_grad_fn = jit(vmap(grad_fn, (None, 0, 0)))
 
     params = deepcopy(model.EMPTY_BASE_PARAMS)
-    # params["fene"] = model.DEFAULT_BASE_PARAMS["fene"]
-    params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
+    # params["fene"] = model.default_base_params_seq_avg["fene"]
+    params["stacking"] = model.default_base_params_seq_avg["stacking"]
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
 
@@ -213,7 +213,7 @@ def get_parser():
                         help="Number of equilibration steps")
     parser.add_argument('--sample-every', type=int, default=100,
                         help="Frequency of sampling reference states.")
-    parser.add_argument('--n-sims', type=int, default=1,
+    parser.add_argument('--n-sims', type=int, default=10,
                         help="Number of individual simulations, i.e. batch size")
 
     parser.add_argument('--target-pitch', type=float, default=pitch.TARGET_AVG_PITCH,
