@@ -256,7 +256,8 @@ class TopologyInfo:
             r_cutoff=r_cutoff,
             dr_threshold=dr_threshold,
             custom_mask_function=bonded_nbrs_mask_fn,
-            format=NeighborListFormat.OrderedSparse
+            format=NeighborListFormat.OrderedSparse,
+            disable_cell_list=True
         )
 
         return neighbor_list_fn

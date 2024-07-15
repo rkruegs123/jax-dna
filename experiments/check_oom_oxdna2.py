@@ -88,18 +88,6 @@ def run(args):
     init_body = conf_info.get_states()[0]
     box_size = conf_info.box_size
 
-    if use_neighbors:
-        r_cutoff = 10.0
-        dr_threshold = 0.2
-
-        neighbor_fn = top_info.get_neighbor_list_fn(
-            displacement_fn, conf_info.box_size, r_cutoff, dr_threshold)
-        neighbor_fn = jit(neighbor_fn)
-        neighbors = neighbor_fn.allocate(init_body.center) # We use the COMs
-    else:
-        neighbors_idx = top_info.unbonded_nbrs.T
-
-
     dt = 5e-3
     t_kelvin = utils.DEFAULT_TEMP
     kT = utils.get_kt(t_kelvin)
@@ -142,22 +130,45 @@ def run(args):
     def sim_fn(params, body, n_steps, key, gamma):
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
         init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
-        init_state = init_fn(key, body, mass=mass, seq=seq_oh,
-                             bonded_nbrs=top_info.bonded_nbrs,
-                             unbonded_nbrs=top_info.unbonded_nbrs.T)
 
-        @jit
-        def scan_fn(state, step):
-            if use_neighbors:
+        if use_neighbors:
+            
+            @jit
+            def scan_fn(in_state, step):
+                state, neighbors = in_state
+                state = step_fn(state,
+                                seq=seq_oh,
+                                bonded_nbrs=top_info.bonded_nbrs,
+                                unbonded_nbrs=neighbors.idx)
                 neighbors = neighbors.update(state.center)
-                neighbors_idx = neighbors.idx
-            state = step_fn(state,
-                            seq=seq_oh,
-                            bonded_nbrs=top_info.bonded_nbrs,
-                            unbonded_nbrs=neighbors_idx)
-            return state, state.position
+                return (state, neighbors), state.position
 
-        fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_steps))
+            r_cutoff = 10.0
+            dr_threshold = 0.2
+
+            neighbor_fn = top_info.get_neighbor_list_fn(
+                displacement_fn, conf_info.box_size, r_cutoff, dr_threshold)
+            neighbor_fn = jit(neighbor_fn)
+            neighbors = neighbor_fn.allocate(body.center) # We use the COMs
+            init_state = init_fn(key, body, mass=mass, seq=seq_oh,
+                             bonded_nbrs=top_info.bonded_nbrs,
+                                 unbonded_nbrs=neighbors.idx)
+
+            (fin_state, _), traj = scan(scan_fn, (init_state, neighbors), jnp.arange(n_steps))
+        else:
+            neighbors_idx = top_info.unbonded_nbrs.T
+            init_state = init_fn(key, body, mass=mass, seq=seq_oh,
+                             bonded_nbrs=top_info.bonded_nbrs,
+                                 unbonded_nbrs=neighbors_idx)
+            @jit
+            def scan_fn(state, step):
+                neighbors_idx = top_info.unbonded_nbrs.T
+                state = step_fn(state,
+                                seq=seq_oh,
+                                bonded_nbrs=top_info.bonded_nbrs,
+                                unbonded_nbrs=neighbors_idx)
+                return state, state.position
+            fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_steps))
         return fin_state.position, traj
 
 
