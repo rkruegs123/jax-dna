@@ -1,15 +1,14 @@
 # Core options
 T = 296.15K
 equilibration_steps = 0
-steps = 10000
+steps = 250000
 conf_file = init.conf
 topology = sys.top
 trajectory_file = output.dat
 time_scale = linear
-print_conf_interval = 100
-print_energy_every = 100
-# interaction_type = DNA
-interaction_type = DNA_nomesh
+print_conf_interval = 1000
+print_energy_every = 1000
+interaction_type = DNA2_nomesh
 major_minor_grooving = 1
 salt_concentration = 0.5
 seed = 0
@@ -17,7 +16,7 @@ lastconf_file = last_conf.dat
 list_type = no
 restart_step_counter = 0
 energy_file = energy.dat
-dh_half_charged_ends = False # Note: set to *True* for full testing!
+dh_half_charged_ends = 1
 
 # Molecular dynamics options
 sim_type = MD
