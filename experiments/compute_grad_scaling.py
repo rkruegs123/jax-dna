@@ -33,6 +33,7 @@ def run(args):
     interval = args['interval']
     sample_every = args['sample_every']
     checkpoint_every = args['checkpoint_every']
+    n_trials = args['n_trials']
 
     lengths = onp.arange(interval, hi+1, interval) * sample_every
 
@@ -189,22 +190,30 @@ def run(args):
 
     for sim_length in lengths:
 
-        start = time.time()
-        failed, mean_grad_abs = get_grad_abs(sim_length, checkpoint_every)
-        end = time.time()
-        tot_time = end - start
+        tot_times = list()
+        mean_grad_abss = list()
+        for i in range(n_trials):
+            start = time.time()
+            failed, mean_grad_abs = get_grad_abs(sim_length, checkpoint_every)
+            end = time.time()
+            tot_time = end - start
+
+            tot_times.append(tot_time)
+            mean_grad_abss.append(mean_grad_abs)
+
         with open(log_path, "a") as f:
             f.write(f"- # steps: {sim_length}\n")
-            f.write(f"\t- failed: {failed}\n")
-            f.write(f"\t- 1st grad time: {tot_time}\n")
-            f.write(f"\t- Mean grad abs.: {mean_grad_abs}\n")
+            f.write(f"\t- 1st grad time (mean): {onp.mean(tot_times)}\n")
+            f.write(f"\t- 1st grad time (var): {onp.var(tot_times)}\n")
+            f.write(f"\t- Mean grad abs. (mean): {onp.mean(mean_grad_abss)}\n")
+            f.write(f"\t- Mean grad abs. (var): {onp.var(mean_grad_abss)}\n")
 
         with open(length_path, "a") as f:
             f.write(f"{sim_length}\n")
         with open(time_path, "a") as f:
-            f.write(f"{tot_time}\n")
+            f.write(f"{onp.mean(tot_times)}\n")
         with open(mean_grad_abs_path, "a") as f:
-            f.write(f"{mean_grad_abs}\n")
+            f.write(f"{onp.mean(mean_grad_abss)}\n")
 
         if failed:
             break
@@ -228,6 +237,9 @@ def get_parser():
 
     parser.add_argument('--checkpoint-every', type=int, default=50,
                         help="Checkpoint frequency")
+
+    parser.add_argument('--n-trials', type=int, default=10,
+                        help="Number of trials per simulation length")
 
 
     return parser
