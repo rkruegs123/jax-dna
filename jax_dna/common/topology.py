@@ -200,6 +200,18 @@ class TopologyInfo:
         self.unbonded_nbrs = get_unbonded_neighbors(self.n, bonded_nbrs)
         self.unbonded_nbrs = onp.array(self.unbonded_nbrs)
 
+        # Store which nucleotides are on the ends
+        is_end = list()
+        for i, nuc_row in self.top_df.iterrows():
+            nbr_5p = int(nuc_row['5p_nbr'])
+            nbr_3p = int(nuc_row['3p_nbr'])
+            if nbr_5p == -1 or nbr_3p == -1:
+                is_end.append(True)
+            else:
+                is_end.append(False)
+        self.is_end = jnp.array(onp.array(is_end).astype(onp.int32))
+
+
     def write(self, opath, reverse):
         """
         Write self.top_df (always 5'->3') to an oxDNA-style topology
