@@ -142,7 +142,7 @@ def run(args):
         return fin_state.position, traj
 
 
-    def get_grad_abs(n_steps, checkpoint_every):
+    def get_grad_abs(n_steps, checkpoint_every, key_seed):
 
         if checkpoint_every is None:
             scan = lax.scan
@@ -163,7 +163,7 @@ def run(args):
         # params["fene"] = default_base_params["fene"]
         params["stacking"] = default_base_params["stacking"]
 
-        key = random.PRNGKey(0)
+        key = random.PRNGKey(key_seed)
         try:
             start = time.time()
             (loss, traj), grads = grad_fn(params, init_body, key)
@@ -194,7 +194,7 @@ def run(args):
         mean_grad_abss = list()
         for i in range(n_trials):
             start = time.time()
-            failed, mean_grad_abs = get_grad_abs(sim_length, checkpoint_every)
+            failed, mean_grad_abs = get_grad_abs(sim_length, checkpoint_every, i)
             end = time.time()
             tot_time = end - start
 
