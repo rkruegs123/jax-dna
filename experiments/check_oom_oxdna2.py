@@ -7,6 +7,7 @@ from tqdm import tqdm
 import time
 import argparse
 import numpy as onp
+import os
 
 import optax
 import jax.numpy as jnp
@@ -51,6 +52,9 @@ def run(args):
         f.write(params_str)
 
     log_path = run_dir / "log.txt"
+
+    nvidia_smi_path = run_dir / "nvidia-smi.txt"
+    os.system(f"nvidia-smi >> {nvidia_smi_path}")
 
     displacement_fn, shift_fn = space.free()
 
