@@ -204,7 +204,7 @@ def run(args):
         with open(time_path, "a") as f:
             f.write(f"{tot_time}\n")
         with open(mean_grad_abs_path, "a") as f:
-            f.write(f"{mean_grad_abs_path}\n")
+            f.write(f"{mean_grad_abs}\n")
 
         if failed:
             break
