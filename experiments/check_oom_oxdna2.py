@@ -126,13 +126,19 @@ def run(args):
         losses, all_metadata = vmap(body_loss_fn)(states_to_eval)
         return losses.mean(), all_metadata
 
+    r_cutoff = 10.0
+    dr_threshold = 0.2
+    neighbor_fn = top_info.get_neighbor_list_fn(
+        displacement_fn, conf_info.box_size, r_cutoff, dr_threshold)
+    neighbor_fn = jit(neighbor_fn)
+    neighbors = neighbor_fn.allocate(init_body.center) # We use the COMs
 
     def sim_fn(params, body, n_steps, key, gamma):
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
         init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
 
         if use_neighbors:
-            
+
             @jit
             def scan_fn(in_state, step):
                 state, neighbors = in_state
@@ -140,16 +146,9 @@ def run(args):
                                 seq=seq_oh,
                                 bonded_nbrs=top_info.bonded_nbrs,
                                 unbonded_nbrs=neighbors.idx)
-                neighbors = neighbors.update(state.center)
+                neighbors = neighbors.update(state.position.center)
                 return (state, neighbors), state.position
 
-            r_cutoff = 10.0
-            dr_threshold = 0.2
-
-            neighbor_fn = top_info.get_neighbor_list_fn(
-                displacement_fn, conf_info.box_size, r_cutoff, dr_threshold)
-            neighbor_fn = jit(neighbor_fn)
-            neighbors = neighbor_fn.allocate(body.center) # We use the COMs
             init_state = init_fn(key, body, mass=mass, seq=seq_oh,
                              bonded_nbrs=top_info.bonded_nbrs,
                                  unbonded_nbrs=neighbors.idx)
