@@ -55,6 +55,7 @@ def run(args):
     grad_time_ckpt_path = run_dir / "grad_time_ckpt.txt"
     sim_time_no_ckpt_path = run_dir / "sim_time_no_ckpt.txt"
     grad_time_no_ckpt_path = run_dir / "grad_time_no_ckpt.txt"
+    sim_length_path = run_dir / "sim_length.txt"
 
     nvidia_smi_path = run_dir / "nvidia-smi.txt"
     os.system(f"nvidia-smi >> {nvidia_smi_path}")
@@ -246,6 +247,8 @@ def run(args):
         sim_time_ckpt = all_times[5]
         grad_time_ckpt = all_times[7]
 
+        with open(sim_length_path, "a") as f:
+            f.write(f"{sim_length}\n")
         with open(sim_time_ckpt_path, "a") as f:
             f.write(f"{sim_time_ckpt}\n")
         with open(grad_time_ckpt_path, "a") as f:
