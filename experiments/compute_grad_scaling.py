@@ -36,6 +36,7 @@ def run(args):
     n_trials = args['n_trials']
     small_system = args['small_system']
     use_neighbors = args['use_neighbors']
+    n_eq_steps = args['n_eq_steps']
 
     lengths = onp.arange(interval, hi+1, interval) * sample_every
 
@@ -86,7 +87,8 @@ def run(args):
         # reverse_direction=True
         reverse_direction=False
     )
-    init_body = conf_info.get_states()[0]
+    centered_conf_info = center_configuration.center_conf(top_info, conf_info)
+    init_body = centered_conf_info.get_states()[0]
     box_size = conf_info.box_size
 
 
@@ -172,6 +174,9 @@ def run(args):
             fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_steps))
         return fin_state.position, traj
 
+    eq_fn = lambda params, key: sim_fn(params, init_body, n_eq_steps, key, gamma)
+    eq_fn = jit(eq_fn)
+
 
     target_pitch = pitch.TARGET_AVG_PITCH
     def get_grad_abs(n_steps, checkpoint_every, key_seed):
@@ -199,9 +204,11 @@ def run(args):
         params["stacking"] = default_base_params["stacking"]
 
         key = random.PRNGKey(key_seed)
+        key, eq_key = random.split(key)
+        eq_body = eq_fn(params, eq_key)
         try:
             start = time.time()
-            (loss, traj), grads = grad_fn(params, init_body, key)
+            (loss, traj), grads = grad_fn(params, eq_body, key)
             end = time.time()
             first_grad_time = end - start
 
@@ -263,6 +270,8 @@ def get_parser():
 
     parser.add_argument('--sample-every', type=int, default=1000,
                         help="Sampling frequency for trajectories")
+    parser.add_argument('--n-eq-steps', type=int, default=10000,
+                        help="Number of equilibration steps")
     parser.add_argument('--n-skip-quartets', type=int, default=5,
                         help="Number of quartets to skip on either end of the duplex")
     parser.add_argument('--interval', type=int, default=5,
