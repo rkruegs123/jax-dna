@@ -159,7 +159,7 @@ def run(args):
         else:
             neighbors_idx = top_info.unbonded_nbrs.T
             init_state = init_fn(key, body, mass=mass, seq=seq_oh,
-                             bonded_nbrs=top_info.bonded_nbrs,
+                                 bonded_nbrs=top_info.bonded_nbrs,
                                  unbonded_nbrs=neighbors_idx)
             @jit
             def scan_fn(state, step):
@@ -173,6 +173,7 @@ def run(args):
         return fin_state.position, traj
 
 
+    target_pitch = pitch.TARGET_AVG_PITCH
     def get_grad_abs(n_steps, checkpoint_every, key_seed):
 
         if checkpoint_every is None:
@@ -184,8 +185,11 @@ def run(args):
         @jit
         def loss_fn(params, eq_body, key):
             fin_pos, traj = sim_fn(params, eq_body, n_steps, key, gamma)
-            loss, metadata = traj_loss_fn(traj)
-            return loss, traj
+            states_to_eval = traj[::sample_every]
+            pitches = vmap(compute_avg_pitch)(states_to_eval)
+            avg_pitch = pitches.mean()
+            rmse = jnp.sqrt((avg_pitch - target_pitch)**2)
+            return rmse, traj
         grad_fn = value_and_grad(loss_fn, has_aux=True)
         grad_fn = jit(grad_fn)
 

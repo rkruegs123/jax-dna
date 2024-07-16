@@ -227,6 +227,7 @@ def get_parser():
                         help="Frequency of plotting data from gradient descent epochs")
 
     parser.add_argument('--slow-diffusion', action='store_true')
+    parser.add_argument('--small-system', action='store_true')
 
     return parser
 

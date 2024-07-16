@@ -80,7 +80,7 @@ def run(args):
     quartets = utils.get_all_quartets(n_bp)[n_skip_quartets:-n_skip_quartets]
 
     compute_avg_pitch, pitch_loss_fn = pitch.get_pitch_loss_fn(
-        simple_helix_quartets, displacement_fn, model.com_to_hb)
+        quartets, displacement_fn, model.com_to_hb)
 
     conf_info = trajectory.TrajectoryInfo(
         top_info,
