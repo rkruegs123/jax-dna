@@ -34,6 +34,8 @@ def run(args):
     sample_every = args['sample_every']
     checkpoint_every = args['checkpoint_every']
     n_trials = args['n_trials']
+    small_system = args['small_system']
+    use_neighbors = args['use_neighbors']
 
     lengths = onp.arange(interval, hi+1, interval) * sample_every
 
@@ -61,7 +63,10 @@ def run(args):
 
     displacement_fn, shift_fn = space.free()
 
-    sys_basedir = Path("data/templates/simple-helix-12bp")
+    if small_system:
+        sys_basedir = Path("data/templates/simple-helix-12bp")
+    else:
+        sys_basedir = Path("data/templates/simple-helix-60bp")
     top_path = sys_basedir / "sys.top"
     conf_path = sys_basedir / "init.conf"
 
@@ -70,10 +75,10 @@ def run(args):
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
     n_bp = (seq_oh.shape[0] // 2)
-    simple_helix_quartets = utils.get_all_quartets(n_bp)[1:-1]
+    quartets = utils.get_all_quartets(n_bp)[n_skip_quartets:-n_skip_quartets]
 
     compute_avg_pitch, pitch_loss_fn = pitch.get_pitch_loss_fn(
-        simple_helix_quartets, displacement_fn, model.com_to_hb)
+        quartets, displacement_fn, model.com_to_hb)
 
     conf_info = trajectory.TrajectoryInfo(
         top_info,
@@ -123,22 +128,48 @@ def run(args):
         losses, all_metadata = vmap(body_loss_fn)(states_to_eval)
         return losses.mean(), all_metadata
 
+    r_cutoff = 10.0
+    dr_threshold = 0.2
+    neighbor_fn = top_info.get_neighbor_list_fn(
+        displacement_fn, conf_info.box_size, r_cutoff, dr_threshold)
+    neighbor_fn = jit(neighbor_fn)
+    neighbors = neighbor_fn.allocate(init_body.center) # We use the COMs
+
     def sim_fn(params, body, n_steps, key, gamma):
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
         init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
-        init_state = init_fn(key, body, mass=mass, seq=seq_oh,
+
+        if use_neighbors:
+
+            @jit
+            def scan_fn(in_state, step):
+                state, neighbors = in_state
+                state = step_fn(state,
+                                seq=seq_oh,
+                                bonded_nbrs=top_info.bonded_nbrs,
+                                unbonded_nbrs=neighbors.idx)
+                neighbors = neighbors.update(state.position.center)
+                return (state, neighbors), state.position
+
+            init_state = init_fn(key, body, mass=mass, seq=seq_oh,
                              bonded_nbrs=top_info.bonded_nbrs,
-                             unbonded_nbrs=top_info.unbonded_nbrs.T)
+                                 unbonded_nbrs=neighbors.idx)
 
-        @jit
-        def scan_fn(state, step):
-            state = step_fn(state,
-                            seq=seq_oh,
-                            bonded_nbrs=top_info.bonded_nbrs,
-                            unbonded_nbrs=top_info.unbonded_nbrs.T)
-            return state, state.position
-
-        fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_steps))
+            (fin_state, _), traj = scan(scan_fn, (init_state, neighbors), jnp.arange(n_steps))
+        else:
+            neighbors_idx = top_info.unbonded_nbrs.T
+            init_state = init_fn(key, body, mass=mass, seq=seq_oh,
+                             bonded_nbrs=top_info.bonded_nbrs,
+                                 unbonded_nbrs=neighbors_idx)
+            @jit
+            def scan_fn(state, step):
+                neighbors_idx = top_info.unbonded_nbrs.T
+                state = step_fn(state,
+                                seq=seq_oh,
+                                bonded_nbrs=top_info.bonded_nbrs,
+                                unbonded_nbrs=neighbors_idx)
+                return state, state.position
+            fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_steps))
         return fin_state.position, traj
 
 
@@ -228,7 +259,7 @@ def get_parser():
 
     parser.add_argument('--sample-every', type=int, default=1000,
                         help="Sampling frequency for trajectories")
-    parser.add_argument('--n-skip-quartets', type=int, default=1,
+    parser.add_argument('--n-skip-quartets', type=int, default=5,
                         help="Number of quartets to skip on either end of the duplex")
     parser.add_argument('--interval', type=int, default=5,
                         help="Interval of sample-every's for plotting")
@@ -240,6 +271,11 @@ def get_parser():
 
     parser.add_argument('--n-trials', type=int, default=10,
                         help="Number of trials per simulation length")
+
+    parser.add_argument('--small-system', action='store_true',
+                        help="If set, uses a 12 bp system instead of a 60 bp system")
+    parser.add_argument('--use-neighbors', action='store_true',
+                        help="If set, will use neighbor lists")
 
 
     return parser

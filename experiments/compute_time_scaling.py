@@ -34,6 +34,9 @@ def run(args):
     sample_every = args['sample_every']
     checkpoint_every = args['checkpoint_every']
     assert(checkpoint_every is not None)
+    small_system = args['small_system']
+    use_neighbors = args['use_neighbors']
+    include_no_ckpt = args['include_no_ckpt']
 
     lengths = onp.arange(interval, hi+1, interval) * sample_every
 
@@ -62,7 +65,10 @@ def run(args):
 
     displacement_fn, shift_fn = space.free()
 
-    sys_basedir = Path("data/templates/simple-helix-12bp")
+    if small_system:
+        sys_basedir = Path("data/templates/simple-helix-12bp")
+    else:
+        sys_basedir = Path("data/templates/simple-helix-60bp")
     top_path = sys_basedir / "sys.top"
     conf_path = sys_basedir / "init.conf"
 
@@ -71,7 +77,7 @@ def run(args):
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
     n_bp = (seq_oh.shape[0] // 2)
-    simple_helix_quartets = utils.get_all_quartets(n_bp)[1:-1]
+    quartets = utils.get_all_quartets(n_bp)[n_skip_quartets:-n_skip_quartets]
 
     compute_avg_pitch, pitch_loss_fn = pitch.get_pitch_loss_fn(
         simple_helix_quartets, displacement_fn, model.com_to_hb)
@@ -100,14 +106,6 @@ def run(args):
         orientation=gamma.orientation * gamma_scale)
     mass = rigid_body.RigidBody(center=jnp.array([utils.nucleotide_mass], dtype=jnp.float64),
                                 orientation=jnp.array([utils.moment_of_inertia], dtype=jnp.float64))
-
-    """
-    if checkpoint_every is None:
-        scan = lax.scan
-    else:
-        scan = functools.partial(checkpoint.checkpoint_scan,
-                                 checkpoint_every=checkpoint_every)
-    """
 
     scan_ckpt = functools.partial(checkpoint.checkpoint_scan,
                                   checkpoint_every=checkpoint_every)
@@ -192,25 +190,31 @@ def run(args):
         key = random.PRNGKey(0)
 
         # No checkpoint
-        start = time.time()
-        loss, traj = loss_fn_no_ckpt(params, init_body, key)
-        end = time.time()
-        first_sim_time_no_ckpt = end - start
+        if include_no_ckpt:
+            start = time.time()
+            loss, traj = loss_fn_no_ckpt(params, init_body, key)
+            end = time.time()
+            first_sim_time_no_ckpt = end - start
 
-        start = time.time()
-        loss, traj = loss_fn_no_ckpt(params, init_body, key)
-        end = time.time()
-        second_sim_time_no_ckpt = end - start
+            start = time.time()
+            loss, traj = loss_fn_no_ckpt(params, init_body, key)
+            end = time.time()
+            second_sim_time_no_ckpt = end - start
 
-        start = time.time()
-        (loss, traj), grads = grad_fn_no_ckpt(params, init_body, key)
-        end = time.time()
-        first_grad_time_no_ckpt = end - start
+            start = time.time()
+            (loss, traj), grads = grad_fn_no_ckpt(params, init_body, key)
+            end = time.time()
+            first_grad_time_no_ckpt = end - start
 
-        start = time.time()
-        (loss, traj), grads = grad_fn_no_ckpt(params, init_body, key)
-        end = time.time()
-        second_grad_time_no_ckpt = end - start
+            start = time.time()
+            (loss, traj), grads = grad_fn_no_ckpt(params, init_body, key)
+            end = time.time()
+            second_grad_time_no_ckpt = end - start
+        else:
+            first_sim_time_no_ckpt = -1
+            second_sim_time_no_ckpt = -1
+            first_grad_time_no_ckpt = -1
+            second_grad_time_no_ckpt = -1
 
         # Checkpoint
 
@@ -268,7 +272,7 @@ def get_parser():
 
     parser.add_argument('--sample-every', type=int, default=1000,
                         help="Sampling frequency for trajectories")
-    parser.add_argument('--n-skip-quartets', type=int, default=1,
+    parser.add_argument('--n-skip-quartets', type=int, default=5,
                         help="Number of quartets to skip on either end of the duplex")
     parser.add_argument('--interval', type=int, default=5,
                         help="Interval of sample-every's for plotting")
@@ -277,6 +281,13 @@ def get_parser():
 
     parser.add_argument('--checkpoint-every', type=int, default=50,
                         help="Checkpoint frequency")
+
+    parser.add_argument('--small-system', action='store_true',
+                        help="If set, uses a 12 bp system instead of a 60 bp system")
+    parser.add_argument('--use-neighbors', action='store_true',
+                        help="If set, will use neighbor lists")
+    parser.add_argument('--include-no-ckpt', action='store_true',
+                        help="If set, will run an additional check with no checkpointing")
 
 
     return parser
