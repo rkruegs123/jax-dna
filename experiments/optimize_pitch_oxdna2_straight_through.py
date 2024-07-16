@@ -22,7 +22,7 @@ config.update("jax_enable_x64", True)
 
 
 
-checkpoint_every = 10
+checkpoint_every = 50
 if checkpoint_every is None:
     scan = jax.lax.scan
 else:
@@ -39,6 +39,7 @@ def run(args):
     sample_every = args['sample_every']
     assert(n_steps_per_sim % sample_every == 0)
     n_skip_quartets = args['n_skip_quartets']
+    small_system = args['small_system']
 
     slow_diffusion = args['slow_diffusion']
 
@@ -76,7 +77,10 @@ def run(args):
 
 
     # Load the system
-    sys_basedir = Path("data/templates/simple-helix-12bp")
+    if small_system:
+        sys_basedir = Path("data/templates/simple-helix-12bp")
+    else:
+        sys_basedir = Path("data/templates/simple-helix-60bp")
     input_template_path = sys_basedir / "input"
 
     top_path = sys_basedir / "sys.top"
@@ -99,11 +103,6 @@ def run(args):
     box_size = conf_info.box_size
 
     displacement_fn, shift_fn = space.free()
-
-    dt = 5e-3
-    t_kelvin = utils.DEFAULT_TEMP
-    kT = utils.get_kt(t_kelvin)
-
 
     # Get the loss function
     compute_avg_pitch, _ = pitch.get_pitch_loss_fn(
@@ -221,7 +220,7 @@ def get_parser():
     parser.add_argument('--n-iters', type=int, default=200,
                         help="Number of iterations of gradient descent")
     parser.add_argument('--lr', type=float, default=0.001, help="Learning rate")
-    parser.add_argument('--n-skip-quartets', type=int, default=1,
+    parser.add_argument('--n-skip-quartets', type=int, default=5,
                         help="Number of quartets to skip on either end of the duplex")
 
     parser.add_argument('--plot-every', type=int, default=10,
