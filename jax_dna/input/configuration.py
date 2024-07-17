@@ -25,7 +25,7 @@ class BaseConfiguration:
     def __post_init__(self):
         non_initialized_props = [prop.name for prop in dc.fields(self) if getattr(self, prop.name) is None]
         if non_initialized_props:
-            raise ValueError(f"Properties {",".join(non_initialized_props)} are not initialized.")
+            raise ValueError(f"Properties {','.join(non_initialized_props)} are not initialized.")
 
     def init_params(self) -> "BaseConfiguration":
         warnings.warn("init_params not implemented")
