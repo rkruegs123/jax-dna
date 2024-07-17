@@ -20,6 +20,8 @@ SYMPY_EVAL_N: int = 64
 
 @chex.dataclass(frozen=True)
 class BaseConfiguration:
+    params_to_optimize:list[str] = dc.field(default_factory=list)
+
     def __post_init__(self):
         non_initialized_props = [prop.name for prop in dc.fields(self) if getattr(self, prop.name) is None]
         if non_initialized_props:
