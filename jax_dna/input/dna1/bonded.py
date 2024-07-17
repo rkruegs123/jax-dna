@@ -3,28 +3,28 @@ import dataclasses as dc
 import chex
 import numpy as np
 
-import jax_dna.input.dna1.base_smoothing_functions as bsf
 import jax_dna.input.configuration as config
+import jax_dna.input.dna1.base_smoothing_functions as bsf
 
 
 @chex.dataclass(frozen=True)
 class ExcludedVolumeConfiguration(config.BaseConfiguration):
     # independent parameters
-    eps_exc: float|None =  None
-    dr_star_base: float|None =  None
-    sigma_base: float|None =  None
-    sigma_back_base: float|None =  None
-    sigma_base_back: float|None =  None
-    dr_star_back_base: float|None =  None
-    dr_star_base_back: float|None =  None
+    eps_exc: float | None = None
+    dr_star_base: float | None = None
+    sigma_base: float | None = None
+    sigma_back_base: float | None = None
+    sigma_base_back: float | None = None
+    dr_star_back_base: float | None = None
+    dr_star_base_back: float | None = None
 
     # dependent parameters
-    b_base: float|None =  None
-    dr_c_base: float|None =  None
-    b_back_base: float|None =  None
-    dr_c_back_base: float|None =  None
-    b_base_back: float|None =  None
-    dr_c_base_back: float|None =  None
+    b_base: float | None = None
+    dr_c_base: float | None = None
+    b_back_base: float | None = None
+    dr_c_back_base: float | None = None
+    b_base_back: float | None = None
+    dr_c_base_back: float | None = None
 
     def init_params(self) -> "ExcludedVolumeConfiguration":
         b_base, dr_c_base = bsf.get_f3_smoothing_params(self.dr_star_base, self.eps_exc, self.sigma_base)
@@ -48,48 +48,33 @@ class ExcludedVolumeConfiguration(config.BaseConfiguration):
             b_back_base=b_back_base,
             dr_c_back_base=dr_c_back_base,
             b_base_back=b_base_back,
-            dr_c_base_back=dr_c_base_back
+            dr_c_base_back=dr_c_base_back,
         )
 
-
     @staticmethod
-    def from_toml(file_path:str) -> "ExcludedVolumeConfiguration":
+    def from_toml(file_path: str) -> "ExcludedVolumeConfiguration":
         return dc.replace(
-            ExcludedVolumeConfiguration(),
-            **ExcludedVolumeConfiguration.parse_toml(file_path, "excluded_volume")
+            ExcludedVolumeConfiguration(), **ExcludedVolumeConfiguration.parse_toml(file_path, "excluded_volume")
         ).init_params()
 
     @staticmethod
     def from_dict(params: dict[str, float]) -> "ExcludedVolumeConfiguration":
-        return dc.replace(
-            ExcludedVolumeConfiguration(),
-            **params
-        ).init_params()
-
-
-
-
+        return dc.replace(ExcludedVolumeConfiguration(), **params).init_params()
 
 
 @chex.dataclass(frozen=True)
 class VFeneConfiguration(config.BaseConfiguration):
     # independent parameters
-    eps_backbone: float|None =  None
-    r0_backbone: float|None =  None
-    delta_backbone: float|None =  None
-    fmax: float|None =  None
-    finf: float|None =  None
+    eps_backbone: float | None = None
+    r0_backbone: float | None = None
+    delta_backbone: float | None = None
+    fmax: float | None = None
+    finf: float | None = None
 
     @staticmethod
     def from_toml(file_path: str) -> "VFeneConfiguration":
-        return dc.replace(
-            VFeneConfiguration(),
-            **VFeneConfiguration.parse_toml(file_path, "vfene")
-        ).init_params()
+        return dc.replace(VFeneConfiguration(), **VFeneConfiguration.parse_toml(file_path, "vfene")).init_params()
 
     @staticmethod
     def from_dict(params: dict[str, float]) -> "VFeneConfiguration":
-        return dc.replace(
-            VFeneConfiguration(),
-            **params
-        ).init_params()
+        return dc.replace(VFeneConfiguration(), **params).init_params()

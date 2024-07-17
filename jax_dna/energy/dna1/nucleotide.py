@@ -1,4 +1,3 @@
-
 import dataclasses
 from typing import Union
 
@@ -6,6 +5,7 @@ import jax_md
 
 import jax_dna.energy.utils as je_utils
 import jax_dna.utils.types as typ
+
 
 @dataclasses.dataclass(frozen=True)
 class Nucleotide(jax_md.rigid_body.RigidBody):
@@ -17,7 +17,6 @@ class Nucleotide(jax_md.rigid_body.RigidBody):
     back_base_vectors: typ.Arr_Nucleotide_3
     base_normals: typ.Arr_Nucleotide_3
     cross_prods: typ.Arr_Nucleotide_3
-
 
     @staticmethod
     def from_rigid_body(

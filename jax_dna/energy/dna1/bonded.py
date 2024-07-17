@@ -167,4 +167,3 @@ class Fene(je_base.BaseEnergyFunction):
 #         stack_dg = jnp.dot(stack_weights, v_stack)
 
 #         return stack_dg
-
