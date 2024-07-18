@@ -26,6 +26,17 @@ class ExcludedVolumeConfiguration(config.BaseConfiguration):
     b_base_back: float | None = None
     dr_c_base_back: float | None = None
 
+    # override
+    required_params: list[str] = [
+        "eps_exc",
+        "dr_star_base",
+        "sigma_base",
+        "sigma_back_base",
+        "sigma_base_back",
+        "dr_star_back_base",
+        "dr_star_base_back",
+    ]
+
     def init_params(self) -> "ExcludedVolumeConfiguration":
         b_base, dr_c_base = bsf.get_f3_smoothing_params(self.dr_star_base, self.eps_exc, self.sigma_base)
 
@@ -70,6 +81,9 @@ class VFeneConfiguration(config.BaseConfiguration):
     delta_backbone: float | None = None
     fmax: float | None = None
     finf: float | None = None
+
+    # override
+    required_params: list[str] = ["eps_backbone", "r0_backbone", "delta_backbone", "fmax", "finf"]
 
     @staticmethod
     def from_toml(file_path: str) -> "VFeneConfiguration":
