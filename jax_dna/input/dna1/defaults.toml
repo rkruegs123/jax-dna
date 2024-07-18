@@ -36,25 +36,31 @@ fmax = 500.0
 finf = 4.0
 
 [stacking]
-dr_low_stack = 0.32
-dr_high_stack = 0.75
-eps_stack = 1.3448
+eps_stack_base = 1.3448
+eps_stack_kt_coeff = 2.6568
 a_stack = 6.0
 dr0_stack = 0.4
 dr_c_stack = 0.9
+dr_low_stack = 0.32
+dr_high_stack = 0.75
+
+a_stack_4 = 1.30
 theta0_stack_4 = 0.0
 delta_theta_star_stack_4 = 0.8
-a_stack_4 = 1.30
+
+a_stack_5 = 0.90
 theta0_stack_5 = 0.0
 delta_theta_star_stack_5 = 0.95
-a_stack_5 = 0.90
+
+a_stack_6 = 0.90
 theta0_stack_6 = 0.0
 delta_theta_star_stack_6 = 0.95
-a_stack_6 = 0.90
-neg_cos_phi1_star_stack = -0.65
+
 a_stack_1 = 2.00
-neg_cos_phi2_star_stack = -0.65
+neg_cos_phi1_star_stack = -0.65
+
 a_stack_2 = 2.00
+neg_cos_phi2_star_stack = -0.65
 
 # unbonded parameters ==========================================================
 

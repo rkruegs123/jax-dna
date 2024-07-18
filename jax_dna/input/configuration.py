@@ -24,8 +24,8 @@ WARN_INIT_PARAMS_NOT_IMPLEMENTED = "init_params not implemented"
 
 @chex.dataclass(frozen=True)
 class BaseConfiguration:
-    params_to_optimize: list[str] = dc.field(default_factory=list)
-    required_params: list[str] = dc.field(default_factory=list)
+    params_to_optimize: tuple[str] = ()
+    required_params: tuple[str] = ()
 
     @property
     def opt_params(self) -> dict[str, jdt.Scalar]:

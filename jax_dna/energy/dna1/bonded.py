@@ -1,6 +1,3 @@
-import dataclasses as dc
-from typing import Callable
-
 import chex
 import jax.numpy as jnp
 
@@ -80,90 +77,81 @@ class Fene(je_base.BaseEnergyFunction):
         ).sum()
 
 
-# class Stacking(je_base.BaseEnergyFunction):
-#     def __init__(
-#         self,
-#         displacement_fn: Callable,
-#         params: dict[str, float] = {},
-#         opt_params: dict[str, float] = {},
-#     ):
-#         super().__init__(displacement_fn, dna1_defaults.STACKING_DG | params, opt_params)
+@chex.dataclass(frozen=True)
+class Stacking(je_base.BaseEnergyFunction):
+    params: config.StackingConfiguration
 
-#     def __call__(
-#         self,
-#         body: dna1_nucleotide.Nucleotide,
-#         seq: jnp.ndarray,
-#         bonded_neghbors: typ.Arr_Bonded_Neighbors,
-#         unbonded_neghbors: typ.Arr_Unbonded_Neighbors,
-#     ) -> typ.Scalar:
-#         nn_i = bonded_neghbors[:, 0]
-#         nn_j = bonded_neghbors[:, 1]
+    def __call__(
+        self,
+        body: dna1_nucleotide.Nucleotide,
+        seq: jnp.ndarray,
+        bonded_neghbors: typ.Arr_Bonded_Neighbors,
+        unbounded_neghbors: typ.Arr_Unbonded_Neighbors,
+    ) -> typ.Scalar:
+        nn_i = bonded_neghbors[:, 0]
+        nn_j = bonded_neghbors[:, 1]
 
-#         ## Fene variables
-#         dr_back_nn = self.displacement_mapped(body.back_sites[nn_i], body.back_sites[nn_j])  # N x N x 3
-#         r_back_nn = jnp.linalg.norm(dr_back_nn, axis=1)
+        ## Fene variables
+        dr_back_nn = self.displacement_mapped(body.back_sites[nn_i], body.back_sites[nn_j])  # N x N x 3
+        r_back_nn = jnp.linalg.norm(dr_back_nn, axis=1)
 
-#         dr_stack_nn = self.displacement_mapped(body.stack_sites[nn_i], body.stack_sites[nn_j])
-#         r_stack_nn = jnp.linalg.norm(dr_stack_nn, axis=1)
-#         theta4 = jnp.arccos(jd_math.clamp(jnp.einsum("ij, ij->i", body.base_normals[nn_i], body.base_normals[nn_j])))
-#         theta5 = jnp.pi - jnp.arccos(
-#             jd_math.clamp(jnp.einsum("ij, ij->i", dr_stack_nn, body.base_normals[nn_j]) / r_stack_nn)
-#         )
-#         theta6 = jnp.pi - jnp.arccos(
-#             jd_math.clamp(jnp.einsum("ij, ij->i", body.base_normals[nn_i], dr_stack_nn) / r_stack_nn)
-#         )
-#         cosphi1 = -jnp.einsum("ij, ij->i", body.cross_prods[nn_i], dr_back_nn) / r_back_nn
-#         cosphi2 = -jnp.einsum("ij, ij->i", body.cross_prods[nn_j], dr_back_nn) / r_back_nn
+        dr_stack_nn = self.displacement_mapped(body.stack_sites[nn_i], body.stack_sites[nn_j])
+        r_stack_nn = jnp.linalg.norm(dr_stack_nn, axis=1)
+        theta4 = jnp.arccos(jd_math.clamp(jnp.einsum("ij, ij->i", body.base_normals[nn_i], body.base_normals[nn_j])))
+        theta5 = jnp.pi - jnp.arccos(
+            jd_math.clamp(jnp.einsum("ij, ij->i", dr_stack_nn, body.base_normals[nn_j]) / r_stack_nn)
+        )
+        theta6 = jnp.pi - jnp.arccos(
+            jd_math.clamp(jnp.einsum("ij, ij->i", body.base_normals[nn_i], dr_stack_nn) / r_stack_nn)
+        )
+        cosphi1 = -jnp.einsum("ij, ij->i", body.cross_prods[nn_i], dr_back_nn) / r_back_nn
+        cosphi2 = -jnp.einsum("ij, ij->i", body.cross_prods[nn_j], dr_back_nn) / r_back_nn
 
-#         v_stack = dna1_interactions.stacking(
-#             r_stack_nn,
-#             theta4,
-#             theta5,
-#             theta6,
-#             cosphi1,
-#             cosphi2,
-#             **self.get_params(
-#                 [
-#                     "dr_low_stack",
-#                     "dr_high_stack",
-#                     "eps_stack",
-#                     "a_stack",
-#                     "dr0_stack",
-#                     "dr_c_stack",
-#                     "dr_c_low_stack",
-#                     "dr_c_high_stack",
-#                     "b_low_stack",
-#                     "b_high_stack",
-#                     "theta0_stack_4",
-#                     "delta_theta_star_stack_4",
-#                     "a_stack_4",
-#                     "delta_theta_stack_4_c",
-#                     "b_stack_4",
-#                     "theta0_stack_5",
-#                     "delta_theta_star_stack_5",
-#                     "a_stack_5",
-#                     "delta_theta_stack_5_c",
-#                     "b_stack_5",
-#                     "theta0_stack_6",
-#                     "delta_theta_star_stack_6",
-#                     "a_stack_6",
-#                     "delta_theta_stack_6_c",
-#                     "b_stack_6",
-#                     "neg_cos_phi1_star_stack",
-#                     "a_stack_1",
-#                     "neg_cos_phi1_c_stack",
-#                     "b_neg_cos_phi1_stack",
-#                     "neg_cos_phi2_star_stack",
-#                     "a_stack_2",
-#                     "neg_cos_phi2_c_stack",
-#                     "b_neg_cos_phi2_stack",
-#                 ]
-#             ),
-#         )
+        v_stack = dna1_interactions.stacking(
+            r_stack_nn,
+            theta4,
+            theta5,
+            theta6,
+            cosphi1,
+            cosphi2,
+            self.params.dr_low_stack,
+            self.params.dr_high_stack,
+            self.params.eps_stack,
+            self.params.a_stack,
+            self.params.dr0_stack,
+            self.params.dr_c_stack,
+            self.params.dr_c_low_stack,
+            self.params.dr_c_high_stack,
+            self.params.b_low_stack,
+            self.params.b_high_stack,
+            self.params.theta0_stack_4,
+            self.params.delta_theta_star_stack_4,
+            self.params.a_stack_4,
+            self.params.delta_theta_stack_4_c,
+            self.params.b_stack_4,
+            self.params.theta0_stack_5,
+            self.params.delta_theta_star_stack_5,
+            self.params.a_stack_5,
+            self.params.delta_theta_stack_5_c,
+            self.params.b_stack_5,
+            self.params.theta0_stack_6,
+            self.params.delta_theta_star_stack_6,
+            self.params.a_stack_6,
+            self.params.delta_theta_stack_6_c,
+            self.params.b_stack_6,
+            self.params.neg_cos_phi1_star_stack,
+            self.params.a_stack_1,
+            self.params.neg_cos_phi1_c_stack,
+            self.params.b_neg_cos_phi1_stack,
+            self.params.neg_cos_phi2_star_stack,
+            self.params.a_stack_2,
+            self.params.neg_cos_phi2_c_stack,
+            self.params.b_neg_cos_phi2_stack,
+        )
 
-#         stack_probs = je_utils.get_pair_probs(seq, nn_i, nn_j)
-#         stack_weights = jnp.dot(stack_probs, self.get_param("ss_stack_weights").flatten())
+        stack_probs = je_utils.get_pair_probs(seq, nn_i, nn_j)
+        stack_weights = jnp.dot(stack_probs, self.params.ss_stack_weights.flatten())
 
-#         stack_dg = jnp.dot(stack_weights, v_stack)
+        stack_dg = jnp.dot(stack_weights, v_stack)
 
-#         return stack_dg
+        return stack_dg
