@@ -63,18 +63,19 @@ class ExcludedVolumeConfiguration(config.BaseConfiguration):
         )
 
     @staticmethod
-    def from_toml(file_path: str) -> "ExcludedVolumeConfiguration":
-        return dc.replace(
-            ExcludedVolumeConfiguration(), **ExcludedVolumeConfiguration.parse_toml(file_path, "excluded_volume")
-        ).init_params()
+    def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "ExcludedVolumeConfiguration":
+        dict_params = ExcludedVolumeConfiguration.parse_toml(file_path, "bonded_excluded_volume")
+        return ExcludedVolumeConfiguration.from_dict(dict_params, params_to_optimize)
 
     @staticmethod
-    def from_dict(params: dict[str, float]) -> "ExcludedVolumeConfiguration":
-        return dc.replace(ExcludedVolumeConfiguration(), **params).init_params()
+    def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "ExcludedVolumeConfiguration":
+        return dc.replace(
+            ExcludedVolumeConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
+        ).init_params()
 
 
 @chex.dataclass(frozen=True)
-class VFeneConfiguration(config.BaseConfiguration):
+class FeneConfiguration(config.BaseConfiguration):
     # independent parameters
     eps_backbone: float | None = None
     r0_backbone: float | None = None
@@ -86,12 +87,13 @@ class VFeneConfiguration(config.BaseConfiguration):
     required_params: tuple[str] = ("eps_backbone", "r0_backbone", "delta_backbone", "fmax", "finf")
 
     @staticmethod
-    def from_toml(file_path: str) -> "VFeneConfiguration":
-        return dc.replace(VFeneConfiguration(), **VFeneConfiguration.parse_toml(file_path, "vfene")).init_params()
+    def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "FeneConfiguration":
+        dict_params = FeneConfiguration.parse_toml(file_path, "vfene")
+        FeneConfiguration.from_dict(dict_params, params_to_optimize)
 
     @staticmethod
-    def from_dict(params: dict[str, float]) -> "VFeneConfiguration":
-        return dc.replace(VFeneConfiguration(), **params).init_params()
+    def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "FeneConfiguration":
+        return dc.replace(FeneConfiguration(), **(params | {"params_to_optimize": params_to_optimize})).init_params()
 
 
 @chex.dataclass(frozen=True)
@@ -162,19 +164,23 @@ class StackingConfiguration(config.BaseConfiguration):
     )
 
     @staticmethod
-    def from_toml(file_path: str) -> "StackingConfiguration":
+    def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "StackingConfiguration":
         full_toml = config.BaseConfiguration.parse_toml(file_path, "")
 
-        return dc.replace(
-            StackingConfiguration(),
-            **(
-                full_toml["stacking"] | {"kt": full_toml["t_kelvin"], "ss_stack_weights": full_toml["stack_weights_sa"]}
-            ),
-        ).init_params()
+        dict_params = full_toml["stacking"].update(
+            {
+                "kt": full_toml["t_kelvin"],
+                "ss_stack_weights": full_toml["stack_weights_sa"],
+            }
+        )
+
+        return StackingConfiguration.from_dict(dict_params, params_to_optimize)
 
     @staticmethod
-    def from_dict(params: dict[str, float]) -> "VFeneConfiguration":
-        return dc.replace(VFeneConfiguration(), **params).init_params()
+    def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "StackingConfiguration":
+        return dc.replace(
+            StackingConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
+        ).init_params()
 
     def init_params(self) -> "StackingConfiguration":
         eps_stack = self.eps_stack_base + self.eps_stack_kt_coeff * self.kt

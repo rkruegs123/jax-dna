@@ -7,6 +7,7 @@ import jax_dna.input.topology as topology
 import jax_dna.input.trajectory as trajectory
 import jax_dna.input.configuration as config
 import jax_dna.input.dna1.bonded as  dna1_bonded_config
+import jax_dna.input.dna1.unbonded as dna1_unbonded_config
 import jax_dna.energy.dna1 as dna1_energy
 import jax_dna.energy.base as jdna_energy
 
@@ -54,6 +55,18 @@ if __name__=="__main__":
     )
 
 
+    config_file = "jax_dna/input/dna1/defaults.toml"
+    configs = [
+        dna1_bonded_config.FeneConfiguration.from_toml(config_file),
+        dna1_bonded_config.ExcludedVolumeConfiguration,
+        dna1_bonded_config.StackingConfiguration,
+        dna1_unbonded_config.ExcludedVolumeConfiguration,
+        dna1_unbonded_config.HydrogenBondingConfiguration,
+        dna1_unbonded_config.CrossStackingConfiguration,
+        dna1_unbonded_config.CoaxialStackingConfiguration,
+    ]
+
+
     opt_params = [
         dna1_bonded_config.VFeneConfiguration(eps_backbone=0.15),
         dna1_bonded_config.ExcludedVolumeConfiguration(
@@ -63,24 +76,16 @@ if __name__=="__main__":
         ),
     ]
 
-    params = [
-        dna1_bonded_config.VFeneConfiguration.from_toml(
-            "jax_dna/input/dna1/defaults.toml",
-        ),
-        dna1_bonded_config.ExcludedVolumeConfiguration.from_toml(
-            "jax_dna/input/dna1/defaults.toml",
-        ),
-    ]
 
 
     energy_fns = [
         dna1_energy.bonded.Fene,
         dna1_energy.bonded.ExcludedVolume,
-        # dna1.bonded.Stacking,
-        # dna1.unbonded.ExcludedVolume,
-        # dna1.unbonded.HydrogenBonding,
-        # dna1.unbonded.CrossStacking,
-        # dna1.unbonded.CoaxialStacking,
+        dna1_energy.bonded.Stacking,
+        dna1_energy.unbonded.ExcludedVolume,
+        dna1_energy.unbonded.HydrogenBonding,
+        dna1_energy.unbonded.CrossStacking,
+        dna1_energy.unbonded.CoaxialStacking,
     ]
 
 

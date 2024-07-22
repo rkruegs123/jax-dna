@@ -78,14 +78,15 @@ class ExcludedVolumeConfiguration(config.BaseConfiguration):
         )
 
     @staticmethod
-    def from_toml(file_path: str) -> "ExcludedVolumeConfiguration":
-        return dc.replace(
-            ExcludedVolumeConfiguration(), **ExcludedVolumeConfiguration.parse_toml(file_path, "excluded_volume")
-        ).init_params()
+    def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "ExcludedVolumeConfiguration":
+        dict_params = ExcludedVolumeConfiguration.parse_toml(file_path, "unbonded_excluded_volume")
+        return ExcludedVolumeConfiguration.from_dict(dict_params, params_to_optimize)
 
     @staticmethod
-    def from_dict(params: dict[str, float]) -> "ExcludedVolumeConfiguration":
-        return dc.replace(ExcludedVolumeConfiguration(), **params).init_params()
+    def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "ExcludedVolumeConfiguration":
+        return dc.replace(
+            ExcludedVolumeConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
+        ).init_params()
 
 
 @chex.dataclass(frozen=True)
@@ -248,6 +249,17 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
             delta_theta_hb_8_c=delta_theta_hb_8_c,
         )
 
+    @staticmethod
+    def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "HydrogenBondingConfiguration":
+        dict_params = HydrogenBondingConfiguration.parse_toml(file_path, "hydrogen_bonding")
+        return HydrogenBondingConfiguration.from_dict(dict_params, params_to_optimize)
+
+    @staticmethod
+    def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "HydrogenBondingConfiguration":
+        return dc.replace(
+            HydrogenBondingConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
+        ).init_params()
+
 
 @chex.dataclass(frozen=True)
 class CrossStackingConfiguration(config.BaseConfiguration):
@@ -398,6 +410,17 @@ class CrossStackingConfiguration(config.BaseConfiguration):
             delta_theta_cross_8_c=delta_theta_cross_8_c,
         )
 
+    @staticmethod
+    def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "CrossStackingConfiguration":
+        dict_params = CrossStackingConfiguration.parse_toml(file_path, "cross_stacking")
+        return CrossStackingConfiguration.from_dict(dict_params, params_to_optimize)
+
+    @staticmethod
+    def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "CrossStackingConfiguration":
+        return dc.replace(
+            CrossStackingConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
+        ).init_params()
+
 
 @chex.dataclass(frozen=True)
 class CoaxialStackingConfiguration(config.BaseConfiguration):
@@ -536,3 +559,14 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
             b_cos_phi4_coax=b_cos_phi4_coax,
             cos_phi4_c_coax=cos_phi4_c_coax,
         )
+
+    @staticmethod
+    def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "CoaxialStackingConfiguration":
+        dict_params = CoaxialStackingConfiguration.parse_toml(file_path, "coaxial_stacking")
+        return CoaxialStackingConfiguration.from_dict(dict_params, params_to_optimize)
+
+    @staticmethod
+    def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "CoaxialStackingConfiguration":
+        return dc.replace(
+            CoaxialStackingConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
+        ).init_params()
