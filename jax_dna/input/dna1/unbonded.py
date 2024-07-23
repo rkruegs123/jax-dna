@@ -1,6 +1,7 @@
 import dataclasses as dc
 
 import chex
+import numpy as np
 
 import jax_dna.input.configuration as config
 import jax_dna.input.dna1.base_smoothing_functions as bsf
@@ -124,6 +125,9 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
     theta0_hb_8: float | None = None
     delta_theta_star_hb_8: float | None = None
 
+    # required but not optimizable
+    ss_hb_weights: np.ndarray | None = None
+
     # dependent parameters =====================================================
     b_low_hb: float | None = None
     dr_c_low_hb: float | None = None
@@ -168,7 +172,11 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
         "a_hb_8",
         "theta0_hb_8",
         "delta_theta_star_hb_8",
+        "ss_hb_weights",
     )
+
+    non_optimizable_required_params: tuple[str] = ("ss_hb_weights",)
+
 
     def init_params(self) -> "HydrogenBondingConfiguration":
         ## f1(dr_hb)
@@ -245,7 +253,15 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
 
     @staticmethod
     def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "HydrogenBondingConfiguration":
-        dict_params = HydrogenBondingConfiguration.parse_toml(file_path, "hydrogen_bonding")
+        full_toml = config.BaseConfiguration.parse_toml(file_path)
+
+        dict_params = full_toml["hydrogen_bonding"]
+        dict_params.update(
+            {
+                "ss_hb_weights": full_toml["hb_weights_sa"],
+            }
+        )
+
         return HydrogenBondingConfiguration.from_dict(dict_params, params_to_optimize)
 
 

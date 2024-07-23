@@ -62,6 +62,7 @@ class ExcludedVolume(je_base.BaseEnergyFunction):
         return (mask * exc_vol_unbonded_dg).sum()
 
 
+@chex.dataclass(frozen=True)
 class HydrogenBonding(je_base.BaseEnergyFunction):
     params: config.HydrogenBondingConfiguration
 
@@ -79,7 +80,7 @@ class HydrogenBonding(je_base.BaseEnergyFunction):
         hb_probs = je_utils.get_pair_probs(
             seq, op_i, op_j
         )  # get the probabilities of all possibile hydrogen bonds for all neighbors
-        hb_weights = jnp.dot(hb_probs, self.params.hb_weights.flatten())
+        hb_weights = jnp.dot(hb_probs, self.params.ss_hb_weights.flatten())
 
         dr_base_op = self.displacement_mapped(body.base_sites[op_j], body.base_sites[op_i])  # Note the flip here
         r_base_op = jnp.linalg.norm(dr_base_op, axis=1)
