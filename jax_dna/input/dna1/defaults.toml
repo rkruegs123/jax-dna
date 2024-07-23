@@ -1,9 +1,10 @@
 
 # environment parameters =======================================================
-t_kelvin = 296.15
+t_kelvin = "296.15 * 0.1 / 300.0"
 com_to_stacking = 0.34
 com_to_hb = 0.4
 com_to_backbone = -0.4
+dt = 5e-3
 hb_weights_sa = [
     [0.0, 0.0, 0.0, 1.0],  # AX
     [0.0, 0.0, 1.0, 0.0],  # CX
