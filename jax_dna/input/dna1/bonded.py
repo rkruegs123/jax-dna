@@ -71,7 +71,7 @@ class ExcludedVolumeConfiguration(config.BaseConfiguration):
     def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "ExcludedVolumeConfiguration":
         return dc.replace(
             ExcludedVolumeConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
-        ).init_params()
+        )
 
 
 @chex.dataclass(frozen=True)
@@ -93,7 +93,7 @@ class FeneConfiguration(config.BaseConfiguration):
 
     @staticmethod
     def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "FeneConfiguration":
-        return dc.replace(FeneConfiguration(), **(params | {"params_to_optimize": params_to_optimize})).init_params()
+        return dc.replace(FeneConfiguration(), **(params | {"params_to_optimize": params_to_optimize}))
 
 
 @chex.dataclass(frozen=True)
@@ -180,7 +180,7 @@ class StackingConfiguration(config.BaseConfiguration):
     def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "StackingConfiguration":
         return dc.replace(
             StackingConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
-        ).init_params()
+        )
 
     def init_params(self) -> "StackingConfiguration":
         eps_stack = self.eps_stack_base + self.eps_stack_kt_coeff * self.kt

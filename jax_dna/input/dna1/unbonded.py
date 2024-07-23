@@ -86,7 +86,7 @@ class ExcludedVolumeConfiguration(config.BaseConfiguration):
     def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "ExcludedVolumeConfiguration":
         return dc.replace(
             ExcludedVolumeConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
-        ).init_params()
+        )
 
 
 @chex.dataclass(frozen=True)
@@ -258,7 +258,7 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
     def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "HydrogenBondingConfiguration":
         return dc.replace(
             HydrogenBondingConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
-        ).init_params()
+        )
 
 
 @chex.dataclass(frozen=True)
@@ -419,7 +419,7 @@ class CrossStackingConfiguration(config.BaseConfiguration):
     def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "CrossStackingConfiguration":
         return dc.replace(
             CrossStackingConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
-        ).init_params()
+        )
 
 
 @chex.dataclass(frozen=True)
@@ -569,4 +569,4 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
     def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "CoaxialStackingConfiguration":
         return dc.replace(
             CoaxialStackingConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
-        ).init_params()
+        )
