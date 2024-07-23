@@ -82,12 +82,6 @@ class ExcludedVolumeConfiguration(config.BaseConfiguration):
         dict_params = ExcludedVolumeConfiguration.parse_toml(file_path, "unbonded_excluded_volume")
         return ExcludedVolumeConfiguration.from_dict(dict_params, params_to_optimize)
 
-    @staticmethod
-    def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "ExcludedVolumeConfiguration":
-        return dc.replace(
-            ExcludedVolumeConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
-        )
-
 
 @chex.dataclass(frozen=True)
 class HydrogenBondingConfiguration(config.BaseConfiguration):
@@ -254,12 +248,6 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
         dict_params = HydrogenBondingConfiguration.parse_toml(file_path, "hydrogen_bonding")
         return HydrogenBondingConfiguration.from_dict(dict_params, params_to_optimize)
 
-    @staticmethod
-    def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "HydrogenBondingConfiguration":
-        return dc.replace(
-            HydrogenBondingConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
-        )
-
 
 @chex.dataclass(frozen=True)
 class CrossStackingConfiguration(config.BaseConfiguration):
@@ -415,12 +403,6 @@ class CrossStackingConfiguration(config.BaseConfiguration):
         dict_params = CrossStackingConfiguration.parse_toml(file_path, "cross_stacking")
         return CrossStackingConfiguration.from_dict(dict_params, params_to_optimize)
 
-    @staticmethod
-    def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "CrossStackingConfiguration":
-        return dc.replace(
-            CrossStackingConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
-        )
-
 
 @chex.dataclass(frozen=True)
 class CoaxialStackingConfiguration(config.BaseConfiguration):
@@ -564,9 +546,3 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
     def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "CoaxialStackingConfiguration":
         dict_params = CoaxialStackingConfiguration.parse_toml(file_path, "coaxial_stacking")
         return CoaxialStackingConfiguration.from_dict(dict_params, params_to_optimize)
-
-    @staticmethod
-    def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "CoaxialStackingConfiguration":
-        return dc.replace(
-            CoaxialStackingConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
-        )

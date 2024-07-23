@@ -67,12 +67,6 @@ class ExcludedVolumeConfiguration(config.BaseConfiguration):
         dict_params = ExcludedVolumeConfiguration.parse_toml(file_path, "bonded_excluded_volume")
         return ExcludedVolumeConfiguration.from_dict(dict_params, params_to_optimize)
 
-    @staticmethod
-    def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "ExcludedVolumeConfiguration":
-        return dc.replace(
-            ExcludedVolumeConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
-        )
-
 
 @chex.dataclass(frozen=True)
 class FeneConfiguration(config.BaseConfiguration):
@@ -89,11 +83,7 @@ class FeneConfiguration(config.BaseConfiguration):
     @staticmethod
     def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "FeneConfiguration":
         dict_params = FeneConfiguration.parse_toml(file_path, "vfene")
-        FeneConfiguration.from_dict(dict_params, params_to_optimize)
-
-    @staticmethod
-    def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "FeneConfiguration":
-        return dc.replace(FeneConfiguration(), **(params | {"params_to_optimize": params_to_optimize}))
+        return FeneConfiguration.from_dict(dict_params, params_to_optimize)
 
 
 @chex.dataclass(frozen=True)
@@ -119,6 +109,7 @@ class StackingConfiguration(config.BaseConfiguration):
     a_stack_1: float | None = None
     neg_cos_phi2_star_stack: float | None = None
     a_stack_2: float | None = None
+    # required but non optimizable
     kt: float | None = None
     ss_stack_weights: np.ndarray | None = None
 
@@ -160,14 +151,18 @@ class StackingConfiguration(config.BaseConfiguration):
         "a_stack_1",
         "neg_cos_phi2_star_stack",
         "a_stack_2",
+        "kt",
         "ss_stack_weights",
     )
 
+    non_optimizable_required_params: tuple[str] = ("kt", "ss_stack_weights")
+
     @staticmethod
     def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "StackingConfiguration":
-        full_toml = config.BaseConfiguration.parse_toml(file_path, "")
+        full_toml = config.BaseConfiguration.parse_toml(file_path)
 
-        dict_params = full_toml["stacking"].update(
+        dict_params = full_toml["stacking"]
+        dict_params.update(
             {
                 "kt": full_toml["t_kelvin"],
                 "ss_stack_weights": full_toml["stack_weights_sa"],
@@ -175,12 +170,6 @@ class StackingConfiguration(config.BaseConfiguration):
         )
 
         return StackingConfiguration.from_dict(dict_params, params_to_optimize)
-
-    @staticmethod
-    def from_dict(params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "StackingConfiguration":
-        return dc.replace(
-            StackingConfiguration(), **(params | {"params_to_optimize": params_to_optimize})
-        )
 
     def init_params(self) -> "StackingConfiguration":
         eps_stack = self.eps_stack_base + self.eps_stack_kt_coeff * self.kt
