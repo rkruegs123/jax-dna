@@ -85,7 +85,6 @@ class BaseConfiguration:
             if all(isinstance(leaf, str) for leaf in leaves):
                 return jax.tree_util.tree_map(BaseConfiguration.parse_str, value)
             elif all(isinstance(leaf, float) for leaf in leaves):
-                print(value)
                 return np.array(value)
 
         return value
