@@ -52,7 +52,7 @@ class ExcludedVolume(je_base.BaseEnergyFunction):
 
 @chex.dataclass(frozen=True)
 class Fene(je_base.BaseEnergyFunction):
-    params: config.VFeneConfiguration
+    params: config.FeneConfiguration
 
     def __call__(
         self,
