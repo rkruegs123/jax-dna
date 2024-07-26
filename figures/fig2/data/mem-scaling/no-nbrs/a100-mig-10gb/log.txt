@@ -1,0 +1,64 @@
+Checkpoint every: None
+- # steps: 2500
+	- failed: True
+	- 1st grad time: -1
+	- 2nd grad time: -1
+	- 1st loss time: -1
+	- 2nd loss time: -1
+	- Mean grad abs.: -1
+- # steps: 1250
+	- failed: True
+	- 1st grad time: -1
+	- 2nd grad time: -1
+	- 1st loss time: -1
+	- 2nd loss time: -1
+	- Mean grad abs.: -1
+- # steps: 620
+	- failed: True
+	- 1st grad time: -1
+	- 2nd grad time: -1
+	- 1st loss time: -1
+	- 2nd loss time: -1
+	- Mean grad abs.: -1
+- # steps: 310
+	- failed: True
+	- 1st grad time: -1
+	- 2nd grad time: -1
+	- 1st loss time: -1
+	- 2nd loss time: -1
+	- Mean grad abs.: -1
+- # steps: 150
+	- failed: False
+	- 1st grad time: 62.99443483352661
+	- 2nd grad time: 0.2138669490814209
+	- 1st loss time: 9.266929626464844
+	- 2nd loss time: 0.06413722038269043
+	- Mean grad abs.: nan
+- # steps: 230
+	- failed: False
+	- 1st grad time: 62.937026023864746
+	- 2nd grad time: 0.42578125
+	- 1st loss time: 9.396451711654663
+	- 2nd loss time: 0.10877180099487305
+	- Mean grad abs.: nan
+- # steps: 270
+	- failed: True
+	- 1st grad time: -1
+	- 2nd grad time: -1
+	- 1st loss time: -1
+	- 2nd loss time: -1
+	- Mean grad abs.: -1
+- # steps: 250
+	- failed: True
+	- 1st grad time: -1
+	- 2nd grad time: -1
+	- 1st loss time: -1
+	- 2nd loss time: -1
+	- Mean grad abs.: -1
+- # steps: 240
+	- failed: False
+	- 1st grad time: 64.35296845436096
+	- 2nd grad time: 0.44045042991638184
+	- 1st loss time: 8.900931596755981
+	- 2nd loss time: 0.11237549781799316
+	- Mean grad abs.: nan

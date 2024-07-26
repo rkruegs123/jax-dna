@@ -1,0 +1,8 @@
+run_name: check-oom-cNone-v100-32gb-60bp-s10-no-nbrs
+sample_every: 10
+n_skip_quartets: 5
+hi: 500
+lo: 0
+checkpoint_every: None
+small_system: False
+use_neighbors: False

@@ -127,48 +127,67 @@ def run(args):
         losses, all_metadata = vmap(body_loss_fn)(states_to_eval)
         return losses.mean(), all_metadata
 
-    def sim_fn_ckpt(params, body, n_steps, key, gamma):
-        em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
-        init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
-        init_state = init_fn(key, body, mass=mass, seq=seq_oh,
-                             bonded_nbrs=top_info.bonded_nbrs,
-                             unbonded_nbrs=top_info.unbonded_nbrs.T)
+    def get_sim_fn(n_steps, gamma, checkpoint):
+        if checkpoint:
+            sim_scan = scan_ckpt
+        else:
+            sim_scan = lax.scan
 
-        @jit
-        def scan_fn(state, step):
-            state = step_fn(state,
-                            seq=seq_oh,
-                            bonded_nbrs=top_info.bonded_nbrs,
-                            unbonded_nbrs=top_info.unbonded_nbrs.T)
-            return state, state.position
+        r_cutoff = 10.0
+        dr_threshold = 0.2
+        neighbor_fn = top_info.get_neighbor_list_fn(
+            displacement_fn, conf_info.box_size, r_cutoff, dr_threshold)
+        neighbor_fn = jit(neighbor_fn)
+        neighbors = neighbor_fn.allocate(init_body.center) # We use the COMs
 
-        fin_state, traj = scan_ckpt(scan_fn, init_state, jnp.arange(n_steps))
-        return fin_state.position, traj
+        def sim_fn(body, params, key):
+            em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
+            init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
 
-    def sim_fn_no_ckpt(params, body, n_steps, key, gamma):
-        em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
-        init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
-        init_state = init_fn(key, body, mass=mass, seq=seq_oh,
-                             bonded_nbrs=top_info.bonded_nbrs,
-                             unbonded_nbrs=top_info.unbonded_nbrs.T)
+            if use_neighbors:
+                @jit
+                def scan_fn(in_state, step):
+                    state, neighbors = in_state
+                    state = step_fn(state,
+                                    seq=seq_oh,
+                                    bonded_nbrs=top_info.bonded_nbrs,
+                                    unbonded_nbrs=neighbors.idx)
+                    neighbors = neighbors.update(state.position.center)
+                    return (state, neighbors), state.position
 
-        @jit
-        def scan_fn(state, step):
-            state = step_fn(state,
-                            seq=seq_oh,
-                            bonded_nbrs=top_info.bonded_nbrs,
-                            unbonded_nbrs=top_info.unbonded_nbrs.T)
-            return state, state.position
+                init_state = init_fn(key, body, mass=mass, seq=seq_oh,
+                                     bonded_nbrs=top_info.bonded_nbrs,
+                                     unbonded_nbrs=neighbors.idx)
 
-        fin_state, traj = lax.scan(scan_fn, init_state, jnp.arange(n_steps))
-        return fin_state.position, traj
+                (fin_state, _), traj = sim_scan(scan_fn, (init_state, neighbors), jnp.arange(n_steps))
+            else:
+                neighbors_idx = top_info.unbonded_nbrs.T
+                init_state = init_fn(key, body, mass=mass, seq=seq_oh,
+                                     bonded_nbrs=top_info.bonded_nbrs,
+                                     unbonded_nbrs=neighbors_idx)
 
-
+                @jit
+                def scan_fn(state, step):
+                    neighbors_idx = top_info.unbonded_nbrs.T
+                    state = step_fn(state,
+                                    seq=seq_oh,
+                                    bonded_nbrs=top_info.bonded_nbrs,
+                                    unbonded_nbrs=neighbors_idx)
+                    return state, state.position
+                fin_state, traj = sim_scan(scan_fn, init_state, jnp.arange(n_steps))
+            return fin_state.position, traj
+        return sim_fn
+            
     def get_time(n_steps, checkpoint_every):
+
+        sim_fn_no_ckpt = get_sim_fn(n_steps, gamma, checkpoint=False)
+        sim_fn_no_ckpt = jit(sim_fn_no_ckpt)
+        sim_fn_ckpt = get_sim_fn(n_steps, gamma, checkpoint=True)
+        sim_fn_ckpt = jit(sim_fn_ckpt)
 
         @jit
         def loss_fn_no_ckpt(params, eq_body, key):
-            fin_pos, traj = sim_fn_no_ckpt(params, eq_body, n_steps, key, gamma)
+            fin_pos, traj = sim_fn_no_ckpt(eq_body, params, key)
             loss, metadata = traj_loss_fn(traj)
             return loss, traj
         grad_fn_no_ckpt = value_and_grad(loss_fn_no_ckpt, has_aux=True)
@@ -176,7 +195,7 @@ def run(args):
 
         @jit
         def loss_fn_ckpt(params, eq_body, key):
-            fin_pos, traj = sim_fn_ckpt(params, eq_body, n_steps, key, gamma)
+            fin_pos, traj = sim_fn_ckpt(eq_body, params, key)
             loss, metadata = traj_loss_fn(traj)
             return loss, traj
         grad_fn_ckpt = value_and_grad(loss_fn_ckpt, has_aux=True)

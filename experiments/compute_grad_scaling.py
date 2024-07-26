@@ -154,7 +154,7 @@ def run(args):
                 return (state, neighbors), state.position
 
             init_state = init_fn(key, body, mass=mass, seq=seq_oh,
-                             bonded_nbrs=top_info.bonded_nbrs,
+                                 bonded_nbrs=top_info.bonded_nbrs,
                                  unbonded_nbrs=neighbors.idx)
 
             (fin_state, _), traj = scan(scan_fn, (init_state, neighbors), jnp.arange(n_steps))
@@ -205,7 +205,7 @@ def run(args):
 
         key = random.PRNGKey(key_seed)
         key, eq_key = random.split(key)
-        eq_body = eq_fn(params, eq_key)
+        eq_body, _ = eq_fn(params, eq_key)
         try:
             start = time.time()
             (loss, traj), grads = grad_fn(params, eq_body, key)
