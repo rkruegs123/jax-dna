@@ -10,7 +10,6 @@ import jax_dna.energy.dna1.base_smoothing_functions as bsf
 import jax_dna.energy.dna1.interactions as dna1_interactions
 import jax_dna.energy.dna1.nucleotide as dna1_nucleotide
 import jax_dna.energy.utils as je_utils
-import jax_dna.input.dna1.bonded as config
 import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as typ
 
@@ -79,11 +78,11 @@ class ExcludedVolume(je_base.BaseEnergyFunction):
         self,
         body: dna1_nucleotide.Nucleotide,
         seq: jnp.ndarray,
-        bonded_neghbors: typ.Arr_Bonded_Neighbors,
-        unbonded_neghbors: typ.Arr_Unbonded_Neighbors,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors,
     ) -> typ.Scalar:
-        nn_i = bonded_neghbors[:, 0]
-        nn_j = bonded_neghbors[:, 1]
+        nn_i = bonded_neighbors[:, 0]
+        nn_j = bonded_neighbors[:, 1]
 
         dr_base = self.displacement_mapped(body.base_sites[nn_i], body.base_sites[nn_j])
         dr_back_base = self.displacement_mapped(body.back_sites[nn_i], body.base_sites[nn_j])

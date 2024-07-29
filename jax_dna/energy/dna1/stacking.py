@@ -177,11 +177,11 @@ class Stacking(je_base.BaseEnergyFunction):
         self,
         body: dna1_nucleotide.Nucleotide,
         seq: jnp.ndarray,
-        bonded_neghbors: typ.Arr_Bonded_Neighbors,
-        unbounded_neghbors: typ.Arr_Unbonded_Neighbors,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors,
     ) -> typ.Scalar:
-        nn_i = bonded_neghbors[:, 0]
-        nn_j = bonded_neghbors[:, 1]
+        nn_i = bonded_neighbors[:, 0]
+        nn_j = bonded_neighbors[:, 1]
 
         ## Fene variables
         dr_back_nn = self.displacement_mapped(body.back_sites[nn_i], body.back_sites[nn_j])  # N x N x 3

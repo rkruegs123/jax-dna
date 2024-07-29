@@ -99,11 +99,11 @@ class ExcludedVolume(je_base.BaseEnergyFunction):
         self,
         body: dna1_nucleotide.Nucleotide,
         seq: jnp.ndarray,
-        bonded_neghbors: typ.Arr_Bonded_Neighbors,
-        unbonded_neghbors: typ.Arr_Unbonded_Neighbors,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors,
     ) -> typ.Scalar:
-        op_i = unbonded_neghbors[0]
-        op_j = unbonded_neghbors[1]
+        op_i = unbonded_neighbors[0]
+        op_j = unbonded_neighbors[1]
 
         mask = jnp.array(op_i < body.center.shape[0], dtype=jnp.float32)
 
