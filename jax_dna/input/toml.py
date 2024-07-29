@@ -1,4 +1,3 @@
-
 from typing import Any
 
 import jax
@@ -13,7 +12,8 @@ except ImportError:
 
 
 ERR_MISSING_TOML_ENTRY = "Missing entry {entry} in TOML file"
-SYMPY_EVAL_N:int = 32
+SYMPY_EVAL_N: int = 32
+
 
 def parse_str(value: str) -> str | float:
     try:
@@ -37,6 +37,7 @@ def parse_value(value: str | float | list[str] | list[float]) -> str | float | n
 
     return value
 
+
 def parse_toml(file_path: str, key: str | None = None) -> dict[str, Any]:
     with open(file_path, "rb") as f:
         config_dict = toml.load(f)
@@ -47,6 +48,4 @@ def parse_toml(file_path: str, key: str | None = None) -> dict[str, Any]:
         else:
             raise ValueError(ERR_MISSING_TOML_ENTRY.format(entry=key))
 
-    return jax.tree_util.tree_map(
-        parse_value, config_dict, is_leaf=lambda x: isinstance(x, (str, float, list))
-    )
+    return jax.tree_util.tree_map(parse_value, config_dict, is_leaf=lambda x: isinstance(x, (str, float, list)))

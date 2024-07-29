@@ -4,9 +4,9 @@ import chex
 import jax.numpy as jnp
 import numpy as np
 
+import jax_dna.energy.base as je_base
 import jax_dna.energy.configuration as config
 import jax_dna.energy.dna1.base_smoothing_functions as bsf
-import jax_dna.energy.base as je_base
 import jax_dna.energy.dna1.interactions as dna1_interactions
 import jax_dna.energy.dna1.nucleotide as dna1_nucleotide
 import jax_dna.energy.utils as je_utils

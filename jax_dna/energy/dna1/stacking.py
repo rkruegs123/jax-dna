@@ -4,9 +4,9 @@ import chex
 import jax.numpy as jnp
 import numpy as np
 
+import jax_dna.energy.base as je_base
 import jax_dna.energy.configuration as config
 import jax_dna.energy.dna1.base_smoothing_functions as bsf
-import jax_dna.energy.base as je_base
 import jax_dna.energy.dna1.interactions as dna1_interactions
 import jax_dna.energy.dna1.nucleotide as dna1_nucleotide
 import jax_dna.energy.utils as je_utils
@@ -14,14 +14,14 @@ import jax_dna.input.dna1.bonded as config
 import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as typ
 
-
-STACK_WEIGHTS_SA = np.array([
-    [1.0, 1.0, 1.0, 1.0],  # AX
-    [1.0, 1.0, 1.0, 1.0],  # CX
-    [1.0, 1.0, 1.0, 1.0],  # GX
-    [1.0, 1.0, 1.0, 1.0],  # TX
-])
-
+STACK_WEIGHTS_SA = np.array(
+    [
+        [1.0, 1.0, 1.0, 1.0],  # AX
+        [1.0, 1.0, 1.0, 1.0],  # CX
+        [1.0, 1.0, 1.0, 1.0],  # GX
+        [1.0, 1.0, 1.0, 1.0],  # TX
+    ]
+)
 
 
 @chex.dataclass(frozen=True)

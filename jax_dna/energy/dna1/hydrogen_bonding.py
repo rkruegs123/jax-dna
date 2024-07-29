@@ -4,22 +4,24 @@ import chex
 import jax.numpy as jnp
 import numpy as np
 
+import jax_dna.energy.base as je_base
 import jax_dna.energy.configuration as config
 import jax_dna.energy.dna1.base_smoothing_functions as bsf
-import jax_dna.energy.base as je_base
 import jax_dna.energy.dna1.interactions as dna1_interactions
 import jax_dna.energy.dna1.nucleotide as dna1_nucleotide
 import jax_dna.energy.utils as je_utils
 import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as typ
 
+HB_WEIGHTS_SA = np.array(
+    [
+        [0.0, 0.0, 0.0, 1.0],  # AX
+        [0.0, 0.0, 1.0, 0.0],  # CX
+        [0.0, 1.0, 0.0, 0.0],  # GX
+        [1.0, 0.0, 0.0, 0.0],  # TX
+    ]
+)
 
-HB_WEIGHTS_SA = np.array([
-    [0.0, 0.0, 0.0, 1.0],  # AX
-    [0.0, 0.0, 1.0, 0.0],  # CX
-    [0.0, 1.0, 0.0, 0.0],  # GX
-    [1.0, 0.0, 0.0, 0.0],  # TX
-])
 
 @chex.dataclass(frozen=True)
 class HydrogenBondingConfiguration(config.BaseConfiguration):
@@ -113,7 +115,6 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
     )
 
     non_optimizable_required_params: tuple[str] = ("ss_hb_weights",)
-
 
     def init_params(self) -> "HydrogenBondingConfiguration":
         ## f1(dr_hb)
