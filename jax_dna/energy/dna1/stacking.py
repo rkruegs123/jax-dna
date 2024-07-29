@@ -10,7 +10,6 @@ import jax_dna.energy.dna1.base_smoothing_functions as bsf
 import jax_dna.energy.dna1.interactions as dna1_interactions
 import jax_dna.energy.dna1.nucleotide as dna1_nucleotide
 import jax_dna.energy.utils as je_utils
-import jax_dna.input.dna1.bonded as config
 import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as typ
 
