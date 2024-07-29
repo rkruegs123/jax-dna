@@ -1,12 +1,10 @@
 import dataclasses as dc
-import functools
 from typing import Any, Callable, Union
 
 import chex
 import jax.numpy as jnp
 import jax_md
 
-import jax_dna.input.configuration as config
 import jax_dna.utils.types as typ
 
 ERR_PARAM_NOT_FOUND = "Parameter '{key}' not found in {class_name}"

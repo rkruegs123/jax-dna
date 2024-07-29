@@ -15,7 +15,7 @@ sigma_base_back = 0.515
 dr_star_back_base = 0.50
 dr_star_base_back = 0.50
 
-[vfene]
+[fene]
 eps_backbone = 2.0
 r0_backbone = 0.7525
 delta_backbone = 0.25

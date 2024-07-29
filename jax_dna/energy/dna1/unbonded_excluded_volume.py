@@ -12,7 +12,7 @@ import jax_dna.utils.types as typ
 
 
 @chex.dataclass(frozen=True)
-class ExcludedVolumeConfiguration(config.BaseConfiguration):
+class UnbondedExcludedVolumeConfiguration(config.BaseConfiguration):
     # independent parameters
     eps_exc: float | None = None
     dr_star_base: float | None = None
@@ -47,7 +47,7 @@ class ExcludedVolumeConfiguration(config.BaseConfiguration):
         "sigma_backbone",
     )
 
-    def init_params(self) -> "ExcludedVolumeConfiguration":
+    def init_params(self) -> "UnbondedExcludedVolumeConfiguration":
         ## f3(dr_base)
         b_base, dr_c_base = bsf.get_f3_smoothing_params(self.dr_star_base, self.eps_exc, self.sigma_base)
 
@@ -82,15 +82,10 @@ class ExcludedVolumeConfiguration(config.BaseConfiguration):
             dr_c_backbone=dr_c_backbone,
         )
 
-    @staticmethod
-    def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "ExcludedVolumeConfiguration":
-        dict_params = ExcludedVolumeConfiguration.parse_toml(file_path, "unbonded_excluded_volume")
-        return ExcludedVolumeConfiguration.from_dict(dict_params, params_to_optimize)
-
 
 @chex.dataclass(frozen=True)
-class ExcludedVolume(je_base.BaseEnergyFunction):
-    params: config.ExcludedVolumeConfiguration
+class UnbondedExcludedVolume(je_base.BaseEnergyFunction):
+    params: UnbondedExcludedVolumeConfiguration
 
     def __call__(
         self,

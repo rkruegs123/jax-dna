@@ -5,11 +5,10 @@ import jax.numpy as jnp
 import jax_md
 import jax_dna.input.topology as topology
 import jax_dna.input.trajectory as trajectory
-import jax_dna.input.configuration as config
-import jax_dna.input.dna1.bonded as  dna1_bonded_config
-import jax_dna.input.dna1.unbonded as dna1_unbonded_config
+import jax_dna.input.toml as toml_reader
 import jax_dna.energy.dna1 as dna1_energy
 import jax_dna.energy.base as jdna_energy
+import jax_dna.energy.configuration as jdna_energy_config
 import jax_dna.utils.types as jdt
 
 jax.config.update("jax_enable_x64", True)
@@ -18,11 +17,8 @@ if __name__=="__main__":
 
     topology_fname = "data/templates/simple-helix/sys.top"
     traj_fname = "data/templates/simple-helix/init.conf"
-    config_fname = "jax_dna/input/dna1/defaults.toml"
-
-
-
-    displacement_fn, shift_fn = jax_md.space.free()
+    simulation_config = "jax_dna/input/dna1/default_simulation.toml"
+    energy_config = "jax_dna/input/dna1/default_energy.toml"
 
     top = topology.from_oxdna_file(topology_fname)
     seq = jnp.array(top.seq_one_hot)
@@ -30,67 +26,61 @@ if __name__=="__main__":
         traj_fname,
         top.strand_counts,
     )
-    experiment_config = config.BaseConfiguration.parse_toml(config_fname)
+    experiment_config = toml_reader.parse_toml(simulation_config)
+    energy_config = toml_reader.parse_toml(energy_config)
 
-    dt = experiment_config["dt"]
-    kT = experiment_config["t_kelvin"]
-
-    gamma = jax_md.rigid_body.RigidBody(
-        center=jnp.array([kT/2.5], dtype=jnp.float64),
-        orientation=jnp.array([kT/7.5], dtype=jnp.float64),
-    )
-    beta = 1 / kT
-    gamma = jax_md.rigid_body.RigidBody(
-        center=jnp.array([kT/2.5], dtype=jnp.float64),
-        orientation=jnp.array([kT/7.5], dtype=jnp.float64),
-    )
-    nucleotide_mass = 1.0
-    moment_of_inertia = [1.0, 1.0, 1.0]
-    mass = jax_md.rigid_body.RigidBody(
-        center=jnp.array([nucleotide_mass], dtype=jnp.float64),
-        orientation=jnp.array([moment_of_inertia], dtype=jnp.float64),
-    )
+    displacement_fn, shift_fn = jax_md.space.free()
+    key = jax.random.PRNGKey(0)
 
     init_body = traj.states[0].to_rigid_body()
 
-    key = jax.random.PRNGKey(0)
+    dt = experiment_config["dt"]
+    kT = experiment_config["kT"]
+    diff_coef = experiment_config["diff_coef"]
+    rot_diff_coef = experiment_config["rot_diff_coef"]
 
-    transform_fn = functools.partial(
-        dna1_energy.Nucleotide.from_rigid_body,
-        com_to_backbone=experiment_config["com_to_backbone"],
-        com_to_hb=experiment_config["com_to_hb"],
-        com_to_stacking=experiment_config["com_to_stacking"],
+    gamma = jax_md.rigid_body.RigidBody(
+        center=jnp.array([kT/diff_coef], dtype=jnp.float64),
+        orientation=jnp.array([kT/rot_diff_coef], dtype=jnp.float64),
+    )
+    mass = jax_md.rigid_body.RigidBody(
+        center=jnp.array([experiment_config["nucleotide_mass"]], dtype=jnp.float64),
+        orientation=jnp.array([experiment_config["moment_of_inertia"]], dtype=jnp.float64),
     )
 
+    geometry = energy_config["geometry"]
+    transform_fn = functools.partial(
+        dna1_energy.Nucleotide.from_rigid_body,
+        com_to_backbone=geometry["com_to_backbone"],
+        com_to_hb=geometry["com_to_hb"],
+        com_to_stacking=geometry["com_to_stacking"],
+    )
 
-    config_file = "jax_dna/input/dna1/defaults.toml"
     configs = [
         # single param
-        dna1_bonded_config.FeneConfiguration.from_toml(config_file, ("eps_backbone",)),
+        dna1_energy.FeneConfiguration.from_dict(energy_config["fene"], ("eps_backbone",)),
         # multiple params
-        dna1_bonded_config.ExcludedVolumeConfiguration.from_toml(config_file, ("eps_exc","dr_star_base")),
+        dna1_energy.BondedExcludedVolumeConfiguration.from_dict(energy_config["bonded_excluded_volume"], ("eps_exc","dr_star_base")),
         # shortcut for all params, though you could list them all too
-        dna1_bonded_config.StackingConfiguration.from_toml(config_file, ("*",)),
-        dna1_unbonded_config.ExcludedVolumeConfiguration.from_toml(config_file),
-        dna1_unbonded_config.HydrogenBondingConfiguration.from_toml(config_file),
-        dna1_unbonded_config.CrossStackingConfiguration.from_toml(config_file),
-        dna1_unbonded_config.CoaxialStackingConfiguration.from_toml(config_file),
+        dna1_energy.StackingConfiguration.from_dict(energy_config["stacking"] | {"kt": kT }, ("*",)),
+        dna1_energy.UnbondedExcludedVolumeConfiguration.from_dict(energy_config["unbonded_excluded_volume"]),
+        dna1_energy.HydrogenBondingConfiguration.from_dict(energy_config["hydrogen_bonding"]),
+        dna1_energy.CrossStackingConfiguration.from_dict(energy_config["cross_stacking"]),
+        dna1_energy.CoaxialStackingConfiguration.from_dict(energy_config["coaxial_stacking"]),
     ]
-
-
 
     opt_params = [c.opt_params for c in configs]
 
     # configs and energy functions should be in the same order
     # though maybe we can be more clever in the future
     energy_fns = [
-        dna1_energy.bonded.Fene,
-        dna1_energy.bonded.ExcludedVolume,
-        dna1_energy.bonded.Stacking,
-        dna1_energy.unbonded.ExcludedVolume,
-        dna1_energy.unbonded.HydrogenBonding,
-        # dna1_energy.unbonded.CrossStacking,
-        # dna1_energy.unbonded.CoaxialStacking,
+        dna1_energy.Fene,
+        dna1_energy.BondedExcludedVolume,
+        dna1_energy.Stacking,
+        dna1_energy.UnbondedExcludedVolume,
+        dna1_energy.HydrogenBonding,
+        dna1_energy.CrossStacking,
+        dna1_energy.CoaxialStacking,
     ]
 
     def test_energy_fn(
@@ -121,7 +111,7 @@ if __name__=="__main__":
 
 
     def test_energy_grad_fn(
-        params: list[config.BaseConfiguration],
+        params: list[dict[str, jdt.ARR_OR_SCALAR] | jdna_energy_config.BaseConfiguration],
     ) -> float:
         transformed_fns = [
             energy_fn(
@@ -161,7 +151,6 @@ if __name__=="__main__":
         )
 
         return next_state.position.center.sum()
-
 
 
     print("jitting test_energy_fn")

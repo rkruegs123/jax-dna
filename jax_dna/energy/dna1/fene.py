@@ -20,15 +20,10 @@ class FeneConfiguration(config.BaseConfiguration):
     # override
     required_params: tuple[str] = ("eps_backbone", "r0_backbone", "delta_backbone", "fmax", "finf")
 
-    @staticmethod
-    def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "FeneConfiguration":
-        dict_params = FeneConfiguration.parse_toml(file_path, "vfene")
-        return FeneConfiguration.from_dict(dict_params, params_to_optimize)
-
 
 @chex.dataclass(frozen=True)
 class Fene(je_base.BaseEnergyFunction):
-    params: config.FeneConfiguration
+    params: FeneConfiguration
 
     def __call__(
         self,

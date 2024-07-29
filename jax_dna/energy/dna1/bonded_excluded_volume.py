@@ -12,7 +12,7 @@ import jax_dna.utils.types as typ
 
 
 @chex.dataclass(frozen=True)
-class ExcludedVolumeConfiguration(config.BaseConfiguration):
+class BondedExcludedVolumeConfiguration(config.BaseConfiguration):
     # independent parameters
     eps_exc: float | None = None
     dr_star_base: float | None = None
@@ -41,7 +41,7 @@ class ExcludedVolumeConfiguration(config.BaseConfiguration):
         "dr_star_base_back",
     )
 
-    def init_params(self) -> "ExcludedVolumeConfiguration":
+    def init_params(self) -> "BondedExcludedVolumeConfiguration":
         b_base, dr_c_base = bsf.get_f3_smoothing_params(self.dr_star_base, self.eps_exc, self.sigma_base)
 
         ## f3(dr_back_base)
@@ -68,8 +68,8 @@ class ExcludedVolumeConfiguration(config.BaseConfiguration):
 
 
 @chex.dataclass(frozen=True)
-class ExcludedVolume(je_base.BaseEnergyFunction):
-    params: config.ExcludedVolumeConfiguration
+class BondedExcludedVolume(je_base.BaseEnergyFunction):
+    params: BondedExcludedVolumeConfiguration
 
     def __call__(
         self,

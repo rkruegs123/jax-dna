@@ -150,14 +150,10 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
             cos_phi4_c_coax=cos_phi4_c_coax,
         )
 
-    @staticmethod
-    def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "CoaxialStackingConfiguration":
-        dict_params = CoaxialStackingConfiguration.parse_toml(file_path, "coaxial_stacking")
-        return CoaxialStackingConfiguration.from_dict(dict_params, params_to_optimize)
 
-
+@chex.dataclass(frozen=True)
 class CoaxialStacking(je_base.BaseEnergyFunction):
-    params: config.CoaxialStackingConfiguration
+    params: CoaxialStackingConfiguration
 
     def __call__(
         self,

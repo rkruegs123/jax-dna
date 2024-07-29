@@ -111,10 +111,7 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
         "a_hb_8",
         "theta0_hb_8",
         "delta_theta_star_hb_8",
-        "ss_hb_weights",
     )
-
-    non_optimizable_required_params: tuple[str] = ("ss_hb_weights",)
 
     def init_params(self) -> "HydrogenBondingConfiguration":
         ## f1(dr_hb)
@@ -189,23 +186,10 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
             delta_theta_hb_8_c=delta_theta_hb_8_c,
         )
 
-    @staticmethod
-    def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "HydrogenBondingConfiguration":
-        full_toml = config.BaseConfiguration.parse_toml(file_path)
-
-        dict_params = full_toml["hydrogen_bonding"]
-        dict_params.update(
-            {
-                "ss_hb_weights": full_toml["hb_weights_sa"],
-            }
-        )
-
-        return HydrogenBondingConfiguration.from_dict(dict_params, params_to_optimize)
-
 
 @chex.dataclass(frozen=True)
 class HydrogenBonding(je_base.BaseEnergyFunction):
-    params: config.HydrogenBondingConfiguration
+    params: HydrogenBondingConfiguration
 
     def __call__(
         self,
@@ -221,7 +205,7 @@ class HydrogenBonding(je_base.BaseEnergyFunction):
         hb_probs = je_utils.get_pair_probs(
             seq, op_i, op_j
         )  # get the probabilities of all possibile hydrogen bonds for all neighbors
-        hb_weights = jnp.dot(hb_probs, self.params.ss_hb_weights.flatten())
+        hb_weights = jnp.dot(hb_probs, HB_WEIGHTS_SA.flatten())
 
         dr_base_op = self.displacement_mapped(body.base_sites[op_j], body.base_sites[op_i])  # Note the flip here
         r_base_op = jnp.linalg.norm(dr_base_op, axis=1)

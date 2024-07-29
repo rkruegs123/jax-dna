@@ -48,7 +48,6 @@ class StackingConfiguration(config.BaseConfiguration):
     a_stack_2: float | None = None
     # required but non optimizable
     kt: float | None = None
-    ss_stack_weights: np.ndarray | None = None
 
     # dependent parameters
     b_low_stack: float | None = None
@@ -89,24 +88,9 @@ class StackingConfiguration(config.BaseConfiguration):
         "neg_cos_phi2_star_stack",
         "a_stack_2",
         "kt",
-        "ss_stack_weights",
     )
 
-    non_optimizable_required_params: tuple[str] = ("kt", "ss_stack_weights")
-
-    @staticmethod
-    def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "StackingConfiguration":
-        full_toml = config.BaseConfiguration.parse_toml(file_path)
-
-        dict_params = full_toml["stacking"]
-        dict_params.update(
-            {
-                "kt": full_toml["t_kelvin"],
-                "ss_stack_weights": full_toml["stack_weights_sa"],
-            }
-        )
-
-        return StackingConfiguration.from_dict(dict_params, params_to_optimize)
+    non_optimizable_required_params: tuple[str] = ("kt",)
 
     def init_params(self) -> "StackingConfiguration":
         eps_stack = self.eps_stack_base + self.eps_stack_kt_coeff * self.kt
@@ -170,7 +154,7 @@ class StackingConfiguration(config.BaseConfiguration):
 
 @chex.dataclass(frozen=True)
 class Stacking(je_base.BaseEnergyFunction):
-    params: config.StackingConfiguration
+    params: StackingConfiguration
 
     def __call__(
         self,
@@ -241,7 +225,7 @@ class Stacking(je_base.BaseEnergyFunction):
         )
 
         stack_probs = je_utils.get_pair_probs(seq, nn_i, nn_j)
-        stack_weights = jnp.dot(stack_probs, self.params.ss_stack_weights.flatten())
+        stack_weights = jnp.dot(stack_probs, STACK_WEIGHTS_SA.flatten())
 
         stack_dg = jnp.dot(stack_weights, v_stack)
 

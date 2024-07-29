@@ -161,14 +161,10 @@ class CrossStackingConfiguration(config.BaseConfiguration):
             delta_theta_cross_8_c=delta_theta_cross_8_c,
         )
 
-    @staticmethod
-    def from_toml(file_path: str, params_to_optimize: tuple[str] = ()) -> "CrossStackingConfiguration":
-        dict_params = CrossStackingConfiguration.parse_toml(file_path, "cross_stacking")
-        return CrossStackingConfiguration.from_dict(dict_params, params_to_optimize)
 
-
+@chex.dataclass(frozen=True)
 class CrossStacking(je_base.BaseEnergyFunction):
-    params: config.CrossStackingConfiguration
+    params: CrossStackingConfiguration
 
     def __call__(
         self,
