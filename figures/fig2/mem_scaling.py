@@ -1,8 +1,11 @@
 import matplotlib.pyplot as plt
 from matplotlib import rc
+from pathlib import Path
 
 rc('text', usetex=True)
-plt.rcParams.update({'font.size': 24})
+plt.rcParams.update({'font.size': 32})
+
+output_dir = Path("figures/fig2/output")
 
 
 no_nbrs = [
@@ -36,15 +39,19 @@ for name, gb, max_length in no_nbrs:
         ax.axhline(y=gb, linestyle="--", color="grey")
     else:
         ax.axhline(y=gb, linestyle="--", color="blue")
-        ax.text(2040, gb+3, name, va='center', ha='left')
+        ax.text(1900, gb+3, name, va='center', ha='left')
 
 ax.plot(all_lengths_no_nbrs, all_gbs_no_nbrs, label="No neighbors", color="red")
 all_lengths_nbrs = [entry[2] for entry in nbrs]
 all_gbs_nbrs = [entry[1] for entry in nbrs]
 ax.plot(all_lengths_nbrs, all_gbs_nbrs, label="Neighbors", color="green")
-ax.set_xlabel("Simulation Length")
+ax.set_xlabel("Simulation Steps")
 ax.set_ylabel("GPU Memory (GB)")
 ax.set_xlim([0, 2500])
 ax.set_ylim([0, 90])
-ax.legend()
-plt.show()
+# ax.legend()
+ax.legend(bbox_to_anchor=[0.45, 0.85])
+plt.tight_layout()
+
+# plt.show()
+plt.savefig(output_dir / "mem_scaling.pdf")
