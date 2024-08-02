@@ -1,5 +1,3 @@
-import dataclasses as dc
-
 import chex
 import jax.numpy as jnp
 import numpy as np
@@ -166,8 +164,7 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
             self.delta_theta_star_hb_8,
         )
 
-        return dc.replace(
-            self,
+        return self.replace(
             b_low_hb=b_low_hb,
             dr_c_low_hb=dr_c_low_hb,
             b_high_hb=b_high_hb,

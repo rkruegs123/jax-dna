@@ -1,5 +1,3 @@
-import dataclasses as dc
-
 import chex
 import jax.numpy as jnp
 
@@ -56,8 +54,7 @@ class BondedExcludedVolumeConfiguration(config.BaseConfiguration):
             self.sigma_base_back,
         )
 
-        return dc.replace(
-            self,
+        return self.replace(
             b_base=b_base,
             dr_c_base=dr_c_base,
             b_back_base=b_back_base,

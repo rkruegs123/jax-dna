@@ -1,5 +1,3 @@
-import dataclasses as dc
-
 import chex
 import jax.numpy as jnp
 
@@ -141,8 +139,7 @@ class CrossStackingConfiguration(config.BaseConfiguration):
             self.delta_theta_star_cross_8,
         )
 
-        return dc.replace(
-            self,
+        return self.replace(
             b_low_cross=b_low_cross,
             dr_c_low_cross=dr_c_low_cross,
             b_high_cross=b_high_cross,

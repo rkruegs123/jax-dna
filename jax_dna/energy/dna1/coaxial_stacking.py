@@ -1,5 +1,3 @@
-import dataclasses as dc
-
 import chex
 import jax.numpy as jnp
 
@@ -130,8 +128,7 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
             self.cos_phi4_star_coax,
         )
 
-        return dc.replace(
-            self,
+        return self.replace(
             b_low_coax=b_low_coax,
             dr_c_low_coax=dr_c_low_coax,
             b_high_coax=b_high_coax,

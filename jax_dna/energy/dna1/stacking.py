@@ -1,5 +1,3 @@
-import dataclasses as dc
-
 import chex
 import jax.numpy as jnp
 import numpy as np
@@ -132,8 +130,7 @@ class StackingConfiguration(config.BaseConfiguration):
             self.neg_cos_phi2_star_stack,
         )
 
-        return dc.replace(
-            self,
+        return self.replace(
             b_low_stack=b_low_stack,
             dr_c_low_stack=dr_c_low_stack,
             b_high_stack=b_high_stack,
