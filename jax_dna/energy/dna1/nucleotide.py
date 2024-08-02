@@ -1,13 +1,13 @@
-import dataclasses
 from typing import Union
 
+import chex
 import jax_md
 
 import jax_dna.energy.utils as je_utils
 import jax_dna.utils.types as typ
 
 
-@dataclasses.dataclass(frozen=True)
+@chex.dataclass(frozen=True)
 class Nucleotide(jax_md.rigid_body.RigidBody):
     center: typ.Arr_Nucleotide_3
     orientation: Union[typ.Arr_Nucleotide_3, jax_md.rigid_body.Quaternion]
@@ -34,12 +34,12 @@ class Nucleotide(jax_md.rigid_body.RigidBody):
         base_sites = rigid_body.center + com_to_hb * back_base_vectors
 
         return Nucleotide(
-            rigid_body.center,
-            rigid_body.orientation,
-            back_base_vectors,
-            base_normals,
-            cross_prods,
-            stack_sites,
-            back_sites,
-            base_sites,
+            center=rigid_body.center,
+            orientation=rigid_body.orientation,
+            back_base_vectors=back_base_vectors,
+            base_normals=base_normals,
+            cross_prods=cross_prods,
+            stack_sites=stack_sites,
+            back_sites=back_sites,
+            base_sites=base_sites,
         )
