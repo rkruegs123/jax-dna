@@ -65,7 +65,7 @@ def run(args):
     max_approx_iters = args['max_approx_iters']
 
     opt_keys = args['opt_keys']
-    
+
     # Setup the logging directory
     if run_name is None:
         raise RuntimeError(f"Must set run name")
@@ -236,7 +236,9 @@ def run(args):
             body,
             seq=seq_oh,
             bonded_nbrs=top_info.bonded_nbrs,
-            unbonded_nbrs=top_info.unbonded_nbrs.T)
+            unbonded_nbrs=top_info.unbonded_nbrs.T,
+            is_end=top_info.is_end
+        )
         energy_fn = jit(energy_fn)
 
         # Check energies
@@ -317,7 +319,8 @@ def run(args):
         energy_fn = lambda body: em.energy_fn(body,
                                               seq=seq_oh,
                                               bonded_nbrs=top_info.bonded_nbrs,
-                                              unbonded_nbrs=top_info.unbonded_nbrs.T)
+                                              unbonded_nbrs=top_info.unbonded_nbrs.T,
+                                              is_end=top_info.is_end)
         energy_fn = jit(energy_fn)
         new_energies = vmap(energy_fn)(ref_states)
         diffs = new_energies - ref_energies # element-wise subtraction
