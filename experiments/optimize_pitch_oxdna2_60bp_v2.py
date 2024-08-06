@@ -66,6 +66,9 @@ def run(args):
 
     opt_keys = args['opt_keys']
 
+    no_archive = args['no_archive']
+    no_delete = args['no_delete']
+
     # Setup the logging directory
     if run_name is None:
         raise RuntimeError(f"Must set run name")
@@ -206,6 +209,13 @@ def run(args):
         if combine_proc.returncode != 0:
             raise RuntimeError(f"Combining trajectories failed with error code: {combine_proc.returncode}")
 
+        if not no_delete:
+            files_to_remove = ["output.dat"]
+            for r in range(n_sims):
+                repeat_dir = iter_dir / f"r{r}"
+                for f_stem in files_to_remove:
+                    file_to_rem = repeat_dir / f_stem
+                    file_to_rem.unlink()
 
         # Analyze
 
@@ -306,6 +316,10 @@ def run(args):
         analyze_end = time.time()
         with open(resample_log_path, "a") as f:
             f.write(f"- Remaining analysis took {analyze_end - analyze_start} seconds\n")
+
+        if not no_archive:
+            shutil.make_archive(iter_dir, 'zip', iter_dir)
+            shutil.rmtree(iter_dir)
 
         return traj_states, calc_energies, jnp.array(ref_avg_angles), iter_dir
 
@@ -520,6 +534,9 @@ def get_parser():
     parser.add_argument('--oxdna-path', type=str,
                         default="/home/ryan/Documents/Harvard/research/brenner/oxdna-bin/oxDNA/",
                         help='oxDNA base directory')
+
+    parser.add_argument('--no-archive', action='store_true')
+    parser.add_argument('--no-delete', action='store_true')
 
     parser.add_argument(
         '--opt-keys',
