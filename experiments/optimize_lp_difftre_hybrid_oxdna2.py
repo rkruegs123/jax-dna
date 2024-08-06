@@ -23,7 +23,7 @@ import os
 import optax
 import jax.numpy as jnp
 from jax_md import space
-from jax import vmap, jit, lax, grad, value_and_grad
+from jax import vmap, jit, lax, grad, value_and_grad, tree_util
 
 from jax_dna.common import utils, topology, trajectory, center_configuration, checkpoint
 from jax_dna.loss import persistence_length
@@ -43,6 +43,11 @@ else:
     scan = functools.partial(checkpoint.checkpoint_scan,
                              checkpoint_every=checkpoint_every)
 
+
+INF = 1e6
+def relative_diff(init_val, fin_val, eps=1e-10):
+    denom = jnp.where(init_val != 0, init_val, init_val + eps)
+    return (fin_val - init_val) / denom
 
 def zip_file(file_path, zip_name):
     with zipfile.ZipFile(zip_name, 'w') as zipf:
@@ -103,6 +108,8 @@ def run(args):
     lp_path = run_dir / "lp.txt"
     l0_avg_path = run_dir / "l0_avg.txt"
     resample_log_path = run_dir / "resample_log.txt"
+    rel_diff_path = log_dir / "rel_diff.txt"
+    iter_params_path = log_dir / "iter_params.txt"
 
     params_str = ""
     params_str += f"n_ref_states: {n_ref_states}\n"
@@ -501,6 +508,28 @@ def run(args):
             f.write(f"{curr_l0_avg}\n")
         with open(times_path, "a") as f:
             f.write(f"{iter_end - iter_start}\n")
+        iter_params_str = f"\nIteration {i}:"
+        for k, v in params.items():
+            iter_params_str += f"\n- {k}"
+            for vk, vv in v.items():
+                iter_params_str += f"\n\t- {vk}: {vv}"
+        with open(iter_params_path, "a") as f:
+            f.write(iter_params_str)
+        grads_str = f"\nIteration {i}:"
+        for k, v in grads.items():
+            grads_str += f"\n- {k}"
+            for vk, vv in v.items():
+                grads_str += f"\n\t- {vk}: {vv}"
+        with open(grads_path, "a") as f:
+            f.write(grads_str)
+        rel_diffs = tree_util.tree_map(relative_diff, init_params, params)
+        rel_diffs_str = f"\nIteration {i}:"
+        for k, v in rel_diffs.items():
+            rel_diffs_str += f"\n- {k}"
+            for vk, vv in v.items():
+                rel_diffs_str += f"\n\t- {vk}: {vv}"
+        with open(rel_diff_path, "a") as f:
+            f.write(rel_diffs_str)
 
         all_losses.append(loss)
         all_n_effs.append(n_eff)
