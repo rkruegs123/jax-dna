@@ -26,7 +26,7 @@ def recompile_oxdna(override_base_params, oxdna_path, t_kelvin, num_threads=4, s
     variable_mapper["coaxial_stacking"]["B_coax_1_f6"] = "CXST_THETA1_SB"
     if "coaxial_stacking" in override_base_params_copy:
         if "A_coax_1_f6" in override_base_params_copy["coaxial_stacking"]:
-            override_base_params_copy["coaxial_stacking"] /= 2
+            override_base_params_copy["coaxial_stacking"]["A_coax_1_f6"] /= 2
 
     if seq_avg:
         # The variable mapper should always be correct
