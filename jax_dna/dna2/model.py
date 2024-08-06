@@ -60,6 +60,20 @@ def add_coupling(base_params):
     base_params["hydrogen_bonding"]["theta0_hb_8"] = base_params["hydrogen_bonding"]["theta0_hb_7"]
     base_params["hydrogen_bonding"]["delta_theta_star_hb_8"] = base_params["hydrogen_bonding"]["delta_theta_star_hb_7"]
 
+    # Coaxial Stacking
+    base_params["coaxial_stacking"]["a_coax_6"] = base_params["coaxial_stacking"]["a_coax_5"]
+    base_params["coaxial_stacking"]["theta0_coax_6"] = base_params["coaxial_stacking"]["theta0_coax_5"]
+    base_params["coaxial_stacking"]["delta_theta_star_coax_6"] = base_params["coaxial_stacking"]["delta_theta_star_coax_5"]
+
+    # Cross stacking
+    base_params["cross_stacking"]["a_cross_3"] = base_params["cross_stacking"]["a_cross_2"]
+    base_params["cross_stacking"]["theta0_cross_3"] = base_params["cross_stacking"]["theta0_cross_2"]
+    base_params["cross_stacking"]["delta_theta_star_cross_3"] = base_params["cross_stacking"]["delta_theta_star_cross_2"]
+
+    base_params["cross_stacking"]["a_cross_8"] = base_params["cross_stacking"]["a_cross_7"]
+    base_params["cross_stacking"]["theta0_cross_8"] = base_params["cross_stacking"]["theta0_cross_7"]
+    base_params["cross_stacking"]["delta_theta_star_cross_8"] = base_params["cross_stacking"]["delta_theta_star_cross_7"]
+
 
 def get_full_base_params(override_base_params, seq_avg=True):
     if seq_avg:
