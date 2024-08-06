@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pprint
 from tqdm import tqdm
+import zipfile
+import os
 
 import jax.numpy as jnp
 from jax import jit, value_and_grad, vmap, tree_util
@@ -34,6 +36,11 @@ if checkpoint_every is None:
 else:
     scan = functools.partial(checkpoint.checkpoint_scan,
                              checkpoint_every=checkpoint_every)
+
+
+def zip_file(file_path, zip_name):
+    with zipfile.ZipFile(zip_name, 'w') as zipf:
+        zipf.write(file_path, os.path.basename(file_path))
 
 INF = 1e6
 def relative_diff(init_val, fin_val, eps=1e-10):
@@ -66,8 +73,8 @@ def run(args):
 
     opt_keys = args['opt_keys']
 
-    no_archive = args['no_archive']
     no_delete = args['no_delete']
+    no_archive = args['no_archive']
 
     # Setup the logging directory
     if run_name is None:
@@ -317,9 +324,10 @@ def run(args):
         with open(resample_log_path, "a") as f:
             f.write(f"- Remaining analysis took {analyze_end - analyze_start} seconds\n")
 
+
         if not no_archive:
-            shutil.make_archive(iter_dir, 'zip', iter_dir)
-            shutil.rmtree(iter_dir)
+            zip_file(str(iter_dir / "output.dat"), str(iter_dir / "output.dat.zip"))
+            shutil.rmtree(iter_dir / "output.dat")
 
         return traj_states, calc_energies, jnp.array(ref_avg_angles), iter_dir
 
@@ -535,8 +543,8 @@ def get_parser():
                         default="/home/ryan/Documents/Harvard/research/brenner/oxdna-bin/oxDNA/",
                         help='oxDNA base directory')
 
-    parser.add_argument('--no-archive', action='store_true')
     parser.add_argument('--no-delete', action='store_true')
+    parser.add_argument('--no-archive', action='store_true')
 
     parser.add_argument(
         '--opt-keys',

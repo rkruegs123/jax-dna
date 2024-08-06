@@ -17,6 +17,8 @@ import argparse
 import pandas as pd
 import random
 import seaborn as sns
+import zipfile
+import os
 
 import optax
 import jax.numpy as jnp
@@ -41,6 +43,10 @@ else:
     scan = functools.partial(checkpoint.checkpoint_scan,
                              checkpoint_every=checkpoint_every)
 
+
+def zip_file(file_path, zip_name):
+    with zipfile.ZipFile(zip_name, 'w') as zipf:
+        zipf.write(file_path, os.path.basename(file_path))
 
 compute_all_curves = vmap(persistence_length.get_correlation_curve, (0, None, None))
 
@@ -71,8 +77,8 @@ def run(args):
     target_lp = args['target_lp']
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
-    no_archive = args['no_archive']
     no_delete = args['no_delete']
+    no_archive = args['no_archive']
     opt_keys = args['opt_keys']
 
 
@@ -372,8 +378,8 @@ def run(args):
             f.write(f"- Remaining analysis took {analyze_end - analyze_start} seconds\n")
 
         if not no_archive:
-            shutil.make_archive(iter_dir, 'zip', iter_dir)
-            shutil.rmtree(iter_dir)
+            zip_file(str(iter_dir / "output.dat"), str(iter_dir / "output.dat.zip"))
+            shutil.rmtree(iter_dir / "output.dat")
 
         return traj_states, calc_energies, unweighted_corr_curves, unweighted_l0_avgs, iter_dir
 
@@ -582,8 +588,8 @@ def get_parser():
     parser.add_argument('--min-neff-factor', type=float, default=0.95,
                         help="Factor for determining min Neff")
 
-    parser.add_argument('--no-archive', action='store_true')
     parser.add_argument('--no-delete', action='store_true')
+    parser.add_argument('--no-archive', action='store_true')
 
     parser.add_argument(
         '--opt-keys',
