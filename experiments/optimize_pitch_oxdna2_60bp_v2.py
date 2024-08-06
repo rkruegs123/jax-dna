@@ -327,7 +327,7 @@ def run(args):
 
         if not no_archive:
             zip_file(str(iter_dir / "output.dat"), str(iter_dir / "output.dat.zip"))
-            shutil.rmtree(iter_dir / "output.dat")
+            os.remove(str(iter_dir / "output.dat"))
 
         return traj_states, calc_energies, jnp.array(ref_avg_angles), iter_dir
 
