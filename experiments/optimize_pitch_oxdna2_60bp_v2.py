@@ -15,16 +15,16 @@ import pprint
 from tqdm import tqdm
 
 import jax.numpy as jnp
-from jax import jit, value_and_grad, vmap
+from jax import jit, value_and_grad, vmap, tree_util
 from jax_md import space
 import optax
 
 from jax_dna.common import utils, trajectory, topology, checkpoint, center_configuration
-from jax_dna.loss import pitch2
+from jax_dna.loss import pitch, pitch2
 from jax_dna.dna1.oxdna_utils import rewrite_input_file
 from jax_dna.dna2.oxdna_utils import recompile_oxdna
-from jax_dna.dna1 import model1
-from jax_dna.dna2 import model2
+from jax_dna.dna1 import model as model1
+from jax_dna.dna2 import model as model2
 
 
 
@@ -35,8 +35,10 @@ else:
     scan = functools.partial(checkpoint.checkpoint_scan,
                              checkpoint_every=checkpoint_every)
 
-def relative_diff(init_val, fin_val):
-    return (fin_val - init_val) / init_val
+INF = 1e6
+def relative_diff(init_val, fin_val, eps=1e-10):
+    denom = jnp.where(init_val != 0, init_val, init_val + eps)
+    return (fin_val - init_val) / denom
 
 def run(args):
     # Load parameters
@@ -57,10 +59,13 @@ def run(args):
 
     n_iters = args['n_iters']
     lr = args['lr']
+    optimizer_type = args['optimizer_type']
     target_pitch = args['target_pitch']
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
 
+    opt_keys = args['opt_keys']
+    
     # Setup the logging directory
     if run_name is None:
         raise RuntimeError(f"Must set run name")
@@ -88,6 +93,7 @@ def run(args):
     rel_diff_path = log_dir / "rel_diff.txt"
     angle_path = log_dir / "angle.txt"
     resample_log_path = log_dir / "resample_log.txt"
+    iter_params_path = log_dir / "iter_params.txt"
 
     params_str = ""
     params_str += f"n_ref_states: {n_ref_states}\n"
@@ -334,10 +340,17 @@ def run(args):
 
     # Setup the optimization
     params = deepcopy(model2.EMPTY_BASE_PARAMS)
-    params["stacking"] = model2.default_base_params_seq_avg["stacking"]
-    params["fene"] = model2.default_base_params_seq_avg["fene"]
+    for opt_key in opt_keys:
+        params[opt_key] = deepcopy(model2.default_base_params_seq_avg[opt_key])
+    # params["stacking"] = model2.default_base_params_seq_avg["stacking"]
+    # params["fene"] = model2.default_base_params_seq_avg["fene"]
     init_params = deepcopy(params)
-    optimizer = optax.adam(learning_rate=lr)
+    if optimizer_type == "adam":
+        optimizer = optax.adam(learning_rate=lr)
+    elif optimizer_type == "rmsprop":
+        optimizer = optax.rmsprop(learning_rate=lr)
+    else:
+        raise RuntimeError(f"Invalid optimizer: {optimizer_type}")
     opt_state = optimizer.init(params)
 
     with open(resample_log_path, "a") as f:
@@ -405,9 +418,16 @@ def run(args):
         with open(pitch_path, "a") as f:
             f.write(f"{curr_pitch}\n")
         with open(angle_path, "a") as f:
-            f.write(f"{angle_pitch}\n")
+            f.write(f"{curr_angle}\n")
         with open(times_path, "a") as f:
             f.write(f"{iter_end - iter_start}\n")
+        iter_params_str = f"\nIteration {i}:"
+        for k, v in params.items():
+            iter_params_str += f"\n- {k}"
+            for vk, vv in v.items():
+                iter_params_str += f"\n\t- {vk}: {vv}"
+        with open(iter_params_path, "a") as f:
+            f.write(iter_params_str)
         grads_str = f"\nIteration {i}:"
         for k, v in grads.items():
             grads_str += f"\n- {k}"
@@ -415,7 +435,7 @@ def run(args):
                 grads_str += f"\n\t- {vk}: {vv}"
         with open(grads_path, "a") as f:
             f.write(grads_str)
-        rel_diffs = jax.tree_util.tree_map(relative_diff, init_params, params)
+        rel_diffs = tree_util.tree_map(relative_diff, init_params, params)
         rel_diffs_str = f"\nIteration {i}:"
         for k, v in rel_diffs.items():
             rel_diffs_str += f"\n- {k}"
@@ -485,6 +505,9 @@ def get_parser():
                         help="Maximum number of iterations before resampling")
     parser.add_argument('--offset', type=int, default=4,
                         help="Offset for number of quartets to skip on either end of the duplex")
+    parser.add_argument('--optimizer-type', type=str,
+                        default="adam",
+                        choices=["adam", "rmsprop"])
 
 
     parser.add_argument('--plot-every', type=int, default=10,
@@ -494,6 +517,13 @@ def get_parser():
     parser.add_argument('--oxdna-path', type=str,
                         default="/home/ryan/Documents/Harvard/research/brenner/oxdna-bin/oxDNA/",
                         help='oxDNA base directory')
+
+    parser.add_argument(
+        '--opt-keys',
+        nargs='*',  # Accept zero or more arguments
+        default=["fene", "stacking"],
+        help='Parameter keys to optimize'
+    )
 
     return parser
 
