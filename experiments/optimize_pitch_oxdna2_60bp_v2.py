@@ -365,10 +365,39 @@ def run(args):
 
     # Setup the optimization
     params = deepcopy(model2.EMPTY_BASE_PARAMS)
+    """
     for opt_key in opt_keys:
         params[opt_key] = deepcopy(model2.default_base_params_seq_avg[opt_key])
     # params["stacking"] = model2.default_base_params_seq_avg["stacking"]
     # params["fene"] = model2.default_base_params_seq_avg["fene"]
+    """
+
+    params["cross_stacking"] = {
+        'a_cross_1': 2.14800724,
+        'a_cross_2': 1.58786823,
+        'a_cross_3': 1.7,
+        'a_cross_4': 1.48194529,
+        'a_cross_7': 1.64535252,
+        'a_cross_8': 1.7,
+        'delta_theta_star_cross_1': 0.50991688,
+        'delta_theta_star_cross_2': 0.6869812,
+        'delta_theta_star_cross_3': 0.68,
+        'delta_theta_star_cross_4': 0.56647497,
+        'delta_theta_star_cross_7': 0.64481717,
+        'delta_theta_star_cross_8': 0.68,
+        'dr_c_cross': 0.73086121,
+        'dr_high_cross': 0.66874196,
+        'dr_low_cross': 0.48334671,
+        'k_cross': 47.59567433,
+        'r0_cross': 0.6185543,
+        'theta0_cross_1': 0.68204133,
+        'theta0_cross_2': 0.93298264,
+        'theta0_cross_3': 1.,
+        'theta0_cross_4': 0.02562048,
+        'theta0_cross_7': 0.77015391,
+        'theta0_cross_8': 0.875
+    }
+
     init_params = deepcopy(params)
     if optimizer_type == "adam":
         optimizer = optax.adam(learning_rate=lr)
