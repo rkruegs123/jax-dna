@@ -82,3 +82,57 @@ def test_harmonic(r: float, k: float, r0: float):
     actual = float(potentials.v_harmonic(r, k, r0))
     expected = float(_sympy_harmonic().evalf(subs={"r": r, "k": k, "r0": r0}))
     np.testing.assert_allclose(actual, expected)
+
+
+def _sympy_v_lj() -> sp.Expr:
+    """String form of the Lennard-Jones potential."""
+    return sp.parsing.sympy_parser.parse_expr("4 * eps * ((sigma / r)**12 - (sigma / r)**6)")
+
+
+@pytest.mark.parametrize(
+    "r, eps, sigma",
+    [
+        (5, 3, 2),
+    ],
+)
+def test_v_lj(r: float, eps: float, sigma: float):
+    """tests Lennard-Jones potential. Function is equation 2.4 form the oxDNA paper."""
+    actual = float(potentials.v_lj(r, eps, sigma))
+    expected = float(_sympy_v_lj().evalf(subs={"r": r, "eps": eps, "sigma": sigma}))
+    np.testing.assert_allclose(actual, expected)
+
+
+def _sympy_v_mod() -> sp.Expr:
+    """String form of the modified potential."""
+    return sp.parsing.sympy_parser.parse_expr("1 - a * (theta - theta0)**2")
+
+
+@pytest.mark.parametrize(
+    "theta, a, theta0",
+    [
+        (5, 3, 2),
+    ],
+)
+def test_v_mod(theta: float, a: float, theta0: float):
+    """tests modified potential. Function is equation 2.5 form the oxDNA paper."""
+    actual = float(potentials.v_mod(theta, a, theta0))
+    expected = float(_sympy_v_mod().evalf(subs={"theta": theta, "a": a, "theta0": theta0}))
+    np.testing.assert_allclose(actual, expected)
+
+
+def _sympy_v_smooth() -> sp.Expr:
+    """String form of the smooth potential."""
+    return sp.parsing.sympy_parser.parse_expr("b * (x_c - x)**2")
+
+
+@pytest.mark.parametrize(
+    "x, b, x_c",
+    [
+        (5, 3, 2),
+    ],
+)
+def test_v_smooth(x: float, b: float, x_c: float):
+    """tests smooth potential. Function is equation 2.6 form the oxDNA paper."""
+    actual = float(potentials.v_smooth(x, b, x_c))
+    expected = float(_sympy_v_smooth().evalf(subs={"x": x, "b": b, "x_c": x_c}))
+    np.testing.assert_allclose(actual, expected)

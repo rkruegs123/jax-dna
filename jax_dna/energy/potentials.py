@@ -6,7 +6,9 @@ import jax_dna.utils.types as jd_types
 # Section 2.4.1
 
 
-def v_fene(r: jd_types.ARR_OR_SCALAR, eps: float, r0: float, delt: float) -> jd_types.ARR_OR_SCALAR:
+def v_fene(
+    r: jd_types.ARR_OR_SCALAR, eps: jd_types.Scalar, r0: jd_types.Scalar, delt: jd_types.Scalar
+) -> jd_types.ARR_OR_SCALAR:
     """The FENE potential.
 
     This is based on equation 2.1 from the oxDNA paper.
@@ -17,9 +19,9 @@ def v_fene(r: jd_types.ARR_OR_SCALAR, eps: float, r0: float, delt: float) -> jd_
 
 def v_morse(
     r: jd_types.ARR_OR_SCALAR,
-    eps: float,
-    r0: float,
-    a: float,
+    eps: jd_types.Scalar,
+    r0: jd_types.Scalar,
+    a: jd_types.Scalar,
 ) -> jd_types.ARR_OR_SCALAR:
     """The Morse potential.
 
@@ -31,8 +33,8 @@ def v_morse(
 
 def v_harmonic(
     r: jd_types.ARR_OR_SCALAR,
-    k: float,
-    r0: float,
+    k: jd_types.Scalar,
+    r0: jd_types.Scalar,
 ) -> jd_types.ARR_OR_SCALAR:
     """The Harmonic potential.
 
@@ -41,14 +43,24 @@ def v_harmonic(
     return k / 2 * (r - r0) ** 2
 
 
-def v_lj(r, eps, sigma):
+def v_lj(r: jd_types.ARR_OR_SCALAR, eps: jd_types.Scalar, sigma: jd_types.Scalar) -> jd_types.ARR_OR_SCALAR:
+    """The Lennard-Jones potential.
+
+    This is based on equation 2.4 from the oxDNA paper.
+    """
     x = (sigma / r) ** 12 - (sigma / r) ** 6
     return 4 * eps * x
 
 
-def v_mod(theta, a, theta0):
+def v_mod(theta: jd_types.Scalar, a: jd_types.Scalar, theta0: jd_types.Scalar):
+    """The modified potential.
+
+    This is based on equation 2.5 from the oxDNA paper."""
     return 1 - a * (theta - theta0) ** 2
 
 
-def v_smooth(x, b, x_c):
+def v_smooth(x: jd_types.ARR_OR_SCALAR, b: jd_types.Scalar, x_c: jd_types.Scalar) -> jd_types.ARR_OR_SCALAR:
+    """The smooth potential.
+
+    This is based on equation 2.6 from the oxDNA paper."""
     return b * (x_c - x) ** 2
