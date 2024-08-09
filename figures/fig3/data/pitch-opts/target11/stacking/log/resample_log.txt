@@ -1,0 +1,620 @@
+Generating initial reference states and energies...
+- Recompiling took 60.36575174331665 seconds
+- Simulation took 177.58588814735413 seconds
+- Loading took 33.148839473724365 seconds
+- Calculating energies took 8.514000177383423 seconds
+- Remaining analysis took 77.96407675743103 seconds
+Finished generating initial reference states. Took 360.73528242111206 seconds.
+
+Iteration 2
+- n_eff was 2192.832367353191. Resampling...
+- Recompiling took 57.96164679527283 seconds
+- Simulation took 174.40957140922546 seconds
+- Loading took 33.14328193664551 seconds
+- Calculating energies took 8.023266792297363 seconds
+- Remaining analysis took 79.78307127952576 seconds
+- time to resample: 356.1271004676819 seconds
+
+Iteration 4
+- n_eff was 2230.128665062357. Resampling...
+- Recompiling took 57.104881048202515 seconds
+- Simulation took 172.07191491127014 seconds
+- Loading took 33.378708839416504 seconds
+- Calculating energies took 8.165209293365479 seconds
+- Remaining analysis took 78.5056664943695 seconds
+- time to resample: 352.01737666130066 seconds
+
+Iteration 6
+- n_eff was 2214.996631726108. Resampling...
+- Recompiling took 56.968257188797 seconds
+- Simulation took 171.04123759269714 seconds
+- Loading took 33.20991516113281 seconds
+- Calculating energies took 8.139516115188599 seconds
+- Remaining analysis took 79.99330544471741 seconds
+- time to resample: 352.2953598499298 seconds
+
+Iteration 8
+- n_eff was 2234.8057960257656. Resampling...
+- Recompiling took 56.716304063797 seconds
+- Simulation took 172.29972982406616 seconds
+- Loading took 32.693817377090454 seconds
+- Calculating energies took 8.136402368545532 seconds
+- Remaining analysis took 79.36119890213013 seconds
+- time to resample: 352.0415880680084 seconds
+
+Iteration 10
+- n_eff was 2227.686896897228. Resampling...
+- Recompiling took 56.62942576408386 seconds
+- Simulation took 170.37975192070007 seconds
+- Loading took 32.77820706367493 seconds
+- Calculating energies took 8.007808685302734 seconds
+- Remaining analysis took 78.6034824848175 seconds
+- time to resample: 349.2337830066681 seconds
+
+Iteration 12
+- n_eff was 2213.1916630110936. Resampling...
+- Recompiling took 57.00387215614319 seconds
+- Simulation took 169.0547318458557 seconds
+- Loading took 32.78706955909729 seconds
+- Calculating energies took 8.351840496063232 seconds
+- Remaining analysis took 78.4616334438324 seconds
+- time to resample: 348.6049063205719 seconds
+
+Iteration 14
+- n_eff was 2216.3357936628577. Resampling...
+- Recompiling took 57.83558773994446 seconds
+- Simulation took 169.6771218776703 seconds
+- Loading took 33.253417015075684 seconds
+- Calculating energies took 8.014915704727173 seconds
+- Remaining analysis took 78.53875088691711 seconds
+- time to resample: 350.19751834869385 seconds
+
+Iteration 16
+- n_eff was 2230.8752116471655. Resampling...
+- Recompiling took 57.27693724632263 seconds
+- Simulation took 166.4582600593567 seconds
+- Loading took 32.78216052055359 seconds
+- Calculating energies took 8.26190185546875 seconds
+- Remaining analysis took 79.10483002662659 seconds
+- time to resample: 346.8142030239105 seconds
+
+Iteration 18
+- n_eff was 2225.2986585859812. Resampling...
+- Recompiling took 56.98378777503967 seconds
+- Simulation took 168.48005557060242 seconds
+- Loading took 32.47084045410156 seconds
+- Calculating energies took 8.198311805725098 seconds
+- Remaining analysis took 78.82487225532532 seconds
+- time to resample: 347.8294343948364 seconds
+
+Iteration 20
+- n_eff was 2227.062181584734. Resampling...
+- Recompiling took 57.49901747703552 seconds
+- Simulation took 169.52237153053284 seconds
+- Loading took 32.398815393447876 seconds
+- Calculating energies took 8.168638229370117 seconds
+- Remaining analysis took 79.36947727203369 seconds
+- time to resample: 349.77204179763794 seconds
+
+Iteration 22
+- n_eff was 2221.2265079673703. Resampling...
+- Recompiling took 57.06315565109253 seconds
+- Simulation took 166.94044423103333 seconds
+- Loading took 32.49492955207825 seconds
+- Calculating energies took 7.974040508270264 seconds
+- Remaining analysis took 79.19943618774414 seconds
+- time to resample: 346.52374505996704 seconds
+
+Iteration 24
+- n_eff was 2185.7846613912234. Resampling...
+- Recompiling took 57.08210778236389 seconds
+- Simulation took 167.4610435962677 seconds
+- Loading took 32.93844938278198 seconds
+- Calculating energies took 8.03828740119934 seconds
+- Remaining analysis took 78.19105195999146 seconds
+- time to resample: 346.5258560180664 seconds
+
+Iteration 26
+- n_eff was 2190.199076206891. Resampling...
+- Recompiling took 57.38872241973877 seconds
+- Simulation took 170.90113615989685 seconds
+- Loading took 32.71095299720764 seconds
+- Calculating energies took 7.966238498687744 seconds
+- Remaining analysis took 78.66462135314941 seconds
+- time to resample: 350.55293679237366 seconds
+
+Iteration 28
+- n_eff was 2175.922579915398. Resampling...
+- Recompiling took 57.8749840259552 seconds
+- Simulation took 168.97612881660461 seconds
+- Loading took 32.885539531707764 seconds
+- Calculating energies took 8.029277801513672 seconds
+- Remaining analysis took 78.10317587852478 seconds
+- time to resample: 348.6865944862366 seconds
+
+Iteration 30
+- n_eff was 2126.288805578726. Resampling...
+- Recompiling took 58.93175935745239 seconds
+- Simulation took 166.41047477722168 seconds
+- Loading took 32.84357714653015 seconds
+- Calculating energies took 7.97479510307312 seconds
+- Remaining analysis took 77.14873361587524 seconds
+- time to resample: 346.0793616771698 seconds
+
+Iteration 32
+- n_eff was 2100.8178333126507. Resampling...
+- Recompiling took 57.90751624107361 seconds
+- Simulation took 166.0958743095398 seconds
+- Loading took 33.59957551956177 seconds
+- Calculating energies took 8.134696245193481 seconds
+- Remaining analysis took 77.71221327781677 seconds
+- time to resample: 346.25990295410156 seconds
+
+Iteration 34
+- n_eff was 2116.898015553165. Resampling...
+- Recompiling took 57.47213864326477 seconds
+- Simulation took 167.48354983329773 seconds
+- Loading took 32.75753140449524 seconds
+- Calculating energies took 8.144545555114746 seconds
+- Remaining analysis took 77.56593632698059 seconds
+- time to resample: 346.2285282611847 seconds
+
+Iteration 36
+- n_eff was 2148.9998102805575. Resampling...
+- Recompiling took 57.255845069885254 seconds
+- Simulation took 169.43634223937988 seconds
+- Loading took 32.6055748462677 seconds
+- Calculating energies took 8.0700044631958 seconds
+- Remaining analysis took 79.10086464881897 seconds
+- time to resample: 349.26951909065247 seconds
+
+Iteration 38
+- n_eff was 2119.5879239219676. Resampling...
+- Recompiling took 57.643712282180786 seconds
+- Simulation took 166.5751223564148 seconds
+- Loading took 32.17726540565491 seconds
+- Calculating energies took 8.145664691925049 seconds
+- Remaining analysis took 76.2777533531189 seconds
+- time to resample: 343.65054416656494 seconds
+
+Iteration 40
+- n_eff was 2139.3499452914293. Resampling...
+- Recompiling took 58.27324676513672 seconds
+- Simulation took 166.3506088256836 seconds
+- Loading took 31.98547101020813 seconds
+- Calculating energies took 8.096720933914185 seconds
+- Remaining analysis took 75.89631700515747 seconds
+- time to resample: 343.379310131073 seconds
+
+Iteration 42
+- n_eff was 2108.628102277888. Resampling...
+- Recompiling took 57.94246292114258 seconds
+- Simulation took 170.01915001869202 seconds
+- Loading took 31.893012523651123 seconds
+- Calculating energies took 8.13658618927002 seconds
+- Remaining analysis took 74.5493814945221 seconds
+- time to resample: 345.304030418396 seconds
+
+Iteration 44
+- n_eff was 2094.381473584419. Resampling...
+- Recompiling took 58.49322056770325 seconds
+- Simulation took 167.3758361339569 seconds
+- Loading took 33.240490674972534 seconds
+- Calculating energies took 8.334315538406372 seconds
+- Remaining analysis took 76.70066475868225 seconds
+- time to resample: 347.459979057312 seconds
+
+Iteration 46
+- n_eff was 2051.6018280334197. Resampling...
+- Recompiling took 59.51318621635437 seconds
+- Simulation took 170.52595949172974 seconds
+- Loading took 31.789303302764893 seconds
+- Calculating energies took 8.25365662574768 seconds
+- Remaining analysis took 76.99432468414307 seconds
+- time to resample: 349.9714045524597 seconds
+
+Iteration 48
+- n_eff was 2052.2395088017756. Resampling...
+- Recompiling took 59.01810073852539 seconds
+- Simulation took 178.00752639770508 seconds
+- Loading took 31.573455333709717 seconds
+- Calculating energies took 8.103639364242554 seconds
+- Remaining analysis took 76.25752568244934 seconds
+- time to resample: 356.1481306552887 seconds
+
+Iteration 49
+- n_eff was 2372.832547493194. Resampling...
+- Recompiling took 58.42011833190918 seconds
+- Simulation took 166.1444070339203 seconds
+- Loading took 32.592562198638916 seconds
+- Calculating energies took 7.846550703048706 seconds
+- Remaining analysis took 76.1062159538269 seconds
+- time to resample: 343.9355571269989 seconds
+
+Iteration 51
+- n_eff was 2063.911002667137. Resampling...
+- Recompiling took 58.822670459747314 seconds
+- Simulation took 165.59033846855164 seconds
+- Loading took 33.38493871688843 seconds
+- Calculating energies took 7.950245141983032 seconds
+- Remaining analysis took 76.19872331619263 seconds
+- time to resample: 344.73503255844116 seconds
+
+Iteration 53
+- n_eff was 2036.9957843564005. Resampling...
+- Recompiling took 58.1776659488678 seconds
+- Simulation took 166.88544511795044 seconds
+- Loading took 33.7572066783905 seconds
+- Calculating energies took 7.926935434341431 seconds
+- Remaining analysis took 75.51711702346802 seconds
+- time to resample: 345.08274030685425 seconds
+
+Iteration 55
+- n_eff was 2282.1781581635382. Resampling...
+- Recompiling took 58.04090452194214 seconds
+- Simulation took 165.1151020526886 seconds
+- Loading took 33.95079755783081 seconds
+- Calculating energies took 8.073087930679321 seconds
+- Remaining analysis took 76.7084732055664 seconds
+- time to resample: 344.7751190662384 seconds
+
+Iteration 60
+- n_eff was 2477.321978271828. Resampling...
+- Recompiling took 59.98097848892212 seconds
+- Simulation took 164.17503809928894 seconds
+- Loading took 34.65537405014038 seconds
+- Calculating energies took 8.200332403182983 seconds
+- Remaining analysis took 77.50014519691467 seconds
+- time to resample: 347.35371804237366 seconds
+
+Iteration 63
+- n_eff was 2289.6646813330894. Resampling...
+- Recompiling took 59.14729571342468 seconds
+- Simulation took 164.43431687355042 seconds
+- Loading took 32.50522232055664 seconds
+- Calculating energies took 7.996928453445435 seconds
+- Remaining analysis took 78.2015974521637 seconds
+- time to resample: 345.13103580474854 seconds
+
+Iteration 68
+- n_eff was 2441.1609713196985. Resampling...
+- Recompiling took 59.36021375656128 seconds
+- Simulation took 165.78956580162048 seconds
+- Loading took 32.576380252838135 seconds
+- Calculating energies took 7.993512392044067 seconds
+- Remaining analysis took 78.05250763893127 seconds
+- time to resample: 346.6969530582428 seconds
+
+Iteration 73
+- n_eff was 2484.8289334975425. Resampling...
+- Recompiling took 58.18157339096069 seconds
+- Simulation took 167.0033254623413 seconds
+- Loading took 32.479451179504395 seconds
+- Calculating energies took 7.977126121520996 seconds
+- Remaining analysis took 78.3164484500885 seconds
+- time to resample: 346.7888391017914 seconds
+
+Iteration 78
+- n_eff was 2491.8135289018123. Resampling...
+- Recompiling took 59.06317758560181 seconds
+- Simulation took 165.40323185920715 seconds
+- Loading took 33.09374380111694 seconds
+- Calculating energies took 7.978640794754028 seconds
+- Remaining analysis took 78.51638722419739 seconds
+- time to resample: 346.99018001556396 seconds
+
+Iteration 83
+- n_eff was 2499.807549009296. Resampling...
+- Recompiling took 58.837472915649414 seconds
+- Simulation took 167.93283009529114 seconds
+- Loading took 32.58728575706482 seconds
+- Calculating energies took 8.155632495880127 seconds
+- Remaining analysis took 77.79600954055786 seconds
+- time to resample: 348.11138558387756 seconds
+
+Iteration 88
+- n_eff was 2493.3155230066186. Resampling...
+- Recompiling took 58.07995557785034 seconds
+- Simulation took 167.01097798347473 seconds
+- Loading took 32.21680545806885 seconds
+- Calculating energies took 8.117868900299072 seconds
+- Remaining analysis took 78.0360996723175 seconds
+- time to resample: 346.3269169330597 seconds
+
+Iteration 93
+- n_eff was 2424.210670946089. Resampling...
+- Recompiling took 58.30518627166748 seconds
+- Simulation took 174.79751682281494 seconds
+- Loading took 32.940452337265015 seconds
+- Calculating energies took 8.044564723968506 seconds
+- Remaining analysis took 77.51099514961243 seconds
+- time to resample: 354.3864657878876 seconds
+
+Iteration 98
+- n_eff was 2450.0726312219986. Resampling...
+- Recompiling took 58.10776376724243 seconds
+- Simulation took 166.57318353652954 seconds
+- Loading took 32.57738184928894 seconds
+- Calculating energies took 8.57864761352539 seconds
+- Remaining analysis took 78.16809892654419 seconds
+- time to resample: 348.0932972431183 seconds
+
+Iteration 103
+- n_eff was 2497.0441456311364. Resampling...
+- Recompiling took 58.91187763214111 seconds
+- Simulation took 161.93868827819824 seconds
+- Loading took 32.713356256484985 seconds
+- Calculating energies took 8.126927137374878 seconds
+- Remaining analysis took 77.48720860481262 seconds
+- time to resample: 343.12938356399536 seconds
+
+Iteration 108
+- n_eff was 2453.5734178708026. Resampling...
+- Recompiling took 58.21302080154419 seconds
+- Simulation took 167.74151515960693 seconds
+- Loading took 32.38693881034851 seconds
+- Calculating energies took 8.213582277297974 seconds
+- Remaining analysis took 78.65970015525818 seconds
+- time to resample: 348.07915592193604 seconds
+
+Iteration 113
+- n_eff was 2447.835595214564. Resampling...
+- Recompiling took 58.614511013031006 seconds
+- Simulation took 162.7363691329956 seconds
+- Loading took 32.651143312454224 seconds
+- Calculating energies took 8.060821294784546 seconds
+- Remaining analysis took 77.96813607215881 seconds
+- time to resample: 342.872599363327 seconds
+
+Iteration 118
+- n_eff was 2480.9961259774727. Resampling...
+- Recompiling took 58.31567144393921 seconds
+- Simulation took 162.08302068710327 seconds
+- Loading took 33.032716274261475 seconds
+- Calculating energies took 8.177770376205444 seconds
+- Remaining analysis took 78.43646502494812 seconds
+- time to resample: 342.83637952804565 seconds
+
+Iteration 122
+- n_eff was 2343.786424226978. Resampling...
+- Recompiling took 58.796005964279175 seconds
+- Simulation took 164.29326701164246 seconds
+- Loading took 32.43781638145447 seconds
+- Calculating energies took 8.025070428848267 seconds
+- Remaining analysis took 78.73770928382874 seconds
+- time to resample: 345.0782949924469 seconds
+
+Iteration 127
+- n_eff was 2485.5135335492005. Resampling...
+- Recompiling took 57.9282431602478 seconds
+- Simulation took 163.4113733768463 seconds
+- Loading took 31.477730989456177 seconds
+- Calculating energies took 8.39612340927124 seconds
+- Remaining analysis took 79.74650311470032 seconds
+- time to resample: 343.90007424354553 seconds
+
+Iteration 131
+- n_eff was 2360.720089817957. Resampling...
+- Recompiling took 58.42209768295288 seconds
+- Simulation took 166.009521484375 seconds
+- Loading took 31.9132559299469 seconds
+- Calculating energies took 8.043831825256348 seconds
+- Remaining analysis took 78.06070303916931 seconds
+- time to resample: 345.27630519866943 seconds
+
+Iteration 136
+- n_eff was 2470.420400692794. Resampling...
+- Recompiling took 59.2557110786438 seconds
+- Simulation took 165.31167483329773 seconds
+- Loading took 32.78852033615112 seconds
+- Calculating energies took 8.377273321151733 seconds
+- Remaining analysis took 76.26102828979492 seconds
+- time to resample: 344.7605040073395 seconds
+
+Iteration 139
+- n_eff was 2352.93263306238. Resampling...
+- Recompiling took 58.859534740448 seconds
+- Simulation took 164.38340306282043 seconds
+- Loading took 32.909666538238525 seconds
+- Calculating energies took 8.224111080169678 seconds
+- Remaining analysis took 77.66837358474731 seconds
+- time to resample: 345.0681321620941 seconds
+
+Iteration 144
+- n_eff was 2494.2225471883644. Resampling...
+- Recompiling took 58.9557101726532 seconds
+- Simulation took 163.51364254951477 seconds
+- Loading took 32.011624574661255 seconds
+- Calculating energies took 8.301294326782227 seconds
+- Remaining analysis took 77.9023928642273 seconds
+- time to resample: 343.48311471939087 seconds
+
+Iteration 148
+- n_eff was 2318.109312916575. Resampling...
+- Recompiling took 59.04228949546814 seconds
+- Simulation took 164.17814922332764 seconds
+- Loading took 33.24969267845154 seconds
+- Calculating energies took 8.006240367889404 seconds
+- Remaining analysis took 78.15095496177673 seconds
+- time to resample: 345.42012763023376 seconds
+
+Iteration 153
+- n_eff was 2478.9377236976784. Resampling...
+- Recompiling took 59.548269510269165 seconds
+- Simulation took 167.84787106513977 seconds
+- Loading took 32.88033127784729 seconds
+- Calculating energies took 8.192872285842896 seconds
+- Remaining analysis took 78.4022204875946 seconds
+- time to resample: 349.6579761505127 seconds
+
+Iteration 158
+- n_eff was 2470.108396260157. Resampling...
+- Recompiling took 59.81249165534973 seconds
+- Simulation took 163.43617868423462 seconds
+- Loading took 33.51910185813904 seconds
+- Calculating energies took 8.037384986877441 seconds
+- Remaining analysis took 77.92773342132568 seconds
+- time to resample: 345.53654384613037 seconds
+
+Iteration 163
+- n_eff was 2387.5320169098095. Resampling...
+- Recompiling took 58.31097650527954 seconds
+- Simulation took 163.0221643447876 seconds
+- Loading took 33.192081689834595 seconds
+- Calculating energies took 8.038061141967773 seconds
+- Remaining analysis took 78.19041013717651 seconds
+- time to resample: 343.5271065235138 seconds
+
+Iteration 168
+- n_eff was 2457.949289109941. Resampling...
+- Recompiling took 58.800896644592285 seconds
+- Simulation took 164.06228399276733 seconds
+- Loading took 33.047301054000854 seconds
+- Calculating energies took 8.03515338897705 seconds
+- Remaining analysis took 78.11400032043457 seconds
+- time to resample: 344.82366609573364 seconds
+
+Iteration 173
+- n_eff was 2459.389168949742. Resampling...
+- Recompiling took 58.848854064941406 seconds
+- Simulation took 163.94887113571167 seconds
+- Loading took 32.769707918167114 seconds
+- Calculating energies took 8.333374738693237 seconds
+- Remaining analysis took 78.05213952064514 seconds
+- time to resample: 344.90756821632385 seconds
+
+Iteration 177
+- n_eff was 2354.009098037503. Resampling...
+- Recompiling took 58.97931694984436 seconds
+- Simulation took 166.5341579914093 seconds
+- Loading took 33.281192779541016 seconds
+- Calculating energies took 8.29623556137085 seconds
+- Remaining analysis took 79.99904608726501 seconds
+- time to resample: 349.88156270980835 seconds
+
+Iteration 182
+- n_eff was 2498.5393342390694. Resampling...
+- Recompiling took 57.804333209991455 seconds
+- Simulation took 165.7452986240387 seconds
+- Loading took 32.215224504470825 seconds
+- Calculating energies took 8.265118837356567 seconds
+- Remaining analysis took 78.13853025436401 seconds
+- time to resample: 344.97173404693604 seconds
+
+Iteration 187
+- n_eff was 2381.2206856062885. Resampling...
+- Recompiling took 57.8242712020874 seconds
+- Simulation took 165.72537541389465 seconds
+- Loading took 33.258782148361206 seconds
+- Calculating energies took 8.102152585983276 seconds
+- Remaining analysis took 79.04269480705261 seconds
+- time to resample: 346.7435920238495 seconds
+
+Iteration 192
+- n_eff was 2499.8793254843927. Resampling...
+- Recompiling took 58.34119009971619 seconds
+- Simulation took 163.0488359928131 seconds
+- Loading took 32.706395387649536 seconds
+- Calculating energies took 8.069653034210205 seconds
+- Remaining analysis took 77.3570191860199 seconds
+- time to resample: 342.52291989326477 seconds
+
+Iteration 197
+- n_eff was 2494.0379793208344. Resampling...
+- Recompiling took 57.94533610343933 seconds
+- Simulation took 165.41570234298706 seconds
+- Loading took 32.4859254360199 seconds
+- Calculating energies took 8.014501333236694 seconds
+- Remaining analysis took 76.28338289260864 seconds
+- time to resample: 343.0240271091461 seconds
+
+Iteration 202
+- n_eff was 2481.2127465687163. Resampling...
+- Recompiling took 57.59114170074463 seconds
+- Simulation took 163.2272675037384 seconds
+- Loading took 32.68733263015747 seconds
+- Calculating energies took 8.106868028640747 seconds
+- Remaining analysis took 77.95345687866211 seconds
+- time to resample: 342.3938076496124 seconds
+
+Iteration 207
+- n_eff was 2499.1751098254263. Resampling...
+- Recompiling took 57.040568828582764 seconds
+- Simulation took 162.31323170661926 seconds
+- Loading took 32.875914096832275 seconds
+- Calculating energies took 8.250750541687012 seconds
+- Remaining analysis took 77.78976774215698 seconds
+- time to resample: 341.074951171875 seconds
+
+Iteration 212
+- n_eff was 2487.7254310797725. Resampling...
+- Recompiling took 57.72537064552307 seconds
+- Simulation took 162.36453986167908 seconds
+- Loading took 33.303314447402954 seconds
+- Calculating energies took 8.805567979812622 seconds
+- Remaining analysis took 79.15074968338013 seconds
+- time to resample: 344.1436984539032 seconds
+
+Iteration 217
+- n_eff was 2498.8625155420923. Resampling...
+- Recompiling took 57.36876654624939 seconds
+- Simulation took 161.96376371383667 seconds
+- Loading took 34.48904061317444 seconds
+- Calculating energies took 8.638694047927856 seconds
+- Remaining analysis took 80.16733980178833 seconds
+- time to resample: 345.4381103515625 seconds
+
+Iteration 222
+- n_eff was 2499.191725023122. Resampling...
+- Recompiling took 57.36161470413208 seconds
+- Simulation took 163.08743166923523 seconds
+- Loading took 33.78301000595093 seconds
+- Calculating energies took 8.128376245498657 seconds
+- Remaining analysis took 79.74180316925049 seconds
+- time to resample: 344.86331486701965 seconds
+
+Iteration 227
+- n_eff was 2453.924460795544. Resampling...
+- Recompiling took 57.53601789474487 seconds
+- Simulation took 163.45287442207336 seconds
+- Loading took 33.87488102912903 seconds
+- Calculating energies took 8.838627815246582 seconds
+- Remaining analysis took 82.16171622276306 seconds
+- time to resample: 348.828978061676 seconds
+
+Iteration 232
+- n_eff was 2491.396406683679. Resampling...
+- Recompiling took 58.30437469482422 seconds
+- Simulation took 164.03460550308228 seconds
+- Loading took 34.268903732299805 seconds
+- Calculating energies took 8.388367414474487 seconds
+- Remaining analysis took 80.59920358657837 seconds
+- time to resample: 348.46027994155884 seconds
+
+Iteration 237
+- n_eff was 2477.7864686523903. Resampling...
+- Recompiling took 58.30906796455383 seconds
+- Simulation took 165.41880202293396 seconds
+- Loading took 34.125622034072876 seconds
+- Calculating energies took 8.484456300735474 seconds
+- Remaining analysis took 80.28207755088806 seconds
+- time to resample: 349.475013256073 seconds
+
+Iteration 242
+- n_eff was 2494.365448609676. Resampling...
+- Recompiling took 57.105756521224976 seconds
+- Simulation took 165.92118406295776 seconds
+- Loading took 33.073545694351196 seconds
+- Calculating energies took 8.076581478118896 seconds
+- Remaining analysis took 80.18131875991821 seconds
+- time to resample: 347.2039816379547 seconds
+
+Iteration 247
+- n_eff was 2474.911503580805. Resampling...
+- Recompiling took 57.06157732009888 seconds
+- Simulation took 165.11203002929688 seconds
+- Loading took 33.0682806968689 seconds
+- Calculating energies took 8.207488059997559 seconds
+- Remaining analysis took 79.74221658706665 seconds
+- time to resample: 346.05985260009766 seconds
+
