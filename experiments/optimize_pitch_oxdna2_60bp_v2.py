@@ -493,13 +493,16 @@ def run(args):
             plt.clf()
 
         if i % save_obj_every == 0 and i:
-            onp.save(obj_dir / "ref_iters_i{i}.npy", onp.array(all_ref_times), allow_pickle=False)
-            onp.save(obj_dir / "ref_pitches_i{i}.npy", onp.array(all_ref_pitches), allow_pickle=False)
-            onp.save(obj_dir / "pitches_i{i}.npy", onp.array(all_pitches), allow_pickle=False)
+            onp.save(obj_dir / f"ref_iters_i{i}.npy", onp.array(all_ref_times), allow_pickle=False)
+            onp.save(obj_dir / f"ref_pitches_i{i}.npy", onp.array(all_ref_pitches), allow_pickle=False)
+            onp.save(obj_dir / f"pitches_i{i}.npy", onp.array(all_pitches), allow_pickle=False)
 
 
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
+    onp.save(obj_dir / f"fin_ref_iters.npy", onp.array(all_ref_times), allow_pickle=False)
+    onp.save(obj_dir / f"fin_ref_pitches.npy", onp.array(all_ref_pitches), allow_pickle=False)
+    onp.save(obj_dir / f"fin_pitches.npy", onp.array(all_pitches), allow_pickle=False)
 
 
 def get_parser():
