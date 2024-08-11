@@ -386,7 +386,8 @@ def rewrite_input_file(template_path, output_dir,
                        external_model=None,
                        seq_dep_file=None,
                        seq_dep_file_RNA=None,
-                       observables_str=None
+                       observables_str=None,
+                       salt_concentration=None
 ):
     with open(template_path, "r") as f:
         input_template_lines = f.readlines()
@@ -499,6 +500,9 @@ def rewrite_input_file(template_path, output_dir,
             input_lines.append(f"{new_line}\n")
         elif tokens[0] == "seq_dep_file_RNA" and seq_dep_file_RNA is not None:
             new_line = gen_new_line(tokens, seq_dep_file_RNA, str)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "salt_concentration" and salt_concentration is not None:
+            new_line = gen_new_line(tokens, salt_concentration, float)
             input_lines.append(f"{new_line}\n")
         else:
             input_lines.append(it_line)
