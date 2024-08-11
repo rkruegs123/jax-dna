@@ -23,6 +23,9 @@ default_weight = 0
 extrapolate_hist = 36C, 42C, 45C, 48C, 51C, 54C, 57C, 60C, 63C, 66C, 69C, 72C
 small_system = 1
 
+salt_concentration = 0.5
+dh_half_charged_ends = 1
+
 # Define sequence dependence
 use_average_seq = 1
 
