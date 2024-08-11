@@ -48,7 +48,6 @@ def run(args):
 
     n_threads = args['n_threads']
     n_sims = args['n_sims']
-    n_eq_steps = args['n_eq_steps']
     sample_every = args['sample_every']
     offset = args['offset']
     n_eq_steps = 0
@@ -56,6 +55,7 @@ def run(args):
     n_trials = args['n_trials']
     hi = args['hi']
     lo = args['lo']
+    interval = args['interval']
     assert((hi - lo) % interval == 0)
     assert(interval % sample_every == 0)
     assert(interval % n_sims == 0)
@@ -338,7 +338,7 @@ def run(args):
         start = time.time()
         n_steps_total = sim_length
         assert(n_steps_total % n_sims == 0)
-        n_steps_per_sim = n_steps_total // n_sims
+        n_steps_per_sim = int(n_steps_total // n_sims)
         ref_states, ref_energies, ref_avg_angles = get_ref_states(params, n_steps_per_sim, seed=0, trial=trial)
         end = time.time()
 
