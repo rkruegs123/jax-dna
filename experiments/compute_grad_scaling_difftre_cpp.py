@@ -89,6 +89,7 @@ def run(args):
     length_path = log_dir / "length.txt"
     time_path = log_dir / "time.txt"
     mean_grad_abs_path = log_dir / "mean_grad_abs.txt"
+    grad_abs_var_path = log_dir / "grad_abs_var.txt"
 
     params_str = ""
     for k, v in args.items():
@@ -339,7 +340,7 @@ def run(args):
         n_steps_total = sim_length
         assert(n_steps_total % n_sims == 0)
         n_steps_per_sim = int(n_steps_total // n_sims)
-        ref_states, ref_energies, ref_avg_angles = get_ref_states(params, n_steps_per_sim, seed=0, trial=trial)
+        ref_states, ref_energies, ref_avg_angles = get_ref_states(params, n_steps_per_sim, seed=trial, trial=trial)
         end = time.time()
 
         _, grads = grad_fn(params, ref_states, ref_energies, ref_avg_angles)
@@ -379,6 +380,8 @@ def run(args):
             f.write(f"{onp.mean(tot_times)}\n")
         with open(mean_grad_abs_path, "a") as f:
             f.write(f"{onp.mean(mean_grad_abss)}\n")
+        with open(grad_abs_var_path, "a") as f:
+            f.write(f"{onp.var(mean_grad_abss)}\n")
 
 
 
