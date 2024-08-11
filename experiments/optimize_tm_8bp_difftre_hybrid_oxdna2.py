@@ -775,9 +775,9 @@ def get_parser():
         default=["stacking", "hydrogen_bonding"],
         help='Parameter keys to optimize'
     )
-    parser.add_argument('--save-obj-every', type=int, default=50,
+    parser.add_argument('--save-obj-every', type=int, default=5,
                         help="Frequency of saving numpy files")
-    parser.add_argument('--plot-every', type=int, default=10,
+    parser.add_argument('--plot-every', type=int, default=1,
                         help="Frequency of plotting data from gradient descent epochs")
 
 
