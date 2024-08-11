@@ -29,8 +29,9 @@ config.update("jax_enable_x64", True)
 
 def run(args):
     run_name = args['run_name']
-    n_skip_quartets = args['n_skip_quartets']
+    offset = args['offset']
     hi = args['hi']
+    lo = args['lo']
     interval = args['interval']
     sample_every = args['sample_every']
     checkpoint_every = args['checkpoint_every']
@@ -180,6 +181,7 @@ def run(args):
         key, eq_key = random.split(key)
         eq_body, _ = eq_fn(params, eq_key)
         fin_pos, traj_states = sim_fn(params, eq_body, n_steps, key, gamma)
+        n_traj_states = len(traj_states.center)
 
         em = model2.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
         energy_fn = lambda body: em.energy_fn(body,
