@@ -1,0 +1,2751 @@
+
+Iteration 0:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0
+	- eps_backbone: 0.0
+	- r0_backbone: 0.0
+- hydrogen_bonding
+- stacking
+Iteration 1:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.003999999989813707
+	- eps_backbone: -0.0004999999766602814
+	- r0_backbone: -0.0013220518238005235
+- hydrogen_bonding
+- stacking
+Iteration 2:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.007996270924196303
+	- eps_backbone: -0.0009996175358281123
+	- r0_backbone: -0.002643691020551473
+- hydrogen_bonding
+- stacking
+Iteration 3:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.011954773487369508
+	- eps_backbone: -0.0014949855186854322
+	- r0_backbone: -0.003961022619320309
+- hydrogen_bonding
+- stacking
+Iteration 4:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.01590098241538307
+	- eps_backbone: -0.0019891794060394874
+	- r0_backbone: -0.005277853992415054
+- hydrogen_bonding
+- stacking
+Iteration 5:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.019810248127702934
+	- eps_backbone: -0.0024790428685075305
+	- r0_backbone: -0.006588407332674299
+- hydrogen_bonding
+- stacking
+Iteration 6:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.023702912285638256
+	- eps_backbone: -0.0029670186750673233
+	- r0_backbone: -0.007894361359597517
+- hydrogen_bonding
+- stacking
+Iteration 7:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.02764352745194687
+	- eps_backbone: -0.0034610018507916784
+	- r0_backbone: -0.009209570224046375
+- hydrogen_bonding
+- stacking
+Iteration 8:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.031621302334634116
+	- eps_backbone: -0.003959727086392917
+	- r0_backbone: -0.01053281920066358
+- hydrogen_bonding
+- stacking
+Iteration 9:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.03560005269369593
+	- eps_backbone: -0.004458844706540899
+	- r0_backbone: -0.011865432737846172
+- hydrogen_bonding
+- stacking
+Iteration 10:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.039591943006907604
+	- eps_backbone: -0.004959883884150584
+	- r0_backbone: -0.013205792934745749
+- hydrogen_bonding
+- stacking
+Iteration 11:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.04358237534195242
+	- eps_backbone: -0.005461387091326375
+	- r0_backbone: -0.014538317387651193
+- hydrogen_bonding
+- stacking
+Iteration 12:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.04757233382071635
+	- eps_backbone: -0.005963456049727367
+	- r0_backbone: -0.01586627546286539
+- hydrogen_bonding
+- stacking
+Iteration 13:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.05157710493863199
+	- eps_backbone: -0.006467662031996224
+	- r0_backbone: -0.017194298131468545
+- hydrogen_bonding
+- stacking
+Iteration 14:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.05560472236723335
+	- eps_backbone: -0.006974959034075745
+	- r0_backbone: -0.01852528243980943
+- hydrogen_bonding
+- stacking
+Iteration 15:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0596843620359242
+	- eps_backbone: -0.00748858417922893
+	- r0_backbone: -0.019868823407970877
+- hydrogen_bonding
+- stacking
+Iteration 16:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06381767968106611
+	- eps_backbone: -0.008008673224718765
+	- r0_backbone: -0.021223528514711047
+- hydrogen_bonding
+- stacking
+Iteration 17:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0679513041748061
+	- eps_backbone: -0.008528846509352261
+	- r0_backbone: -0.022574237675453808
+- hydrogen_bonding
+- stacking
+Iteration 18:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07209330465058117
+	- eps_backbone: -0.009050061767168827
+	- r0_backbone: -0.023923302869720896
+- hydrogen_bonding
+- stacking
+Iteration 19:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0752960681160737
+	- eps_backbone: -0.009449599412686194
+	- r0_backbone: -0.0249548295065714
+- hydrogen_bonding
+- stacking
+Iteration 20:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0776771324554999
+	- eps_backbone: -0.009742908645499648
+	- r0_backbone: -0.025710264853188405
+- hydrogen_bonding
+- stacking
+Iteration 21:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07926599296825843
+	- eps_backbone: -0.009935076744603255
+	- r0_backbone: -0.026237192469919925
+- hydrogen_bonding
+- stacking
+Iteration 22:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.08016603209542561
+	- eps_backbone: -0.010039553719392913
+	- r0_backbone: -0.02656234102104124
+- hydrogen_bonding
+- stacking
+Iteration 23:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0804666032339072
+	- eps_backbone: -0.010067948311131558
+	- r0_backbone: -0.026709267350677104
+- hydrogen_bonding
+- stacking
+Iteration 24:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0802445604890929
+	- eps_backbone: -0.010030230520201022
+	- r0_backbone: -0.02669866345741112
+- hydrogen_bonding
+- stacking
+Iteration 25:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07956603855688993
+	- eps_backbone: -0.009934965846452704
+	- r0_backbone: -0.026548704196483426
+- hydrogen_bonding
+- stacking
+Iteration 26:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07852327434562678
+	- eps_backbone: -0.009793967144702709
+	- r0_backbone: -0.026273541026638654
+- hydrogen_bonding
+- stacking
+Iteration 27:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07715817259387414
+	- eps_backbone: -0.009612620578198783
+	- r0_backbone: -0.02588791462641974
+- hydrogen_bonding
+- stacking
+Iteration 28:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07550728330406531
+	- eps_backbone: -0.009395621495165374
+	- r0_backbone: -0.025404940797254024
+- hydrogen_bonding
+- stacking
+Iteration 29:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07360245788193032
+	- eps_backbone: -0.009147064789702952
+	- r0_backbone: -0.024836304669579676
+- hydrogen_bonding
+- stacking
+Iteration 30:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07147135595672527
+	- eps_backbone: -0.008870514328098045
+	- r0_backbone: -0.02419241312447778
+- hydrogen_bonding
+- stacking
+Iteration 31:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06914187095095348
+	- eps_backbone: -0.00856884578082684
+	- r0_backbone: -0.023461776697973395
+- hydrogen_bonding
+- stacking
+Iteration 32:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06747284771644169
+	- eps_backbone: -0.008352459836662773
+	- r0_backbone: -0.0229643215665181
+- hydrogen_bonding
+- stacking
+Iteration 33:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06639289368353651
+	- eps_backbone: -0.008211855873996643
+	- r0_backbone: -0.022672756144956105
+- hydrogen_bonding
+- stacking
+Iteration 34:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06583889675073484
+	- eps_backbone: -0.008138724270834174
+	- r0_backbone: -0.02256342050835301
+- hydrogen_bonding
+- stacking
+Iteration 35:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06575502560502922
+	- eps_backbone: -0.008125783882263815
+	- r0_backbone: -0.02261579468535653
+- hydrogen_bonding
+- stacking
+Iteration 36:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06611805980120389
+	- eps_backbone: -0.008169185801526035
+	- r0_backbone: -0.022801457622953714
+- hydrogen_bonding
+- stacking
+Iteration 37:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06688063554050339
+	- eps_backbone: -0.008262973800396867
+	- r0_backbone: -0.02310631145041195
+- hydrogen_bonding
+- stacking
+Iteration 38:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06800171875428918
+	- eps_backbone: -0.008402013008935283
+	- r0_backbone: -0.023517902878264708
+- hydrogen_bonding
+- stacking
+Iteration 39:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06856695031548643
+	- eps_backbone: -0.008471293018556092
+	- r0_backbone: -0.02374942015492982
+- hydrogen_bonding
+- stacking
+Iteration 40:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06863339296375992
+	- eps_backbone: -0.008477958087697912
+	- r0_backbone: -0.02381937581099548
+- hydrogen_bonding
+- stacking
+Iteration 41:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06833673589731504
+	- eps_backbone: -0.008438593344663126
+	- r0_backbone: -0.02376338114494605
+- hydrogen_bonding
+- stacking
+Iteration 42:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06771230233492553
+	- eps_backbone: -0.008357718542857384
+	- r0_backbone: -0.023593739588481585
+- hydrogen_bonding
+- stacking
+Iteration 43:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06750727278573465
+	- eps_backbone: -0.008330309178623763
+	- r0_backbone: -0.023560233297132832
+- hydrogen_bonding
+- stacking
+Iteration 44:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06768077034204922
+	- eps_backbone: -0.008351116104027168
+	- r0_backbone: -0.023649563077341725
+- hydrogen_bonding
+- stacking
+Iteration 45:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06819579713204416
+	- eps_backbone: -0.00841540490187398
+	- r0_backbone: -0.023849729709627253
+- hydrogen_bonding
+- stacking
+Iteration 46:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06821746321507471
+	- eps_backbone: -0.008417484983101131
+	- r0_backbone: -0.023874237497596942
+- hydrogen_bonding
+- stacking
+Iteration 47:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06779765605936539
+	- eps_backbone: -0.008363926272052402
+	- r0_backbone: -0.02374213365520905
+- hydrogen_bonding
+- stacking
+Iteration 48:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06698349138383342
+	- eps_backbone: -0.00826071750374946
+	- r0_backbone: -0.023470369932200738
+- hydrogen_bonding
+- stacking
+Iteration 49:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06668716485606718
+	- eps_backbone: -0.008222815040072717
+	- r0_backbone: -0.023379483521892775
+- hydrogen_bonding
+- stacking
+Iteration 50:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0668541148943187
+	- eps_backbone: -0.008243298155224288
+	- r0_backbone: -0.023450100725902336
+- hydrogen_bonding
+- stacking
+Iteration 51:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0674203773002866
+	- eps_backbone: -0.008314293382961857
+	- r0_backbone: -0.0236506129229915
+- hydrogen_bonding
+- stacking
+Iteration 52:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06751385628652895
+	- eps_backbone: -0.008325559503334468
+	- r0_backbone: -0.023693922863859598
+- hydrogen_bonding
+- stacking
+Iteration 53:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06718283712719386
+	- eps_backbone: -0.00828321502768159
+	- r0_backbone: -0.023596041493921013
+- hydrogen_bonding
+- stacking
+Iteration 54:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06729996172482444
+	- eps_backbone: -0.008297545703026654
+	- r0_backbone: -0.023644693831510664
+- hydrogen_bonding
+- stacking
+Iteration 55:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0669909836187601
+	- eps_backbone: -0.00825809341754502
+	- r0_backbone: -0.023551890661662085
+- hydrogen_bonding
+- stacking
+Iteration 56:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06635999600309495
+	- eps_backbone: -0.008177389013674374
+	- r0_backbone: -0.023332704644796746
+- hydrogen_bonding
+- stacking
+Iteration 57:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06614448577639731
+	- eps_backbone: -0.008149868959151485
+	- r0_backbone: -0.02327107366731813
+- hydrogen_bonding
+- stacking
+Iteration 58:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06630428363843932
+	- eps_backbone: -0.008170346731374623
+	- r0_backbone: -0.02335101520670974
+- hydrogen_bonding
+- stacking
+Iteration 59:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06680298923485273
+	- eps_backbone: -0.008234148162664545
+	- r0_backbone: -0.023558259438839525
+- hydrogen_bonding
+- stacking
+Iteration 60:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06689762446241843
+	- eps_backbone: -0.008246245844538591
+	- r0_backbone: -0.023609281997588775
+- hydrogen_bonding
+- stacking
+Iteration 61:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06657716507728506
+	- eps_backbone: -0.008206343912992575
+	- r0_backbone: -0.023516262307588746
+- hydrogen_bonding
+- stacking
+Iteration 62:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06669557811600213
+	- eps_backbone: -0.008221355218540949
+	- r0_backbone: -0.023571545995435636
+- hydrogen_bonding
+- stacking
+Iteration 63:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06639627003183102
+	- eps_backbone: -0.008184056894944391
+	- r0_backbone: -0.023482551678824713
+- hydrogen_bonding
+- stacking
+Iteration 64:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06653389851769664
+	- eps_backbone: -0.008201422440623163
+	- r0_backbone: -0.023541260187830832
+- hydrogen_bonding
+- stacking
+Iteration 65:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06706371410307832
+	- eps_backbone: -0.008267857890837504
+	- r0_backbone: -0.02373256676333108
+- hydrogen_bonding
+- stacking
+Iteration 66:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06717681334828907
+	- eps_backbone: -0.008281528516786318
+	- r0_backbone: -0.023775857785519904
+- hydrogen_bonding
+- stacking
+Iteration 67:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0669133723334503
+	- eps_backbone: -0.008247534540448465
+	- r0_backbone: -0.023685787440158625
+- hydrogen_bonding
+- stacking
+Iteration 68:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06631142933086465
+	- eps_backbone: -0.008170716986870441
+	- r0_backbone: -0.023475769031496355
+- hydrogen_bonding
+- stacking
+Iteration 69:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06613107730186818
+	- eps_backbone: -0.008147352669619634
+	- r0_backbone: -0.023415313634921886
+- hydrogen_bonding
+- stacking
+Iteration 70:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06633026124796815
+	- eps_backbone: -0.008172087814673823
+	- r0_backbone: -0.023489453680441696
+- hydrogen_bonding
+- stacking
+Iteration 71:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06607972825191188
+	- eps_backbone: -0.008140185630457264
+	- r0_backbone: -0.02342153952291142
+- hydrogen_bonding
+- stacking
+Iteration 72:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0662828733244103
+	- eps_backbone: -0.008165477268230803
+	- r0_backbone: -0.023494883498110103
+- hydrogen_bonding
+- stacking
+Iteration 73:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06603692568987207
+	- eps_backbone: -0.00813422120496099
+	- r0_backbone: -0.02342633173032042
+- hydrogen_bonding
+- stacking
+Iteration 74:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0662432061670708
+	- eps_backbone: -0.008159953176262835
+	- r0_backbone: -0.023499026585938818
+- hydrogen_bonding
+- stacking
+Iteration 75:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06600102935418461
+	- eps_backbone: -0.008129228265278066
+	- r0_backbone: -0.02342996412188229
+- hydrogen_bonding
+- stacking
+Iteration 76:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06619127663002722
+	- eps_backbone: -0.008152381485863947
+	- r0_backbone: -0.023495217765353228
+- hydrogen_bonding
+- stacking
+Iteration 77:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06595395410352012
+	- eps_backbone: -0.008122355801896353
+	- r0_backbone: -0.023426419200195905
+- hydrogen_bonding
+- stacking
+Iteration 78:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06614824647775941
+	- eps_backbone: -0.008146101120261262
+	- r0_backbone: -0.02349201752992006
+- hydrogen_bonding
+- stacking
+Iteration 79:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06591486827262583
+	- eps_backbone: -0.008116642937440521
+	- r0_backbone: -0.023423423506965295
+- hydrogen_bonding
+- stacking
+Iteration 80:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06611241687054714
+	- eps_backbone: -0.008140865783572426
+	- r0_backbone: -0.023489310054532746
+- hydrogen_bonding
+- stacking
+Iteration 81:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06669497823961379
+	- eps_backbone: -0.008213302086980012
+	- r0_backbone: -0.02368388708407557
+- hydrogen_bonding
+- stacking
+Iteration 82:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06681320315935113
+	- eps_backbone: -0.008227668241901798
+	- r0_backbone: -0.02372343569859809
+- hydrogen_bonding
+- stacking
+Iteration 83:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0665134334096038
+	- eps_backbone: -0.008189756323494501
+	- r0_backbone: -0.023623497041012083
+- hydrogen_bonding
+- stacking
+Iteration 84:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06583828328836971
+	- eps_backbone: -0.008104910906207574
+	- r0_backbone: -0.02339824139396636
+- hydrogen_bonding
+- stacking
+Iteration 85:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06563466778762628
+	- eps_backbone: -0.008079077483467811
+	- r0_backbone: -0.02333058138366552
+- hydrogen_bonding
+- stacking
+Iteration 86:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06581902542295537
+	- eps_backbone: -0.00810197943513058
+	- r0_backbone: -0.023395875318908226
+- hydrogen_bonding
+- stacking
+Iteration 87:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06635258656204757
+	- eps_backbone: -0.008168754125527311
+	- r0_backbone: -0.023580858604913487
+- hydrogen_bonding
+- stacking
+Iteration 88:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0671991964485732
+	- eps_backbone: -0.008274888074634279
+	- r0_backbone: -0.023873388564369186
+- hydrogen_bonding
+- stacking
+Iteration 89:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06759883035231717
+	- eps_backbone: -0.008324825992149676
+	- r0_backbone: -0.02401132290937915
+- hydrogen_bonding
+- stacking
+Iteration 90:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06759699552503506
+	- eps_backbone: -0.008324270095133701
+	- r0_backbone: -0.02401024155493973
+- hydrogen_bonding
+- stacking
+Iteration 91:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06722541171259122
+	- eps_backbone: -0.008277566957251903
+	- r0_backbone: -0.023886114157367022
+- hydrogen_bonding
+- stacking
+Iteration 92:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06652015397603783
+	- eps_backbone: -0.00818922685730994
+	- r0_backbone: -0.023650906460418956
+- hydrogen_bonding
+- stacking
+Iteration 93:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0655134919420326
+	- eps_backbone: -0.008063291649346827
+	- r0_backbone: -0.02331525543641001
+- hydrogen_bonding
+- stacking
+Iteration 94:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06497927233522005
+	- eps_backbone: -0.007996334250996107
+	- r0_backbone: -0.023137337552792115
+- hydrogen_bonding
+- stacking
+Iteration 95:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06487118732278518
+	- eps_backbone: -0.007982563563100786
+	- r0_backbone: -0.023101802968085425
+- hydrogen_bonding
+- stacking
+Iteration 96:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06516984509487611
+	- eps_backbone: -0.008019935919562848
+	- r0_backbone: -0.023200031211111874
+- hydrogen_bonding
+- stacking
+Iteration 97:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0658347854414536
+	- eps_backbone: -0.008103380493817092
+	- r0_backbone: -0.023418826742693702
+- hydrogen_bonding
+- stacking
+Iteration 98:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06682967136097795
+	- eps_backbone: -0.008228370298822618
+	- r0_backbone: -0.023746458542141417
+- hydrogen_bonding
+- stacking
+Iteration 99:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06732858710663892
+	- eps_backbone: -0.008290878818788983
+	- r0_backbone: -0.02391025204893547
+- hydrogen_bonding
+- stacking
+Iteration 100:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06738106714022551
+	- eps_backbone: -0.008297117174062563
+	- r0_backbone: -0.023926390723521478
+- hydrogen_bonding
+- stacking
+Iteration 101:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06707945272611204
+	- eps_backbone: -0.008258522379426814
+	- r0_backbone: -0.023810278196568446
+- hydrogen_bonding
+- stacking
+Iteration 102:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06645938318027822
+	- eps_backbone: -0.008179637270584017
+	- r0_backbone: -0.02357552498585353
+- hydrogen_bonding
+- stacking
+Iteration 103:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06624725459943748
+	- eps_backbone: -0.008152412548054988
+	- r0_backbone: -0.023493631130327503
+- hydrogen_bonding
+- stacking
+Iteration 104:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06640249567279
+	- eps_backbone: -0.008171687031254704
+	- r0_backbone: -0.023549084002275133
+- hydrogen_bonding
+- stacking
+Iteration 105:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06688969331233419
+	- eps_backbone: -0.008232981181888088
+	- r0_backbone: -0.023728397483526755
+- hydrogen_bonding
+- stacking
+Iteration 106:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06685479945489958
+	- eps_backbone: -0.008228598696570222
+	- r0_backbone: -0.023735665140076478
+- hydrogen_bonding
+- stacking
+Iteration 107:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0663519138028772
+	- eps_backbone: -0.008165357464442025
+	- r0_backbone: -0.023588641864372893
+- hydrogen_bonding
+- stacking
+Iteration 108:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06637126119846637
+	- eps_backbone: -0.008167764564669722
+	- r0_backbone: -0.023610073772519103
+- hydrogen_bonding
+- stacking
+Iteration 109:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0668587628290862
+	- eps_backbone: -0.00822901426795608
+	- r0_backbone: -0.023782568181607924
+- hydrogen_bonding
+- stacking
+Iteration 110:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06682799965109765
+	- eps_backbone: -0.008225098020443466
+	- r0_backbone: -0.0237848444190223
+- hydrogen_bonding
+- stacking
+Iteration 111:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06641246329551787
+	- eps_backbone: -0.008173413931543916
+	- r0_backbone: -0.023661159622539337
+- hydrogen_bonding
+- stacking
+Iteration 112:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06565170383702545
+	- eps_backbone: -0.008078862042510182
+	- r0_backbone: -0.023423883432285696
+- hydrogen_bonding
+- stacking
+Iteration 113:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06535139843006199
+	- eps_backbone: -0.008041506674819177
+	- r0_backbone: -0.023336479275064447
+- hydrogen_bonding
+- stacking
+Iteration 114:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06546501472150879
+	- eps_backbone: -0.008055574608474614
+	- r0_backbone: -0.023384180061373175
+- hydrogen_bonding
+- stacking
+Iteration 115:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06595173242610786
+	- eps_backbone: -0.00811599723558365
+	- r0_backbone: -0.02355351143508736
+- hydrogen_bonding
+- stacking
+Iteration 116:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0667553826196634
+	- eps_backbone: -0.008216065989104626
+	- r0_backbone: -0.023833816873813835
+- hydrogen_bonding
+- stacking
+Iteration 117:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06711219743633956
+	- eps_backbone: -0.008260298201612004
+	- r0_backbone: -0.023957730085649852
+- hydrogen_bonding
+- stacking
+Iteration 118:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06706569261693596
+	- eps_backbone: -0.008254117697469088
+	- r0_backbone: -0.02394058979793963
+- hydrogen_bonding
+- stacking
+Iteration 119:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06665577671025802
+	- eps_backbone: -0.008202515125542709
+	- r0_backbone: -0.023796472601055225
+- hydrogen_bonding
+- stacking
+Iteration 120:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06591902769852798
+	- eps_backbone: -0.008110078831426115
+	- r0_backbone: -0.023538285171776627
+- hydrogen_bonding
+- stacking
+Iteration 121:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06567898100298342
+	- eps_backbone: -0.008080184997796724
+	- r0_backbone: -0.023434931498922573
+- hydrogen_bonding
+- stacking
+Iteration 122:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0658848831128751
+	- eps_backbone: -0.008106416468254052
+	- r0_backbone: -0.023470908369656825
+- hydrogen_bonding
+- stacking
+Iteration 123:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06649205418837867
+	- eps_backbone: -0.00818315567672312
+	- r0_backbone: -0.023632372492072326
+- hydrogen_bonding
+- stacking
+Iteration 124:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0674611288964364
+	- eps_backbone: -0.008305481428628747
+	- r0_backbone: -0.023906957108453662
+- hydrogen_bonding
+- stacking
+Iteration 125:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06790829989167046
+	- eps_backbone: -0.008361935442875112
+	- r0_backbone: -0.024024652529536526
+- hydrogen_bonding
+- stacking
+Iteration 126:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06797124524738374
+	- eps_backbone: -0.008370013855225289
+	- r0_backbone: -0.024015112354735312
+- hydrogen_bonding
+- stacking
+Iteration 127:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06768754032746505
+	- eps_backbone: -0.008334448095570268
+	- r0_backbone: -0.023890833297796534
+- hydrogen_bonding
+- stacking
+Iteration 128:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06709087513829948
+	- eps_backbone: -0.008259501488764753
+	- r0_backbone: -0.023663048614377603
+- hydrogen_bonding
+- stacking
+Iteration 129:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06689513887672294
+	- eps_backbone: -0.008234942962887959
+	- r0_backbone: -0.0235738482048971
+- hydrogen_bonding
+- stacking
+Iteration 130:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06706122489036193
+	- eps_backbone: -0.008255842082728226
+	- r0_backbone: -0.023609631722656704
+- hydrogen_bonding
+- stacking
+Iteration 131:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06677428296866661
+	- eps_backbone: -0.00821957935753892
+	- r0_backbone: -0.023498526753687316
+- hydrogen_bonding
+- stacking
+Iteration 132:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06608051936406567
+	- eps_backbone: -0.008132013552291761
+	- r0_backbone: -0.023255557321480973
+- hydrogen_bonding
+- stacking
+Iteration 133:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0658914258262373
+	- eps_backbone: -0.00810806531293895
+	- r0_backbone: -0.02317968211250339
+- hydrogen_bonding
+- stacking
+Iteration 134:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06615572908994483
+	- eps_backbone: -0.008141250369552377
+	- r0_backbone: -0.023253909983023867
+- hydrogen_bonding
+- stacking
+Iteration 135:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06682766874906854
+	- eps_backbone: -0.00822581111993459
+	- r0_backbone: -0.02346313972107955
+- hydrogen_bonding
+- stacking
+Iteration 136:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06792091708556969
+	- eps_backbone: -0.00836325390615189
+	- r0_backbone: -0.023809952871904946
+- hydrogen_bonding
+- stacking
+Iteration 137:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06841223423980902
+	- eps_backbone: -0.008425044792204628
+	- r0_backbone: -0.02396242379678191
+- hydrogen_bonding
+- stacking
+Iteration 138:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06836291251794946
+	- eps_backbone: -0.008418875116728342
+	- r0_backbone: -0.023940316313405503
+- hydrogen_bonding
+- stacking
+Iteration 139:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06782904641904053
+	- eps_backbone: -0.0083518055444467
+	- r0_backbone: -0.02376167304214677
+- hydrogen_bonding
+- stacking
+Iteration 140:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06686188397074666
+	- eps_backbone: -0.008230304699641144
+	- r0_backbone: -0.023442944285627505
+- hydrogen_bonding
+- stacking
+Iteration 141:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0664469794068745
+	- eps_backbone: -0.008177413999077454
+	- r0_backbone: -0.02329627261398605
+- hydrogen_bonding
+- stacking
+Iteration 142:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06652570641490407
+	- eps_backbone: -0.008185843535818305
+	- r0_backbone: -0.023304077409750865
+- hydrogen_bonding
+- stacking
+Iteration 143:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0670480009254506
+	- eps_backbone: -0.008249387143424824
+	- r0_backbone: -0.02345081236162316
+- hydrogen_bonding
+- stacking
+Iteration 144:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06797112624765256
+	- eps_backbone: -0.008362764664652245
+	- r0_backbone: -0.023722723784452296
+- hydrogen_bonding
+- stacking
+Iteration 145:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06834344644311696
+	- eps_backbone: -0.00840791193609658
+	- r0_backbone: -0.023827049029996883
+- hydrogen_bonding
+- stacking
+Iteration 146:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06827636474291965
+	- eps_backbone: -0.00839787874682496
+	- r0_backbone: -0.02377847269341189
+- hydrogen_bonding
+- stacking
+Iteration 147:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06781431508927582
+	- eps_backbone: -0.008338253004931961
+	- r0_backbone: -0.023592500065755546
+- hydrogen_bonding
+- stacking
+Iteration 148:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06699884662705413
+	- eps_backbone: -0.008234274306585965
+	- r0_backbone: -0.023283242084807466
+- hydrogen_bonding
+- stacking
+Iteration 149:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06666114301488957
+	- eps_backbone: -0.008190554077926238
+	- r0_backbone: -0.023146590000813975
+- hydrogen_bonding
+- stacking
+Iteration 150:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06675207088524249
+	- eps_backbone: -0.008200877746998403
+	- r0_backbone: -0.023164969109018035
+- hydrogen_bonding
+- stacking
+Iteration 151:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06724932634686898
+	- eps_backbone: -0.008262184548625262
+	- r0_backbone: -0.023316459247278494
+- hydrogen_bonding
+- stacking
+Iteration 152:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06811354592592811
+	- eps_backbone: -0.008369559485753797
+	- r0_backbone: -0.02358795855167641
+- hydrogen_bonding
+- stacking
+Iteration 153:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06847163830617453
+	- eps_backbone: -0.00841357275234722
+	- r0_backbone: -0.02369664234854199
+- hydrogen_bonding
+- stacking
+Iteration 154:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0683733969706748
+	- eps_backbone: -0.008400441081816035
+	- r0_backbone: -0.023658649286297913
+- hydrogen_bonding
+- stacking
+Iteration 155:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06786513766798574
+	- eps_backbone: -0.008335972562859006
+	- r0_backbone: -0.023488762147098385
+- hydrogen_bonding
+- stacking
+Iteration 156:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0678404290229464
+	- eps_backbone: -0.00833193887521122
+	- r0_backbone: -0.02347206042557385
+- hydrogen_bonding
+- stacking
+Iteration 157:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06825053628656375
+	- eps_backbone: -0.008382249891506599
+	- r0_backbone: -0.023593205026379176
+- hydrogen_bonding
+- stacking
+Iteration 158:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06818822948185121
+	- eps_backbone: -0.00837368733104804
+	- r0_backbone: -0.023566375979070003
+- hydrogen_bonding
+- stacking
+Iteration 159:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06856334579479872
+	- eps_backbone: -0.008419796464173901
+	- r0_backbone: -0.023678110320412695
+- hydrogen_bonding
+- stacking
+Iteration 160:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06847066493288212
+	- eps_backbone: -0.008407575378924892
+	- r0_backbone: -0.0236430857574651
+- hydrogen_bonding
+- stacking
+Iteration 161:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06803923461678729
+	- eps_backbone: -0.008353033080736205
+	- r0_backbone: -0.023502584844421175
+- hydrogen_bonding
+- stacking
+Iteration 162:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06730496774903694
+	- eps_backbone: -0.008260666430504382
+	- r0_backbone: -0.023267386630512792
+- hydrogen_bonding
+- stacking
+Iteration 163:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06698532441739369
+	- eps_backbone: -0.008220199499204828
+	- r0_backbone: -0.023163480583354473
+- hydrogen_bonding
+- stacking
+Iteration 164:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06703773337669383
+	- eps_backbone: -0.008226296247742182
+	- r0_backbone: -0.023177686647644465
+- hydrogen_bonding
+- stacking
+Iteration 165:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06742585766166109
+	- eps_backbone: -0.00827441021039288
+	- r0_backbone: -0.023298473069144933
+- hydrogen_bonding
+- stacking
+Iteration 166:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06819364575491882
+	- eps_backbone: -0.008369972901871248
+	- r0_backbone: -0.02353230042898788
+- hydrogen_bonding
+- stacking
+Iteration 167:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06846308121487299
+	- eps_backbone: -0.00840332267370858
+	- r0_backbone: -0.023617025082693355
+- hydrogen_bonding
+- stacking
+Iteration 168:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06828329700426372
+	- eps_backbone: -0.008380589610088807
+	- r0_backbone: -0.023567242415939518
+- hydrogen_bonding
+- stacking
+Iteration 169:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0677001368139718
+	- eps_backbone: -0.00830749923237828
+	- r0_backbone: -0.023396470925233667
+- hydrogen_bonding
+- stacking
+Iteration 170:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06759461407568179
+	- eps_backbone: -0.008294086343301754
+	- r0_backbone: -0.023368235589326374
+- hydrogen_bonding
+- stacking
+Iteration 171:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06793820475110945
+	- eps_backbone: -0.008337145798569479
+	- r0_backbone: -0.02349382714942334
+- hydrogen_bonding
+- stacking
+Iteration 172:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06868694347314408
+	- eps_backbone: -0.008431159602439453
+	- r0_backbone: -0.02375794244918166
+- hydrogen_bonding
+- stacking
+Iteration 173:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06891768064736126
+	- eps_backbone: -0.00846001943134489
+	- r0_backbone: -0.023843558273421595
+- hydrogen_bonding
+- stacking
+Iteration 174:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06868180851553252
+	- eps_backbone: -0.008430184539247598
+	- r0_backbone: -0.023768571010901515
+- hydrogen_bonding
+- stacking
+Iteration 175:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06802754992151505
+	- eps_backbone: -0.008347737331323657
+	- r0_backbone: -0.023549578214350327
+- hydrogen_bonding
+- stacking
+Iteration 176:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06791893645509006
+	- eps_backbone: -0.008333550606079543
+	- r0_backbone: -0.023496667292454785
+- hydrogen_bonding
+- stacking
+Iteration 177:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06829941789717697
+	- eps_backbone: -0.008380541115721507
+	- r0_backbone: -0.023592886585899246
+- hydrogen_bonding
+- stacking
+Iteration 178:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06816254206893912
+	- eps_backbone: -0.008362911805992024
+	- r0_backbone: -0.02353534948473649
+- hydrogen_bonding
+- stacking
+Iteration 179:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06851699535106737
+	- eps_backbone: -0.008406747642449197
+	- r0_backbone: -0.023627406629032646
+- hydrogen_bonding
+- stacking
+Iteration 180:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06835742280124024
+	- eps_backbone: -0.008386354172170152
+	- r0_backbone: -0.02356614519521464
+- hydrogen_bonding
+- stacking
+Iteration 181:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06779481317179581
+	- eps_backbone: -0.008315141808775017
+	- r0_backbone: -0.023382194758415097
+- hydrogen_bonding
+- stacking
+Iteration 182:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06770617361952702
+	- eps_backbone: -0.00830372460840123
+	- r0_backbone: -0.02334544685321066
+- hydrogen_bonding
+- stacking
+Iteration 183:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0680436385452956
+	- eps_backbone: -0.008346054277427628
+	- r0_backbone: -0.023441226370469442
+- hydrogen_bonding
+- stacking
+Iteration 184:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06876513408136242
+	- eps_backbone: -0.008436832764945223
+	- r0_backbone: -0.023656313017076026
+- hydrogen_bonding
+- stacking
+Iteration 185:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06899490109914264
+	- eps_backbone: -0.008465588849472683
+	- r0_backbone: -0.023721021295542412
+- hydrogen_bonding
+- stacking
+Iteration 186:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06881819851113957
+	- eps_backbone: -0.008443118934457927
+	- r0_backbone: -0.023660011353531695
+- hydrogen_bonding
+- stacking
+Iteration 187:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06827501585065421
+	- eps_backbone: -0.008374475798102576
+	- r0_backbone: -0.023485698339644714
+- hydrogen_bonding
+- stacking
+Iteration 188:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0681716589962933
+	- eps_backbone: -0.008361261922774643
+	- r0_backbone: -0.023448265933842145
+- hydrogen_bonding
+- stacking
+Iteration 189:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06846460676232047
+	- eps_backbone: -0.00839798305013606
+	- r0_backbone: -0.023534175036209783
+- hydrogen_bonding
+- stacking
+Iteration 190:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06911366785502215
+	- eps_backbone: -0.00847958638942048
+	- r0_backbone: -0.023731160810926227
+- hydrogen_bonding
+- stacking
+Iteration 191:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0692747971166301
+	- eps_backbone: -0.00850026109576596
+	- r0_backbone: -0.023766058910885436
+- hydrogen_bonding
+- stacking
+Iteration 192:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06899704947058183
+	- eps_backbone: -0.00846612155939852
+	- r0_backbone: -0.023655165914902656
+- hydrogen_bonding
+- stacking
+Iteration 193:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06832466513507462
+	- eps_backbone: -0.00838270916841588
+	- r0_backbone: -0.023413318771053956
+- hydrogen_bonding
+- stacking
+Iteration 194:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06814187845618913
+	- eps_backbone: -0.00836027576077747
+	- r0_backbone: -0.023337491467282527
+- hydrogen_bonding
+- stacking
+Iteration 195:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06839938736614326
+	- eps_backbone: -0.008392671559747433
+	- r0_backbone: -0.02341087334309928
+- hydrogen_bonding
+- stacking
+Iteration 196:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06830299773109605
+	- eps_backbone: -0.008380593231770428
+	- r0_backbone: -0.02336135982901463
+- hydrogen_bonding
+- stacking
+Iteration 197:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0685448380078757
+	- eps_backbone: -0.008411008800304876
+	- r0_backbone: -0.023432422664889666
+- hydrogen_bonding
+- stacking
+Iteration 198:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06843375460996359
+	- eps_backbone: -0.00839706977027721
+	- r0_backbone: -0.0233806572263882
+- hydrogen_bonding
+- stacking
+Iteration 199:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0680044479391213
+	- eps_backbone: -0.008343142497190259
+	- r0_backbone: -0.023218224310318197
+- hydrogen_bonding
+- stacking
+Iteration 200:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06794733665422603
+	- eps_backbone: -0.008335967280265089
+	- r0_backbone: -0.023187761654160408
+- hydrogen_bonding
+- stacking
+Iteration 201:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0682932135516261
+	- eps_backbone: -0.008379438139373252
+	- r0_backbone: -0.023288639549810173
+- hydrogen_bonding
+- stacking
+Iteration 202:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06820784585917017
+	- eps_backbone: -0.00836868430827864
+	- r0_backbone: -0.02325126138756243
+- hydrogen_bonding
+- stacking
+Iteration 203:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0677340946597238
+	- eps_backbone: -0.008309105925145666
+	- r0_backbone: -0.023089365338766137
+- hydrogen_bonding
+- stacking
+Iteration 204:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06770559601630066
+	- eps_backbone: -0.00830546676860977
+	- r0_backbone: -0.023072109633992997
+- hydrogen_bonding
+- stacking
+Iteration 205:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0680779424725837
+	- eps_backbone: -0.008352182214739767
+	- r0_backbone: -0.02318508746027495
+- hydrogen_bonding
+- stacking
+Iteration 206:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06884271870035352
+	- eps_backbone: -0.008447567338545348
+	- r0_backbone: -0.023429048531087824
+- hydrogen_bonding
+- stacking
+Iteration 207:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06996190897005605
+	- eps_backbone: -0.008586931132749442
+	- r0_backbone: -0.02379096050502398
+- hydrogen_bonding
+- stacking
+Iteration 208:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07053533986547289
+	- eps_backbone: -0.008658451379187637
+	- r0_backbone: -0.02397383768587147
+- hydrogen_bonding
+- stacking
+Iteration 209:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07061680579853813
+	- eps_backbone: -0.008668795258109707
+	- r0_backbone: -0.023995537138567124
+- hydrogen_bonding
+- stacking
+Iteration 210:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07025576601117445
+	- eps_backbone: -0.008624106708734258
+	- r0_backbone: -0.023872281281336807
+- hydrogen_bonding
+- stacking
+Iteration 211:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0695638476366307
+	- eps_backbone: -0.008537370767125352
+	- r0_backbone: -0.02363294948640263
+- hydrogen_bonding
+- stacking
+Iteration 212:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06857669917485176
+	- eps_backbone: -0.008413155004898254
+	- r0_backbone: -0.023289873809072627
+- hydrogen_bonding
+- stacking
+Iteration 213:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06804813372263396
+	- eps_backbone: -0.008346897225718575
+	- r0_backbone: -0.023107677326655807
+- hydrogen_bonding
+- stacking
+Iteration 214:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06793057968311267
+	- eps_backbone: -0.008332552940902849
+	- r0_backbone: -0.02306981731887083
+- hydrogen_bonding
+- stacking
+Iteration 215:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06818286995001377
+	- eps_backbone: -0.008364912086143206
+	- r0_backbone: -0.023161815088405424
+- hydrogen_bonding
+- stacking
+Iteration 216:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06882297528969583
+	- eps_backbone: -0.008445886711902273
+	- r0_backbone: -0.02337105669544317
+- hydrogen_bonding
+- stacking
+Iteration 217:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06981106256171943
+	- eps_backbone: -0.008570519945570787
+	- r0_backbone: -0.023685601869978593
+- hydrogen_bonding
+- stacking
+Iteration 218:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07028978375011907
+	- eps_backbone: -0.00863104839565454
+	- r0_backbone: -0.023842982084546206
+- hydrogen_bonding
+- stacking
+Iteration 219:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07031106921918662
+	- eps_backbone: -0.008633980844147127
+	- r0_backbone: -0.023859078401888993
+- hydrogen_bonding
+- stacking
+Iteration 220:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06992084860849257
+	- eps_backbone: -0.008585102468015027
+	- r0_backbone: -0.023747977385782524
+- hydrogen_bonding
+- stacking
+Iteration 221:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06918417838698554
+	- eps_backbone: -0.008492802392349064
+	- r0_backbone: -0.023513614783776688
+- hydrogen_bonding
+- stacking
+Iteration 222:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06813300074144868
+	- eps_backbone: -0.008361149974129511
+	- r0_backbone: -0.023167830034034227
+- hydrogen_bonding
+- stacking
+Iteration 223:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06757867600292755
+	- eps_backbone: -0.008291598624824092
+	- r0_backbone: -0.022992283269663426
+- hydrogen_bonding
+- stacking
+Iteration 224:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0674734434697104
+	- eps_backbone: -0.008278131786718768
+	- r0_backbone: -0.022970306381402503
+- hydrogen_bonding
+- stacking
+Iteration 225:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06777268314766771
+	- eps_backbone: -0.008315169820563906
+	- r0_backbone: -0.02308655961395756
+- hydrogen_bonding
+- stacking
+Iteration 226:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06843659294481852
+	- eps_backbone: -0.008397784809383801
+	- r0_backbone: -0.02331956469830101
+- hydrogen_bonding
+- stacking
+Iteration 227:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06942709365330768
+	- eps_backbone: -0.00852124918693864
+	- r0_backbone: -0.023657679536440202
+- hydrogen_bonding
+- stacking
+Iteration 228:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07070910141222164
+	- eps_backbone: -0.008681223254569659
+	- r0_backbone: -0.024090401008905
+- hydrogen_bonding
+- stacking
+Iteration 229:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07147595691337782
+	- eps_backbone: -0.008776726441693472
+	- r0_backbone: -0.02435158373086647
+- hydrogen_bonding
+- stacking
+Iteration 230:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07178118529773769
+	- eps_backbone: -0.008814416210293663
+	- r0_backbone: -0.024458408570787654
+- hydrogen_bonding
+- stacking
+Iteration 231:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07167500473941901
+	- eps_backbone: -0.008800056009371726
+	- r0_backbone: -0.024417807341272635
+- hydrogen_bonding
+- stacking
+Iteration 232:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07119872258018956
+	- eps_backbone: -0.008738887190970712
+	- r0_backbone: -0.024244627742947836
+- hydrogen_bonding
+- stacking
+Iteration 233:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07039068361185818
+	- eps_backbone: -0.008635805489550341
+	- r0_backbone: -0.023952438678393903
+- hydrogen_bonding
+- stacking
+Iteration 234:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06928661142452541
+	- eps_backbone: -0.008495395467057576
+	- r0_backbone: -0.023553675272195793
+- hydrogen_bonding
+- stacking
+Iteration 235:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06791998534482735
+	- eps_backbone: -0.008321969450410194
+	- r0_backbone: -0.023059783948312304
+- hydrogen_bonding
+- stacking
+Iteration 236:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06712103860314711
+	- eps_backbone: -0.00822002112346265
+	- r0_backbone: -0.022746755546457952
+- hydrogen_bonding
+- stacking
+Iteration 237:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06683363429825762
+	- eps_backbone: -0.008182441381379801
+	- r0_backbone: -0.02259638139614529
+- hydrogen_bonding
+- stacking
+Iteration 238:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06700665664774097
+	- eps_backbone: -0.008202783268109859
+	- r0_backbone: -0.022592330069636752
+- hydrogen_bonding
+- stacking
+Iteration 239:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06759365826014796
+	- eps_backbone: -0.008275211647407632
+	- r0_backbone: -0.022719969992206074
+- hydrogen_bonding
+- stacking
+Iteration 240:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06855244024763363
+	- eps_backbone: -0.008394445208344314
+	- r0_backbone: -0.022966191002654048
+- hydrogen_bonding
+- stacking
+Iteration 241:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.06983108035420571
+	- eps_backbone: -0.008553769874149797
+	- r0_backbone: -0.02333943975842329
+- hydrogen_bonding
+- stacking
+Iteration 242:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07139472132742908
+	- eps_backbone: -0.008748904099340926
+	- r0_backbone: -0.023826736875274753
+- hydrogen_bonding
+- stacking
+Iteration 243:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07239140873012295
+	- eps_backbone: -0.008872956291067546
+	- r0_backbone: -0.024113472433032617
+- hydrogen_bonding
+- stacking
+Iteration 244:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07287892696941767
+	- eps_backbone: -0.008933107852493904
+	- r0_backbone: -0.024219909065120653
+- hydrogen_bonding
+- stacking
+Iteration 245:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07290849772103059
+	- eps_backbone: -0.008935759703209478
+	- r0_backbone: -0.0241642920447828
+- hydrogen_bonding
+- stacking
+Iteration 246:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.0725582969316716
+	- eps_backbone: -0.008890859959471697
+	- r0_backbone: -0.023985312125032944
+- hydrogen_bonding
+- stacking
+Iteration 247:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07186706477700633
+	- eps_backbone: -0.008803277433881096
+	- r0_backbone: -0.023695497890747843
+- hydrogen_bonding
+- stacking
+Iteration 248:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07087030575270514
+	- eps_backbone: -0.008677487925056404
+	- r0_backbone: -0.023306257111212203
+- hydrogen_bonding
+- stacking
+Iteration 249:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+	- delta_backbone: 0.07034536746795195
+	- eps_backbone: -0.008610889387801635
+	- r0_backbone: -0.023083824489942104
+- hydrogen_bonding
+- stacking
