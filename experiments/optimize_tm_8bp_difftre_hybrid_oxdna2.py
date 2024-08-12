@@ -189,15 +189,15 @@ def run(args):
                 prev_lastconf_info = trajectory.TrajectoryInfo(
                     top_info,
                     read_from_file=True, traj_path=prev_lastconf_path,
-                    reverse_direction=True
-                    # reverse_direction=False
+                    # reverse_direction=True
+                    reverse_direction=False
                 )
                 # conf_info_copy = center_configuration.center_conf(top_info, prev_lastconf_info)
             conf_info_copy.traj_df.t = onp.full(seq_oh.shape[0], r*n_steps_per_sim)
 
             conf_info_copy.write(repeat_dir / "init.conf",
-                                 # reverse=False,
-                                 reverse=True,
+                                 reverse=False,
+                                 # reverse=True,
                                  write_topology=False)
 
             check_seed_dir = repeat_dir / "check_seed"
@@ -311,8 +311,8 @@ def run(args):
         traj_info = trajectory.TrajectoryInfo(
             top_info, read_from_file=True,
             traj_path=iter_dir / "output.dat",
-            # reverse_direction=False)
-            reverse_direction=True
+            reverse_direction=False
+            # reverse_direction=True
         )
         ref_states = traj_info.get_states()
         assert(len(ref_states) == n_ref_states)

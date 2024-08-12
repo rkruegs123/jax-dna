@@ -31,6 +31,7 @@ from jax_dna.loss import persistence_length
 from jax_dna.dna1 import model as model1
 from jax_dna.dna2 import model as model2
 from jax_dna.dna2.oxdna_utils import recompile_oxdna
+from jax_dna.dna1.oxdna_utils import rewrite_input_file
 import jax_dna.input.trajectory as jdt
 
 from jax.config import config
