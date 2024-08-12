@@ -20,16 +20,18 @@ import seaborn as sns
 import zipfile
 import os
 
+
 import optax
 import jax.numpy as jnp
 from jax_md import space
-from jax import vmap, jit, lax, grad, value_and_grad, tree_util
+from jax import vmap, jit, lax, grad, value_and_grad
 
 from jax_dna.common import utils, topology, trajectory, center_configuration, checkpoint
 from jax_dna.loss import persistence_length
 from jax_dna.dna1 import model as model1
 from jax_dna.dna2 import model as model2
-from jax_dna.dna1.oxdna_utils import rewrite_input_file
+from jax_dna.dna2.oxdna_utils import recompile_oxdna
+import jax_dna.input.trajectory as jdt
 
 from jax.config import config
 config.update("jax_enable_x64", True)
@@ -44,18 +46,12 @@ else:
                              checkpoint_every=checkpoint_every)
 
 
-INF = 1e6
-def relative_diff(init_val, fin_val, eps=1e-10):
-    denom = jnp.where(init_val != 0, init_val, init_val + eps)
-    return (fin_val - init_val) / denom
+compute_all_curves = vmap(persistence_length.get_correlation_curve, (0, None, None))
+
 
 def zip_file(file_path, zip_name):
     with zipfile.ZipFile(zip_name, 'w') as zipf:
         zipf.write(file_path, os.path.basename(file_path))
-
-compute_all_curves = vmap(persistence_length.get_correlation_curve, (0, None, None))
-
-# Compute the average persistence length
 
 def run(args):
     # Load parameters
@@ -82,9 +78,12 @@ def run(args):
     target_lp = args['target_lp']
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
+    salt_concentration = args['salt_concentration']
+    opt_keys = args['opt_keys']
     no_delete = args['no_delete']
     no_archive = args['no_archive']
-    opt_keys = args['opt_keys']
+    plot_every = args['plot_every']
+    save_obj_every = args['save_obj_every']
 
 
     # Setup the logging directory
@@ -97,19 +96,23 @@ def run(args):
     img_dir = run_dir / "img"
     img_dir.mkdir(parents=False, exist_ok=False)
 
+    obj_dir = run_dir / "obj"
+    obj_dir.mkdir(parents=False, exist_ok=False)
+
+    log_dir = run_dir / "log"
+    log_dir.mkdir(parents=False, exist_ok=False)
+
     ref_traj_dir = run_dir / "ref_traj"
     ref_traj_dir.mkdir(parents=False, exist_ok=False)
 
 
-    loss_path = run_dir / "loss.txt"
-    times_path = run_dir / "times.txt"
-    grads_path = run_dir / "grads.txt"
-    neff_path = run_dir / "neff.txt"
-    lp_path = run_dir / "lp.txt"
-    l0_avg_path = run_dir / "l0_avg.txt"
-    resample_log_path = run_dir / "resample_log.txt"
-    rel_diff_path = log_dir / "rel_diff.txt"
-    iter_params_path = log_dir / "iter_params.txt"
+    loss_path = log_dir / "loss.txt"
+    times_path = log_dir / "times.txt"
+    grads_path = log_dir / "grads.txt"
+    neff_path = log_dir / "neff.txt"
+    lp_path = log_dir / "lp.txt"
+    l0_avg_path = log_dir / "l0_avg.txt"
+    resample_log_path = log_dir / "resample_log.txt"
 
     params_str = ""
     params_str += f"n_ref_states: {n_ref_states}\n"
@@ -119,6 +122,7 @@ def run(args):
         f.write(params_str)
 
     # Load the system
+    # FIXME: will have to add template options for GPU/CUDA-related things
     sys_basedir = Path("data/templates/persistence-length")
     input_template_path = sys_basedir / "input"
 
@@ -152,6 +156,7 @@ def run(args):
 
 
     # Do the simulation
+    # FIXME: take care of CPU vs. GPU
     def get_ref_states(params, i, seed, prev_basedir):
 
         random.seed(seed)
@@ -160,7 +165,7 @@ def run(args):
         iter_dir.mkdir(parents=False, exist_ok=False)
 
         recompile_start = time.time()
-        oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+        recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
         recompile_end = time.time()
 
         with open(resample_log_path, "a") as f:
@@ -169,6 +174,7 @@ def run(args):
         sim_start = time.time()
         if device == "cpu":
             procs = list()
+
         for r in range(n_sims):
             repeat_dir = iter_dir / f"r{r}"
             repeat_dir.mkdir(parents=False, exist_ok=False)
@@ -201,7 +207,8 @@ def run(args):
                 equilibration_steps=n_eq_steps, dt=dt,
                 no_stdout_energy=0, backend=backend,
                 log_file=str(repeat_dir / "sim.log"),
-                interaction_type="DNA2_nomesh"
+                interaction_type="DNA2_nomesh",
+                salt_concentration=salt_concentration
             )
 
             if device == "cpu":
@@ -239,16 +246,27 @@ def run(args):
                     file_to_rem = repeat_dir / f_stem
                     file_to_rem.unlink()
 
+
         # Analyze
 
         ## Load states from oxDNA simulation
         load_start = time.time()
+        """
         traj_info = trajectory.TrajectoryInfo(
             top_info, read_from_file=True,
             traj_path=iter_dir / "output.dat",
             # reverse_direction=True)
             reverse_direction=False)
         traj_states = traj_info.get_states()
+        """
+        strand_length = int(seq_oh.shape[0] // 2)
+        traj_ = jdt.from_file(
+            iter_dir / "output.dat",
+            [strand_length, strand_length],
+            is_oxdna=False,
+            n_processes=n_threads,
+        )
+        traj_states = [ns.to_rigid_body() for ns in traj_.states]
         n_traj_states = len(traj_states)
         traj_states = utils.tree_stack(traj_states)
         load_end = time.time()
@@ -264,13 +282,14 @@ def run(args):
         energy_df = pd.concat(energy_dfs, ignore_index=True)
 
         ## Generate an energy function
-        em = model2.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
+        em = model2.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_concentration)
         energy_fn = lambda body: em.energy_fn(
             body,
             seq=seq_oh,
             bonded_nbrs=top_info.bonded_nbrs,
             unbonded_nbrs=top_info.unbonded_nbrs.T,
-            is_end=top_info.is_end)
+            is_end=top_info.is_end
+        )
         energy_fn = jit(energy_fn)
 
         # Check energies
@@ -281,8 +300,12 @@ def run(args):
         with open(resample_log_path, "a") as f:
             f.write(f"- Calculating energies took {calc_end - calc_start} seconds\n")
 
+
+        # gt_energies = energy_df.iloc[1:, :].potential_energy.to_numpy() * seq_oh.shape[0]
         gt_energies = energy_df.potential_energy.to_numpy() * seq_oh.shape[0]
 
+        atol_places = 3
+        tol = 10**(-atol_places)
         energy_diffs = list()
         for i, (calc, gt) in enumerate(zip(calc_energies, gt_energies)):
             diff = onp.abs(calc - gt)
@@ -394,7 +417,7 @@ def run(args):
     # Construct the loss function
     @jit
     def loss_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs):
-        em = model2.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
+        em = model2.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_concentration)
 
         # Compute the weights
         energy_fn = lambda body: em.energy_fn(body,
@@ -508,28 +531,6 @@ def run(args):
             f.write(f"{curr_l0_avg}\n")
         with open(times_path, "a") as f:
             f.write(f"{iter_end - iter_start}\n")
-        iter_params_str = f"\nIteration {i}:"
-        for k, v in params.items():
-            iter_params_str += f"\n- {k}"
-            for vk, vv in v.items():
-                iter_params_str += f"\n\t- {vk}: {vv}"
-        with open(iter_params_path, "a") as f:
-            f.write(iter_params_str)
-        grads_str = f"\nIteration {i}:"
-        for k, v in grads.items():
-            grads_str += f"\n- {k}"
-            for vk, vv in v.items():
-                grads_str += f"\n\t- {vk}: {vv}"
-        with open(grads_path, "a") as f:
-            f.write(grads_str)
-        rel_diffs = tree_util.tree_map(relative_diff, init_params, params)
-        rel_diffs_str = f"\nIteration {i}:"
-        for k, v in rel_diffs.items():
-            rel_diffs_str += f"\n- {k}"
-            for vk, vv in v.items():
-                rel_diffs_str += f"\n\t- {vk}: {vv}"
-        with open(rel_diff_path, "a") as f:
-            f.write(rel_diffs_str)
 
         all_losses.append(loss)
         all_n_effs.append(n_eff)
@@ -539,49 +540,58 @@ def run(args):
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
 
-        plt.plot(expected_corr_curve)
-        plt.xlabel("Nuc. Index")
-        plt.ylabel("Correlation")
-        plt.savefig(img_dir / f"corr_iter{i}.png")
-        plt.clf()
+        if i % plot_every == 0 and i:
+            plt.plot(expected_corr_curve)
+            plt.xlabel("Nuc. Index")
+            plt.ylabel("Correlation")
+            plt.savefig(img_dir / f"corr_iter{i}.png")
+            plt.clf()
 
-        log_corr_fn = lambda n: -n * curr_l0_avg / (curr_lp / utils.nm_per_oxdna_length) + curr_offset # oxDNA units
-        plt.plot(jnp.log(expected_corr_curve))
-        plt.plot(log_corr_fn(jnp.arange(expected_corr_curve.shape[0])), linestyle='--')
-        plt.xlabel("Nuc. Index")
-        plt.ylabel("Log-Correlation")
-        plt.savefig(img_dir / f"log_corr_iter{i}.png")
-        plt.clf()
+            log_corr_fn = lambda n: -n * curr_l0_avg / (curr_lp / utils.nm_per_oxdna_length) + curr_offset # oxDNA units
+            plt.plot(jnp.log(expected_corr_curve))
+            plt.plot(log_corr_fn(jnp.arange(expected_corr_curve.shape[0])), linestyle='--')
+            plt.xlabel("Nuc. Index")
+            plt.ylabel("Log-Correlation")
+            plt.savefig(img_dir / f"log_corr_iter{i}.png")
+            plt.clf()
 
-        plt.plot(expected_corr_curve[:truncation])
-        plt.xlabel("Nuc. Index")
-        plt.ylabel("Correlation")
-        plt.savefig(img_dir / f"corr_truncated_iter{i}.png")
-        plt.clf()
+            plt.plot(expected_corr_curve[:truncation])
+            plt.xlabel("Nuc. Index")
+            plt.ylabel("Correlation")
+            plt.savefig(img_dir / f"corr_truncated_iter{i}.png")
+            plt.clf()
 
-        plt.plot(jnp.log(expected_corr_curve[:truncation]))
-        plt.plot(log_corr_fn(jnp.arange(expected_corr_curve[:truncation].shape[0])), linestyle='--')
-        plt.xlabel("Nuc. Index")
-        plt.ylabel("Log-Correlation")
-        plt.savefig(img_dir / f"log_corr_truncated_iter{i}.png")
-        plt.clf()
+            plt.plot(jnp.log(expected_corr_curve[:truncation]))
+            plt.plot(log_corr_fn(jnp.arange(expected_corr_curve[:truncation].shape[0])), linestyle='--')
+            plt.xlabel("Nuc. Index")
+            plt.ylabel("Log-Correlation")
+            plt.savefig(img_dir / f"log_corr_truncated_iter{i}.png")
+            plt.clf()
 
-        plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
-        plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
-        plt.legend()
-        plt.ylabel("Loss")
-        plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"losses_iter{i}.png")
-        plt.clf()
+            plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
+            plt.legend()
+            plt.ylabel("Loss")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"losses_iter{i}.png")
+            plt.clf()
 
-        plt.plot(onp.arange(i+1), all_lps, linestyle="--", color="blue")
-        plt.scatter(all_ref_times, all_ref_lps, marker='o', label="Resample points", color="blue")
-        plt.axhline(y=target_lp, linestyle='--', label="Target Lp", color='red')
-        plt.legend()
-        plt.ylabel("Expected Lp (nm)")
-        plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"lps_iter{i}.png")
-        plt.clf()
+            plt.plot(onp.arange(i+1), all_lps, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_lps, marker='o', label="Resample points", color="blue")
+            plt.axhline(y=target_lp, linestyle='--', label="Target Lp", color='red')
+            plt.legend()
+            plt.ylabel("Expected Lp (nm)")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"lps_iter{i}.png")
+            plt.clf()
+
+        if i % save_obj_every == 0 and i:
+            onp.save(obj_dir / f"ref_iters_i{i}.npy", onp.array(all_ref_times), allow_pickle=False)
+            onp.save(obj_dir / f"ref_lps_i{i}.npy", onp.array(all_ref_lps), allow_pickle=False)
+            onp.save(obj_dir / f"lps_i{i}.npy", onp.array(all_lps), allow_pickle=False)
+    onp.save(obj_dir / f"fin_ref_iters.npy", onp.array(all_ref_times), allow_pickle=False)
+    onp.save(obj_dir / f"fin_ref_lps.npy", onp.array(all_ref_lps), allow_pickle=False)
+    onp.save(obj_dir / f"fin_lps.npy", onp.array(all_lps), allow_pickle=False)
 
 def get_parser():
 
@@ -617,15 +627,22 @@ def get_parser():
     parser.add_argument('--min-neff-factor', type=float, default=0.95,
                         help="Factor for determining min Neff")
 
-    parser.add_argument('--no-delete', action='store_true')
-    parser.add_argument('--no-archive', action='store_true')
+    parser.add_argument('--salt-concentration', type=float, default=0.5, help="Salt concentration in molar (M)")
 
     parser.add_argument(
         '--opt-keys',
         nargs='*',  # Accept zero or more arguments
-        default=["fene", "stacking"],
+        default=["stacking"],
         help='Parameter keys to optimize'
     )
+
+    parser.add_argument('--no-delete', action='store_true')
+    parser.add_argument('--no-archive', action='store_true')
+
+    parser.add_argument('--plot-every', type=int, default=10,
+                        help="Frequency of plotting data from gradient descent epochs")
+    parser.add_argument('--save-obj-every', type=int, default=50,
+                        help="Frequency of saving numpy files")
 
     return parser
 
