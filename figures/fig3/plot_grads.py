@@ -15,8 +15,9 @@ rc('text', usetex=True)
 
 
 data_dir = Path("figures/fig3/data")
-all_opt_dir = data_dir / "pitch-opts/target11/all/"
+all_opt_dir = data_dir / "pitch-opts/target11/adam/all/"
 grads_path = all_opt_dir / "log/grads.txt"
+output_dir = Path("figures/fig3/output")
 
 with open(grads_path) as gf:
     grads_lines = [line.rstrip() for line in gf]
@@ -88,7 +89,6 @@ legend_labels = list()
 for key1, key2, val in top_m_values:
     bar_heights.append(val)
     plot_xlabels.append(label_dict[key1][key2])
-    # legend_colors.append(f"tab:{colors[key1]}")
     legend_colors.append(f"{colors[key1]}")
 
     if labels[key1] in legend_labels:
@@ -96,13 +96,15 @@ for key1, key2, val in top_m_values:
     else:
         legend_labels.append(labels[key1])
 
-fig, ax = plt.subplots(figsize=(20, 8))
-ax.set_ylabel(r'$|\nabla_{\theta}\mathcal{L}|$')
-y_vals = [0, 5, 10, 15, 20]
-ax.set_yticks(y_vals)
-ax.set_yticklabels([r'$0$', r'$5$', r'$10$', r'$15$', r'$20$'])
-ax.set_xlabel("Parameter")
-ax.bar(plot_xlabels, bar_heights, label=legend_labels, color=legend_colors)
-ax.legend(title="Interaction")
-plt.tight_layout()
-plt.show()
+for width, height in [(20, 8), (28, 8), (32, 8)]:
+    fig, ax = plt.subplots(figsize=(width, height))
+    ax.set_ylabel(r'$|\nabla_{\theta}\mathcal{L}|$')
+    y_vals = [0, 5, 10, 15, 20]
+    ax.set_yticks(y_vals)
+    ax.set_yticklabels([r'$0$', r'$5$', r'$10$', r'$15$', r'$20$'])
+    ax.set_xlabel("Parameter")
+    ax.bar(plot_xlabels, bar_heights, label=legend_labels, color=legend_colors)
+    ax.legend(title="Interaction")
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig(output_dir / f"top{m}_grads_{width}x{height}.pdf")

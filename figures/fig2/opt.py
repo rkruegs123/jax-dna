@@ -36,14 +36,24 @@ plt.savefig(output_dir / "loss.pdf")
 plt.close()
 
 
-fig, ax = plt.subplots(figsize=(12, 10))
+fig, ax = plt.subplots(figsize=(12, 8))
 ax.plot(iters, pitches, color="black")
 ax.axhline(y=target_pitch, linestyle="--", color="red", label="Target Pitch", linewidth=2)
+
 ax.set_xlabel("Iteration")
 ax.set_ylabel("Pitch (bp/turn)")
-# ax.legend(loc="upper right")
-ax.legend(bbox_to_anchor=[1.0, 0.95])
+
+y_vals = [10.75, 11.0]
+ax.set_yticks(y_vals)
+ax.set_yticklabels([r'$10.75$', r'$11$'])
+ax.set_ylim(ymin=10.7, ymax=11.1)
+
+ax.legend(loc="upper right")
+# ax.legend(bbox_to_anchor=[1.0, 0.95])
 plt.tight_layout()
+
+
 # plt.show()
 plt.savefig(output_dir / "pitch.pdf")
+
 plt.close()
