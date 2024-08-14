@@ -65,8 +65,9 @@ def euler_angles_to_quaternion(
     return np.array([q0, q1, q2, q3]).T
 
 
-def smooth_abs(x: typ.ARR_OR_SCALAR, eps=1e-10) -> typ.ARR_OR_SCALAR:
+def smooth_abs(x: typ.ARR_OR_SCALAR, eps: typ.Scalar = 1e-10) -> typ.ARR_OR_SCALAR:
     """A smooth absolute value function.
+
     Note that a non-zero eps gives continuous first dervatives.
 
     https://math.stackexchange.com/questions/1172472/differentiable-approximation-of-the-absolute-value-function
@@ -74,18 +75,14 @@ def smooth_abs(x: typ.ARR_OR_SCALAR, eps=1e-10) -> typ.ARR_OR_SCALAR:
     return jnp.sqrt(x**2 + eps)
 
 
-def clamp(x, lo=-1.0, hi=1.0):
-    """
-    correction = 1e-10
-    min_ = jnp.where(x + 1e-10 > hi, hi, x)
-    max_ = jnp.where(min_ - 1e-10 < lo, lo, min_)
-    """
-
-    min_ = jnp.where(x >= hi, hi, x)
-    max_ = jnp.where(min_ <= lo, lo, min_)
-    return max_
-    # return jnp.clip(x, lo, hi)
+def clamp(x: typ.ARR_OR_SCALAR, lo: typ.Scalar = -1.0, hi: typ.Scalar = 1.0) -> typ.ARR_OR_SCALAR:
+    """Clamp a value between two values."""
+    clipped_max = jnp.where(x >= hi, hi, x)
+    return jnp.where(clipped_max <= lo, lo, clipped_max)
 
 
+# This is an idea to prototype a function that we ca use to benchmark different
+# implementations of the same function.
 def mult(a: typ.Arr_N, b: typ.Arr_N) -> typ.Arr_N:
+    """Element-wise multiplication of two arrays."""
     return jnp.einsum("ij, ij->i", a, b)

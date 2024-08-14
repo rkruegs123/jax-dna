@@ -1,6 +1,9 @@
+"""Hydrogen bonding energy function for DNA1 model."""
+
 import chex
 import jax.numpy as jnp
 import numpy as np
+from typing_extensions import override
 
 import jax_dna.energy.base as je_base
 import jax_dna.energy.configuration as config
@@ -23,8 +26,10 @@ HB_WEIGHTS_SA = np.array(
 
 @chex.dataclass(frozen=True)
 class HydrogenBondingConfiguration(config.BaseConfiguration):
+    """Configuration for the hydrogen bonding energy function."""
+
     # independent parameters ===================================================
-    ## f1(dr_hb)
+    # reference to f1(dr_hb)
     eps_hb: float | None = None
     a_hb: float | None = None
     dr0_hb: float | None = None
@@ -32,32 +37,32 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
     dr_low_hb: float | None = None
     dr_high_hb: float | None = None
 
-    ## f4(theta_1)
+    # reference to f4(theta_1)
     a_hb_1: float | None = None
     theta0_hb_1: float | None = None
     delta_theta_star_hb_1: float | None = None
 
-    ## f4(theta_2)
+    # reference to f4(theta_2)
     a_hb_2: float | None = None
     theta0_hb_2: float | None = None
     delta_theta_star_hb_2: float | None = None
 
-    ## f4(theta_3)
+    # reference to f4(theta_3)
     a_hb_3: float | None = None
     theta0_hb_3: float | None = None
     delta_theta_star_hb_3: float | None = None
 
-    ## f4(theta_4)
+    # reference to f4(theta_4)
     a_hb_4: float | None = None
     theta0_hb_4: float | None = None
     delta_theta_star_hb_4: float | None = None
 
-    ## f4(theta_7)
+    # reference to f4(theta_7)
     a_hb_7: float | None = None
     theta0_hb_7: float | None = None
     delta_theta_star_hb_7: float | None = None
 
-    ## f4(theta_8)
+    # reference to f4(theta_8)
     a_hb_8: float | None = None
     theta0_hb_8: float | None = None
     delta_theta_star_hb_8: float | None = None
@@ -111,8 +116,9 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
         "delta_theta_star_hb_8",
     )
 
+    @override
     def init_params(self) -> "HydrogenBondingConfiguration":
-        ## f1(dr_hb)
+        # reference to f1(dr_hb)
         b_low_hb, dr_c_low_hb, b_high_hb, dr_c_high_hb = bsf.get_f1_smoothing_params(
             self.eps_hb,
             self.dr0_hb,
@@ -122,42 +128,42 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
             self.dr_high_hb,
         )
 
-        ## f4(theta_1)
+        # reference to f4(theta_1)
         b_hb_1, delta_theta_hb_1_c = bsf.get_f4_smoothing_params(
             self.a_hb_1,
             self.theta0_hb_1,
             self.delta_theta_star_hb_1,
         )
 
-        ## f4(theta_2)
+        # reference to f4(theta_2)
         b_hb_2, delta_theta_hb_2_c = bsf.get_f4_smoothing_params(
             self.a_hb_2,
             self.theta0_hb_2,
             self.delta_theta_star_hb_2,
         )
 
-        ## f4(theta_3)
+        # reference to f4(theta_3)
         b_hb_3, delta_theta_hb_3_c = bsf.get_f4_smoothing_params(
             self.a_hb_3,
             self.theta0_hb_3,
             self.delta_theta_star_hb_3,
         )
 
-        ## f4(theta_4)
+        # reference to f4(theta_4)
         b_hb_4, delta_theta_hb_4_c = bsf.get_f4_smoothing_params(
             self.a_hb_4,
             self.theta0_hb_4,
             self.delta_theta_star_hb_4,
         )
 
-        ## f4(theta_7)
+        # reference to f4(theta_7)
         b_hb_7, delta_theta_hb_7_c = bsf.get_f4_smoothing_params(
             self.a_hb_7,
             self.theta0_hb_7,
             self.delta_theta_star_hb_7,
         )
 
-        ## f4(theta_8)
+        # reference to f4(theta_8)
         b_hb_8, delta_theta_hb_8_c = bsf.get_f4_smoothing_params(
             self.a_hb_8,
             self.theta0_hb_8,
@@ -186,8 +192,11 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
 
 @chex.dataclass(frozen=True)
 class HydrogenBonding(je_base.BaseEnergyFunction):
+    """Hydrogen bonding energy function for DNA1 model."""
+
     params: HydrogenBondingConfiguration
 
+    @override
     def __call__(
         self,
         body: dna1_nucleotide.Nucleotide,
@@ -265,9 +274,5 @@ class HydrogenBonding(je_base.BaseEnergyFunction):
             self.params.b_hb_8,
         )
 
-        # v_hb = jnp.where(mask, v_hb, 0.0) # Mask for neighbors
-        v_hb = mask * v_hb
-
-        hb_dg = jnp.dot(hb_weights, v_hb)
-
-        return hb_dg
+        v_hb = jnp.where(mask, v_hb, 0.0)  # Mask for neighbors
+        return jnp.dot(hb_weights, v_hb)

@@ -1,5 +1,8 @@
+"""FENE energy function for DNA1 model."""
+
 import chex
 import jax.numpy as jnp
+from typing_extensions import override
 
 import jax_dna.energy.base as je_base
 import jax_dna.energy.configuration as config
@@ -10,7 +13,8 @@ import jax_dna.utils.types as typ
 
 @chex.dataclass(frozen=True)
 class FeneConfiguration(config.BaseConfiguration):
-    # independent parameters
+    """Configuration for the FENE energy function."""
+
     eps_backbone: float | None = None
     r0_backbone: float | None = None
     delta_backbone: float | None = None
@@ -23,8 +27,11 @@ class FeneConfiguration(config.BaseConfiguration):
 
 @chex.dataclass(frozen=True)
 class Fene(je_base.BaseEnergyFunction):
+    """FENE energy function for DNA1 model."""
+
     params: FeneConfiguration
 
+    @override
     def __call__(
         self,
         body: dna1_nucleotide.Nucleotide,

@@ -1,5 +1,8 @@
+"""Cross-stacking energy term for DNA1 model."""
+
 import chex
 import jax.numpy as jnp
+from typing_extensions import override
 
 import jax_dna.energy.base as je_base
 import jax_dna.energy.configuration as config
@@ -12,6 +15,8 @@ import jax_dna.utils.types as typ
 
 @chex.dataclass(frozen=True)
 class CrossStackingConfiguration(config.BaseConfiguration):
+    """Configuration for the cross-stacking energy function."""
+
     # independent parameters ===================================================
     dr_low_cross: float | None = None
     dr_high_cross: float | None = None
@@ -82,8 +87,9 @@ class CrossStackingConfiguration(config.BaseConfiguration):
         "a_cross_8",
     )
 
+    @override
     def init_params(self) -> "CrossStackingConfiguration":
-        ## f2(dr_hb)
+        # reference to f2(dr_hb)
         (
             b_low_cross,
             dr_c_low_cross,
@@ -97,42 +103,42 @@ class CrossStackingConfiguration(config.BaseConfiguration):
             self.dr_high_cross,
         )
 
-        ## f4(theta_1)
+        # reference to f4(theta_1)
         b_cross_1, delta_theta_cross_1_c = bsf.get_f4_smoothing_params(
             self.a_cross_1,
             self.theta0_cross_1,
             self.delta_theta_star_cross_1,
         )
 
-        ## f4(theta_2)
+        # reference to f4(theta_2)
         b_cross_2, delta_theta_cross_2_c = bsf.get_f4_smoothing_params(
             self.a_cross_2,
             self.theta0_cross_2,
             self.delta_theta_star_cross_2,
         )
 
-        ## f4(theta_3)
+        # reference to f4(theta_3)
         b_cross_3, delta_theta_cross_3_c = bsf.get_f4_smoothing_params(
             self.a_cross_3,
             self.theta0_cross_3,
             self.delta_theta_star_cross_3,
         )
 
-        ## f4(theta_4) + f4(pi - theta_4)
+        # reference to f4(theta_4) + f4(pi - theta_4)
         b_cross_4, delta_theta_cross_4_c = bsf.get_f4_smoothing_params(
             self.a_cross_4,
             self.theta0_cross_4,
             self.delta_theta_star_cross_4,
         )
 
-        ## f4(theta_7) + f4(pi - theta_7)
+        # reference to f4(theta_7) + f4(pi - theta_7)
         b_cross_7, delta_theta_cross_7_c = bsf.get_f4_smoothing_params(
             self.a_cross_7,
             self.theta0_cross_7,
             self.delta_theta_star_cross_7,
         )
 
-        ## f4(theta_8) + f4(pi - theta_8)
+        # reference to f4(theta_8) + f4(pi - theta_8)
         b_cross_8, delta_theta_cross_8_c = bsf.get_f4_smoothing_params(
             self.a_cross_8,
             self.theta0_cross_8,
@@ -161,8 +167,11 @@ class CrossStackingConfiguration(config.BaseConfiguration):
 
 @chex.dataclass(frozen=True)
 class CrossStacking(je_base.BaseEnergyFunction):
+    """Cross-stacking energy function for DNA1 model."""
+
     params: CrossStackingConfiguration
 
+    @override
     def __call__(
         self,
         body: dna1_nucleotide.Nucleotide,
@@ -234,7 +243,5 @@ class CrossStacking(je_base.BaseEnergyFunction):
             self.params.a_cross_8,
             self.params.b_cross_8,
         )
-        # cr_stack_dg = jnp.where(mask, cr_stack_dg, 0.0).sum() # Mask for neighbors
-        cr_stack_dg = (mask * cr_stack_dg).sum()
 
-        return cr_stack_dg
+        return jnp.where(mask, cr_stack_dg, 0.0).sum()  # Mask for neighbors

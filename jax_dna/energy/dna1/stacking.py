@@ -1,6 +1,9 @@
+"""Stacking energy function for DNA1 model."""
+
 import chex
 import jax.numpy as jnp
 import numpy as np
+from typing_extensions import override
 
 import jax_dna.energy.base as je_base
 import jax_dna.energy.configuration as config
@@ -23,6 +26,8 @@ STACK_WEIGHTS_SA = np.array(
 
 @chex.dataclass(frozen=True)
 class StackingConfiguration(config.BaseConfiguration):
+    """Configuration for the stacking energy function."""
+
     # independent parameters
     eps_stack_base: float | None = None
     eps_stack_kt_coeff: float | None = None
@@ -90,6 +95,7 @@ class StackingConfiguration(config.BaseConfiguration):
 
     non_optimizable_required_params: tuple[str] = ("kt",)
 
+    @override
     def init_params(self) -> "StackingConfiguration":
         eps_stack = self.eps_stack_base + self.eps_stack_kt_coeff * self.kt
 
@@ -151,8 +157,11 @@ class StackingConfiguration(config.BaseConfiguration):
 
 @chex.dataclass(frozen=True)
 class Stacking(je_base.BaseEnergyFunction):
+    """Stacking energy function for DNA1 model."""
+
     params: StackingConfiguration
 
+    @override
     def __call__(
         self,
         body: dna1_nucleotide.Nucleotide,
@@ -224,6 +233,4 @@ class Stacking(je_base.BaseEnergyFunction):
         stack_probs = je_utils.get_pair_probs(seq, nn_i, nn_j)
         stack_weights = jnp.dot(stack_probs, STACK_WEIGHTS_SA.flatten())
 
-        stack_dg = jnp.dot(stack_weights, v_stack)
-
-        return stack_dg
+        return jnp.dot(stack_weights, v_stack)

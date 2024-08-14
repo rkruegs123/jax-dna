@@ -1,3 +1,5 @@
+"""Configuration class for energy models."""
+
 import dataclasses as dc
 import warnings
 from typing import Any, Union
@@ -8,12 +10,23 @@ import jax_dna.utils.types as jdt
 
 ERR_INVALID_MERGE_TYPE = "Cannot merge {this_type} with {that_type}"
 ERR_MISSING_REQUIRED_PARAMS = "Required properties {props} are not initialized."
-ERR_OPT_DEPENDENT_PARAMS = "Optimized parameters cannot be dependent on other parameters. Only {req_params} permitted, but found {given_params}"
+ERR_OPT_DEPENDENT_PARAMS = "Only {req_params} permitted, but found {given_params}"
 WARN_INIT_PARAMS_NOT_IMPLEMENTED = "init_params not implemented"
 
 
 @chex.dataclass(frozen=True)
 class BaseConfiguration:
+    """Base class for configuration classes.
+
+    This class should not be used directly.
+
+    Attributes:
+        params_to_optimize (tuple[str]): parameters to optimize
+        required_params (tuple[str]): required parameters
+        non_optimizable_required_params (tuple[str]): required parameters that are not optimizable
+        OPT_ALL (tuple[str]): CONSTANT, is a wild card for all parameters
+    """
+
     params_to_optimize: tuple[str] = ()
     required_params: tuple[str] = ()
     non_optimizable_required_params: tuple[str] = ()
@@ -21,16 +34,20 @@ class BaseConfiguration:
 
     @property
     def opt_params(self) -> dict[str, jdt.Scalar]:
+        """Returns the parameters to optimize."""
         if self.params_to_optimize == self.OPT_ALL:
-            return {
+            params = {
                 k: v
                 for k, v in dc.asdict(self).items()
                 if (k in self.required_params) and (k not in self.non_optimizable_required_params)
             }
         else:
-            return {k: v for k, v in dc.asdict(self).items() if k in self.params_to_optimize}
+            params = {k: v for k, v in dc.asdict(self).items() if k in self.params_to_optimize}
 
-    def __post_init__(self):
+        return params
+
+    def __post_init__(self) -> None:
+        """Checks validity of the configuration."""
         non_initialized_props = [param for param in self.required_params if getattr(self, param) is None]
         if non_initialized_props:
             raise ValueError(ERR_MISSING_REQUIRED_PARAMS.format(props=",".join(non_initialized_props)))
@@ -45,25 +62,38 @@ class BaseConfiguration:
             )
 
     def init_params(self) -> "BaseConfiguration":
-        warnings.warn(WARN_INIT_PARAMS_NOT_IMPLEMENTED)
+        """Initializes the dependent parameters in configuration.
+
+        Should be implemented in the subclass if dependent parameters are present.
+        """
+        warnings.warn(WARN_INIT_PARAMS_NOT_IMPLEMENTED, stacklevel=1)
         return self
 
     @classmethod
     def from_dict(cls, params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "BaseConfiguration":
+        """Creates a configuration from a dictionary."""
         return cls(**(params | {"params_to_optimize": params_to_optimize}))
 
     def __merge__baseconfig(self, other: "BaseConfiguration") -> "BaseConfiguration":
+        """Merges two BaseConfiguration objects."""
         filtered = {k: v for k, v in dc.asdict(other).items() if v is not None}
         return self.__merge__dict(filtered)
 
     def __merge__dict(self, other: dict[str, Any]) -> "BaseConfiguration":
+        """Merges a dictionary with the configuration."""
         return dc.replace(self, **other)
 
     # python doesn't like using the bar for type hints when inside the class, use Union for now
     def __or__(self, other: Union["BaseConfiguration", dict[str, jdt.ARR_OR_SCALAR]]) -> "BaseConfiguration":
+        """Convenience method to merge a configuration or a dictionary with the current configuration.
+
+        Returns a new configuration object.
+        """
         if isinstance(other, BaseConfiguration):
-            return self.__merge__baseconfig(other)
+            merge_fn = self.__merge__baseconfig
         elif isinstance(other, dict):
-            return self.__merge__dict(other)
+            merge_fn = self.__merge__dict
         else:
             raise TypeError(ERR_INVALID_MERGE_TYPE.format(this_type=type(self), that_type=type(other)))
+
+        return merge_fn(other)

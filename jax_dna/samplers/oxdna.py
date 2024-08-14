@@ -1,10 +1,14 @@
+"""OXDNA sampler module.
+
+Run an jax_dna simulation using an oxDNA sampler.
+"""
+
 import subprocess
 from pathlib import Path
 from typing import Any
 
 import jax_dna.input.topology as jd_top
 import jax_dna.input.trajectory as jd_traj
-import jax_dna.utils.types as typ
 
 REQUIRED_KEYS = {
     "oxnda_bin",
@@ -22,6 +26,7 @@ OXDNA_TOPOLOGY_FILE_KEY = "topology"
 def run(
     input_config: dict[str, Any], meta: dict[str, Any], params: dict[str, Any]
 ) -> tuple[jd_traj.Trajectory, dict[str, Any]]:
+    """Run an OXDNA simulation."""
     _ = params
 
     _validate_input_config(input_config)
@@ -42,6 +47,7 @@ def run(
     return (trajectory, meta)
 
 
+# TODO(ryanhausen): This should probably be found as an environment variable rather than a str path
 def _run_oxdna(oxdna_bin: Path, input_file: Path) -> None:
     if not oxdna_bin.exists():
         raise FileNotFoundError(ERR_OXDNA_NOT_FOUND.format(oxdna_bin))
@@ -50,15 +56,16 @@ def _run_oxdna(oxdna_bin: Path, input_file: Path) -> None:
         raise FileNotFoundError(ERR_INPUT_FILE_NOT_FOUND.format(input_file))
 
     completed_proc = subprocess.run(
-        [
+        [  # noqa: S603
             str(oxdna_bin),
             str(input_file),
         ],
         stderr=subprocess.STDOUT,
+        check=True,
     )
 
     if completed_proc.returncode != 0:
-        with open("oxdna.log", "w") as f:
+        with Path("oxdna.log").open("w") as f:
             f.write(completed_proc.stdout)
         raise RuntimeError(ERR_OXDNA_FAILED)
 
@@ -72,12 +79,10 @@ def _parse_input_file_line(stripped_line: str) -> list[tuple[str, str]]:
 
 
 def _parse_input_file(file_data: list[str]) -> dict[str, Any]:
-    input_config = {}
     stripped_lines = map(str.strip, file_data)
     valid_lines = filter(_is_valid_input_file_line, stripped_lines)
-    input_config = dict(_parse_input_file_line(line) for line in valid_lines)
 
-    return input_config
+    return dict(_parse_input_file_line(line) for line in valid_lines)
 
 
 def _validate_input_config(input_config: dict[str, Any]) -> None:

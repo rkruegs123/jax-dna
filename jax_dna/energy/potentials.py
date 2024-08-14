@@ -1,3 +1,5 @@
+"""This module contains the potential energy functions used in the oxDNA DNA1 model."""
+
 import jax.numpy as jnp
 
 import jax_dna.utils.types as jd_types
@@ -9,7 +11,7 @@ import jax_dna.utils.types as jd_types
 def v_fene(
     r: jd_types.ARR_OR_SCALAR, eps: jd_types.Scalar, r0: jd_types.Scalar, delt: jd_types.Scalar
 ) -> jd_types.ARR_OR_SCALAR:
-    """The FENE potential.
+    """FENE spring (used to connect backbones).
 
     This is based on equation 2.1 from the oxDNA paper.
     """
@@ -23,7 +25,7 @@ def v_morse(
     r0: jd_types.Scalar,
     a: jd_types.Scalar,
 ) -> jd_types.ARR_OR_SCALAR:
-    """The Morse potential.
+    """Morse potential (used for stacking and H-bonding).
 
     This is based on equation 2.2 from the oxDNA paper.
     """
@@ -36,7 +38,7 @@ def v_harmonic(
     k: jd_types.Scalar,
     r0: jd_types.Scalar,
 ) -> jd_types.ARR_OR_SCALAR:
-    """The Harmonic potential.
+    """Harmonic potential (used for cross-stacking and coaxial stacking).
 
     This is based on equation 2.3 from the oxDNA paper.
     """
@@ -44,7 +46,7 @@ def v_harmonic(
 
 
 def v_lj(r: jd_types.ARR_OR_SCALAR, eps: jd_types.Scalar, sigma: jd_types.Scalar) -> jd_types.ARR_OR_SCALAR:
-    """The Lennard-Jones potential.
+    """Lennard - Jones potential (used for soft repulsion).
 
     This is based on equation 2.4 from the oxDNA paper.
     """
@@ -52,15 +54,17 @@ def v_lj(r: jd_types.ARR_OR_SCALAR, eps: jd_types.Scalar, sigma: jd_types.Scalar
     return 4 * eps * x
 
 
-def v_mod(theta: jd_types.Scalar, a: jd_types.Scalar, theta0: jd_types.Scalar):
-    """The modified potential.
+def v_mod(theta: jd_types.ARR_OR_SCALAR, a: jd_types.Scalar, theta0: jd_types.Scalar) -> jd_types.ARR_OR_SCALAR:
+    """Quadratic terms (used for modulation).
 
-    This is based on equation 2.5 from the oxDNA paper."""
+    This is based on equation 2.5 from the oxDNA paper.
+    """
     return 1 - a * (theta - theta0) ** 2
 
 
 def v_smooth(x: jd_types.ARR_OR_SCALAR, b: jd_types.Scalar, x_c: jd_types.Scalar) -> jd_types.ARR_OR_SCALAR:
-    """The smooth potential.
+    """Quadratic smoothing terms for truncation.
 
-    This is based on equation 2.6 from the oxDNA paper."""
+    This is based on equation 2.6 from the oxDNA paper.
+    """
     return b * (x_c - x) ** 2

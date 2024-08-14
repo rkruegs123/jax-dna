@@ -1,5 +1,8 @@
+"""Bonded excluded volume energy for DNA1 model."""
+
 import chex
 import jax.numpy as jnp
+from typing_extensions import override
 
 import jax_dna.energy.base as je_base
 import jax_dna.energy.configuration as config
@@ -11,6 +14,8 @@ import jax_dna.utils.types as typ
 
 @chex.dataclass(frozen=True)
 class BondedExcludedVolumeConfiguration(config.BaseConfiguration):
+    """Configuration for the bonded excluded volume energy function."""
+
     # independent parameters
     eps_exc: float | None = None
     dr_star_base: float | None = None
@@ -39,15 +44,16 @@ class BondedExcludedVolumeConfiguration(config.BaseConfiguration):
         "dr_star_base_back",
     )
 
+    @override
     def init_params(self) -> "BondedExcludedVolumeConfiguration":
         b_base, dr_c_base = bsf.get_f3_smoothing_params(self.dr_star_base, self.eps_exc, self.sigma_base)
 
-        ## f3(dr_back_base)
+        # reference to f3(dr_back_base)
         b_back_base, dr_c_back_base = bsf.get_f3_smoothing_params(
             self.dr_star_back_base, self.eps_exc, self.sigma_back_base
         )
 
-        ## f3(dr_base_back)
+        # reference to f3(dr_base_back)
         b_base_back, dr_c_base_back = bsf.get_f3_smoothing_params(
             self.dr_star_base_back,
             self.eps_exc,
@@ -66,8 +72,11 @@ class BondedExcludedVolumeConfiguration(config.BaseConfiguration):
 
 @chex.dataclass(frozen=True)
 class BondedExcludedVolume(je_base.BaseEnergyFunction):
+    """Bonded excluded volume energy function for DNA1 model."""
+
     params: BondedExcludedVolumeConfiguration
 
+    @override
     def __call__(
         self,
         body: dna1_nucleotide.Nucleotide,
@@ -82,7 +91,7 @@ class BondedExcludedVolume(je_base.BaseEnergyFunction):
         dr_back_base = self.displacement_mapped(body.back_sites[nn_i], body.base_sites[nn_j])
         dr_base_back = self.displacement_mapped(body.base_sites[nn_i], body.back_sites[nn_j])
 
-        exc_vol_bonded_dg = dna1_interactions.exc_vol_bonded(
+        return dna1_interactions.exc_vol_bonded(
             dr_base,
             dr_back_base,
             dr_base_back,
@@ -100,5 +109,3 @@ class BondedExcludedVolume(je_base.BaseEnergyFunction):
             self.params.b_base_back,
             self.params.dr_c_base_back,
         ).sum()
-
-        return exc_vol_bonded_dg

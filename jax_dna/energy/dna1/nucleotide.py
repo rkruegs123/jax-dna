@@ -1,4 +1,4 @@
-from typing import Union
+"""Extends `jax_md.rigid_body.RigidBody` for DNA1 nucleotide."""
 
 import chex
 import jax_md
@@ -9,8 +9,14 @@ import jax_dna.utils.types as typ
 
 @chex.dataclass(frozen=True)
 class Nucleotide(jax_md.rigid_body.RigidBody):
+    """Nucleotide rigid body with additional sites for DNA1.
+
+    This class is inteneded to be used as a dataclass for a nucleotide rigid body
+    as a `rigid_body_transform_fn` in `jax_md.energy.ComposedEnergyFunction`.
+    """
+
     center: typ.Arr_Nucleotide_3
-    orientation: Union[typ.Arr_Nucleotide_3, jax_md.rigid_body.Quaternion]
+    orientation: typ.Arr_Nucleotide_3 | jax_md.rigid_body.Quaternion
     stack_sites: typ.Arr_Nucleotide_3
     back_sites: typ.Arr_Nucleotide_3
     base_sites: typ.Arr_Nucleotide_3
@@ -24,7 +30,8 @@ class Nucleotide(jax_md.rigid_body.RigidBody):
         com_to_backbone: typ.Scalar,
         com_to_hb: typ.Scalar,
         com_to_stacking: typ.Scalar,
-    ):
+    ) -> "Nucleotide":
+        """Class method to precompute nucleotide sites from a rigid body."""
         back_base_vectors = je_utils.q_to_back_base(rigid_body.orientation)
         base_normals = je_utils.q_to_base_normal(rigid_body.orientation)
         cross_prods = je_utils.q_to_cross_prod(rigid_body.orientation)

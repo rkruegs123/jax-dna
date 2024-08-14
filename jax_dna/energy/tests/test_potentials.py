@@ -3,9 +3,9 @@ import numpy as np
 import pytest
 import sympy as sp
 
-import jax_dna.energy.potentials as potentials
+from jax_dna.energy import potentials
 
-jax.config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True) # noqa: FBT003
 
 # functional forms from oxDNA paper
 # https://ora.ox.ac.uk/objects/uuid:b2415bb2-7975-4f59-b5e2-8c022b4a3719/files/mdcac62bc9133143fc05070ed20048c50
@@ -18,7 +18,7 @@ def _sympy_v_fene() -> sp.Expr:
 
 
 @pytest.mark.parametrize(
-    "r, eps, r0, delt",
+    ("r", "eps", "r0", "delt"),
     [
         (5, 3, 2, 10),
     ],
@@ -36,7 +36,7 @@ def _sympy_v_morse() -> sp.Expr:
 
 
 @pytest.mark.parametrize(
-    "r, eps, r0, a",
+    ("r", "eps", "r0", "a"),
     [
         (5, 3, 2, 10),
     ],
@@ -54,7 +54,7 @@ def _sympy_v_harmonic() -> sp.Expr:
 
 
 @pytest.mark.parametrize(
-    "r, k, r0",
+    ("r", "k", "r0"),
     [
         (5, 3, 2),
     ],
@@ -72,7 +72,7 @@ def _sympy_harmonic() -> sp.Expr:
 
 
 @pytest.mark.parametrize(
-    "r, k, r0",
+    ("r", "k", "r0"),
     [
         (5, 3, 2),
     ],
@@ -90,7 +90,7 @@ def _sympy_v_lj() -> sp.Expr:
 
 
 @pytest.mark.parametrize(
-    "r, eps, sigma",
+    ("r", "eps", "sigma"),
     [
         (5, 3, 2),
     ],
@@ -108,7 +108,7 @@ def _sympy_v_mod() -> sp.Expr:
 
 
 @pytest.mark.parametrize(
-    "theta, a, theta0",
+    ("theta", "a", "theta0"),
     [
         (5, 3, 2),
     ],
@@ -126,7 +126,7 @@ def _sympy_v_smooth() -> sp.Expr:
 
 
 @pytest.mark.parametrize(
-    "x, b, x_c",
+    ("x", "b", "x_c"),
     [
         (5, 3, 2),
     ],

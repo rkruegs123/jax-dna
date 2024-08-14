@@ -1,7 +1,10 @@
+"""Unbonded excluded volume energy function for DNA1 model."""
+
 import dataclasses as dc
 
 import chex
 import jax.numpy as jnp
+from typing_extensions import override
 
 import jax_dna.energy.base as je_base
 import jax_dna.energy.configuration as config
@@ -13,6 +16,8 @@ import jax_dna.utils.types as typ
 
 @chex.dataclass(frozen=True)
 class UnbondedExcludedVolumeConfiguration(config.BaseConfiguration):
+    """Configuration for the unbonded excluded volume energy function."""
+
     # independent parameters
     eps_exc: float | None = None
     dr_star_base: float | None = None
@@ -47,23 +52,24 @@ class UnbondedExcludedVolumeConfiguration(config.BaseConfiguration):
         "sigma_backbone",
     )
 
+    @override
     def init_params(self) -> "UnbondedExcludedVolumeConfiguration":
-        ## f3(dr_base)
+        # reference to f3(dr_base)
         b_base, dr_c_base = bsf.get_f3_smoothing_params(self.dr_star_base, self.eps_exc, self.sigma_base)
 
-        ## f3(dr_back_base)
+        # reference to f3(dr_back_base)
         b_back_base, dr_c_back_base = bsf.get_f3_smoothing_params(
             self.dr_star_back_base, self.eps_exc, self.sigma_back_base
         )
 
-        ## f3(dr_base_back)
+        # reference to f3(dr_base_back)
         b_base_back, dr_c_base_back = bsf.get_f3_smoothing_params(
             self.dr_star_base_back,
             self.eps_exc,
             self.sigma_base_back,
         )
 
-        ## f3(dr_backbone)
+        # reference to f3(dr_backbone)
         b_backbone, dr_c_backbone = bsf.get_f3_smoothing_params(
             self.dr_star_backbone,
             self.eps_exc,
@@ -85,8 +91,11 @@ class UnbondedExcludedVolumeConfiguration(config.BaseConfiguration):
 
 @chex.dataclass(frozen=True)
 class UnbondedExcludedVolume(je_base.BaseEnergyFunction):
+    """Unbonded excluded volume energy function for DNA1 model."""
+
     params: UnbondedExcludedVolumeConfiguration
 
+    @override
     def __call__(
         self,
         body: dna1_nucleotide.Nucleotide,
@@ -130,6 +139,4 @@ class UnbondedExcludedVolume(je_base.BaseEnergyFunction):
             self.params.dr_c_backbone,
         )
 
-        # used to be:
-        # return jnp.where(mask, exc_vol_unbonded_dg, 0.0).sum()
-        return (mask * exc_vol_unbonded_dg).sum()
+        return jnp.where(mask, exc_vol_unbonded_dg, 0.0).sum()

@@ -1,5 +1,8 @@
+"""Coaxial stacking energy function for DNA1 model."""
+
 import chex
 import jax.numpy as jnp
+from typing_extensions import override
 
 import jax_dna.energy.base as je_base
 import jax_dna.energy.configuration as config
@@ -12,6 +15,8 @@ import jax_dna.utils.types as typ
 
 @chex.dataclass(frozen=True)
 class CoaxialStackingConfiguration(config.BaseConfiguration):
+    """Configuration for the coaxial stacking energy function."""
+
     # independent parameters ===================================================
     dr_low_coax: float | None = None
     dr_high_coax: float | None = None
@@ -78,8 +83,9 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
         "a_coax_4p",
     )
 
+    @override
     def init_params(self) -> "CoaxialStackingConfiguration":
-        ## f2(dr_coax)
+        # reference to f2(dr_coax)
         b_low_coax, dr_c_low_coax, b_high_coax, dr_c_high_coax = bsf.get_f2_smoothing_params(
             self.k_coax,
             self.dr0_coax,
@@ -88,41 +94,41 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
             self.dr_high_coax,
         )
 
-        ## f4(theta_4)
+        # reference to f4(theta_4)
         b_coax_4, delta_theta_coax_4_c = bsf.get_f4_smoothing_params(
             self.a_coax_4,
             self.theta0_coax_4,
             self.delta_theta_star_coax_4,
         )
 
-        ## f4(theta_1) + f4(2*pi - theta_1)
+        # reference to f4(theta_1) + f4(2*pi - theta_1)
         b_coax_1, delta_theta_coax_1_c = bsf.get_f4_smoothing_params(
             self.a_coax_1,
             self.theta0_coax_1,
             self.delta_theta_star_coax_1,
         )
 
-        ## f4(theta_5) + f4(pi - theta_5)
+        # reference to f4(theta_5) + f4(pi - theta_5)
         b_coax_5, delta_theta_coax_5_c = bsf.get_f4_smoothing_params(
             self.a_coax_5,
             self.theta0_coax_5,
             self.delta_theta_star_coax_5,
         )
 
-        ## f4(theta_6) + f4(pi - theta_6)
+        # reference to f4(theta_6) + f4(pi - theta_6)
         b_coax_6, delta_theta_coax_6_c = bsf.get_f4_smoothing_params(
             self.a_coax_6,
             self.theta0_coax_6,
             self.delta_theta_star_coax_6,
         )
 
-        ## f5(cos(phi3))
+        # reference to f5(cos(phi3))
         b_cos_phi3_coax, cos_phi3_c_coax = bsf.get_f5_smoothing_params(
             self.a_coax_3p,
             self.cos_phi3_star_coax,
         )
 
-        ## f5(cos(phi4))
+        # reference to f5(cos(phi4))
         b_cos_phi4_coax, cos_phi4_c_coax = bsf.get_f5_smoothing_params(
             self.a_coax_4p,
             self.cos_phi4_star_coax,
@@ -150,8 +156,11 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
 
 @chex.dataclass(frozen=True)
 class CoaxialStacking(je_base.BaseEnergyFunction):
+    """Coaxial stacking energy function for DNA1 model."""
+
     params: CoaxialStackingConfiguration
 
+    @override
     def __call__(
         self,
         body: dna1_nucleotide.Nucleotide,
@@ -228,7 +237,5 @@ class CoaxialStacking(je_base.BaseEnergyFunction):
             self.params.a_coax_4p,
             self.params.b_cos_phi4_coax,
         )
-        # cx_stack_dg = jnp.where(mask, cx_stack_dg, 0.0).sum() # Mask for neighbors
-        cx_stack_dg = (mask * cx_stack_dg).sum()
 
-        return cx_stack_dg
+        return jnp.where(mask, cx_stack_dg, 0.0).sum()

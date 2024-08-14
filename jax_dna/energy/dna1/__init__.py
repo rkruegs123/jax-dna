@@ -1,3 +1,5 @@
+"""oxDNA1 energy implementation in jax_dna."""
+
 from jax_dna.energy.dna1.bonded_excluded_volume import BondedExcludedVolume, BondedExcludedVolumeConfiguration
 from jax_dna.energy.dna1.coaxial_stacking import CoaxialStacking, CoaxialStackingConfiguration
 from jax_dna.energy.dna1.cross_stacking import CrossStacking, CrossStackingConfiguration

@@ -1,4 +1,8 @@
+"""Smoothing functions for the base functions in DNA1 model."""
+
 import jax.numpy as jnp
+
+import jax_dna.utils.types as typ
 
 
 def get_f1_smoothing_params(eps, x0, a, xc, x_low, x_high):
