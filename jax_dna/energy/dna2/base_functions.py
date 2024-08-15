@@ -7,6 +7,7 @@ https://ora.ox.ac.uk/objects/uuid:241ae8d5-2092-4b24-b1d0-3fb7482b7bcd/files/m74
 import jax.numpy as jnp
 
 import jax_dna.utils.types as typ
+from jax_dna.energy.dna1.base_functions import f1, f2, f3, f4, f5
 
 
 def f6(theta: typ.ARR_OR_SCALAR, a: typ.Scalar, b: typ.Scalar) -> typ.ARR_OR_SCALAR:
@@ -14,3 +15,6 @@ def f6(theta: typ.ARR_OR_SCALAR, a: typ.Scalar, b: typ.Scalar) -> typ.ARR_OR_SCA
     cond = theta >= b
     val = a / 2 * (theta - b) ** 2
     return jnp.where(cond, val, 0.0)
+
+
+__all__ = ["f1", "f2", "f3", "f4", "f5", "f6"]

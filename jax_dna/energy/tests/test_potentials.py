@@ -5,7 +5,7 @@ import sympy as sp
 
 from jax_dna.energy import potentials
 
-jax.config.update("jax_enable_x64", True) # noqa: FBT003
+jax.config.update("jax_enable_x64", True)  # noqa: FBT003
 
 # functional forms from oxDNA paper
 # https://ora.ox.ac.uk/objects/uuid:b2415bb2-7975-4f59-b5e2-8c022b4a3719/files/mdcac62bc9133143fc05070ed20048c50

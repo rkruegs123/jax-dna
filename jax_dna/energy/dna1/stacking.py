@@ -100,7 +100,6 @@ class StackingConfiguration(config.BaseConfiguration):
         eps_stack = self.eps_stack_base + self.eps_stack_kt_coeff * self.kt
 
         b_low_stack, dr_c_low_stack, b_high_stack, dr_c_high_stack = bsf.get_f1_smoothing_params(
-            self.eps_stack,
             self.dr0_stack,
             self.a_stack,
             self.dr_c_stack,

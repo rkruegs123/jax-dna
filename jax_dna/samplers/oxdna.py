@@ -48,6 +48,7 @@ def run(
 
 
 # TODO(ryanhausen): This should probably be found as an environment variable rather than a str path
+# https://github.com/ssec-jhu/jax-dna/issues/8
 def _run_oxdna(oxdna_bin: Path, input_file: Path) -> None:
     if not oxdna_bin.exists():
         raise FileNotFoundError(ERR_OXDNA_NOT_FOUND.format(oxdna_bin))

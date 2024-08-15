@@ -96,7 +96,6 @@ class CrossStackingConfiguration(config.BaseConfiguration):
             b_high_cross,
             dr_c_high_cross,
         ) = bsf.get_f2_smoothing_params(
-            self.k_cross,
             self.r0_cross,
             self.dr_c_cross,
             self.dr_low_cross,

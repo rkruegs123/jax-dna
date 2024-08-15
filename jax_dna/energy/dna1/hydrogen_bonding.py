@@ -120,7 +120,6 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
     def init_params(self) -> "HydrogenBondingConfiguration":
         # reference to f1(dr_hb)
         b_low_hb, dr_c_low_hb, b_high_hb, dr_c_high_hb = bsf.get_f1_smoothing_params(
-            self.eps_hb,
             self.dr0_hb,
             self.a_hb,
             self.dr_c_hb,

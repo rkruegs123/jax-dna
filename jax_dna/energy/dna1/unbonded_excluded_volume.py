@@ -55,24 +55,20 @@ class UnbondedExcludedVolumeConfiguration(config.BaseConfiguration):
     @override
     def init_params(self) -> "UnbondedExcludedVolumeConfiguration":
         # reference to f3(dr_base)
-        b_base, dr_c_base = bsf.get_f3_smoothing_params(self.dr_star_base, self.eps_exc, self.sigma_base)
+        b_base, dr_c_base = bsf.get_f3_smoothing_params(self.dr_star_base, self.sigma_base)
 
         # reference to f3(dr_back_base)
-        b_back_base, dr_c_back_base = bsf.get_f3_smoothing_params(
-            self.dr_star_back_base, self.eps_exc, self.sigma_back_base
-        )
+        b_back_base, dr_c_back_base = bsf.get_f3_smoothing_params(self.dr_star_back_base, self.sigma_back_base)
 
         # reference to f3(dr_base_back)
         b_base_back, dr_c_base_back = bsf.get_f3_smoothing_params(
             self.dr_star_base_back,
-            self.eps_exc,
             self.sigma_base_back,
         )
 
         # reference to f3(dr_backbone)
         b_backbone, dr_c_backbone = bsf.get_f3_smoothing_params(
             self.dr_star_backbone,
-            self.eps_exc,
             self.sigma_backbone,
         )
 

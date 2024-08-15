@@ -87,7 +87,6 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
     def init_params(self) -> "CoaxialStackingConfiguration":
         # reference to f2(dr_coax)
         b_low_coax, dr_c_low_coax, b_high_coax, dr_c_high_coax = bsf.get_f2_smoothing_params(
-            self.k_coax,
             self.dr0_coax,
             self.dr_c_coax,
             self.dr_low_coax,
