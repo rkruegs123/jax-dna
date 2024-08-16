@@ -1,4 +1,9 @@
-"""Smoothing functions for the base functions in DNA1 model."""
+"""Smoothing functions for the base functions in DNA1 model.
+
+functional forms from oxDNA paper
+https://ora.ox.ac.uk/objects/uuid:b2415bb2-7975-4f59-b5e2-8c022b4a3719/files/mdcac62bc9133143fc05070ed20048c50
+# Section 2.4.1
+"""
 
 import jax.numpy as jnp
 
@@ -42,7 +47,7 @@ def _solve_f1_xc_star(x: typ.Scalar, a: typ.Scalar, x0: typ.Scalar, xc: typ.Scal
 
 def get_f1_smoothing_params(
     x0: typ.Scalar, a: typ.Scalar, xc: typ.Scalar, x_low: typ.Scalar, x_high: typ.Scalar
-) -> typ.Tuple[typ.Scalar, typ.Scalar, typ.Scalar, typ.Scalar]:
+) -> tuple[typ.Scalar, typ.Scalar, typ.Scalar, typ.Scalar]:
     """Get the smoothing parameters for the f1 smoothing function."""
     solved_b_low = _solve_f1_b(x_low, a, x0, xc)
     solved_b_high = _solve_f1_b(x_high, a, x0, xc)
@@ -64,11 +69,8 @@ def _solve_f2_xc_star(x: typ.Scalar, x0: typ.Scalar, xc: typ.Scalar) -> typ.Scal
 
 
 def get_f2_smoothing_params(
-    x0:typ.Scalar,
-    xc:typ.Scalar,
-    x_low:typ.Scalar,
-    x_high:typ.Scalar
-) -> typ.Tuple[typ.Scalar, typ.Scalar, typ.Scalar, typ.Scalar]:
+    x0: typ.Scalar, xc: typ.Scalar, x_low: typ.Scalar, x_high: typ.Scalar
+) -> tuple[typ.Scalar, typ.Scalar, typ.Scalar, typ.Scalar]:
     """Get the smoothing parameters for the f2 smoothing function."""
     solved_b_low = _solve_f2_b(x_low, x0, xc)
     solved_b_high = _solve_f2_b(x_high, x0, xc)
@@ -94,7 +96,7 @@ def _solve_f3_xc(x: typ.Scalar, sigma: typ.Scalar) -> typ.Scalar:
     return x * (-7 * sigma**6 + 4 * x**6) / (3 * (-2 * sigma**6 + x**6))
 
 
-def get_f3_smoothing_params(r_star: typ.Scalar, sigma:typ.Scalar) -> typ.Tuple[typ.Scalar, typ.Scalar]:
+def get_f3_smoothing_params(r_star: typ.Scalar, sigma: typ.Scalar) -> tuple[typ.Scalar, typ.Scalar]:
     """Get the smoothing parameters for the f3 smoothing function."""
     solved_b = _solve_f3_b(r_star, sigma)
     solved_xc = _solve_f3_xc(r_star, sigma)
@@ -112,9 +114,7 @@ def _solve_f4_xc(x: typ.Scalar, x0: typ.Scalar, a: typ.Scalar) -> typ.Scalar:
     return (-a * x * x0 + a * x0**2 - 1) / (a * (-x + x0))
 
 
-def get_f4_smoothing_params(
-    a: typ.Scalar, x0: typ.Scalar, delta_x_star: typ.Scalar
-) -> typ.Tuple[typ.Scalar, typ.Scalar]:
+def get_f4_smoothing_params(a: typ.Scalar, x0: typ.Scalar, delta_x_star: typ.Scalar) -> tuple[typ.Scalar, typ.Scalar]:
     """Get the smoothing parameters for the f4 smoothing function."""
     solved_b_plus = _solve_f4_b(x0 + delta_x_star, x0, a)
 
@@ -129,12 +129,12 @@ def _solve_f5_b(x: typ.Scalar, x0: typ.Scalar, a: typ.Scalar) -> typ.Scalar:
     return -(a**2) * (x - x0) ** 2 / (a * x**2 - 2 * a * x * x0 + a * x0**2 - 1)
 
 
-def _solve_f5_xc(x: typ.Scalar, x0: typ.Scalar, a:typ.Scalar) -> typ.Scalar:
+def _solve_f5_xc(x: typ.Scalar, x0: typ.Scalar, a: typ.Scalar) -> typ.Scalar:
     """Solve for the smoothing parameter xc in the f5 smoothing function."""
     return (a * x * x0 - a * x0**2 + 1) / (a * (x - x0))
 
 
-def get_f5_smoothing_params(a: typ.Scalar, x_star: typ.Scalar) -> typ.Tuple[typ.Scalar, typ.Scalar]:
+def get_f5_smoothing_params(a: typ.Scalar, x_star: typ.Scalar) -> tuple[typ.Scalar, typ.Scalar]:
     """Get the smoothing parameters for the f5 smoothing function."""
     solved_b = _solve_f5_b(x_star, 0.0, a)
     solved_xc = _solve_f5_xc(x_star, 0.0, a)
