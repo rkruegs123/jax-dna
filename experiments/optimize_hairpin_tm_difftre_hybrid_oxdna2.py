@@ -13,6 +13,8 @@ from copy import deepcopy
 import seaborn as sns
 import pprint
 import functools
+import zipfile
+import os
 
 import jax.numpy as jnp
 from jax_md import space
@@ -36,6 +38,10 @@ if checkpoint_every is None:
 else:
     scan = functools.partial(checkpoint.checkpoint_scan,
                              checkpoint_every=checkpoint_every)
+
+def zip_file(file_path, zip_name):
+    with zipfile.ZipFile(zip_name, 'w') as zipf:
+        zipf.write(file_path, os.path.basename(file_path))
 
 
 def hairpin_tm_running_avg(traj_hist_files, n_stem_bp, n_dist_thresholds):
