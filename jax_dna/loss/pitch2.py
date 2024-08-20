@@ -67,7 +67,7 @@ def get_all_angles(body, quartets, displacement_fn, com_to_hb, com_to_backbone_x
 class TestPitch(unittest.TestCase):
     test_data_basedir = Path("data/test-data")
 
-    def test_geom(self):
+    def test_pitch2(self):
 
         test_cases = [
             # (self.test_data_basedir / f"simple-helix-60bp", model1.com_to_hb, model1.com_to_backbone, 0.0),
