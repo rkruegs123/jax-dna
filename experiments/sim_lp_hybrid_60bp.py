@@ -218,6 +218,7 @@ def run(args):
             print(f"\t- Reference. Energy: {gt}")
             diff = onp.abs(calc - gt)
             print(f"\t- Difference: {diff}")
+            energy_diffs.append(diff)
 
             if diff >= tol:
                 # pdb.set_trace()
