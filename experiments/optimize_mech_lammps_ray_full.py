@@ -165,10 +165,10 @@ def run(args):
     save_obj_every = args['save_obj_every']
     plot_every = args['plot_every']
 
-    opt_stk = args['opt_stk']
-    opt_hb = args['opt_hb']
-    opt_xstk = args['opt_xstk']
-    assert(int(opt_stk) + int(opt_hb) + int(opt_xstk))
+    # opt_stk = args['opt_stk']
+    # opt_hb = args['opt_hb']
+    # opt_xstk = args['opt_xstk']
+    # assert(int(opt_stk) + int(opt_hb) + int(opt_xstk))
 
     timestep = args['timestep']
     ignore_warnings = args['ignore_warnings']
@@ -978,7 +978,7 @@ def run(args):
     else:
         params = deepcopy(model.EMPTY_BASE_PARAMS)
         for opt_key in opt_keys:
-            params[opt_key] = deepcopy(model2.default_base_params_seq_avg[opt_key])
+            params[opt_key] = deepcopy(model.default_base_params_seq_avg[opt_key])
 
 
         """

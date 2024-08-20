@@ -99,7 +99,8 @@ def run(args):
 
     displacement_fn, shift_fn = space.free()
 
-    dt = 5e-3
+    # dt = 5e-3
+    dt = 3e-3
     t_kelvin = utils.DEFAULT_TEMP
     kT = utils.get_kt(t_kelvin)
     beta = 1 / kT
