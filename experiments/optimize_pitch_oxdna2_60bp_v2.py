@@ -38,6 +38,9 @@ else:
                              checkpoint_every=checkpoint_every)
 
 
+
+
+
 def zip_file(file_path, zip_name):
     with zipfile.ZipFile(zip_name, 'w') as zipf:
         zipf.write(file_path, os.path.basename(file_path))
@@ -311,11 +314,13 @@ def run(args):
         plt.savefig(iter_dir / f"energy_diffs.png")
         plt.clf()
 
+
         # Record the loss
         with open(iter_dir / "summary.txt", "w+") as f:
             f.write(f"Mean energy diff: {onp.mean(energy_diffs)}\n")
             f.write(f"Calc. energy var.: {onp.var(calc_energies)}\n")
             f.write(f"Ref. energy var.: {onp.var(gt_energies)}\n")
+            f.write(f"Pitch: {2*onp.pi / onp.mean(ref_avg_angles)} bp\n")
 
         with open(iter_dir / "params.txt", "w+") as f:
             f.write(f"{pprint.pformat(params)}\n")
@@ -367,7 +372,7 @@ def run(args):
     params = deepcopy(model2.EMPTY_BASE_PARAMS)
     for opt_key in opt_keys:
         params[opt_key] = deepcopy(model2.default_base_params_seq_avg[opt_key])
-    
+
     init_params = deepcopy(params)
     if optimizer_type == "adam":
         optimizer = optax.adam(learning_rate=lr)
@@ -547,6 +552,7 @@ def get_parser():
 
     parser.add_argument('--no-delete', action='store_true')
     parser.add_argument('--no-archive', action='store_true')
+
 
     parser.add_argument(
         '--opt-keys',
