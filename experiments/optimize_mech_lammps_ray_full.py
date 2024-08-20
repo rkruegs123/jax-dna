@@ -129,15 +129,40 @@ def run(args):
     seq_avg = not args['seq_dep']
     assert(seq_avg)
 
+    opt_keys = args['opt_keys']
+
     s_eff_coeff = args['s_eff_coeff']
     c_coeff = args['c_coeff']
     g_coeff = args['g_coeff']
+
     target_s_eff = args['target_s_eff']
     target_c = args['target_c']
     target_g = args['target_g']
 
+    s_eff_uncertainty = args['s_eff_uncertainty']
+    s_eff_hi = target_s_eff + s_eff_uncertainty
+    s_eff_lo = target_s_eff - s_eff_uncertainty
+
+    c_uncertainty = args['c_uncertainty']
+    c_hi = target_c + c_uncertainty
+    c_lo = target_c - c_uncertainty
+
+    g_uncertainty = args['g_uncertainty']
+    g_hi = target_g + g_uncertainty
+    g_lo = target_g - g_uncertainty
+
+
+    def rmse_uncertainty(val, lo_val, hi_val):
+        mse = jnp.where(val < lo_val, (val - lo_val)**2,
+                        jnp.where(val > hi_val, (val - hi_val)**2,
+                                  0.0))
+        return jnp.sqrt(mse)
+
+
     no_archive = args['no_archive']
     no_delete = args['no_delete']
+    save_obj_every = args['save_obj_every']
+    plot_every = args['plot_every']
 
     opt_stk = args['opt_stk']
     opt_hb = args['opt_hb']
@@ -171,6 +196,9 @@ def run(args):
 
     log_dir = run_dir / "log"
     log_dir.mkdir(parents=False, exist_ok=False)
+
+    obj_dir = run_dir / "obj"
+    obj_dir.mkdir(parents=False, exist_ok=False)
 
     ref_traj_dir = run_dir / "ref_traj"
     ref_traj_dir.mkdir(parents=False, exist_ok=False)
@@ -871,12 +899,17 @@ def run(args):
         c = a1 * l0 / (a4*a1 - a3**2)
         g = -(a3 * l0) / (a4 * a1 - a3**2)
 
-        mse_s_eff = (s_eff - target_s_eff)**2
-        rmse_s_eff = jnp.sqrt(mse_s_eff)
-        mse_c = (c - target_c)**2
-        rmse_c = jnp.sqrt(mse_c)
-        mse_g = (g - target_g)**2
-        rmse_g = jnp.sqrt(mse_g)
+        # mse_s_eff = (s_eff - target_s_eff)**2
+        # rmse_s_eff = jnp.sqrt(mse_s_eff)
+        rmse_s_eff = rmse_uncertainty(s_eff, s_eff_lo, s_eff_hi)
+
+        # mse_c = (c - target_c)**2
+        # rmse_c = jnp.sqrt(mse_c)
+        rmse_c = rmse_uncertainty(c, c_lo, c_hi)
+
+        # mse_g = (g - target_g)**2
+        # rmse_g = jnp.sqrt(mse_g)
+        rmse_g = rmse_uncertainty(g, g_lo, g_hi)
 
         rmse = s_eff_coeff*rmse_s_eff + c_coeff*rmse_c + g_coeff*rmse_g
 
@@ -916,85 +949,14 @@ def run(args):
                 'theta0_stack_5': -0.01296192,
                 'theta0_stack_6': 0.}
         }
-        
-        """
-        params = {
-            'coaxial_stacking': {},
-            'cross_stacking': {
-                'a_cross_1': 2.31455731,
-                'a_cross_2': 1.70450807,
-                'a_cross_3': 1.67873762,
-                'a_cross_4': 1.44883857,
-                'a_cross_7': 1.69245376,
-                'a_cross_8': 1.72064209,
-                'delta_theta_star_cross_1': 0.54458955,
-                'delta_theta_star_cross_2': 0.66338096,
-                'delta_theta_star_cross_3': 0.67938846,
-                'delta_theta_star_cross_4': 0.58862738,
-                'delta_theta_star_cross_7': 0.68871809,
-                'delta_theta_star_cross_8': 0.6574125,
-                'k_cross': 47.54757086,
-                'r0_cross': 0.56039235,
-                'theta0_cross_1': 0.8583704,
-                'theta0_cross_2': 1.043966,
-                'theta0_cross_3': 1.01829516,
-                'theta0_cross_4': 0.05097692,
-                'theta0_cross_7': 0.82964295,
-                'theta0_cross_8': 0.84837367},
-            'debye': {},
-            'excluded_volume': {},
-            'fene': {},
-            'hydrogen_bonding': {
-                'a_hb': 7.95666813,
-                'a_hb_1': 1.4432714,
-                'a_hb_2': 1.4801989,
-                'a_hb_3': 1.5,
-                'a_hb_4': 0.45243558,
-                'a_hb_7': 3.975755,
-                'a_hb_8': 4.,
-                'delta_theta_star_hb_1': 0.72860264,
-                'delta_theta_star_hb_2': 0.67604486,
-                'delta_theta_star_hb_3': 0.7,
-                'delta_theta_star_hb_4': 0.67514168,
-                'delta_theta_star_hb_7': 0.46667888,
-                'delta_theta_star_hb_8': 0.45,
-                'dr0_hb': 0.37137837,
-                'dr_c_hb': 0.70679432,
-                'dr_high_hb': 0.71973979,
-                'dr_low_hb': 0.33295084,
-                'eps_hb': 1.02216269,
-                'theta0_hb_1': 0.04742361,
-                'theta0_hb_2': -0.01607566,
-                'theta0_hb_3': 0.,
-                'theta0_hb_4': 3.14748117,
-                'theta0_hb_7': 1.56139349,
-                'theta0_hb_8': 1.57079633},
-            'stacking': {
-                'a_stack': 6.03336862,
-                'a_stack_1': 1.99264362,
-                'a_stack_2': 1.95327108,
-                'a_stack_4': 1.24171132,
-                'a_stack_5': 0.92120935,
-                'a_stack_6': 0.9,
-                'delta_theta_star_stack_4': 0.78325887,
-                'delta_theta_star_stack_5': 0.98753504,
-                'delta_theta_star_stack_6': 0.95,
-                'dr0_stack': 0.37524012,
-                'dr_c_stack': 0.85673047,
-                'dr_high_stack': 0.75849608,
-                'dr_low_stack': 0.33419155,
-                'eps_stack_base': 1.3264173,
-                'eps_stack_kt_coeff': 2.6458173,
-                'neg_cos_phi1_star_stack': -0.64092228,
-                'neg_cos_phi2_star_stack': -0.63824552,
-                'theta0_stack_4': 0.05730139,
-                'theta0_stack_5': -0.01296192,
-                'theta0_stack_6': 0.}
-        }
-        """
+
     else:
         params = deepcopy(model.EMPTY_BASE_PARAMS)
+        for opt_key in opt_keys:
+            params[opt_key] = deepcopy(model2.default_base_params_seq_avg[opt_key])
 
+
+        """
         if seq_avg:
             default_base_params = deepcopy(model.default_base_params_seq_avg)
         else:
@@ -1009,6 +971,7 @@ def run(args):
             del params["cross_stacking"]["dr_c_cross"]
             del params["cross_stacking"]["dr_low_cross"]
             del params["cross_stacking"]["dr_high_cross"]
+        """
 
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
@@ -1097,8 +1060,22 @@ def run(args):
             f.write(f"{n_effs}\n")
         with open(times_path, "a") as f:
             f.write(f"{iter_end - iter_start}\n")
+
+        iter_params_str = f"\nIteration {i}:"
+        for k, v in params.items():
+            iter_params_str += f"\n- {k}"
+            for vk, vv in v.items():
+                iter_params_str += f"\n\t- {vk}: {vv}"
         with open(iter_params_path, "a") as f:
-            f.write(f"{pprint.pformat(params)}\n")
+            f.write(iter_params_str)
+
+        grads_str = f"\nIteration {i}:"
+        for k, v in grads.items():
+            grads_str += f"\n- {k}"
+            for vk, vv in v.items():
+                grads_str += f"\n\t- {vk}: {vv}"
+        with open(grads_path, "a") as f:
+            f.write(grads_str)
 
         all_losses.append(loss)
         all_seffs.append(s_eff)
@@ -1106,46 +1083,74 @@ def run(args):
         all_gs.append(g)
         all_n_effs.append(n_effs)
 
+        if i % plot_every == 0 and i:
+            plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
+            plt.legend()
+            plt.ylabel("Loss")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"losses_iter{i}.png")
+            plt.clf()
+
+            plt.plot(onp.arange(i+1), all_cs, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_cs, marker='o', label="Resample points", color="blue")
+            plt.axhline(y=target_c, linestyle='--', label="Target C", color='red')
+            plt.axhline(y=c_lo, linestyle='--', color='green')
+            plt.axhline(y=c_hi, linestyle='--', color='green')
+            plt.legend()
+            plt.ylabel("C (pn*nm^2)")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"c_iter{i}.png")
+            plt.clf()
+
+            plt.plot(onp.arange(i+1), all_gs, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_gs, marker='o', label="Resample points", color="blue")
+            plt.axhline(y=target_g, linestyle='--', label="Target g", color='red')
+            plt.axhline(y=g_lo, linestyle='--', color='green')
+            plt.axhline(y=g_hi, linestyle='--', color='green')
+            plt.legend()
+            plt.ylabel("g (pn*nm)")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"g_iter{i}.png")
+            plt.clf()
+
+            plt.plot(onp.arange(i+1), all_seffs, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_seffs, marker='o', label="Resample points", color="blue")
+            plt.axhline(y=target_s_eff, linestyle='--', label="Target S_eff", color='red')
+            plt.axhline(y=s_eff_lo, linestyle='--', color='green')
+            plt.axhline(y=s_eff_hi, linestyle='--', color='green')
+            plt.legend()
+            plt.ylabel("S_eff pN")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"seff_iter{i}.png")
+            plt.clf()
+
+
+        if i % save_obj_every == 0 and i:
+            onp.save(obj_dir / f"ref_iters_i{i}.npy", onp.array(all_ref_times), allow_pickle=False)
+
+            onp.save(obj_dir / f"ref_seffs_i{i}.npy", onp.array(all_ref_seffs), allow_pickle=False)
+            onp.save(obj_dir / f"seffs_i{i}.npy", onp.array(all_seffs), allow_pickle=False)
+
+            onp.save(obj_dir / f"ref_gs_i{i}.npy", onp.array(all_ref_gs), allow_pickle=False)
+            onp.save(obj_dir / f"gs_i{i}.npy", onp.array(all_gs), allow_pickle=False)
+
+            onp.save(obj_dir / f"ref_cs_i{i}.npy", onp.array(all_ref_cs), allow_pickle=False)
+            onp.save(obj_dir / f"cs_i{i}.npy", onp.array(all_cs), allow_pickle=False)
+
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
 
+    onp.save(obj_dir / f"fin_ref_iters.npy", onp.array(all_ref_times), allow_pickle=False)
 
-        plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
-        plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
-        plt.legend()
-        plt.ylabel("Loss")
-        plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"losses_iter{i}.png")
-        plt.clf()
+    onp.save(obj_dir / f"fin_ref_seffs.npy", onp.array(all_ref_seffs), allow_pickle=False)
+    onp.save(obj_dir / f"fin_seffs.npy", onp.array(all_seffs), allow_pickle=False)
 
-        plt.plot(onp.arange(i+1), all_cs, linestyle="--", color="blue")
-        plt.scatter(all_ref_times, all_ref_cs, marker='o', label="Resample points", color="blue")
-        plt.axhline(y=target_c, linestyle='--', label="Target C", color='red')
-        plt.legend()
-        plt.ylabel("C (pn*nm^2)")
-        plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"c_iter{i}.png")
-        plt.clf()
+    onp.save(obj_dir / f"fin_ref_gs.npy", onp.array(all_ref_gs), allow_pickle=False)
+    onp.save(obj_dir / f"fin_gs.npy", onp.array(all_gs), allow_pickle=False)
 
-        plt.plot(onp.arange(i+1), all_gs, linestyle="--", color="blue")
-        plt.scatter(all_ref_times, all_ref_gs, marker='o', label="Resample points", color="blue")
-        plt.axhline(y=target_g, linestyle='--', label="Target g", color='red')
-        plt.legend()
-        plt.ylabel("g (pn*nm)")
-        plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"g_iter{i}.png")
-        plt.clf()
-
-        plt.plot(onp.arange(i+1), all_seffs, linestyle="--", color="blue")
-        plt.scatter(all_ref_times, all_ref_seffs, marker='o', label="Resample points", color="blue")
-        plt.axhline(y=target_s_eff, linestyle='--', label="Target S_eff", color='red')
-        plt.legend()
-        plt.ylabel("S_eff pN")
-        plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"seff_iter{i}.png")
-        plt.clf()
-
-
+    onp.save(obj_dir / f"fin_ref_cs.npy", onp.array(all_ref_cs), allow_pickle=False)
+    onp.save(obj_dir / f"fin_cs.npy", onp.array(all_cs), allow_pickle=False)
 
 
 
@@ -1187,26 +1192,49 @@ def get_parser():
     parser.add_argument('--g-coeff', type=float, default=0.0,
                         help="Coefficient for g component")
 
-    parser.add_argument('--target-s-eff', type=float, default=1000,
-                        help="Target S_eff")
-    parser.add_argument('--target-c', type=float, default=400,
-                        help="Target C")
-    parser.add_argument('--target-g', type=float, default=-100.0,
-                        help="Target g")
+    # Experimental values and uncertainties -- Table 2 in https://pubs.acs.org/doi/full/10.1021/acs.jctc.2c00138
+
+    parser.add_argument('--target-s-eff', type=float, default=1045,
+                        help="Target S_eff in pN")
+    parser.add_argument('--s-eff-uncertainty', type=float, default=92,
+                        help="Experimental uncertainty for S_eff in pN")
+
+    parser.add_argument('--target-c', type=float, default=436,
+                        help="Target C in pn*nm^2")
+    parser.add_argument('--c-uncertainty', type=float, default=16,
+                        help="Experimental uncertainty for C in pn*nm^2")
+
+    parser.add_argument('--target-g', type=float, default=-90.0,
+                        help="Target g in (pn*nm)")
+    parser.add_argument('--g-uncertainty', type=float, default=10,
+                        help="Experimental uncertainty for g in (pn*nm)")
+
 
     parser.add_argument('--no-archive', action='store_true')
     parser.add_argument('--no-delete', action='store_true')
     parser.add_argument('--ignore-warnings', action='store_true')
 
-    parser.add_argument('--opt-stk', action='store_true')
-    parser.add_argument('--opt-hb', action='store_true')
-    parser.add_argument('--opt-xstk', action='store_true')
+    # parser.add_argument('--opt-stk', action='store_true')
+    # parser.add_argument('--opt-hb', action='store_true')
+    # parser.add_argument('--opt-xstk', action='store_true')
 
     parser.add_argument('--custom-params', action='store_true')
 
     parser.add_argument('--timestep', type=float, default=0.01,
                         help="Timestep for nve/dotc/langevin integrator")
 
+    parser.add_argument('--save-obj-every', type=int, default=10,
+                        help="Frequency of saving numpy files")
+    parser.add_argument('--plot-every', type=int, default=1,
+                        help="Frequency of plotting data from gradient descent epochs")
+
+
+    parser.add_argument(
+        '--opt-keys',
+        nargs='*',  # Accept zero or more arguments
+        default=["fene", "stacking"],
+        help='Parameter keys to optimize'
+    )
 
     return parser
 
