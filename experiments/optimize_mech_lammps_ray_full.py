@@ -794,17 +794,33 @@ def run(args):
         force_t0_delta_ls = mean_force_t0_distances_nm - l0 # in nm
 
         ## For A1, we assume an offset of 0
+        """
         xs_to_fit = jnp.stack([jnp.zeros_like(forces_pn), forces_pn], axis=1)
         fit_ = jnp.linalg.lstsq(xs_to_fit, force_t0_delta_ls)
         a1 = fit_[0][1]
+        """
+        xs_to_fit = jnp.stack([jnp.ones_like(forces_pn), forces_pn], axis=1)
+        fit_ = jnp.linalg.lstsq(xs_to_fit, mean_force_t0_distances_nm)
+        a1 = fit_[0][1]
+        l0_fit = fit_[0][0]
 
         test_forces = onp.linspace(0, forces_pn.max(), 100)
+        """
         fit_fn = lambda val: a1*val
         plt.plot(test_forces, fit_fn(test_forces))
         plt.scatter(forces_pn, force_t0_delta_ls)
         plt.xlabel("Force (pN)")
         plt.ylabel("deltaL (nm)")
         plt.title(f"A1={a1}")
+        plt.savefig(iter_dir / "a1_fit.png")
+        plt.clf()
+        """
+        fit_fn = lambda val: a1*val + l0_fit
+        plt.plot(test_forces, fit_fn(test_forces))
+        plt.scatter(forces_pn, mean_force_t0_distances_nm)
+        plt.xlabel("Force (pN)")
+        plt.ylabel("L (nm)")
+        plt.title(f"A1={a1}, L0={l0_fit}")
         plt.savefig(iter_dir / "a1_fit.png")
         plt.clf()
 
@@ -846,9 +862,14 @@ def run(args):
         plt.savefig(iter_dir / "a4_fit.png")
         plt.clf()
 
+        """
         s_eff = l0 / a1
         c = a1 * l0 / (a4*a1 - a3**2)
         g = -(a3 * l0) / (a4 * a1 - a3**2)
+        """
+        s_eff = l0_fit / a1
+        c = a1 * l0_fit / (a4*a1 - a3**2)
+        g = -(a3 * l0_fit) / (a4 * a1 - a3**2)
 
         with open(iter_dir / "summary.txt", "w+") as f:
             f.write(f"A1: {a1}\n")
@@ -904,9 +925,16 @@ def run(args):
         theta0 = expected_thetas_f[0]
         delta_ls_f = expected_dists_f_nm - l0
 
+        """
         xs_to_fit = jnp.stack([jnp.zeros_like(forces_pn), forces_pn], axis=1)
         fit_ = jnp.linalg.lstsq(xs_to_fit, delta_ls_f)
         a1 = fit_[0][1]
+        """
+        xs_to_fit = jnp.stack([jnp.ones_like(forces_pn), forces_pn], axis=1)
+        fit_ = jnp.linalg.lstsq(xs_to_fit, expected_dists_f_nm)
+        a1 = fit_[0][1]
+        l0_fit = fit_[0][0]
+
 
         expected_dists_t, expected_thetas_t, n_effs_t = vmap(get_expected_vals, (0, 0, 0, 0))(all_ref_states_t, all_ref_energies_t, all_ref_dists_t, all_ref_thetas_t)
         expected_dists_t_nm = expected_dists_t * utils.nm_per_oxdna_length
@@ -920,9 +948,14 @@ def run(args):
         fit_ = jnp.linalg.lstsq(xs_to_fit, delta_thetas_t)
         a4 = fit_[0][1]
 
+        """
         s_eff = l0 / a1
         c = a1 * l0 / (a4*a1 - a3**2)
         g = -(a3 * l0) / (a4 * a1 - a3**2)
+        """
+        s_eff = l0_fit / a1
+        c = a1 * l0_fit / (a4*a1 - a3**2)
+        g = -(a3 * l0_fit) / (a4 * a1 - a3**2)
 
         # mse_s_eff = (s_eff - target_s_eff)**2
         # rmse_s_eff = jnp.sqrt(mse_s_eff)
