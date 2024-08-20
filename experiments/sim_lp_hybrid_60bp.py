@@ -76,7 +76,7 @@ def run(args):
         f.write(params_str)
 
     # Load the system
-    sys_basedir = Path("data/templates/simple-helix-60bp")
+    sys_basedir = Path("data/templates/simple-helix-60bp-oxdna1")
     input_template_path = sys_basedir / "input"
 
     top_path = sys_basedir / "sys.top"

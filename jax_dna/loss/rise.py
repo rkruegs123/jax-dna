@@ -65,7 +65,8 @@ class TestRise(unittest.TestCase):
     def test_rise(self):
 
         test_cases = [
-            (self.test_data_basedir / f"simple-helix-60bp-oxdna2", model2.com_to_hb)
+            (self.test_data_basedir / f"simple-helix-60bp-oxdna2", model2.com_to_hb),
+            (self.test_data_basedir / f"simple-helix-60bp", model1.com_to_hb)
         ]
 
         for basedir, com_to_hb in test_cases:
