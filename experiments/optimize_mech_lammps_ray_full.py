@@ -147,6 +147,8 @@ def run(args):
     timestep = args['timestep']
     ignore_warnings = args['ignore_warnings']
 
+    custom_params = args['custom_params']
+
 
 
     # forces_pn = jnp.array([0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0])
@@ -883,39 +885,130 @@ def run(args):
     grad_fn = jit(grad_fn)
 
 
-    params = deepcopy(model.EMPTY_BASE_PARAMS)
+    if custom_params:
 
-    if seq_avg:
-        default_base_params = deepcopy(model.default_base_params_seq_avg)
+        params = {
+            'coaxial_stacking': {},
+            'cross_stacking': {},
+            'debye': {},
+            'excluded_volume': {},
+            'fene': {},
+            'hydrogen_bonding': {},
+            'stacking': {
+                'a_stack': 6.03336862,
+                'a_stack_1': 1.99264362,
+                'a_stack_2': 1.95327108,
+                'a_stack_4': 1.24171132,
+                'a_stack_5': 0.92120935,
+                'a_stack_6': 0.9,
+                'delta_theta_star_stack_4': 0.78325887,
+                'delta_theta_star_stack_5': 0.98753504,
+                'delta_theta_star_stack_6': 0.95,
+                'dr0_stack': 0.37524012,
+                'dr_c_stack': 0.85673047,
+                'dr_high_stack': 0.75849608,
+                'dr_low_stack': 0.33419155,
+                'eps_stack_base': 1.3264173,
+                'eps_stack_kt_coeff': 2.6458173,
+                'neg_cos_phi1_star_stack': -0.64092228,
+                'neg_cos_phi2_star_stack': -0.63824552,
+                'theta0_stack_4': 0.05730139,
+                'theta0_stack_5': -0.01296192,
+                'theta0_stack_6': 0.}
+        }
+        
+        """
+        params = {
+            'coaxial_stacking': {},
+            'cross_stacking': {
+                'a_cross_1': 2.31455731,
+                'a_cross_2': 1.70450807,
+                'a_cross_3': 1.67873762,
+                'a_cross_4': 1.44883857,
+                'a_cross_7': 1.69245376,
+                'a_cross_8': 1.72064209,
+                'delta_theta_star_cross_1': 0.54458955,
+                'delta_theta_star_cross_2': 0.66338096,
+                'delta_theta_star_cross_3': 0.67938846,
+                'delta_theta_star_cross_4': 0.58862738,
+                'delta_theta_star_cross_7': 0.68871809,
+                'delta_theta_star_cross_8': 0.6574125,
+                'k_cross': 47.54757086,
+                'r0_cross': 0.56039235,
+                'theta0_cross_1': 0.8583704,
+                'theta0_cross_2': 1.043966,
+                'theta0_cross_3': 1.01829516,
+                'theta0_cross_4': 0.05097692,
+                'theta0_cross_7': 0.82964295,
+                'theta0_cross_8': 0.84837367},
+            'debye': {},
+            'excluded_volume': {},
+            'fene': {},
+            'hydrogen_bonding': {
+                'a_hb': 7.95666813,
+                'a_hb_1': 1.4432714,
+                'a_hb_2': 1.4801989,
+                'a_hb_3': 1.5,
+                'a_hb_4': 0.45243558,
+                'a_hb_7': 3.975755,
+                'a_hb_8': 4.,
+                'delta_theta_star_hb_1': 0.72860264,
+                'delta_theta_star_hb_2': 0.67604486,
+                'delta_theta_star_hb_3': 0.7,
+                'delta_theta_star_hb_4': 0.67514168,
+                'delta_theta_star_hb_7': 0.46667888,
+                'delta_theta_star_hb_8': 0.45,
+                'dr0_hb': 0.37137837,
+                'dr_c_hb': 0.70679432,
+                'dr_high_hb': 0.71973979,
+                'dr_low_hb': 0.33295084,
+                'eps_hb': 1.02216269,
+                'theta0_hb_1': 0.04742361,
+                'theta0_hb_2': -0.01607566,
+                'theta0_hb_3': 0.,
+                'theta0_hb_4': 3.14748117,
+                'theta0_hb_7': 1.56139349,
+                'theta0_hb_8': 1.57079633},
+            'stacking': {
+                'a_stack': 6.03336862,
+                'a_stack_1': 1.99264362,
+                'a_stack_2': 1.95327108,
+                'a_stack_4': 1.24171132,
+                'a_stack_5': 0.92120935,
+                'a_stack_6': 0.9,
+                'delta_theta_star_stack_4': 0.78325887,
+                'delta_theta_star_stack_5': 0.98753504,
+                'delta_theta_star_stack_6': 0.95,
+                'dr0_stack': 0.37524012,
+                'dr_c_stack': 0.85673047,
+                'dr_high_stack': 0.75849608,
+                'dr_low_stack': 0.33419155,
+                'eps_stack_base': 1.3264173,
+                'eps_stack_kt_coeff': 2.6458173,
+                'neg_cos_phi1_star_stack': -0.64092228,
+                'neg_cos_phi2_star_stack': -0.63824552,
+                'theta0_stack_4': 0.05730139,
+                'theta0_stack_5': -0.01296192,
+                'theta0_stack_6': 0.}
+        }
+        """
     else:
-        default_base_params = deepcopy(model.default_base_params_seq_dep)
+        params = deepcopy(model.EMPTY_BASE_PARAMS)
 
-    if opt_stk:
-        params["stacking"] = deepcopy(default_base_params["stacking"])
-    if opt_hb:
-        params["hydrogen_bonding"] = deepcopy(default_base_params["hydrogen_bonding"])
-    if opt_xstk:
-        params["cross_stacking"] = deepcopy(default_base_params["cross_stacking"])
-        del params["cross_stacking"]["dr_c_cross"]
-        del params["cross_stacking"]["dr_low_cross"]
-        del params["cross_stacking"]["dr_high_cross"]
+        if seq_avg:
+            default_base_params = deepcopy(model.default_base_params_seq_avg)
+        else:
+            default_base_params = deepcopy(model.default_base_params_seq_dep)
 
-    """
-    if seq_avg:
-        params["stacking"] = deepcopy(model.default_base_params_seq_avg["stacking"])
-        params["hydrogen_bonding"] = deepcopy(model.default_base_params_seq_avg["hydrogen_bonding"])
-        # params["cross_stacking"] = deepcopy(model.default_base_params_seq_avg["cross_stacking"])
-        # del params["cross_stacking"]["dr_c_cross"]
-        # del params["cross_stacking"]["dr_low_cross"]
-        # del params["cross_stacking"]["dr_high_cross"]
-    else:
-        params["stacking"] = deepcopy(model.default_base_params_seq_dep["stacking"])
-        params["hydrogen_bonding"] = deepcopy(model.default_base_params_seq_dep["hydrogen_bonding"])
-        # params["cross_stacking"] = deepcopy(model.default_base_params_seq_dep["cross_stacking"])
-        # del params["cross_stacking"]["dr_c_cross"]
-        # del params["cross_stacking"]["dr_low_cross"]
-        # del params["cross_stacking"]["dr_high_cross"]
-    """
+        if opt_stk:
+            params["stacking"] = deepcopy(default_base_params["stacking"])
+        if opt_hb:
+            params["hydrogen_bonding"] = deepcopy(default_base_params["hydrogen_bonding"])
+        if opt_xstk:
+            params["cross_stacking"] = deepcopy(default_base_params["cross_stacking"])
+            del params["cross_stacking"]["dr_c_cross"]
+            del params["cross_stacking"]["dr_low_cross"]
+            del params["cross_stacking"]["dr_high_cross"]
 
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
@@ -1108,6 +1201,8 @@ def get_parser():
     parser.add_argument('--opt-stk', action='store_true')
     parser.add_argument('--opt-hb', action='store_true')
     parser.add_argument('--opt-xstk', action='store_true')
+
+    parser.add_argument('--custom-params', action='store_true')
 
     parser.add_argument('--timestep', type=float, default=0.01,
                         help="Timestep for nve/dotc/langevin integrator")
