@@ -310,11 +310,19 @@ def run(args):
 
         with open(iter_dir / "summary.txt", "w+") as f:
             f.write(f"Mean energy diff: {onp.mean(energy_diffs)}\n")
+            f.write(f"Max energy diff: {onp.max(energy_diffs)}\n")
+            f.write(f"Min energy diff: {onp.min(energy_diffs)}\n")
             f.write(f"Calc. energy var.: {onp.var(calc_energies)}\n")
             f.write(f"Ref. energy var.: {onp.var(gt_energies)}\n")
-            f.write(f"Mean Lp truncated: {mean_Lp_truncated}\n")
-            f.write(f"Mean L0: {mean_l0}\n")
-            f.write(f"Mean Rise: {avg_rise}\n")
+
+            f.write(f"\nMean Lp truncated (oxDNA units): {mean_Lp_truncated}\n")
+            f.write(f"Mean L0 (oxDNA units): {mean_l0}\n")
+            f.write(f"Mean Rise (oxDNA units): {avg_rise}\n")
+            f.write(f"Mean Lp truncated (num bp via oxDNA units): {mean_Lp_truncated / avg_rise}\n")
+
+            f.write(f"\nMean Lp truncated (nm): {mean_Lp_truncated * utils.nm_per_oxdna_length}\n")
+            f.write(f"Mean L0 (nm): {mean_l0 * utils.nm_per_oxdna_length}\n")
+            f.write(f"Mean Rise (nm): {avg_rise * utils.nm_per_oxdna_length}\n")
 
 
         return traj_states, calc_energies, unweighted_corr_curves, unweighted_l0_avgs
