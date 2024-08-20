@@ -441,6 +441,7 @@ def run(args):
         all_force_t0_distances = list()
         all_force_t0_thetas = list()
         all_force_t0_last_states = list()
+        running_avgs_force_dists = list()
         for force_pn in forces_pn:
             sim_dir = iter_dir / f"sim-f{force_pn}"
 
@@ -561,6 +562,7 @@ def run(args):
             plt.plot(running_avg)
             plt.savefig(sim_dir / "running_avg_dist.png")
             plt.clf()
+            running_avgs_force_dists.append(running_avg)
 
             last_half = int((n_sample_states * n_sims) // 2)
             plt.plot(running_avg[-last_half:])
@@ -609,6 +611,45 @@ def run(args):
         all_force_t0_calc_energies = utils.tree_stack(all_force_t0_calc_energies)
         all_force_t0_distances = utils.tree_stack(all_force_t0_distances)
         all_force_t0_thetas = utils.tree_stack(all_force_t0_thetas)
+
+        # Compute running avg of a1, l0, and s_eff
+        running_avgs_force_dists = onp.array(running_avgs_force_dists) # (n_forces, n_sample_states*n_sims)
+        running_avg_idxs = onp.arange(n_sample_states*n_sims)
+        n_running_avg_points = 100
+        check_every = (n_sample_states*n_sims) // n_running_avg_points
+        check_idxs = onp.arange(n_running_avg_points) * check_every
+        a1_running_avgs = list()
+        l0_fit_running_avgs = list()
+        s_eff_running_avgs = list()
+        for check_idx in check_idxs:
+            curr_force_dists = running_avgs_force_dists[:, check_idx]
+            curr_force_dists_nm = pn =  * utils.nm_per_oxdna_length
+
+            # Compute a1 and l0
+            xs_to_fit = jnp.stack([jnp.ones_like(forces_pn), forces_pn], axis=1)
+            fit_ = jnp.linalg.lstsq(xs_to_fit, curr_force_dists_nm)
+
+            curr_a1 = fit_[0][1]
+            a1_running_avgs.append(curr_a1)
+            curr_l0_fit = fit_[0][0]
+            l0_running_avgs.append(curr_l0)
+            curr_s_eff = curr_l0_fit / curr_a1
+            s_eff_running_avgs.append(curr_s_eff)
+
+        plt.plot(check_idxs, a1_running_avgs)
+        plt.scatter(check_idxs, a1_running_avgs)
+        plt.savefig(iter_dir / "a1_running_avg.png"))
+        plt.close()
+
+        plt.plot(check_idxs, l0_fit_running_avgs)
+        plt.scatter(check_idxs, l0_fit_running_avgs)
+        plt.savefig(iter_dir / "l0_fit_running_avg.png"))
+        plt.close()
+
+        plt.plot(check_idxs, s_eff_running_avgs)
+        plt.scatter(check_idxs, s_eff_running_avgs)
+        plt.savefig(iter_dir / "s_eff_running_avg.png"))
+        plt.close()
 
 
         all_f2_torque_traj_states = list()
