@@ -7,18 +7,19 @@ Section 2.4.1
 import jax_dna.energy.tests.symbolic_potentials as sp
 import jax_dna.utils.types as typ
 
+
 def f1(
-    r:float,
-    r_low:float,
-    r_high:float,
-    r_c_low:float,
-    r_c_high:float,
-    eps:float,
-    a:float,
-    r0:float,
-    r_c:float,
-    b_low:float,
-    b_high:float
+    r: float,
+    r_low: float,
+    r_high: float,
+    r_c_low: float,
+    r_c_high: float,
+    eps: float,
+    a: float,
+    r0: float,
+    r_c: float,
+    b_low: float,
+    b_high: float,
 ) -> float:
     """This is a symbolic representation of the f1 base function.
 
