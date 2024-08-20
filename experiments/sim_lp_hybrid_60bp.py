@@ -46,7 +46,7 @@ def run(args):
     n_threads = args['n_threads']
     key = args['key']
     n_sims = args['n_sims']
-    if device != "gpu":
+    if device != "cpu":
         raise NotImplementedError(f"Still need to implement GPU version...")
     n_steps_per_sim = args['n_steps_per_sim']
     n_eq_steps = args['n_eq_steps']
