@@ -26,7 +26,7 @@ import optax
 from jax_dna.common.read_seq_specific import read_ss_oxdna
 from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.dna2 import model, lammps_utils
-
+import jax_dna.input.trajectory as jdt
 
 
 if "ip_head" in os.environ:
@@ -130,6 +130,7 @@ def run(args):
     assert(seq_avg)
 
     opt_keys = args['opt_keys']
+    n_threads = args['n_threads']
 
     s_eff_coeff = args['s_eff_coeff']
     c_coeff = args['c_coeff']
@@ -251,6 +252,7 @@ def run(args):
     n = seq_oh.shape[0]
     assert(n % 2 == 0)
     n_bp = n // 2
+    strand_length = int(seq_oh.shape[0] // 2)
 
     strand1_start = 0
     strand1_end = n_bp-1
@@ -443,12 +445,23 @@ def run(args):
             sim_dir = iter_dir / f"sim-f{force_pn}"
 
             ## Load states from oxDNA simulation
+
+            """
             traj_info = trajectory.TrajectoryInfo(
                 top_info, read_from_file=True, reindex=True,
                 traj_path=sim_dir / "output.dat",
                 # reverse_direction=True)
                 reverse_direction=False)
             full_traj_states = traj_info.get_states()
+            """
+            traj_ = jdt.from_file(
+                sim_dir / "output.dat",
+                [strand_length, strand_length],
+                is_oxdna=False,
+                n_processes=n_threads,
+            )
+            full_traj_states = [ns.to_rigid_body() for ns in traj_.states]
+
             assert(len(full_traj_states) == (1+n_total_states)*n_sims)
             sim_freq = 1+n_total_states
             traj_states = list()
@@ -607,12 +620,24 @@ def run(args):
             sim_dir = iter_dir / f"sim-t{torque_pnnm}"
 
             ## Load states from oxDNA simulation
+            """
             traj_info = trajectory.TrajectoryInfo(
                 top_info, read_from_file=True, reindex=True,
                 traj_path=sim_dir / "output.dat",
                 # reverse_direction=True)
                 reverse_direction=False)
             full_traj_states = traj_info.get_states()
+            """
+
+            traj_ = jdt.from_file(
+                sim_dir / "output.dat",
+                [strand_length, strand_length],
+                is_oxdna=False,
+                n_processes=n_threads,
+            )
+            full_traj_states = [ns.to_rigid_body() for ns in traj_.states]
+
+
             assert(len(full_traj_states) == (1+n_total_states)*n_sims)
             sim_freq = 1+n_total_states
             traj_states = list()
@@ -1228,13 +1253,15 @@ def get_parser():
     parser.add_argument('--plot-every', type=int, default=1,
                         help="Frequency of plotting data from gradient descent epochs")
 
-
     parser.add_argument(
         '--opt-keys',
         nargs='*',  # Accept zero or more arguments
         default=["fene", "stacking"],
         help='Parameter keys to optimize'
     )
+
+    parser.add_argument('--n-threads', type=int, default=4,
+                        help="Number of threads for reading trajectories")
 
     return parser
 
