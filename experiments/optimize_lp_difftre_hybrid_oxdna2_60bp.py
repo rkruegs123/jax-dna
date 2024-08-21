@@ -114,6 +114,8 @@ def run(args):
     neff_path = log_dir / "neff.txt"
     lp_path = log_dir / "lp.txt"
     l0_avg_path = log_dir / "l0_avg.txt"
+    rise_path = log_dir / "rise.txt"
+    lp_n_bp_path = log_dir / "lp_n_bp.txt"
     resample_log_path = log_dir / "resample_log.txt"
     iter_params_path = log_dir / "iter_params.txt"
 
@@ -320,7 +322,7 @@ def run(args):
         avg_rise = jnp.mean(all_rises)
 
         mean_Lp_truncated, offset = persistence_length.persistence_length_fit(mean_corr_curve[:truncation], mean_l0)
-        mean_Lp_truncated *= utils.nm_per_oxdna_length
+        # mean_Lp_truncated *= utils.nm_per_oxdna_length
 
         compute_every = 10
         n_curves = unweighted_corr_curves.shape[0]
@@ -365,9 +367,11 @@ def run(args):
         plt.savefig(iter_dir / "full_log_corr_curve.png")
         plt.clf()
 
-        fit_fn = lambda n: -n * mean_l0 / (mean_Lp_truncated/utils.nm_per_oxdna_length) + offset
+        # fit_fn = lambda n: -n * mean_l0 / (mean_Lp_truncated/utils.nm_per_oxdna_length) + offset
+        fit_fn = lambda n: -n * (mean_l0 / mean_Lp_truncated) + offset
         plt.plot(jnp.log(mean_corr_curve)[:truncation])
-        neg_inverse_slope = (mean_Lp_truncated / utils.nm_per_oxdna_length) / mean_l0 # in nucleotides
+        # neg_inverse_slope = (mean_Lp_truncated / utils.nm_per_oxdna_length) / mean_l0 # in nucleotides
+        neg_inverse_slope = mean_Lp_truncated / mean_l0 # in nucleotides
         rounded_offset = onp.round(offset, 3)
         rounded_neg_inverse_slope = onp.round(neg_inverse_slope, 3)
         fit_str = f"fit, -n/{rounded_neg_inverse_slope} + {rounded_offset}"
@@ -420,12 +424,12 @@ def run(args):
             zip_file(str(iter_dir / "output.dat"), str(iter_dir / "output.dat.zip"))
             os.remove(str(iter_dir / "output.dat"))
 
-        return traj_states, calc_energies, unweighted_corr_curves, unweighted_l0_avgs, iter_dir
+        return traj_states, calc_energies, unweighted_corr_curves, unweighted_l0_avgs, all_rises, iter_dir
 
 
     # Construct the loss function
     @jit
-    def loss_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs):
+    def loss_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs, unweighted_rises):
         em = model2.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_concentration)
 
         # Compute the weights
@@ -446,13 +450,21 @@ def run(args):
         weights = boltzs / denom
 
         weighted_corr_curves = vmap(lambda v, w: v * w)(unweighted_corr_curves, weights)
-        weighted_l0_avgs = vmap(lambda l0, w: l0 * w)(unweighted_l0_avgs, weights)
         expected_corr_curve = jnp.sum(weighted_corr_curves, axis=0)
-        expected_l0_avg = jnp.sum(weighted_l0_avgs)
+
+        # weighted_l0_avgs = vmap(lambda l0, w: l0 * w)(unweighted_l0_avgs, weights)
+        # expected_l0_avg = jnp.sum(weighted_l0_avgs)
+        expected_l0_avg = jnp.dot(unweighted_l0_avgs, weights)
+
+        expected_rise = jnp.dot(unweighted_rises, weights)
+
         expected_lp, expected_offset = persistence_length.persistence_length_fit(
             expected_corr_curve[:truncation],
             expected_l0_avg)
         expected_lp = expected_lp * utils.nm_per_oxdna_length
+
+        expected_rise *= utils.nm_per_oxdna_length
+        expected_lp_n_bp = expected_lp / expected_rise
 
         # Compute effective sample size
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
@@ -460,7 +472,7 @@ def run(args):
         mse = (expected_lp - target_lp)**2
         rmse = jnp.sqrt(mse)
 
-        return rmse, (n_eff, expected_lp, expected_corr_curve, expected_l0_avg, expected_offset)
+        return rmse, (n_eff, expected_lp, expected_corr_curve, expected_l0_avg*utils.nm_per_oxdna_length, expected_rise, expected_lp_n_bp, expected_offset)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -488,7 +500,7 @@ def run(args):
         f.write(f"Generating initial reference states and energies...\n")
     start = time.time()
     prev_ref_basedir = None
-    ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs, ref_iter_dir = get_ref_states(params, i=0, seed=0, prev_basedir=prev_ref_basedir)
+    ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs, unweighted_rises, ref_iter_dir = get_ref_states(params, i=0, seed=0, prev_basedir=prev_ref_basedir)
     prev_ref_basedir = deepcopy(ref_iter_dir)
     end = time.time()
     with open(resample_log_path, "a") as f:
@@ -499,7 +511,7 @@ def run(args):
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
 
-        (loss, (n_eff, curr_lp, expected_corr_curve, curr_l0_avg, curr_offset)), grads = grad_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs)
+        (loss, (n_eff, curr_lp, expected_corr_curve, curr_l0_avg, curr_rise, curr_lp_n_bp, curr_offset)), grads = grad_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs, unweighted_rises)
         num_resample_iters += 1
 
         if i == 0:
@@ -515,13 +527,13 @@ def run(args):
                 f.write(f"- n_eff was {n_eff}. Resampling...\n")
 
             start = time.time()
-            ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_basedir=prev_ref_basedir)
+            ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs, unweighted_rises, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_basedir=prev_ref_basedir)
             end = time.time()
             prev_ref_basedir = deepcopy(ref_iter_dir)
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
 
-            (loss, (n_eff, curr_lp, expected_corr_curve, curr_l0_avg, curr_offset)), grads = grad_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs)
+            (loss, (n_eff, curr_lp, expected_corr_curve, curr_l0_avg, curr_rise, curr_lp_n_bp, curr_offset)), grads = grad_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs, unweighted_rises)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
@@ -540,6 +552,11 @@ def run(args):
             f.write(f"{curr_l0_avg}\n")
         with open(times_path, "a") as f:
             f.write(f"{iter_end - iter_start}\n")
+        with open(rise_path, "a") as f:
+            f.write(f"{curr_rise}\n")
+        with open(lp_n_bp_path, "a") as f:
+            f.write(f"{curr_lp_n_bp}\n")
+
 
         grads_str = f"\nIteration {i}:"
         for k, v in grads.items():
@@ -572,7 +589,8 @@ def run(args):
             plt.savefig(img_dir / f"corr_iter{i}.png")
             plt.clf()
 
-            log_corr_fn = lambda n: -n * curr_l0_avg / (curr_lp / utils.nm_per_oxdna_length) + curr_offset # oxDNA units
+            # log_corr_fn = lambda n: -n * curr_l0_avg / (curr_lp / utils.nm_per_oxdna_length) + curr_offset # oxDNA units
+            log_corr_fn = lambda n: -n * curr_l0_avg / (curr_lp) + curr_offset
             plt.plot(jnp.log(expected_corr_curve))
             plt.plot(log_corr_fn(jnp.arange(expected_corr_curve.shape[0])), linestyle='--')
             plt.xlabel("Nuc. Index")
