@@ -273,7 +273,7 @@ def run(args):
         bp1_meas_pos = get_bp_pos(body, bp1_meas)
         bp2_meas_pos = get_bp_pos(body, bp2_meas)
         dist = jnp.abs(bp1_meas_pos[2] - bp2_meas_pos[2])
-        return dist
+        return dist * utils.nm_per_oxdna_length
 
     @jit
     def compute_theta(body):
@@ -1054,7 +1054,10 @@ def run(args):
     else:
         params = deepcopy(model.EMPTY_BASE_PARAMS)
         for opt_key in opt_keys:
-            params[opt_key] = deepcopy(model.default_base_params_seq_avg[opt_key])
+            if seq_avg:
+                params[opt_key] = deepcopy(model.default_base_params_seq_avg[opt_key])
+            else:
+                params[opt_key] = deepcopy(model.default_base_params_seq_dep[opt_key])
 
 
         """
