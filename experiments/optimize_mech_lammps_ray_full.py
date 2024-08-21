@@ -127,7 +127,7 @@ def run(args):
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
     seq_avg = not args['seq_dep']
-    assert(seq_avg)
+    # assert(seq_avg)
 
     opt_keys = args['opt_keys']
     n_threads = args['n_threads']
