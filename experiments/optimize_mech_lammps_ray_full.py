@@ -180,7 +180,8 @@ def run(args):
     # forces_pn = jnp.array([0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0])
     # torques_pnnm = jnp.array([0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0])
 
-    forces_pn = jnp.array([0.0, 2.0, 6.0, 10.0, 15.0, 20.0, 25.0, 30.0])
+    forces_pn = jnp.array(args['forces_pn'], dtype=jnp.float64)
+    # forces_pn = jnp.array([0.0, 2.0, 6.0, 10.0, 15.0, 20.0, 25.0, 30.0])
     torques_pnnm = jnp.array([0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0])
 
 
@@ -832,32 +833,16 @@ def run(args):
         # Compute constants
         mean_force_t0_distances = onp.array([all_force_t0_distances[f_idx].mean() for f_idx in range(len(forces_pn))])
         mean_force_t0_distances_nm = mean_force_t0_distances * utils.nm_per_oxdna_length
-        l0 = mean_force_t0_distances_nm[0]
-        theta0 = all_force_t0_thetas[0].mean()
-        force_t0_delta_ls = mean_force_t0_distances_nm - l0 # in nm
+        # l0 = mean_force_t0_distances_nm[0]
+        # theta0 = all_force_t0_thetas[0].mean()
 
-        ## For A1, we assume an offset of 0
-        """
-        xs_to_fit = jnp.stack([jnp.zeros_like(forces_pn), forces_pn], axis=1)
-        fit_ = jnp.linalg.lstsq(xs_to_fit, force_t0_delta_ls)
-        a1 = fit_[0][1]
-        """
+        ## For A1, we do not assume and offset of 0 and *fit* l0 (rather than take distance under 0 force)
         xs_to_fit = jnp.stack([jnp.ones_like(forces_pn), forces_pn], axis=1)
         fit_ = jnp.linalg.lstsq(xs_to_fit, mean_force_t0_distances_nm)
         a1 = fit_[0][1]
         l0_fit = fit_[0][0]
 
         test_forces = onp.linspace(0, forces_pn.max(), 100)
-        """
-        fit_fn = lambda val: a1*val
-        plt.plot(test_forces, fit_fn(test_forces))
-        plt.scatter(forces_pn, force_t0_delta_ls)
-        plt.xlabel("Force (pN)")
-        plt.ylabel("deltaL (nm)")
-        plt.title(f"A1={a1}")
-        plt.savefig(iter_dir / "a1_fit.png")
-        plt.clf()
-        """
         fit_fn = lambda val: a1*val + l0_fit
         plt.plot(test_forces, fit_fn(test_forces))
         plt.scatter(forces_pn, mean_force_t0_distances_nm)
@@ -870,46 +855,44 @@ def run(args):
         ## Compute A3 -- fit with an unrestricted offset
         mean_f2_torque_distances = onp.array([all_f2_torque_distances[t_idx].mean() for t_idx in range(len(torques_pnnm))])
         mean_f2_torque_distances_nm = mean_f2_torque_distances * utils.nm_per_oxdna_length
-        f2_torque_delta_ls = mean_f2_torque_distances_nm - l0 # in nm
+        # f2_torque_delta_ls = mean_f2_torque_distances_nm - l0 # in nm
 
         xs_to_fit = jnp.stack([jnp.ones_like(torques_pnnm), torques_pnnm], axis=1)
-        fit_ = jnp.linalg.lstsq(xs_to_fit, f2_torque_delta_ls)
+        # fit_ = jnp.linalg.lstsq(xs_to_fit, f2_torque_delta_ls)
+        fit_ = jnp.linalg.lstsq(xs_to_fit, mean_f2_torque_distances_nm)
         a3 = fit_[0][1]
         a3_offset = fit_[0][0]
 
         test_torques = onp.linspace(0, torques_pnnm.max(), 100)
         fit_fn = lambda val: a3*val + a3_offset
         plt.plot(test_torques, fit_fn(test_torques))
-        plt.scatter(torques_pnnm, f2_torque_delta_ls)
+        plt.scatter(torques_pnnm, mean_f2_torque_distances_nm)
         plt.xlabel("Torques (pN*nm)")
-        plt.ylabel("deltaL (nm)")
+        plt.ylabel("L (nm)")
         plt.title(f"A3={a3}")
         plt.savefig(iter_dir / "a3_fit.png")
         plt.clf()
 
         ## Compute A4 -- fit with an unrestricted offset
         mean_f2_torque_thetas = onp.array([all_f2_torque_thetas[t_idx].mean() for t_idx in range(len(torques_pnnm))])
-        f2_torque_delta_thetas = mean_f2_torque_thetas - theta0
+        # f2_torque_delta_thetas = mean_f2_torque_thetas - theta0
 
         xs_to_fit = jnp.stack([jnp.ones_like(torques_pnnm), torques_pnnm], axis=1)
-        fit_ = jnp.linalg.lstsq(xs_to_fit, f2_torque_delta_thetas)
+        # fit_ = jnp.linalg.lstsq(xs_to_fit, f2_torque_delta_thetas)
+        fit_ = jnp.linalg.lstsq(xs_to_fit, mean_f2_torque_thetas)
         a4 = fit_[0][1]
         a4_offset = fit_[0][0]
 
         fit_fn = lambda val: a4*val + a4_offset
         plt.plot(test_torques, fit_fn(test_torques))
-        plt.scatter(torques_pnnm, f2_torque_delta_thetas)
+        # plt.scatter(torques_pnnm, f2_torque_delta_thetas)
+        plt.scatter(torques_pnnm, mean_f2_torque_thetas)
         plt.xlabel("Torques (pN*nm)")
-        plt.ylabel("deltaTheta (rad)")
+        plt.ylabel("Theta (rad)")
         plt.title(f"A4={a4}")
         plt.savefig(iter_dir / "a4_fit.png")
         plt.clf()
 
-        """
-        s_eff = l0 / a1
-        c = a1 * l0 / (a4*a1 - a3**2)
-        g = -(a3 * l0) / (a4 * a1 - a3**2)
-        """
         s_eff = l0_fit / a1
         c = a1 * l0_fit / (a4*a1 - a3**2)
         g = -(a3 * l0_fit) / (a4 * a1 - a3**2)
@@ -964,15 +947,9 @@ def run(args):
 
         expected_dists_f, expected_thetas_f, n_effs_f = vmap(get_expected_vals, (0, 0, 0, 0))(all_ref_states_f, all_ref_energies_f, all_ref_dists_f, all_ref_thetas_f)
         expected_dists_f_nm = expected_dists_f * utils.nm_per_oxdna_length
-        l0 = expected_dists_f_nm[0]
-        theta0 = expected_thetas_f[0]
-        delta_ls_f = expected_dists_f_nm - l0
+        # l0 = expected_dists_f_nm[0]
+        # theta0 = expected_thetas_f[0]
 
-        """
-        xs_to_fit = jnp.stack([jnp.zeros_like(forces_pn), forces_pn], axis=1)
-        fit_ = jnp.linalg.lstsq(xs_to_fit, delta_ls_f)
-        a1 = fit_[0][1]
-        """
         xs_to_fit = jnp.stack([jnp.ones_like(forces_pn), forces_pn], axis=1)
         fit_ = jnp.linalg.lstsq(xs_to_fit, expected_dists_f_nm)
         a1 = fit_[0][1]
@@ -981,21 +958,18 @@ def run(args):
 
         expected_dists_t, expected_thetas_t, n_effs_t = vmap(get_expected_vals, (0, 0, 0, 0))(all_ref_states_t, all_ref_energies_t, all_ref_dists_t, all_ref_thetas_t)
         expected_dists_t_nm = expected_dists_t * utils.nm_per_oxdna_length
-        delta_ls_t = expected_dists_t_nm - l0
+        # delta_ls_t = expected_dists_t_nm - l0
 
         xs_to_fit = jnp.stack([jnp.ones_like(torques_pnnm), torques_pnnm], axis=1)
-        fit_ = jnp.linalg.lstsq(xs_to_fit, delta_ls_t)
+        # fit_ = jnp.linalg.lstsq(xs_to_fit, delta_ls_t)
+        fit_ = jnp.linalg.lstsq(xs_to_fit, expected_dists_t_nm)
         a3 = fit_[0][1]
 
-        delta_thetas_t = expected_thetas_t - theta0
-        fit_ = jnp.linalg.lstsq(xs_to_fit, delta_thetas_t)
+        # delta_thetas_t = expected_thetas_t - theta0
+        # fit_ = jnp.linalg.lstsq(xs_to_fit, delta_thetas_t)
+        fit_ = jnp.linalg.lstsq(xs_to_fit, expected_thetas_t)
         a4 = fit_[0][1]
 
-        """
-        s_eff = l0 / a1
-        c = a1 * l0 / (a4*a1 - a3**2)
-        g = -(a3 * l0) / (a4 * a1 - a3**2)
-        """
         s_eff = l0_fit / a1
         c = a1 * l0_fit / (a4*a1 - a3**2)
         g = -(a3 * l0_fit) / (a4 * a1 - a3**2)
@@ -1341,6 +1315,15 @@ def get_parser():
 
     parser.add_argument('--n-threads', type=int, default=4,
                         help="Number of threads for reading trajectories")
+
+
+    parser.add_argument(
+        '--forces-pn',
+        type=float,
+        nargs='+',
+        default=[0.0, 2.0, 6.0, 10.0, 15.0, 20.0, 25.0, 30.0],
+        help="List of forces in pn"
+    )
 
     return parser
 
