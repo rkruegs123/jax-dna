@@ -273,7 +273,7 @@ def run(args):
         bp1_meas_pos = get_bp_pos(body, bp1_meas)
         bp2_meas_pos = get_bp_pos(body, bp2_meas)
         dist = jnp.abs(bp1_meas_pos[2] - bp2_meas_pos[2])
-        return dist * utils.nm_per_oxdna_length
+        return dist
 
     @jit
     def compute_theta(body):
