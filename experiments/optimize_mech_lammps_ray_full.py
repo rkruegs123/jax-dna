@@ -623,7 +623,7 @@ def run(args):
         s_eff_running_avgs = list()
         for check_idx in check_idxs:
             curr_force_dists = running_avgs_force_dists[:, check_idx]
-            curr_force_dists_nm = pn =  * utils.nm_per_oxdna_length
+            curr_force_dists_nm = curr_force_dists * utils.nm_per_oxdna_length
 
             # Compute a1 and l0
             xs_to_fit = jnp.stack([jnp.ones_like(forces_pn), forces_pn], axis=1)
@@ -638,17 +638,17 @@ def run(args):
 
         plt.plot(check_idxs, a1_running_avgs)
         plt.scatter(check_idxs, a1_running_avgs)
-        plt.savefig(iter_dir / "a1_running_avg.png"))
+        plt.savefig(iter_dir / "a1_running_avg.png")
         plt.close()
 
         plt.plot(check_idxs, l0_fit_running_avgs)
         plt.scatter(check_idxs, l0_fit_running_avgs)
-        plt.savefig(iter_dir / "l0_fit_running_avg.png"))
+        plt.savefig(iter_dir / "l0_fit_running_avg.png")
         plt.close()
 
         plt.plot(check_idxs, s_eff_running_avgs)
         plt.scatter(check_idxs, s_eff_running_avgs)
-        plt.savefig(iter_dir / "s_eff_running_avg.png"))
+        plt.savefig(iter_dir / "s_eff_running_avg.png")
         plt.close()
 
 
