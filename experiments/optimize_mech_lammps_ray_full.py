@@ -631,8 +631,10 @@ def run(args):
 
             curr_a1 = fit_[0][1]
             a1_running_avgs.append(curr_a1)
+
             curr_l0_fit = fit_[0][0]
-            l0_running_avgs.append(curr_l0)
+            l0_fit_running_avgs.append(curr_l0_fit)
+
             curr_s_eff = curr_l0_fit / curr_a1
             s_eff_running_avgs.append(curr_s_eff)
 
