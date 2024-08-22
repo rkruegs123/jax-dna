@@ -182,7 +182,8 @@ def run(args):
 
     forces_pn = jnp.array(args['forces_pn'], dtype=jnp.float64)
     # forces_pn = jnp.array([0.0, 2.0, 6.0, 10.0, 15.0, 20.0, 25.0, 30.0])
-    torques_pnnm = jnp.array([0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0])
+    # torques_pnnm = jnp.array([0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0])
+    torques_pnnm = jnp.array(args['torques_pnnm'], dtype=jnp.float64)
 
 
 
@@ -1329,6 +1330,14 @@ def get_parser():
         nargs='+',
         default=[0.0, 2.0, 6.0, 10.0, 15.0, 20.0, 25.0, 30.0],
         help="List of forces in pn"
+    )
+
+    parser.add_argument(
+        '--torques-pnnm',
+        type=float,
+        nargs='+',
+        default=[0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0],
+        help="List of torques in pnnm"
     )
 
     return parser
