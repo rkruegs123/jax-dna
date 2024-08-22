@@ -841,6 +841,7 @@ def run(args):
         fit_ = jnp.linalg.lstsq(xs_to_fit, mean_force_t0_distances_nm)
         a1 = fit_[0][1]
         l0_fit = fit_[0][0]
+        a1_fit_residual = fit_[1][0]
 
         test_forces = onp.linspace(0, forces_pn.max(), 100)
         fit_fn = lambda val: a1*val + l0_fit
@@ -862,6 +863,7 @@ def run(args):
         fit_ = jnp.linalg.lstsq(xs_to_fit, mean_f2_torque_distances_nm)
         a3 = fit_[0][1]
         a3_offset = fit_[0][0]
+        a3_fit_residual = fit_[1][0]
 
         test_torques = onp.linspace(0, torques_pnnm.max(), 100)
         fit_fn = lambda val: a3*val + a3_offset
@@ -882,6 +884,7 @@ def run(args):
         fit_ = jnp.linalg.lstsq(xs_to_fit, mean_f2_torque_thetas)
         a4 = fit_[0][1]
         a4_offset = fit_[0][0]
+        a4_fit_residual = fit_[1][0]
 
         fit_fn = lambda val: a4*val + a4_offset
         plt.plot(test_torques, fit_fn(test_torques))
@@ -904,6 +907,9 @@ def run(args):
             f.write(f"S_eff: {s_eff}\n")
             f.write(f"C: {c}\n")
             f.write(f"g: {g}\n")
+            f.write(f"A1 residual: {a1_fit_residual}\n")
+            f.write(f"A3 residual: {a3_fit_residual}\n")
+            f.write(f"A4 residual: {a4_fit_residual}\n")
 
         # Archive the iteration directory and delete the unzipped version
         if not no_archive:
