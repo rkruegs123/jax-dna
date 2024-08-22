@@ -1,11 +1,11 @@
 """Base classes for energy functions."""
 
+from collections.abc import Callable
 from typing import Any, Union
 
 import chex
 import jax.numpy as jnp
 import jax_md
-from collections.abc import Callable
 
 import jax_dna.utils.types as typ
 
@@ -38,14 +38,17 @@ class BaseEnergyFunction:
         if not isinstance(other, BaseEnergyFunction):
             raise TypeError(ERR_UNSUPPORTED_OPERATION.format(op="+", left=type(self), right=type(other)))
 
-        return ComposedEnergyFunction([self, other])
+        return ComposedEnergyFunction(energy_fns=[self, other])
 
     def __mul__(self, other: float) -> "ComposedEnergyFunction":
         """Multiply an energy function by a scalar to create a ComposedEnergyFunction."""
         if not isinstance(other, float | int):
             raise TypeError(ERR_UNSUPPORTED_OPERATION.format(op="*", left=type(self), right=type(other)))
 
-        return ComposedEnergyFunction([self], jnp.array([other], dtype=float))
+        return ComposedEnergyFunction(
+            energy_fns=[self],
+            weights=jnp.array([other], dtype=float),
+        )
 
     def __call__(
         self,
