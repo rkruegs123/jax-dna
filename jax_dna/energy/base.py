@@ -1,12 +1,11 @@
 """Base classes for energy functions."""
 
-import dataclasses as dc
 from typing import Any, Union
 
 import chex
 import jax.numpy as jnp
 import jax_md
-from _collections_abc import Callable
+from collections.abc import Callable
 
 import jax_dna.utils.types as typ
 
@@ -14,7 +13,7 @@ ERR_PARAM_NOT_FOUND = "Parameter '{key}' not found in {class_name}"
 ERR_CALL_NOT_IMPLEMENTED = "Subclasses must implement this method"
 ERR_COMPOSED_ENERGY_FN_LEN_MISMATCH = "Weights must have the same length as energy functions"
 ERR_COMPOSED_ENERGY_FN_TYPE_ENERGY_FNS = "energy_fns must be a list of energy functions"
-ERR_UNSUPPORTED_OPERATION = "unsupported operand type(s) for {op}: '{left}' and '{right}'"
+ERR_UNSUPPORTED_OPERATION = "Unsupported operand type(s) for {op}: '{left}' and '{right}'"
 
 
 @chex.dataclass(frozen=True)
@@ -59,7 +58,7 @@ class BaseEnergyFunction:
         raise NotImplementedError(ERR_CALL_NOT_IMPLEMENTED)
 
 
-@dc.dataclass(frozen=True)
+@chex.dataclass(frozen=True)
 class ComposedEnergyFunction:
     """Represents a linear combination of energy functions.
 
