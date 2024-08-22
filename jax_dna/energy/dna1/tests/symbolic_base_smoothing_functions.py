@@ -9,7 +9,9 @@ def _solve_f1_b(x: float, a: float, x0: float, xc: float) -> float:
     """
     return float(
         sp.parsing.sympy_parser.parse_expr(
-            "a**2*(-exp(a*(3*x0 + 2*xc)) + 2*exp(a*(x + 2*x0 + 2*xc)) - exp(a*(2*x + x0 + 2*xc)))*exp(-2*a*x)/(2*exp(a*(x + 2*xc)) + exp(a*(2*x + x0)) - 2*exp(a*(2*x + xc)) - exp(a*(x0 + 2*xc)))"
+            "a**2*(-exp(a*(3*x0 + 2*xc)) + 2*exp(a*(x + 2*x0 + 2*xc))"
+            " - exp(a*(2*x + x0 + 2*xc)))*exp(-2*a*x)/(2*exp(a*(x + 2*xc))"
+            " + exp(a*(2*x + x0)) - 2*exp(a*(2*x + xc)) - exp(a*(x0 + 2*xc)))"
         ).evalf(subs={"x": x, "a": a, "x0": x0, "xc": xc})
     )
 
@@ -22,7 +24,9 @@ def _solve_f1_xc_star(x: float, a: float, x0: float, xc: float) -> float:
     """
     return float(
         sp.parsing.sympy_parser.parse_expr(
-            "(a*x*exp(a*(x + 2*xc)) - a*x*exp(a*(x0 + 2*xc)) + 2*exp(a*(x + 2*xc)) + exp(a*(2*x + x0)) - 2*exp(a*(2*x + xc)) - exp(a*(x0 + 2*xc)))*exp(-2*a*xc)/(a*(exp(a*x) - exp(a*x0)))"
+            "(a*x*exp(a*(x + 2*xc)) - a*x*exp(a*(x0 + 2*xc))"
+            " + 2*exp(a*(x + 2*xc)) + exp(a*(2*x + x0)) - 2*exp(a*(2*x + xc))"
+            " - exp(a*(x0 + 2*xc)))*exp(-2*a*xc)/(a*(exp(a*x) - exp(a*x0)))"
         ).evalf(subs={"x": x, "a": a, "x0": x0, "xc": xc})
     )
 
@@ -73,7 +77,8 @@ def _solve_f3_b(x: float, sigma: float) -> float:
     """Solve for the smoothing parameter b in the f3 smoothing function."""
     return float(
         sp.parsing.sympy_parser.parse_expr(
-            "-36*sigma**6*(-2*sigma**6 + x**6)**2/(x**14*(-sigma + x)*(sigma + x)*(sigma**2 - sigma*x + x**2)*(sigma**2 + sigma*x + x**2))"
+            "-36*sigma**6*(-2*sigma**6 + x**6)**2/(x**14*(-sigma + x)*(sigma + x)"
+            "*(sigma**2 - sigma*x + x**2)*(sigma**2 + sigma*x + x**2))"
         ).evalf(subs={"x": x, "sigma": sigma})
     )
 
@@ -140,3 +145,20 @@ def _solve_f5_b(
             subs={"x": x, "x0": x0, "a": a}
         )
     )
+
+
+def _solve_f5_xc(x: float, x0: float, a: float) -> float:
+    """Solve for the smoothing parameter xc in the f5 smoothing function."""
+    return float(
+        sp.parsing.sympy_parser.parse_expr("(-a*x*x0 + a*x0**2 - 1)/(a*(-x + x0))").evalf(
+            subs={"x": x, "x0": x0, "a": a}
+        )
+    )
+
+
+def get_f5_smoothing_params(a: float, x_star: float) -> tuple[float, float]:
+    """Get the smoothing parameters for the f5 smoothing function."""
+    solved_b = _solve_f5_b(x_star, 0.0, a)
+    solved_xc = _solve_f5_xc(x_star, 0.0, a)
+
+    return solved_b, solved_xc

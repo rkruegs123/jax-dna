@@ -1,7 +1,6 @@
 import jax
 import numpy as np
 import pytest
-import sympy as sp
 
 from jax_dna.energy import potentials
 from jax_dna.energy.tests import symbolic_potentials

@@ -1,0 +1,7 @@
+[key1]
+hello = "world"
+number = 42
+
+[key2]
+pi = "pi"
+math = "2 + 2"

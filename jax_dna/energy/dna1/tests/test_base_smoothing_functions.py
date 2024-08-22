@@ -224,3 +224,43 @@ def test_solve_f5_b(x: float, x0: float, a: float) -> None:
     actual = bsf._solve_f5_b(x, x0, a)
     expected = sbsf._solve_f5_b(x, x0, a)
     np.testing.assert_allclose(actual, expected)
+
+
+@pytest.mark.parametrize(
+    ("x", "x0", "a"),
+    [
+        (0.5, 0.1, 0.2),
+        (0.1, 0.2, 0.3),
+        (0.3, 0.4, 0.5),
+        (0.4, 0.5, 0.6),
+    ],
+)
+def test_solve_f5_xc(
+    x: float,
+    x0: float,
+    a: float,
+) -> None:
+    """Test the _solve_f5_xc function."""
+    actual = bsf._solve_f5_xc(x, x0, a)
+    expected = sbsf._solve_f5_xc(x, x0, a)
+    np.testing.assert_allclose(actual, expected)
+
+
+@pytest.mark.parametrize(
+    ("a", "x_star"),
+    [
+        (0.5, 0.1),
+        (0.1, 0.2),
+        (0.3, 0.5),
+        (0.4, 0.6),
+    ],
+)
+def test_get_f5_smoothing_params(
+    a: float,
+    x_star: float,
+) -> None:
+    """Test the get_f5_smoothing_params function."""
+
+    actual = bsf.get_f5_smoothing_params(a, x_star)
+    expected = sbsf.get_f5_smoothing_params(a, x_star)
+    np.testing.assert_allclose(actual, expected)

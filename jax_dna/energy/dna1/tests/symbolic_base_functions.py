@@ -31,14 +31,15 @@ def f1(
     3. r_high < r < r_c_high
     4. Otherwise
     """
+    value = 0
     if r_low < r < r_high:
-        return sp.v_morse(r, eps, r0, a) - sp.v_morse(r_c, eps, r0, a)
+        value = sp.v_morse(r, eps, r0, a) - sp.v_morse(r_c, eps, r0, a)
     elif r_c_low < r < r_low:
-        return eps * sp.v_smooth(r, b_low, r_c_low)
+        value = eps * sp.v_smooth(r, b_low, r_c_low)
     elif r_high < r < r_c_high:
-        return eps * sp.v_smooth(r, b_high, r_c_high)
-    else:
-        return 0
+        value = eps * sp.v_smooth(r, b_high, r_c_high)
+
+    return value
 
 
 def f2(
@@ -63,14 +64,15 @@ def f2(
     3. r_high < r < r_c_high
     4. Otherwise
     """
+    value = 0
     if r_low < r < r_high:
-        return sp.v_harmonic(r, k, r0) - sp.v_harmonic(r_c, k, r0)
+        value = sp.v_harmonic(r, k, r0) - sp.v_harmonic(r_c, k, r0)
     elif r_c_low < r < r_low:
-        return k * sp.v_smooth(r, b_low, r_c_low)
+        value = k * sp.v_smooth(r, b_low, r_c_low)
     elif r_high < r < r_c_high:
-        return k * sp.v_smooth(r, b_high, r_c_high)
-    else:
-        return 0
+        value = k * sp.v_smooth(r, b_high, r_c_high)
+
+    return value
 
 
 def f3(
@@ -90,13 +92,13 @@ def f3(
     2. r_star < r < r_c
     3. Otherwise
     """
-
+    value = 0
     if r < r_star:
-        return sp.v_lj(r, eps, sigma)
+        value = sp.v_lj(r, eps, sigma)
     elif r_star < r < r_c:
-        return eps * sp.v_smooth(r, b, r_c)
-    else:
-        return 0
+        value = eps * sp.v_smooth(r, b, r_c)
+
+    return value
 
 
 def f4(
@@ -118,14 +120,15 @@ def f4(
     4. Otherwise
     """
 
+    value = 0
     if theta0 - delta_theta_star < theta < theta0 + delta_theta_star:
-        return sp.v_mod(theta, a, theta0)
+        value = sp.v_mod(theta, a, theta0)
     elif theta0 - delta_theta_c < theta < theta0 - delta_theta_star:
-        return sp.v_smooth(theta, b, theta0 - delta_theta_c)
+        value = sp.v_smooth(theta, b, theta0 - delta_theta_c)
     elif theta0 + delta_theta_star < theta < theta0 + delta_theta_c:
-        return sp.v_smooth(theta, b, theta0 + delta_theta_c)
-    else:
-        return 0
+        value = sp.v_smooth(theta, b, theta0 + delta_theta_c)
+
+    return value
 
 
 def f5(
@@ -145,11 +148,12 @@ def f5(
     3. x_c < x < x_star
     4. Otherwise
     """
+    value = 0
     if x > 0:
-        return 1
+        value = 1
     elif x_star < x < 0:
-        return sp.v_mod(x, a, 0)
+        value = sp.v_mod(x, a, 0)
     elif x_c < x < x_star:
-        return sp.v_smooth(x, b, x_c)
-    else:
-        return 0
+        value = sp.v_smooth(x, b, x_c)
+
+    return value

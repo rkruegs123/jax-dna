@@ -25,7 +25,7 @@ def parse_str(value: str) -> str | float:
     except ValueError:
         try:
             return float(sympy.parse_expr(value).evalf(n=SYMPY_EVAL_N))
-        except (TypeError, ValueError, SyntaxError):
+        except (AttributeError, TypeError, ValueError, SyntaxError):
             return value
 
 
