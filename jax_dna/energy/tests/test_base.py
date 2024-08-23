@@ -89,5 +89,20 @@ def test_ComposedEnergyFunction_init():
     assert cef.rigid_body_transform_fn is None
 
 
+def test_ComposedEnergyFunction_raises():
+    """Test the invalid initialization params of ComposedEnergyFunction"""
+    be = _make_base_energy_function()
+    expected_err = re.escape(base.ERR_COMPOSED_ENERGY_FN_TYPE_ENERGY_FNS)
+    with pytest.raises(TypeError, match=expected_err):
+        base.ComposedEnergyFunction(energy_fns=[be, 3])
+
+
+def test_ComposedEnergyFunction_call_raises_lengths():
+    """Test the __call__ function for ComposedEnergyFunction with invalid args."""
+    be = _make_base_energy_function()
+    with pytest.raises(ValueError, match=re.escape(base.ERR_COMPOSED_ENERGY_FN_LEN_MISMATCH)):
+        base.ComposedEnergyFunction(energy_fns=[be], weights=np.array([1.0, 2.0]))
+
+
 if __name__ == "__main__":
-    test_BaseEnergyFunction_mul_raises()
+    test_ComposedEnergyFunction_call_raises_lengths()
