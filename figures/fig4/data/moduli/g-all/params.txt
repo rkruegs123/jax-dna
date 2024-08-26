@@ -1,0 +1,33 @@
+n_sample_states: 1000
+n_sample_steps: 2500000
+n_eq_steps: 50000
+sample_every: 2500
+n_sims: 3
+run_name: new-lammps-opt-g-all-tcut
+lammps_basedir: /n/brenner_lab/Lab/software/lammps-stable_29Sep2021
+tacoxdna_basedir: /n/brenner_lab/User/rkrueger/tacoxDNA
+max_approx_iters: 5
+n_iters: 200
+lr: 0.001
+min_neff_factor: 0.95
+seq_dep: False
+s_eff_coeff: 0.0
+c_coeff: 0.0
+g_coeff: 1.0
+target_s_eff: 1045
+s_eff_uncertainty: 92
+target_c: 436
+c_uncertainty: 16
+target_g: -90.0
+g_uncertainty: 10
+no_archive: False
+no_delete: False
+ignore_warnings: True
+custom_params: False
+timestep: 0.01
+save_obj_every: 10
+plot_every: 1
+opt_keys: ['fene', 'stacking', 'hydrogen_bonding', 'cross_stacking', 'coaxial_stacking']
+n_threads: 28
+forces_pn: [15.0, 20.0, 25.0, 30.0]
+torques_pnnm: [10.0, 15.0, 20.0, 25.0, 30.0]
