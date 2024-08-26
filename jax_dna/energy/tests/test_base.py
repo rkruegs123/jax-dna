@@ -79,7 +79,7 @@ def test_BaseEnergyFunction_call_raises() -> None:
         be(None, None, None, None)
 
 
-def test_ComposedEnergyFunction_init():
+def test_ComposedEnergyFunction_init() -> None:
     """Test the initialization params of ComposedEnergyFunction"""
     be = _make_base_energy_function()
     cef = base.ComposedEnergyFunction(energy_fns=[be])
@@ -89,7 +89,7 @@ def test_ComposedEnergyFunction_init():
     assert cef.rigid_body_transform_fn is None
 
 
-def test_ComposedEnergyFunction_raises():
+def test_ComposedEnergyFunction_init_raises() -> None:
     """Test the invalid initialization params of ComposedEnergyFunction"""
     be = _make_base_energy_function()
     expected_err = re.escape(base.ERR_COMPOSED_ENERGY_FN_TYPE_ENERGY_FNS)
@@ -97,12 +97,37 @@ def test_ComposedEnergyFunction_raises():
         base.ComposedEnergyFunction(energy_fns=[be, 3])
 
 
-def test_ComposedEnergyFunction_call_raises_lengths():
+def test_ComposedEnergyFunction_init_raises_lengths() -> None:
     """Test the __call__ function for ComposedEnergyFunction with invalid args."""
     be = _make_base_energy_function()
     with pytest.raises(ValueError, match=re.escape(base.ERR_COMPOSED_ENERGY_FN_LEN_MISMATCH)):
         base.ComposedEnergyFunction(energy_fns=[be], weights=np.array([1.0, 2.0]))
 
 
+@pytest.mark.parametrize(
+    ("init_weights", "expected_weights"),
+    [
+        (None, None),
+        (np.array([1.0]), np.array([1.0, 1.0])),
+        (np.array([3.0]), np.array([3.0, 3.0])),
+    ],
+)
+def test_ComposedEnergyFunction_add_energy_function(
+    init_weights: np.ndarray | None,
+    expected_weights: np.ndarray | None,
+) -> None:
+    """Test the add_energy_function method of ComposedEnergyFunction."""
+
+    be = _make_base_energy_function()
+    cef = base.ComposedEnergyFunction(energy_fns=[be], weights=init_weights)
+    cef = cef.add_energy_fn(be, 1.0 if init_weights is None else init_weights[0])
+
+    assert len(cef.energy_fns) == 2  # noqa: PLR2004 ignore magic number error
+    if init_weights is None:
+        assert cef.weights is None
+    else:
+        np.testing.assert_allclose(cef.weights, expected_weights)
+
+
 if __name__ == "__main__":
-    test_ComposedEnergyFunction_call_raises_lengths()
+    pass

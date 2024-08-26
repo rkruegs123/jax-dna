@@ -23,7 +23,7 @@ class BaseEnergyFunction:
     This class should not be used directly. Subclasses should implement the __call__ method.
 
     Attributes:
-        displacement_fn (Callable): an instannce of a displacement function from jax_md.space
+        displacement_fn (Callable): an instance of a displacement function from jax_md.space
     """
 
     displacement_fn: Callable
@@ -126,8 +126,8 @@ class ComposedEnergyFunction:
             weights = jnp.concatenate([self.weights, jnp.array([weight])])
 
         return ComposedEnergyFunction(
-            [*self.energy_fns, energy_fn],
-            weights,
+            energy_fns=[*self.energy_fns, energy_fn],
+            weights=weights,
         )
 
     def add_composable_energy_fn(self, energy_fn: "ComposedEnergyFunction") -> "ComposedEnergyFunction":
