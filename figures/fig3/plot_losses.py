@@ -18,20 +18,34 @@ data_dir = Path("figures/fig3/data")
 t11_dir = data_dir / "pitch-opts/target11/"
 output_dir = Path("figures/fig3/output")
 
-for optimizer in ["rmsprop", "adam"]:
+optimal_optimizer = {
+    "all": "adam",
+    "fene": "adam",
+    "stacking": "adam",
+    "hydrogen_bonding": "adam",
+    "cross_stacking": "rmsprop",
+    "coaxial_stacking": "rmsprop"
+}
+
+for optimizer in ["rmsprop", "adam", "optimal"]:
 
     for width, height in [(20, 14), (24, 14), (28, 14)]:
 
         fig, ax = plt.subplots(figsize=(width, height))
         for dir_name, name in [("all", "all"), ("fene", "fene"), ("stacking", "stacking"), ("hb", "hydrogen_bonding"), ("cr-stacking", "cross_stacking"), ("cx-stacking", "coaxial_stacking")]:
 
-            fin_pitches_path = t11_dir / optimizer / dir_name / "obj/fin_pitches.npy"
+            if optimizer != "optimal":
+                opt_dir = optimizer
+            else:
+                opt_dir = optimal_optimizer[name]
+
+            fin_pitches_path = t11_dir / opt_dir / dir_name / "obj/fin_pitches.npy"
             fin_pitches = onp.load(fin_pitches_path)
 
-            fin_ref_iters_path = t11_dir / optimizer / dir_name / "obj/fin_ref_iters.npy"
+            fin_ref_iters_path = t11_dir / opt_dir / dir_name / "obj/fin_ref_iters.npy"
             fin_ref_iters = onp.load(fin_ref_iters_path)
 
-            fin_ref_pitches_path = t11_dir / optimizer / dir_name / "obj/fin_ref_pitches.npy"
+            fin_ref_pitches_path = t11_dir / opt_dir / dir_name / "obj/fin_ref_pitches.npy"
             fin_ref_pitches = onp.load(fin_ref_pitches_path)
 
             ax.plot(fin_pitches, color=colors[name], label=labels[name], linewidth=3)
