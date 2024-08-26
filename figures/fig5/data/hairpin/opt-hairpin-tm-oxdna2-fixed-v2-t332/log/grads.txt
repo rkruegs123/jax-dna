@@ -1,0 +1,3201 @@
+
+Iteration 0:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.673730575197049
+	- a_hb_1: 4.825171194089682
+	- a_hb_2: 12.500823203610883
+	- a_hb_3: 0.0
+	- a_hb_4: 19.34180861629047
+	- a_hb_7: 2.12146699054108
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.009051452301603202
+	- delta_theta_star_hb_2: 0.25697415942384155
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.09428076440847555
+	- delta_theta_star_hb_7: 0.014148816018577866
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 210.0366093178993
+	- dr_c_hb: -152.7800029548435
+	- dr_high_hb: 0.0009953066113760505
+	- dr_low_hb: -0.37799574455297424
+	- eps_hb: -130.051907072137
+	- theta0_hb_1: -69.33523129019562
+	- theta0_hb_2: -154.11518059333054
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 44.89106745169075
+	- theta0_hb_7: 9.196089976478769
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 1:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.040975871589101
+	- a_hb_1: 4.215373674213806
+	- a_hb_2: 10.885533668646744
+	- a_hb_3: 0.0
+	- a_hb_4: 16.90515489585647
+	- a_hb_7: 1.8659879874581304
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.007970668260453392
+	- delta_theta_star_hb_2: 0.2226974858835823
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08407408846022335
+	- delta_theta_star_hb_7: 0.012276625422850834
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 177.3245373687569
+	- dr_c_hb: -131.65849897349162
+	- dr_high_hb: 0.0008770347289671994
+	- dr_low_hb: -0.49953662703099705
+	- eps_hb: -113.93606398250795
+	- theta0_hb_1: -60.56856446718975
+	- theta0_hb_2: -134.37509192569763
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 39.18264797476281
+	- theta0_hb_7: 7.4036318181924035
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 2:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.540520306188206
+	- a_hb_1: 3.7340575984292226
+	- a_hb_2: 9.611983277285876
+	- a_hb_3: 0.0
+	- a_hb_4: 14.959861694499446
+	- a_hb_7: 1.665912523074102
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.007250958403152992
+	- delta_theta_star_hb_2: 0.19652063779193563
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.07570842058226557
+	- delta_theta_star_hb_7: 0.010879294900747634
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 151.53564067919572
+	- dr_c_hb: -114.98860425747917
+	- dr_high_hb: 0.0007955392864374112
+	- dr_low_hb: -0.6492294091478746
+	- eps_hb: -101.14873397299648
+	- theta0_hb_1: -53.634846360526446
+	- theta0_hb_2: -118.76488849117953
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 34.64020973645774
+	- theta0_hb_7: 6.04062564269395
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 3:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -5.095691282668431
+	- a_hb_1: 5.424273820721073
+	- a_hb_2: 13.924725639282181
+	- a_hb_3: 0.0
+	- a_hb_4: 21.752878937330497
+	- a_hb_7: 2.438586745270468
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.010566287804593982
+	- delta_theta_star_hb_2: 0.28361023607724734
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.11184119452235652
+	- delta_theta_star_hb_7: 0.015842787385603622
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 212.61594739411072
+	- dr_c_hb: -164.94761482925745
+	- dr_high_hb: 0.0011635451694173306
+	- dr_low_hb: -1.3574454308403634
+	- eps_hb: -147.4633645157134
+	- theta0_hb_1: -77.93608407010846
+	- theta0_hb_2: -172.29892979854907
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 50.31073495273257
+	- theta0_hb_7: 7.953146205354374
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 4:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -5.217696201824865
+	- a_hb_1: 5.674790335268603
+	- a_hb_2: 14.943911599058183
+	- a_hb_3: 0.0
+	- a_hb_4: 22.559383008444456
+	- a_hb_7: 2.7894567999602278
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.025880879824628972
+	- delta_theta_star_hb_2: 0.26828498862417827
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.10390045150524596
+	- delta_theta_star_hb_7: 0.039663512252987865
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 208.95572119728197
+	- dr_c_hb: -171.90027446876317
+	- dr_high_hb: 0.0014353208254362841
+	- dr_low_hb: -3.7173669515056003
+	- eps_hb: -155.69259745921389
+	- theta0_hb_1: -81.6699144009786
+	- theta0_hb_2: -182.51617160648337
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 52.642961323390445
+	- theta0_hb_7: -0.18433405038617023
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 5:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.481598252128873
+	- a_hb_1: 4.909144429172602
+	- a_hb_2: 12.951226390014726
+	- a_hb_3: 0.0
+	- a_hb_4: 19.556467014925545
+	- a_hb_7: 2.4365164382355875
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.02304294567820757
+	- delta_theta_star_hb_2: 0.2304942232305005
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.09146738170436874
+	- delta_theta_star_hb_7: 0.03466292225546216
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 174.9550820367007
+	- dr_c_hb: -147.25486275740465
+	- dr_high_hb: 0.0012229468866942089
+	- dr_low_hb: -4.030943453512781
+	- eps_hb: -135.58061065577894
+	- theta0_hb_1: -70.73123729632003
+	- theta0_hb_2: -158.29676327014175
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 45.61599650038478
+	- theta0_hb_7: -0.8540449725181896
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 6:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.8734106373596315
+	- a_hb_1: 4.27616935001769
+	- a_hb_2: 11.3049237194882
+	- a_hb_3: 0.0
+	- a_hb_4: 17.058833627183525
+	- a_hb_7: 2.141798935563328
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.020681691076388863
+	- delta_theta_star_hb_2: 0.1990544776902008
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08091731260984991
+	- delta_theta_star_hb_7: 0.030698127835944687
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 147.1186929201237
+	- dr_c_hb: -126.94681874817603
+	- dr_high_hb: 0.0010491105237537175
+	- dr_low_hb: -4.381843962578533
+	- eps_hb: -118.8105178464104
+	- theta0_hb_1: -61.66040826638352
+	- theta0_hb_2: -138.21959297670202
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 39.77218755730167
+	- theta0_hb_7: -1.2358868882649146
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 7:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.376549620549916
+	- a_hb_1: 3.758957051725818
+	- a_hb_2: 9.961019420147013
+	- a_hb_3: 0.0
+	- a_hb_4: 15.005559342106173
+	- a_hb_7: 1.8987256079084365
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.018738455552349077
+	- delta_theta_star_hb_2: 0.1733575259480713
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.0720224988100644
+	- delta_theta_star_hb_7: 0.02760874068021018
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 124.5149177342567
+	- dr_c_hb: -110.3945114034478
+	- dr_high_hb: 0.0009069243290826097
+	- dr_low_hb: -4.787721545407221
+	- eps_hb: -105.00128791947988
+	- theta0_hb_1: -54.22752087643792
+	- theta0_hb_2: -121.77400076663595
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 34.96903201949357
+	- theta0_hb_7: -1.4402110229220115
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 8:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 5.095314391960289
+	- a_hb_1: -5.720189451935546
+	- a_hb_2: -15.197637882313972
+	- a_hb_3: 0.0
+	- a_hb_4: -22.84419129293196
+	- a_hb_7: -2.9127035007209723
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.02935604173879612
+	- delta_theta_star_hb_2: -0.26192396621022584
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.11066524217787244
+	- delta_theta_star_hb_7: -0.043159200402940155
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -182.0889381300732
+	- dr_c_hb: 166.19497528850073
+	- dr_high_hb: -0.001352018511687873
+	- dr_low_hb: 9.193030661050116
+	- eps_hb: 160.60085637414196
+	- theta0_hb_1: 82.5479425296764
+	- theta0_hb_2: 185.72180420262868
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -53.21152534069613
+	- theta0_hb_7: 2.6257401402885154
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 9:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.627452204218985
+	- a_hb_1: -5.234431321235037
+	- a_hb_2: -13.372989980930068
+	- a_hb_3: 0.0
+	- a_hb_4: -21.362360055444924
+	- a_hb_7: -2.5498833769781077
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.0027103313032095754
+	- delta_theta_star_hb_2: -0.33177660568678313
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.11219490035600099
+	- delta_theta_star_hb_7: -0.019331286232431667
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -162.69428074270473
+	- dr_c_hb: 149.3408964303867
+	- dr_high_hb: -0.0013546378991309575
+	- dr_low_hb: 8.838357621045404
+	- eps_hb: 145.96801969819455
+	- theta0_hb_1: 75.85246376523479
+	- theta0_hb_2: 164.9816207961154
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -49.081916216737376
+	- theta0_hb_7: 5.202724263709929
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 10:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.395568140978116
+	- a_hb_1: -4.984035293166319
+	- a_hb_2: -12.740332326758343
+	- a_hb_3: 0.0
+	- a_hb_4: -20.360362503471247
+	- a_hb_7: -2.435763417652898
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.002450870415814096
+	- delta_theta_star_hb_2: -0.31485132567453133
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.10793417616835166
+	- delta_theta_star_hb_7: -0.018871978805593624
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -151.53061739079658
+	- dr_c_hb: 141.67360639749106
+	- dr_high_hb: -0.0012828789042264902
+	- dr_low_hb: 8.442937024117306
+	- eps_hb: 139.34585869489754
+	- theta0_hb_1: 72.27149755427986
+	- theta0_hb_2: 157.23112699296237
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -46.776287637683005
+	- theta0_hb_7: 5.440825033023291
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 11:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.298215594516622
+	- a_hb_1: -4.880454938660596
+	- a_hb_2: -12.479975831689554
+	- a_hb_3: 0.0
+	- a_hb_4: -19.946304172169118
+	- a_hb_7: -2.3885879813210296
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.0024233677406589153
+	- delta_theta_star_hb_2: -0.3074836765489729
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.10609439554577893
+	- delta_theta_star_hb_7: -0.018711285220249244
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -146.51219474234276
+	- dr_c_hb: 138.4526018584964
+	- dr_high_hb: -0.0012555273564921177
+	- dr_low_hb: 7.965014125340422
+	- eps_hb: 136.61475298027096
+	- theta0_hb_1: 70.79193201711917
+	- theta0_hb_2: 154.04205464536167
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -45.82593794835496
+	- theta0_hb_7: 5.901307618144753
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 12:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.299854429694814
+	- a_hb_1: -4.8848706567445435
+	- a_hb_2: -12.493642668693562
+	- a_hb_3: 0.0
+	- a_hb_4: -19.96610387898717
+	- a_hb_7: -2.39081937055489
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.0025620870909632883
+	- delta_theta_star_hb_2: -0.3071449860463561
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.1060410862561576
+	- delta_theta_star_hb_7: -0.018774195697330062
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -146.00289035195584
+	- dr_c_hb: 138.49812261406692
+	- dr_high_hb: -0.001261185364069025
+	- dr_low_hb: 7.469871980927028
+	- eps_hb: 136.75834568098367
+	- theta0_hb_1: 70.86084081189567
+	- theta0_hb_2: 154.21460369595044
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -45.87570215656941
+	- theta0_hb_7: 6.565629441915237
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 13:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.383565205094971
+	- a_hb_1: -4.9788174559603195
+	- a_hb_2: -12.734903754301909
+	- a_hb_3: 0.0
+	- a_hb_4: -20.345650220372104
+	- a_hb_7: -2.434059296211032
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.0028446941921630147
+	- delta_theta_star_hb_2: -0.3126389439088685
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.10746610784869848
+	- delta_theta_star_hb_7: -0.019029056606420486
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -149.2409511109286
+	- dr_c_hb: 141.2517305624773
+	- dr_high_hb: -0.0012944309523049073
+	- dr_low_hb: 6.964451502840773
+	- eps_hb: 139.2874553737927
+	- theta0_hb_1: 72.2140841355207
+	- theta0_hb_2: 157.17841426114438
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -46.7550837972637
+	- theta0_hb_7: 7.44111935357404
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 14:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.543017056398766
+	- a_hb_1: -5.1554133358249885
+	- a_hb_2: -13.18686959994555
+	- a_hb_3: 0.0
+	- a_hb_4: -21.05638516095667
+	- a_hb_7: -2.5151258590033834
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.0032735313169384196
+	- delta_theta_star_hb_2: -0.32353269898950915
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.11024779730438627
+	- delta_theta_star_hb_7: -0.01946700547583581
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -155.96535528474544
+	- dr_c_hb: 146.5084099029006
+	- dr_high_hb: -0.0013532462359989172
+	- dr_low_hb: 6.433820034564761
+	- eps_hb: 144.013604355129
+	- theta0_hb_1: 74.75199720362342
+	- theta0_hb_2: 162.7218052017859
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -48.398786030351665
+	- theta0_hb_7: 8.553173127050195
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 15:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 5.204040648148115
+	- a_hb_1: -5.863146660868713
+	- a_hb_2: -15.139830995368444
+	- a_hb_3: 0.0
+	- a_hb_4: -23.64205017234906
+	- a_hb_7: -2.8277884734889436
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.008872895817438619
+	- delta_theta_star_hb_2: -0.3389226978455392
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.11327416155332681
+	- delta_theta_star_hb_7: -0.02375884506949605
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -137.03940940332492
+	- dr_c_hb: 167.70682412183444
+	- dr_high_hb: -0.0018301013187886155
+	- dr_low_hb: 5.956283971790551
+	- eps_hb: 163.997768307821
+	- theta0_hb_1: 84.39481533817063
+	- theta0_hb_2: 187.1204846809427
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -54.660253857306884
+	- theta0_hb_7: -3.9139769733813674
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 16:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.208147896075577
+	- a_hb_1: 3.60437690239154
+	- a_hb_2: 9.303588824969982
+	- a_hb_3: 0.0
+	- a_hb_4: 14.509745783754823
+	- a_hb_7: 1.7293325516061395
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.0052910296213648875
+	- delta_theta_star_hb_2: 0.20674111927387334
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.06896934610039152
+	- delta_theta_star_hb_7: 0.014497054160491022
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 85.78389813887274
+	- dr_c_hb: -103.41271350819106
+	- dr_high_hb: 0.0011339284889445925
+	- dr_low_hb: -3.1593956725948797
+	- eps_hb: -100.51745390690883
+	- theta0_hb_1: -51.856626923430355
+	- theta0_hb_2: -114.94936805081292
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 33.565858994872634
+	- theta0_hb_7: 1.863941758854475
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 17:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.327358554340418
+	- a_hb_1: 3.731465575704811
+	- a_hb_2: 9.628860732734688
+	- a_hb_3: 0.0
+	- a_hb_4: 15.001638662558712
+	- a_hb_7: 1.7834566906672609
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.00537560796494704
+	- delta_theta_star_hb_2: 0.21277849216641093
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.07089556792180307
+	- delta_theta_star_hb_7: 0.01496668393015197
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 89.89516370760093
+	- dr_c_hb: -107.27307181462324
+	- dr_high_hb: 0.0011794018217072416
+	- dr_low_hb: -2.9007582332663016
+	- eps_hb: -103.83208702826187
+	- theta0_hb_1: -53.664186088040395
+	- theta0_hb_2: -118.93617443146522
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 34.71830364654582
+	- theta0_hb_7: 1.3734363333075505
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 18:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.403418369667017
+	- a_hb_1: 3.8134419506257773
+	- a_hb_2: 9.838362874663716
+	- a_hb_3: 0.0
+	- a_hb_4: 15.315443667637387
+	- a_hb_7: 1.8179593027306855
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.005456301086894057
+	- delta_theta_star_hb_2: 0.2165630753516682
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.072125329298804
+	- delta_theta_star_hb_7: 0.015300846779612184
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 92.50206059603549
+	- dr_c_hb: -109.73570482469763
+	- dr_high_hb: 0.0012084743506027883
+	- dr_low_hb: -2.7104942499221902
+	- eps_hb: -105.94769145814
+	- theta0_hb_1: -54.82520474407963
+	- theta0_hb_2: -121.4957433800178
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 35.45384872967272
+	- theta0_hb_7: 0.8451907978452466
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 19:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.435896982134666
+	- a_hb_1: 3.8496665115400512
+	- a_hb_2: 9.930201159669545
+	- a_hb_3: 0.0
+	- a_hb_4: 15.449846877035043
+	- a_hb_7: 1.8326124587979162
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.0055227474004428114
+	- delta_theta_star_hb_2: 0.21809919918949788
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.07264863493209539
+	- delta_theta_star_hb_7: 0.015485680356587327
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 93.55804880208771
+	- dr_c_hb: -110.78421951605881
+	- dr_high_hb: 0.0012216694589363606
+	- dr_low_hb: -2.5571153033578042
+	- eps_hb: -106.85389378368681
+	- theta0_hb_1: -55.331920660356126
+	- theta0_hb_2: -122.6090532935673
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 35.7692351825083
+	- theta0_hb_7: 0.3117980178844991
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 20:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.427419841248047
+	- a_hb_1: 3.8427873040996134
+	- a_hb_2: 9.911104087337838
+	- a_hb_3: 0.0
+	- a_hb_4: 15.415866235283621
+	- a_hb_7: 1.8286138113379486
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.0055705930765424004
+	- delta_theta_star_hb_2: 0.21753528164477942
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.07250594133293209
+	- delta_theta_star_hb_7: 0.015521905306580451
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 93.14460360511156
+	- dr_c_hb: -110.50292214461712
+	- dr_high_hb: 0.0012198446036265809
+	- dr_low_hb: -2.4343290588061017
+	- eps_hb: -106.62448845064426
+	- theta0_hb_1: -55.223024584967966
+	- theta0_hb_2: -122.36094351036121
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 35.69020474154661
+	- theta0_hb_7: -0.19726920752563526
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 21:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.377444658018077
+	- a_hb_1: 3.843139795718565
+	- a_hb_2: 9.766084934070147
+	- a_hb_3: 0.0
+	- a_hb_4: 14.84593717833689
+	- a_hb_7: 1.8341601494296005
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -4.805957433975418e-05
+	- delta_theta_star_hb_2: 0.16162881476316818
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.0833921466267813
+	- delta_theta_star_hb_7: 0.005343227414510462
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 117.0015648182547
+	- dr_c_hb: -109.81982951486059
+	- dr_high_hb: 0.0008416558969326248
+	- dr_low_hb: -2.548218141095759
+	- eps_hb: -106.13399007169471
+	- theta0_hb_1: -55.00516298475366
+	- theta0_hb_2: -121.78973873999222
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 34.81998751952415
+	- theta0_hb_7: -9.19543725316869
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 22:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.296300201049897
+	- a_hb_1: 3.7579003222785903
+	- a_hb_2: 9.549816426528551
+	- a_hb_3: 0.0
+	- a_hb_4: 14.518551295363736
+	- a_hb_7: 1.796637162181714
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 4.4960554220029383e-05
+	- delta_theta_star_hb_2: 0.15856754276561766
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08165521749726912
+	- delta_theta_star_hb_7: 0.005294231973621289
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 113.6318188754569
+	- dr_c_hb: -107.1653624706947
+	- dr_high_hb: 0.0008250108851089953
+	- dr_low_hb: -2.448606512526108
+	- eps_hb: -103.86651542631333
+	- theta0_hb_1: -53.79160897110433
+	- theta0_hb_2: -119.0969918641506
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 34.04737721161911
+	- theta0_hb_7: -9.142272435076482
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 23:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.1873614719648193
+	- a_hb_1: 3.643134229135485
+	- a_hb_2: 9.25893760427895
+	- a_hb_3: 0.0
+	- a_hb_4: 14.077444244773377
+	- a_hb_7: 1.7457929719464222
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.0001735227859749472
+	- delta_theta_star_hb_2: 0.1543438858602642
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.07930494278635347
+	- delta_theta_star_hb_7: 0.005218642177641274
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 109.1111833227633
+	- dr_c_hb: -103.598358775438
+	- dr_high_hb: 0.0008014905635210647
+	- dr_low_hb: -2.3780753704759943
+	- eps_hb: -100.80745793185073
+	- theta0_hb_1: -52.156900893916685
+	- theta0_hb_2: -115.47130326253922
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 33.00687858530737
+	- theta0_hb_7: -8.854343874164261
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 24:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 3.059021542299869
+	- a_hb_1: -3.5076672279415155
+	- a_hb_2: -8.915761889251483
+	- a_hb_3: 0.0
+	- a_hb_4: -13.556496999415462
+	- a_hb_7: -1.6855961503786197
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.00033125718017409933
+	- delta_theta_star_hb_2: -0.14935253547155014
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.07651101436460861
+	- delta_theta_star_hb_7: -0.005128334617638723
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -103.7923750329561
+	- dr_c_hb: 99.39459396247905
+	- dr_high_hb: -0.0007727858288262983
+	- dr_low_hb: 2.3327053724053934
+	- eps_hb: 97.190631010906
+	- theta0_hb_1: 50.226506500175255
+	- theta0_hb_2: 111.19038434511809
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -31.77822463557961
+	- theta0_hb_7: 8.393836336400877
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 25:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 2.9816910048026823
+	- a_hb_1: -3.426146993387309
+	- a_hb_2: -8.70917850416805
+	- a_hb_3: 0.0
+	- a_hb_4: -13.242895881851265
+	- a_hb_7: -1.6494696401292845
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.0004324333580089691
+	- delta_theta_star_hb_2: -0.1464449272711205
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.07481281610659885
+	- delta_theta_star_hb_7: -0.005082924025786716
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -100.59170249641731
+	- dr_c_hb: 96.86315201095107
+	- dr_high_hb: -0.0007553198650499878
+	- dr_low_hb: 2.279174069051382
+	- eps_hb: 95.01261752987521
+	- theta0_hb_1: 49.06453461524402
+	- theta0_hb_2: 108.61282342453454
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -31.038333912280283
+	- theta0_hb_7: 8.18943086706414
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 26:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 5.117725151926673
+	- a_hb_1: -5.886401118709214
+	- a_hb_2: -14.96297977805522
+	- a_hb_3: 0.0
+	- a_hb_4: -22.75464501769388
+	- a_hb_7: -2.8365270976926644
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.0008057919311953224
+	- delta_theta_star_hb_2: -0.25191394335763484
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.12862174716437247
+	- delta_theta_star_hb_7: -0.0087834115460197
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -172.1468823706764
+	- dr_c_hb: 166.23570072317926
+	- dr_high_hb: -0.001296772108407778
+	- dr_low_hb: 3.8529721127045145
+	- eps_hb: 163.32067904928567
+	- theta0_hb_1: 84.30386442431079
+	- theta0_hb_2: 186.61451775983022
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -53.32807471542527
+	- theta0_hb_7: 14.244015082882699
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 27:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 3.0815302502644886
+	- a_hb_1: -3.4327197801095997
+	- a_hb_2: -8.94230751738949
+	- a_hb_3: 0.0
+	- a_hb_4: -13.924784351685211
+	- a_hb_7: -1.6915909238037632
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.006310735455289179
+	- delta_theta_star_hb_2: -0.17490157415148075
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.0446571218279217
+	- delta_theta_star_hb_7: -0.015892224060859245
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -99.7904918704353
+	- dr_c_hb: 99.97094397891873
+	- dr_high_hb: -0.0013551516476272855
+	- dr_low_hb: 2.64219109209661
+	- eps_hb: 98.11674049108518
+	- theta0_hb_1: 49.996938603416
+	- theta0_hb_2: 111.00949578277023
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -32.51551183539655
+	- theta0_hb_7: 4.701874730004453
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 28:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 3.1275184206232916
+	- a_hb_1: -3.4802355327470282
+	- a_hb_2: -9.06650609605701
+	- a_hb_3: 0.0
+	- a_hb_4: -14.121034956123813
+	- a_hb_7: -1.7136245519612086
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.0065519232570000335
+	- delta_theta_star_hb_2: -0.17671700373965143
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.04526903628762868
+	- delta_theta_star_hb_7: -0.016015500639083823
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -101.68009490462619
+	- dr_c_hb: 101.47631053601503
+	- dr_high_hb: -0.0013751185314136171
+	- dr_low_hb: 2.527659151231839
+	- eps_hb: 99.41162846103505
+	- theta0_hb_1: 50.68500273757523
+	- theta0_hb_2: 112.54097672325685
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -32.971865701810174
+	- theta0_hb_7: 5.09132307451762
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 29:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.2019785689976663
+	- a_hb_1: 3.556907509166212
+	- a_hb_2: 9.266703751294212
+	- a_hb_3: 0.0
+	- a_hb_4: 14.437033235092981
+	- a_hb_7: 1.7490430917946607
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.006890798959219596
+	- delta_theta_star_hb_2: 0.17972964150367443
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.04624408148255821
+	- delta_theta_star_hb_7: 0.01618147085845361
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 104.74436050539259
+	- dr_c_hb: -103.91448103068532
+	- dr_high_hb: 0.0014117466550941293
+	- dr_low_hb: -2.4106931008376726
+	- eps_hb: -101.50400847676588
+	- theta0_hb_1: -51.79578552084218
+	- theta0_hb_2: -115.01121721933389
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 33.70795260920388
+	- theta0_hb_7: -5.56949253023538
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 30:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.2379021280073474
+	- a_hb_1: 3.5941471043919098
+	- a_hb_2: 9.36415382407072
+	- a_hb_3: 0.0
+	- a_hb_4: 14.590270257486775
+	- a_hb_7: 1.7663446233798459
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.00708331470925648
+	- delta_theta_star_hb_2: 0.18116609816272147
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.04671601583326401
+	- delta_theta_star_hb_7: 0.01628816658395507
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 106.22362260875029
+	- dr_c_hb: -105.09047418528
+	- dr_high_hb: 0.0014282651631162373
+	- dr_low_hb: -2.324290743444022
+	- eps_hb: -102.5159774676094
+	- theta0_hb_1: -52.33433453746014
+	- theta0_hb_2: -116.21094886890246
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 34.06431486389774
+	- theta0_hb_7: -5.886570299306661
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 31:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.236548037315995
+	- a_hb_1: 3.593171221918853
+	- a_hb_2: 9.36195018927052
+	- a_hb_3: 0.0
+	- a_hb_4: 14.58624451029253
+	- a_hb_7: 1.7660703944646088
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.007134868984315687
+	- delta_theta_star_hb_2: 0.18105851991177138
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.046703770350706275
+	- delta_theta_star_hb_7: 0.0163261175180315
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 106.16358911981038
+	- dr_c_hb: -105.04521410537393
+	- dr_high_hb: 0.0014256081067886422
+	- dr_low_hb: -2.262528450502814
+	- eps_hb: -102.48333876024785
+	- theta0_hb_1: -52.31891406566492
+	- theta0_hb_2: -116.17997676375694
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 34.05374519475579
+	- theta0_hb_7: -6.038672865611491
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 32:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.20155314931031
+	- a_hb_1: 3.557686831651295
+	- a_hb_2: 9.269741787700298
+	- a_hb_3: 0.0
+	- a_hb_4: 14.44025157682883
+	- a_hb_7: 1.7499122040273196
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.0070577488833050706
+	- delta_theta_star_hb_2: 0.1795596471940247
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.046256722215528345
+	- delta_theta_star_hb_7: 0.016300705129730267
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 104.71327065012052
+	- dr_c_hb: -103.89784644667452
+	- dr_high_hb: 0.0014057297771166918
+	- dr_low_hb: -2.2242104598385977
+	- eps_hb: -101.50781617470861
+	- theta0_hb_1: -51.80334805423099
+	- theta0_hb_2: -115.03771385004774
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 33.71196858388714
+	- theta0_hb_7: -6.035917461215011
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 33:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.168041427395529
+	- a_hb_1: -4.672721088545772
+	- a_hb_2: -12.396954040324236
+	- a_hb_3: 0.0
+	- a_hb_4: -18.540066948916028
+	- a_hb_7: -2.3420158576905212
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.018245301699789298
+	- delta_theta_star_hb_2: -0.24324057320759007
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.08582275902170933
+	- delta_theta_star_hb_7: -0.0162009726196233
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -151.10189965006606
+	- dr_c_hb: 136.0749472560002
+	- dr_high_hb: -0.0016610103421347295
+	- dr_low_hb: 2.694914276053706
+	- eps_hb: 133.18904667243294
+	- theta0_hb_1: 67.84998838058317
+	- theta0_hb_2: 153.42602768869335
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -43.53724920095865
+	- theta0_hb_7: 6.799924146375103
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 34:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.147225466331946
+	- a_hb_1: -4.650260735660779
+	- a_hb_2: -12.338532935899952
+	- a_hb_3: 0.0
+	- a_hb_4: -18.45333392462849
+	- a_hb_7: -2.3316639461942135
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.01816350333562989
+	- delta_theta_star_hb_2: -0.24207181780017295
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.0853875403421327
+	- delta_theta_star_hb_7: -0.016178694999646717
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -150.21592428506466
+	- dr_c_hb: 135.38649362073045
+	- dr_high_hb: -0.0016504131168238823
+	- dr_low_hb: 2.6535039151090896
+	- eps_hb: 132.58555415391714
+	- theta0_hb_1: 67.52823449197528
+	- theta0_hb_2: 152.70733928644893
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -43.33244854239652
+	- theta0_hb_7: 6.842137547100629
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 35:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.196278414778628
+	- a_hb_1: -4.7035286095579645
+	- a_hb_2: -12.480185260545626
+	- a_hb_3: 0.0
+	- a_hb_4: -18.659164854360885
+	- a_hb_7: -2.3566205729986778
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.018354042197735607
+	- delta_theta_star_hb_2: -0.24490596847137147
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.08628982623817905
+	- delta_theta_star_hb_7: -0.016318314362940393
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -152.402959485177
+	- dr_c_hb: 137.0234501422187
+	- dr_high_hb: -0.0016749099453356492
+	- dr_low_hb: 2.5976953635773836
+	- eps_hb: 134.01226654813678
+	- theta0_hb_1: 68.29080707544867
+	- theta0_hb_2: 154.43104163766256
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -43.81521047622035
+	- theta0_hb_7: 7.079188140260764
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 36:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.311181175788615
+	- a_hb_1: -4.82820699201732
+	- a_hb_2: -12.81045133242824
+	- a_hb_3: 0.0
+	- a_hb_4: -19.140304995764886
+	- a_hb_7: -2.4148069245097257
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.018802831221837995
+	- delta_theta_star_hb_2: -0.2515216989863302
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.08844674044047407
+	- delta_theta_star_hb_7: -0.016612906157832456
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -157.49316081221562
+	- dr_c_hb: 140.8536444793417
+	- dr_high_hb: -0.0017325647343970092
+	- dr_low_hb: 2.526897019433222
+	- eps_hb: 137.34772545653595
+	- theta0_hb_1: 70.07479978938157
+	- theta0_hb_2: 158.45501108990106
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -44.94492612061801
+	- theta0_hb_7: 7.508776872531423
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 37:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.492919305625682
+	- a_hb_1: -5.025434558306435
+	- a_hb_2: -13.332173844069045
+	- a_hb_3: 0.0
+	- a_hb_4: -19.8998814341755
+	- a_hb_7: -2.506593396228823
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.019516250661940387
+	- delta_theta_star_hb_2: -0.261989420144933
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.09186851928337925
+	- delta_theta_star_hb_7: -0.01707051202068479
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -165.5458392293234
+	- dr_c_hb: 146.91332573874982
+	- dr_high_hb: -0.0018239615742716001
+	- dr_low_hb: 2.443457071014603
+	- eps_hb: 142.6097033509414
+	- theta0_hb_1: 72.894085729765
+	- theta0_hb_2: 164.80926978113442
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -46.72883856745741
+	- theta0_hb_7: 8.146160978079465
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 38:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.746966812665946
+	- a_hb_1: -5.301238046459601
+	- a_hb_2: -14.060983136796601
+	- a_hb_3: 0.0
+	- a_hb_4: -20.95915284151446
+	- a_hb_7: -2.634525460734624
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.020522239056685633
+	- delta_theta_star_hb_2: -0.2766476887343468
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.09664801677761314
+	- delta_theta_star_hb_7: -0.017688081878998157
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -176.82877378165466
+	- dr_c_hb: 155.39021119122984
+	- dr_high_hb: -0.0019525989334618606
+	- dr_low_hb: 2.3489656191319024
+	- eps_hb: 149.93931239897822
+	- theta0_hb_1: 76.83104214449682
+	- theta0_hb_2: 173.6773051645225
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -49.2167512068308
+	- theta0_hb_7: 9.024028059092702
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 39:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.826115643138102
+	- a_hb_1: -5.277739508443333
+	- a_hb_2: -14.03307508246
+	- a_hb_3: 0.0
+	- a_hb_4: -21.6703513870851
+	- a_hb_7: -2.6885118941522417
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.0165991550386499
+	- delta_theta_star_hb_2: -0.2677157318849307
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.11650740463330145
+	- delta_theta_star_hb_7: -0.020540014223670536
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -153.37029535321332
+	- dr_c_hb: 156.62917732846472
+	- dr_high_hb: -0.0018490479716954727
+	- dr_low_hb: 2.185058041580014
+	- eps_hb: 150.05458467855703
+	- theta0_hb_1: 77.11712531314252
+	- theta0_hb_2: 173.64341343295075
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -50.110848275119515
+	- theta0_hb_7: 13.019548418376695
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 40:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 5.207656495956317
+	- a_hb_1: -5.6723908665863325
+	- a_hb_2: -15.100306057329183
+	- a_hb_3: 0.0
+	- a_hb_4: -23.262366484087224
+	- a_hb_7: -2.8789403438914953
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.017834422412234124
+	- delta_theta_star_hb_2: -0.2874571252016571
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.12365094439542812
+	- delta_theta_star_hb_7: -0.022224652394488162
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -168.31827925492487
+	- dr_c_hb: 169.20676788859893
+	- dr_high_hb: -0.0020009511376160626
+	- dr_low_hb: 2.0889961701062183
+	- eps_hb: 160.7420808455446
+	- theta0_hb_1: 82.81799734344622
+	- theta0_hb_2: 186.61632339790611
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -53.81318727305661
+	- theta0_hb_7: 14.781920064400092
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 41:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.286849068699853
+	- a_hb_1: 3.5564788565420007
+	- a_hb_2: 9.495625939637003
+	- a_hb_3: 0.0
+	- a_hb_4: 14.597292877862062
+	- a_hb_7: 1.8010579338212618
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.011150122181393218
+	- delta_theta_star_hb_2: 0.17980255627832614
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.07672896553266195
+	- delta_theta_star_hb_7: 0.013843381279910555
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 107.87183685448406
+	- dr_c_hb: -106.88547753724744
+	- dr_high_hb: 0.0012458707033330633
+	- dr_low_hb: -1.1519992170857698
+	- eps_hb: -100.57657202835749
+	- theta0_hb_1: -51.9233185805279
+	- theta0_hb_2: -117.20555385474938
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 33.77341571796135
+	- theta0_hb_7: -9.831215385296273
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 42:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.4852959730919046
+	- a_hb_1: 3.752664527511061
+	- a_hb_2: 10.040539051443268
+	- a_hb_3: 0.0
+	- a_hb_4: 15.410212422401335
+	- a_hb_7: 1.8969341572456004
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.011734130447918364
+	- delta_theta_star_hb_2: 0.18931923716088672
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08032522075578674
+	- delta_theta_star_hb_7: 0.014578963946449038
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 115.75947485932136
+	- dr_c_hb: -113.41977457432682
+	- dr_high_hb: 0.001306586949470328
+	- dr_low_hb: -1.0947777056870729
+	- eps_hb: -105.94771582657388
+	- theta0_hb_1: -54.782952727772646
+	- theta0_hb_2: -123.81503050216986
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 35.658965336014305
+	- theta0_hb_7: -10.801527501437185
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 43:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.6382903248843856
+	- a_hb_1: 3.9043242458044123
+	- a_hb_2: 10.460278870551635
+	- a_hb_3: 0.0
+	- a_hb_4: 16.036411381716718
+	- a_hb_7: 1.9707383180773763
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.012178686361654908
+	- delta_theta_star_hb_2: 0.19663892134116767
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08310821970117521
+	- delta_theta_star_hb_7: 0.015190478183419866
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 121.90442724795982
+	- dr_c_hb: -118.46646780499384
+	- dr_high_hb: 0.0013539810620762226
+	- dr_low_hb: -1.0489238102946494
+	- eps_hb: -110.08583093291598
+	- theta0_hb_1: -56.99021406268236
+	- theta0_hb_2: -128.9056665621845
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 37.11169071063772
+	- theta0_hb_7: -11.515682948535652
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 44:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.73836820591115
+	- a_hb_1: 4.003673896463487
+	- a_hb_2: 10.734286140786793
+	- a_hb_3: 0.0
+	- a_hb_4: 16.44602277639407
+	- a_hb_7: 2.0189291986303215
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.01245894330510846
+	- delta_theta_star_hb_2: 0.20139471621407967
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08495042343161296
+	- delta_theta_star_hb_7: 0.015624281203521388
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 125.96279142381243
+	- dr_c_hb: -121.7734038984063
+	- dr_high_hb: 0.0013856456533008496
+	- dr_low_hb: -1.011615037335687
+	- eps_hb: -112.79117289103493
+	- theta0_hb_1: -58.435053818872944
+	- theta0_hb_2: -132.23032244439335
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 38.06162531657532
+	- theta0_hb_7: -11.931035146306263
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 45:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -5.09975702903582
+	- a_hb_1: 5.610394491465817
+	- a_hb_2: 14.520242954153728
+	- a_hb_3: 0.0
+	- a_hb_4: 23.48407492048193
+	- a_hb_7: 2.6091375367344734
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.014208371987425777
+	- delta_theta_star_hb_2: 0.3131894783570776
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.1033800117997199
+	- delta_theta_star_hb_7: 0.015255995992772102
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 205.8432565366589
+	- dr_c_hb: -170.07136194478088
+	- dr_high_hb: 0.0015303201626444504
+	- dr_low_hb: -1.054676802563438
+	- eps_hb: -157.1395765565709
+	- theta0_hb_1: -81.59034546029504
+	- theta0_hb_2: -181.0237716771531
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 53.92809179927267
+	- theta0_hb_7: -23.19323295583862
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 46:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -5.051016175302007
+	- a_hb_1: 5.559039781348924
+	- a_hb_2: 14.386430337930799
+	- a_hb_3: 0.0
+	- a_hb_4: 23.27583521945824
+	- a_hb_7: 2.585571399539079
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.014051703264516588
+	- delta_theta_star_hb_2: 0.310624025584269
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.10252398630294479
+	- delta_theta_star_hb_7: 0.015036148486824504
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 203.61548718700345
+	- dr_c_hb: -168.42978074365945
+	- dr_high_hb: 0.0015102917498698541
+	- dr_low_hb: -1.023275063375449
+	- eps_hb: -155.7758387710051
+	- theta0_hb_1: -80.85508077803281
+	- theta0_hb_2: -179.37810051136452
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 53.4469240133257
+	- theta0_hb_7: -22.65720584294977
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 47:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.900806020880324
+	- a_hb_1: 5.4010483355341785
+	- a_hb_2: 13.974696967727025
+	- a_hb_3: 0.0
+	- a_hb_4: 22.631420941185553
+	- a_hb_7: 2.514560183041551
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.013649607543256295
+	- delta_theta_star_hb_2: 0.30242272445578133
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.09974075668869542
+	- delta_theta_star_hb_7: 0.014541596233275896
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 196.66441723622034
+	- dr_c_hb: -163.37281315544593
+	- dr_high_hb: 0.0014534317990253418
+	- dr_low_hb: -0.9994333189786468
+	- eps_hb: -151.56479979928713
+	- theta0_hb_1: -78.58785552061107
+	- theta0_hb_2: -174.30945108416438
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 51.961157070950044
+	- theta0_hb_7: -21.511118797414486
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 48:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.674063577447313
+	- a_hb_1: 5.162588055177915
+	- a_hb_2: 13.353241263712162
+	- a_hb_3: 0.0
+	- a_hb_4: 21.655855144205628
+	- a_hb_7: 2.4078226099361206
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.013069473384857255
+	- delta_theta_star_hb_2: 0.2898893225871523
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.09549035217264557
+	- delta_theta_star_hb_7: 0.013990518273966914
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 186.17162700976166
+	- dr_c_hb: -155.742927811711
+	- dr_high_hb: 0.0013701823458157538
+	- dr_low_hb: -0.9828529488607906
+	- eps_hb: -145.19055021783475
+	- theta0_hb_1: -75.16169754555337
+	- theta0_hb_2: -166.65248420775362
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 49.71306215642136
+	- theta0_hb_7: -19.946843900542824
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 49:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.396772036337532
+	- a_hb_1: 4.870916932113838
+	- a_hb_2: 12.593044124047514
+	- a_hb_3: 0.0
+	- a_hb_4: 20.458523237521327
+	- a_hb_7: 2.277506123339017
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.012374265145577719
+	- delta_theta_star_hb_2: 0.27438489486609624
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.09025424921368996
+	- delta_theta_star_hb_7: 0.013334636327261
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 173.37182460859333
+	- dr_c_hb: -146.4178063402937
+	- dr_high_hb: 0.0012702671499344336
+	- dr_low_hb: -0.9734770955406846
+	- eps_hb: -137.36553754945325
+	- theta0_hb_1: -70.96523371144272
+	- theta0_hb_2: -157.27603552909855
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 46.95499122907703
+	- theta0_hb_7: -18.14441346230987
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 50:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.092627689093252
+	- a_hb_1: 4.5509350528771435
+	- a_hb_2: 11.758879478734752
+	- a_hb_3: 0.0
+	- a_hb_4: 19.1395922316175
+	- a_hb_7: 2.134696209526335
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.011610777304735802
+	- delta_theta_star_hb_2: 0.25716544903423605
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08447184119423179
+	- delta_theta_star_hb_7: 0.012630765422461967
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 159.386625307318
+	- dr_c_hb: -136.19693742533252
+	- dr_high_hb: 0.001162468719927228
+	- dr_low_hb: -0.9712780939231016
+	- eps_hb: -128.74337157497826
+	- theta0_hb_1: -66.35402917121473
+	- theta0_hb_2: -146.97416898840152
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 43.91805853251073
+	- theta0_hb_7: -16.254460857191713
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 51:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.2984623284683177
+	- a_hb_1: 3.6642515714134487
+	- a_hb_2: 9.4237013565536
+	- a_hb_3: 0.0
+	- a_hb_4: 14.97008630708594
+	- a_hb_7: 1.739386322908978
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.007364908652702774
+	- delta_theta_star_hb_2: 0.15448067135646898
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.06778460428726119
+	- delta_theta_star_hb_7: 0.01179272249865063
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 119.39280824352821
+	- dr_c_hb: -106.00504205685806
+	- dr_high_hb: 0.0006649207946751056
+	- dr_low_hb: -1.0429078241185206
+	- eps_hb: -101.48137043720405
+	- theta0_hb_1: -52.84359763386788
+	- theta0_hb_2: -117.05609871901109
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 34.416708506077164
+	- theta0_hb_7: -6.368185165824813
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 52:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 3.06452728720196
+	- a_hb_1: -3.4238536220272557
+	- a_hb_2: -8.805009388916925
+	- a_hb_3: 0.0
+	- a_hb_4: -13.971612924312497
+	- a_hb_7: -1.6324750289111674
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.007009132960856084
+	- delta_theta_star_hb_2: -0.14530372230025607
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.06321480902860621
+	- delta_theta_star_hb_7: -0.011324709335679715
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -108.17866215219284
+	- dr_c_hb: 98.41579051585416
+	- dr_high_hb: -0.000604667317474959
+	- dr_low_hb: 1.0374173436014462
+	- eps_hb: 95.05726243664688
+	- theta0_hb_1: 49.39609550139168
+	- theta0_hb_2: 109.39732314473876
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -32.12990694841221
+	- theta0_hb_7: 5.2582049416089145
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 53:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 5.0393129982264036
+	- a_hb_1: -5.647741703163504
+	- a_hb_2: -14.527535391524442
+	- a_hb_3: 0.0
+	- a_hb_4: -23.06032874003515
+	- a_hb_7: -2.702825703163264
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.011508903868707402
+	- delta_theta_star_hb_2: -0.2405017163807739
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.10425688263196431
+	- delta_theta_star_hb_7: -0.019001747848414175
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -174.38542245636194
+	- dr_c_hb: 161.6811359200775
+	- dr_high_hb: -0.000954876414596244
+	- dr_low_hb: 1.7946509095237781
+	- eps_hb: 157.24612671155492
+	- theta0_hb_1: 81.54694878293991
+	- theta0_hb_2: 180.58885040268223
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -53.03188581699008
+	- theta0_hb_7: 7.6817833567874585
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 54:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.856557740747037
+	- a_hb_1: -5.454025227617447
+	- a_hb_2: -14.031863659590627
+	- a_hb_3: 0.0
+	- a_hb_4: -22.275608790611145
+	- a_hb_7: -2.6160045271015537
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.011062697589781857
+	- delta_theta_star_hb_2: -0.23292401078222047
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.10068482266590362
+	- delta_theta_star_hb_7: -0.01854530683826986
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -165.91638451453727
+	- dr_c_hb: 155.73259356345451
+	- dr_high_hb: -0.0008972941978820729
+	- dr_low_hb: 1.7620035053214103
+	- eps_hb: 152.10257572643258
+	- theta0_hb_1: 78.78865664759185
+	- theta0_hb_2: 174.47315859894323
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -51.22826218040479
+	- theta0_hb_7: 6.659639760833142
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 55:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.78224372929042
+	- a_hb_1: -5.376600095611082
+	- a_hb_2: -13.834297488167485
+	- a_hb_3: 0.0
+	- a_hb_4: -21.95900038564872
+	- a_hb_7: -2.5813862303934934
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.010855871388596106
+	- delta_theta_star_hb_2: -0.2301463671356503
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.09926883908819306
+	- delta_theta_star_hb_7: -0.018375698972117695
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -162.32533262994195
+	- dr_c_hb: 153.3179182535843
+	- dr_high_hb: -0.0008743673871824903
+	- dr_low_hb: 1.717817923880127
+	- eps_hb: 150.0326469847925
+	- theta0_hb_1: 77.68616245028251
+	- theta0_hb_2: 172.02663478871705
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -50.50149258081128
+	- theta0_hb_7: 5.981197767165122
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 56:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.7980907387006395
+	- a_hb_1: -5.395949720261381
+	- a_hb_2: -13.884761270718856
+	- a_hb_3: 0.0
+	- a_hb_4: -22.032521271459775
+	- a_hb_7: -2.590294506854676
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.010841031160989148
+	- delta_theta_star_hb_2: -0.23136375847825874
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.09964631393750523
+	- delta_theta_star_hb_7: -0.018448886688780298
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -162.7491298044189
+	- dr_c_hb: 153.83743954912907
+	- dr_high_hb: -0.0008795390212833893
+	- dr_low_hb: 1.6625125406292596
+	- eps_hb: 150.52611353280324
+	- theta0_hb_1: 77.96308931047763
+	- theta0_hb_2: 172.63561977642746
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -50.672160134223844
+	- theta0_hb_7: 5.55636406871131
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 57:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.772080121034716
+	- a_hb_1: -5.492801632577737
+	- a_hb_2: -14.103051020409865
+	- a_hb_3: 0.0
+	- a_hb_4: -21.96140034303937
+	- a_hb_7: -2.665818541336475
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.022809980487362255
+	- delta_theta_star_hb_2: -0.23851785047452734
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.056896307117281886
+	- delta_theta_star_hb_7: -0.011341637377544258
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -172.14993019544167
+	- dr_c_hb: 155.14922838433452
+	- dr_high_hb: 0.0005146291114488085
+	- dr_low_hb: 1.4737270616249003
+	- eps_hb: 151.29391494814837
+	- theta0_hb_1: 78.92355456988241
+	- theta0_hb_2: 174.5878949545744
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -50.692736545419855
+	- theta0_hb_7: 9.179118798810794
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 58:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.957485213156432
+	- a_hb_1: -5.699860029182911
+	- a_hb_2: -14.627410377850476
+	- a_hb_3: 0.0
+	- a_hb_4: -22.766886205120034
+	- a_hb_7: -2.7592732113936966
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.023704356519079442
+	- delta_theta_star_hb_2: -0.24775900105037252
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.05893854984417679
+	- delta_theta_star_hb_7: -0.01166662496402161
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -179.9934135221514
+	- dr_c_hb: 161.2391392687397
+	- dr_high_hb: 0.0004920743352238308
+	- dr_low_hb: 1.4283782835469236
+	- eps_hb: 156.66873872879447
+	- theta0_hb_1: 81.8555719872834
+	- theta0_hb_2: 181.03099961782036
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -52.555625673662924
+	- theta0_hb_7: 9.311848880624831
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 59:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 5.231827190356936
+	- a_hb_1: -6.00509607243746
+	- a_hb_2: -15.401333416756778
+	- a_hb_3: 0.0
+	- a_hb_4: -23.95293388917909
+	- a_hb_7: -2.8969939159602336
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.02505606401887013
+	- delta_theta_star_hb_2: -0.2614636329224749
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.06196104879056641
+	- delta_theta_star_hb_7: -0.012192828339928727
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -191.72319218635835
+	- dr_c_hb: 170.25344575193094
+	- dr_high_hb: 0.00044640789367621616
+	- dr_low_hb: 1.3817401378012402
+	- eps_hb: 164.57380121771035
+	- theta0_hb_1: 86.17417358885501
+	- theta0_hb_2: 190.52851039221937
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -55.29778718924028
+	- theta0_hb_7: 9.713229833311
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 60:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 3.014326308370059
+	- a_hb_1: -3.448475025677695
+	- a_hb_2: -8.84113968908862
+	- a_hb_3: 0.0
+	- a_hb_4: -13.744910479655383
+	- a_hb_7: -1.6566033824508208
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.014390838897979215
+	- delta_theta_star_hb_2: -0.15005509600244796
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.034939369985986346
+	- delta_theta_star_hb_7: -0.00687669246230563
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -111.83044773078178
+	- dr_c_hb: 98.14013410547557
+	- dr_high_hb: 0.0002511210687744731
+	- dr_low_hb: 0.7212691470788198
+	- eps_hb: 94.23737056967575
+	- theta0_hb_1: 49.46142342996601
+	- theta0_hb_2: 109.33876622501035
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -31.73503572356583
+	- theta0_hb_7: 5.599369555485029
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 61:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.238826456868892
+	- a_hb_1: 3.690525826361542
+	- a_hb_2: 9.459326007236445
+	- a_hb_3: 0.0
+	- a_hb_4: 14.703942064668396
+	- a_hb_7: 1.764941766747399
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.015380574126772982
+	- delta_theta_star_hb_2: 0.16034542902683033
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.03645376868991734
+	- delta_theta_star_hb_7: 0.007196877028300968
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 121.75205907929868
+	- dr_c_hb: -105.49550616039923
+	- dr_high_hb: -0.0002967784621356153
+	- dr_low_hb: -0.6973548054090547
+	- eps_hb: -100.5752550863237
+	- theta0_hb_1: -52.91362713293535
+	- theta0_hb_2: -116.95546206499604
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 33.952942629394514
+	- theta0_hb_7: -6.056139787475108
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 62:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.415480475914664
+	- a_hb_1: 3.8811528383129312
+	- a_hb_2: 9.945367562876262
+	- a_hb_3: 0.0
+	- a_hb_4: 15.45737432182568
+	- a_hb_7: 1.849941221494483
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.016166045070014727
+	- delta_theta_star_hb_2: 0.1685236274972179
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.037711709602440635
+	- delta_theta_star_hb_7: 0.007447208691907408
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 129.56783839501978
+	- dr_c_hb: -111.28599585292962
+	- dr_high_hb: -0.00033634358975247755
+	- dr_low_hb: -0.6741183604223987
+	- eps_hb: -105.54596651545937
+	- theta0_hb_1: -55.628289878086385
+	- theta0_hb_2: -122.94027958327732
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 35.695037907694726
+	- theta0_hb_7: -6.38243141001177
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 63:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -5.273810550840186
+	- a_hb_1: 5.815354403725348
+	- a_hb_2: 14.855985155415668
+	- a_hb_3: 0.0
+	- a_hb_4: 23.78026434327823
+	- a_hb_7: 2.827580401317464
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.03272310000216502
+	- delta_theta_star_hb_2: 0.21745465866402935
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08507970760948158
+	- delta_theta_star_hb_7: 0.017525064445927323
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 197.5700358885065
+	- dr_c_hb: -169.85726918259383
+	- dr_high_hb: 0.0015462074247475624
+	- dr_low_hb: -0.8915008736987458
+	- eps_hb: -160.79393080094826
+	- theta0_hb_1: -84.12259252804026
+	- theta0_hb_2: -185.26296306361778
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 54.81375688737144
+	- theta0_hb_7: -7.95642427856905
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 64:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -5.329796949783992
+	- a_hb_1: 5.875506852727738
+	- a_hb_2: 15.009798273560701
+	- a_hb_3: 0.0
+	- a_hb_4: 24.017922653971862
+	- a_hb_7: 2.854714341273553
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.03316771404744018
+	- delta_theta_star_hb_2: 0.2198524927337262
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08601648317241217
+	- delta_theta_star_hb_7: 0.0176472426813412
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 199.91215608516583
+	- dr_c_hb: -171.67375626271036
+	- dr_high_hb: 0.0015573356006020854
+	- dr_low_hb: -0.8544643485499664
+	- eps_hb: -162.37025060207733
+	- theta0_hb_1: -84.98216848616518
+	- theta0_hb_2: -187.1606204183696
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 55.3668544416009
+	- theta0_hb_7: -7.911203776597295
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 65:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -5.275140258122554
+	- a_hb_1: 5.819209758713216
+	- a_hb_2: 14.864848526109107
+	- a_hb_3: 0.0
+	- a_hb_4: 23.789177906543618
+	- a_hb_7: 2.829018161709009
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.03299658889604745
+	- delta_theta_star_hb_2: 0.2174139044291048
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08494927302951893
+	- delta_theta_star_hb_7: 0.017484507707607698
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 197.30655748626867
+	- dr_c_hb: -169.8823762806343
+	- dr_high_hb: 0.0015353691907753512
+	- dr_low_hb: -0.8243002915684513
+	- eps_hb: -160.88903320124106
+	- theta0_hb_1: -84.18011411010785
+	- theta0_hb_2: -185.3812775351114
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 54.84125959989457
+	- theta0_hb_7: -7.614529020107266
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 66:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -5.126607801163374
+	- a_hb_1: 5.6639634098760006
+	- a_hb_2: 14.466246084654454
+	- a_hb_3: 0.0
+	- a_hb_4: 23.163879575042884
+	- a_hb_7: 2.7584015790245155
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.03228433000035494
+	- delta_theta_star_hb_2: 0.21090568884045235
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08219031079046246
+	- delta_theta_star_hb_7: 0.017081315237052513
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 190.52745468354018
+	- dr_c_hb: -165.03248297645194
+	- dr_high_hb: 0.0014852422654762665
+	- dr_low_hb: -0.8006401139158598
+	- eps_hb: -156.8068964532637
+	- theta0_hb_1: -81.96553112718739
+	- theta0_hb_2: -180.47780588342974
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 53.398519558632984
+	- theta0_hb_7: -7.115888796957423
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 67:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.906074355000994
+	- a_hb_1: 5.432599796671685
+	- a_hb_2: 13.872950940743555
+	- a_hb_3: 0.0
+	- a_hb_4: 22.232641540501625
+	- a_hb_7: 2.65312522682846
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.03113748719629375
+	- delta_theta_star_hb_2: 0.20134678437416598
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.07815471542482744
+	- delta_theta_star_hb_7: 0.016494565461246436
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 180.59348606173933
+	- dr_c_hb: -157.842369906185
+	- dr_high_hb: 0.001413942139599299
+	- dr_low_hb: -0.78324615110706
+	- eps_hb: -150.71572899422193
+	- theta0_hb_1: -78.66267652021223
+	- theta0_hb_2: -173.1708897601898
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 51.248374700974175
+	- theta0_hb_7: -6.475568803722998
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 68:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.636706285562237
+	- a_hb_1: 5.149330828618815
+	- a_hb_2: 13.14747677340613
+	- a_hb_3: 0.0
+	- a_hb_4: 21.091513794294862
+	- a_hb_7: 2.524069096008344
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.02967870119626015
+	- delta_theta_star_hb_2: 0.1898210883633138
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.07328761652307758
+	- delta_theta_star_hb_7: 0.015777184465475574
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 168.57902096118522
+	- dr_c_hb: -149.07233477480258
+	- dr_high_hb: 0.0013275450978580904
+	- dr_low_hb: -0.7717515158513866
+	- eps_hb: -143.24330141639484
+	- theta0_hb_1: -74.61538771570261
+	- theta0_hb_2: -164.22476600211365
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 48.61317545950806
+	- theta0_hb_7: -5.753602468299442
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 69:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 3.0996576267538196
+	- a_hb_1: -3.463773666840845
+	- a_hb_2: -8.792641320337946
+	- a_hb_3: 0.0
+	- a_hb_4: -14.185510606188924
+	- a_hb_7: -1.7345804115672339
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.010046183161959286
+	- delta_theta_star_hb_2: -0.18022691101040483
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.07196058258083049
+	- delta_theta_star_hb_7: -0.028106283048089115
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -104.38205027065904
+	- dr_c_hb: 100.24054674001746
+	- dr_high_hb: -0.0011403182604166223
+	- dr_low_hb: 0.4112147232705576
+	- eps_hb: 96.88324083125978
+	- theta0_hb_1: 50.17710625550897
+	- theta0_hb_2: 110.18663331202738
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -32.68403789222488
+	- theta0_hb_7: 5.20102972957629
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 70:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 5.119581589728499
+	- a_hb_1: -5.7419846332745195
+	- a_hb_2: -14.568318293547144
+	- a_hb_3: 0.0
+	- a_hb_4: -23.51123114089954
+	- a_hb_7: -2.8799746659884735
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.01684036446539857
+	- delta_theta_star_hb_2: -0.29904019143632254
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.12024953353567369
+	- delta_theta_star_hb_7: -0.046547395091774385
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -170.11285823868184
+	- dr_c_hb: 165.46162320839233
+	- dr_high_hb: -0.0018490174420163407
+	- dr_low_hb: 0.7092268119930709
+	- eps_hb: 160.81648729661978
+	- theta0_hb_1: 83.1852554544888
+	- theta0_hb_2: 182.62003516921928
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -54.16637342359272
+	- theta0_hb_7: 8.268605407925229
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 71:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.989217319805025
+	- a_hb_1: -5.606629093821093
+	- a_hb_2: -14.216418166388046
+	- a_hb_3: 0.0
+	- a_hb_4: -22.959308430960736
+	- a_hb_7: -2.8145130469865465
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.016496474927556924
+	- delta_theta_star_hb_2: -0.2914425694486196
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.11783029423332536
+	- delta_theta_star_hb_7: -0.04531935363382146
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -164.35731999229841
+	- dr_c_hb: 161.1725794817908
+	- dr_high_hb: -0.0017788937999731382
+	- dr_low_hb: 0.6994193309539342
+	- eps_hb: 157.14155483494122
+	- theta0_hb_1: 81.23050179022016
+	- theta0_hb_2: 178.27486969063216
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -52.89098684554702
+	- theta0_hb_7: 7.872405484084286
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 72:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.958813162202992
+	- a_hb_1: -5.576689374435601
+	- a_hb_2: -14.136960447131377
+	- a_hb_3: 0.0
+	- a_hb_4: -22.83477512465226
+	- a_hb_7: -2.799601945925554
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.016462663763795043
+	- delta_theta_star_hb_2: -0.2893737149571331
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.11716538448539104
+	- delta_theta_star_hb_7: -0.04480653484560135
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -162.80057893213362
+	- dr_c_hb: 160.16203812539092
+	- dr_high_hb: -0.0017612219755458432
+	- dr_low_hb: 0.6913826578319185
+	- eps_hb: 156.3121369366972
+	- theta0_hb_1: 80.79538801716386
+	- theta0_hb_2: 177.29796890943285
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -52.604367505378974
+	- theta0_hb_7: 7.749860562473601
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 73:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 5.015209569620365
+	- a_hb_1: -5.638399010182509
+	- a_hb_2: -14.294247649533181
+	- a_hb_3: 0.0
+	- a_hb_4: -23.081933307180535
+	- a_hb_7: -2.828661595655711
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.016698892036056665
+	- delta_theta_star_hb_2: -0.29207667655495734
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.11802282302194822
+	- delta_theta_star_hb_7: -0.044919488761503854
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -164.87359419317053
+	- dr_c_hb: 161.99688071462577
+	- dr_high_hb: -0.0017889246129714422
+	- dr_low_hb: 0.6846370413698084
+	- eps_hb: 157.95833155983618
+	- theta0_hb_1: 81.68181743281956
+	- theta0_hb_2: 179.24950957697467
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -53.17771154582797
+	- theta0_hb_7: 7.862804258650181
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 74:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 5.153511406919397
+	- a_hb_1: -5.786618365924166
+	- a_hb_2: -14.675069577013371
+	- a_hb_3: 0.0
+	- a_hb_4: -23.679414429470114
+	- a_hb_7: -2.8991391991798943
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.017195242793948018
+	- delta_theta_star_hb_2: -0.2992756176557965
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.12030711201265376
+	- delta_theta_star_hb_7: -0.045619872715952414
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -170.3780033566862
+	- dr_c_hb: 166.5179627513081
+	- dr_high_hb: -0.0018596539389511882
+	- dr_low_hb: 0.6791185446310467
+	- eps_hb: 161.9367034022484
+	- theta0_hb_1: 83.81488815357292
+	- theta0_hb_2: 183.96405167502627
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -54.56171743243907
+	- theta0_hb_7: 8.19932554781584
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 75:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.017300416682762
+	- a_hb_1: 4.509924156450121
+	- a_hb_2: 11.832273657415005
+	- a_hb_3: 0.0
+	- a_hb_4: 17.95986113854184
+	- a_hb_7: 2.1656030402273205
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.01003371819115605
+	- delta_theta_star_hb_2: 0.17112412470188382
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08825569914421649
+	- delta_theta_star_hb_7: 0.005005352235285511
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 147.25141349659017
+	- dr_c_hb: -129.9760975974879
+	- dr_high_hb: 0.0014359326987679515
+	- dr_low_hb: -0.6715254763073129
+	- eps_hb: -125.89003003233952
+	- theta0_hb_1: -65.11795615764366
+	- theta0_hb_2: -145.13708955734117
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 41.66181305811234
+	- theta0_hb_7: -4.878211366362576
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 76:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.108218127585701
+	- a_hb_1: 4.606537245281155
+	- a_hb_2: 12.089561036208812
+	- a_hb_3: 0.0
+	- a_hb_4: 18.33508408330629
+	- a_hb_7: 2.2087935882784757
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.010256065932969478
+	- delta_theta_star_hb_2: 0.17421448105898818
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08952743531350071
+	- delta_theta_star_hb_7: 0.005097330645034334
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 151.1459475456217
+	- dr_c_hb: -132.95116028485575
+	- dr_high_hb: 0.0014626226213211597
+	- dr_low_hb: -0.6668591297729602
+	- eps_hb: -128.47741785009734
+	- theta0_hb_1: -66.50261447517624
+	- theta0_hb_2: -148.2639709300285
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 42.54353891849977
+	- theta0_hb_7: -5.071998573185777
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 77:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.135916569187278
+	- a_hb_1: 4.637029802267457
+	- a_hb_2: 12.169636833391138
+	- a_hb_3: 0.0
+	- a_hb_4: 18.452595568440753
+	- a_hb_7: 2.2223066771649687
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.010324397324622907
+	- delta_theta_star_hb_2: 0.17497697849782562
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.0898646242028609
+	- delta_theta_star_hb_7: 0.005078574074693353
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 152.18099959372097
+	- dr_c_hb: -133.848944875505
+	- dr_high_hb: 0.0014697978063704072
+	- dr_low_hb: -0.6643628357548179
+	- eps_hb: -129.2839801086462
+	- theta0_hb_1: -66.93891738418282
+	- theta0_hb_2: -149.23906259029198
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 42.82048016520697
+	- theta0_hb_7: -5.149795580495771
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 78:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.104692588211589
+	- a_hb_1: 4.605847185660305
+	- a_hb_2: 12.084429372458803
+	- a_hb_3: 0.0
+	- a_hb_4: 18.329952017422823
+	- a_hb_7: 2.208166433712896
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.01024778967178017
+	- delta_theta_star_hb_2: 0.17356532143581327
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08933669069686934
+	- delta_theta_star_hb_7: 0.004959436123909267
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 150.55650511146467
+	- dr_c_hb: -132.81039764082544
+	- dr_high_hb: 0.001459015755289522
+	- dr_low_hb: -0.6634490653267037
+	- eps_hb: -128.43155198461258
+	- theta0_hb_1: -66.49096303762775
+	- theta0_hb_2: -148.20791936305102
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 42.53371176043066
+	- theta0_hb_7: -5.1176875921105704
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 79:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.022487793500524
+	- a_hb_1: 4.521222621061699
+	- a_hb_2: 11.85610002996356
+	- a_hb_3: 0.0
+	- a_hb_4: 17.99908842638017
+	- a_hb_7: 2.170047455467256
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.010046599825280347
+	- delta_theta_star_hb_2: 0.1702985193778469
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08806056035459475
+	- delta_theta_star_hb_7: 0.0047570634030712124
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 146.64121345940646
+	- dr_c_hb: -130.09737073165462
+	- dr_high_hb: 0.0014325827403564185
+	- dr_low_hb: -0.6640241679690664
+	- eps_hb: -126.14071238710314
+	- theta0_hb_1: -65.27652631426794
+	- theta0_hb_2: -145.4386048274963
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 41.758197245246755
+	- theta0_hb_7: -4.988425647882654
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 80:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.8994462522993203
+	- a_hb_1: 4.3936890872088155
+	- a_hb_2: 11.513019530724476
+	- a_hb_3: 0.0
+	- a_hb_4: 17.500667219490904
+	- a_hb_7: 2.112627062767686
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.009748274573255087
+	- delta_theta_star_hb_2: 0.16559342839831326
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08618122934946149
+	- delta_theta_star_hb_7: 0.004492996966580548
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 140.90377877752292
+	- dr_c_hb: -126.0446996242435
+	- dr_high_hb: 0.0013927467703231328
+	- dr_low_hb: -0.6667020828024178
+	- eps_hb: -122.69204657516683
+	- theta0_hb_1: -63.44598431285498
+	- theta0_hb_2: -141.27355591375218
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 40.58948457670506
+	- theta0_hb_7: -4.77905193914109
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 81:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.705562791134759
+	- a_hb_1: -5.495122899893476
+	- a_hb_2: -14.048849761343911
+	- a_hb_3: 0.0
+	- a_hb_4: -21.919392646267788
+	- a_hb_7: -2.6617020503379396
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.013947063381454725
+	- delta_theta_star_hb_2: -0.340742831538885
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.08518733725898997
+	- delta_theta_star_hb_7: -0.023926787159089934
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -148.79273272452232
+	- dr_c_hb: 152.85288710273053
+	- dr_high_hb: -0.0011697807278603313
+	- dr_low_hb: 0.6428485446602121
+	- eps_hb: 149.2651943367206
+	- theta0_hb_1: 78.51771337236845
+	- theta0_hb_2: 172.44728082997577
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -50.58128838299473
+	- theta0_hb_7: 4.22081394006644
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 82:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.601652902352948
+	- a_hb_1: -5.383266694120396
+	- a_hb_2: -13.757085554503512
+	- a_hb_3: 0.0
+	- a_hb_4: -21.473901142622772
+	- a_hb_7: -2.6090074741089575
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.013680159117834892
+	- delta_theta_star_hb_2: -0.33420358733803157
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.08365849528732827
+	- delta_theta_star_hb_7: -0.02328153668310335
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -144.27970314165677
+	- dr_c_hb: 149.4059768664596
+	- dr_high_hb: -0.0011413063635764133
+	- dr_low_hb: 0.6491363060278592
+	- eps_hb: 146.31411871680768
+	- theta0_hb_1: 76.92495257983794
+	- theta0_hb_2: 168.89497283662521
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -49.55138535470735
+	- theta0_hb_7: 4.102188630500496
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 83:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.57974549005484
+	- a_hb_1: -5.361521506169847
+	- a_hb_2: -13.698381270261345
+	- a_hb_3: 0.0
+	- a_hb_4: -21.38460161407697
+	- a_hb_7: -2.5981583736901777
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.013623353715749131
+	- delta_theta_star_hb_2: -0.3324531008825834
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.08335426400928903
+	- delta_theta_star_hb_7: -0.022962097677806
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -143.07139377379997
+	- dr_c_hb: 148.6637114939239
+	- dr_high_hb: -0.0011344667289079967
+	- dr_low_hb: 0.6530641146137691
+	- eps_hb: 145.7203075937432
+	- theta0_hb_1: 76.61260386114648
+	- theta0_hb_2: 168.18258565353415
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -49.3466677336522
+	- theta0_hb_7: 4.071333416512345
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 84:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.629722911805836
+	- a_hb_1: -5.418876574905009
+	- a_hb_2: -13.844195164095947
+	- a_hb_3: 0.0
+	- a_hb_4: -21.60809807510167
+	- a_hb_7: -2.624038791039274
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.013750669162106974
+	- delta_theta_star_hb_2: -0.33489788784314206
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.08412635710154825
+	- delta_theta_star_hb_7: -0.022931466723975162
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -144.74494587804938
+	- dr_c_hb: 150.29096895129604
+	- dr_high_hb: -0.0011466206687196804
+	- dr_low_hb: 0.654732865004925
+	- eps_hb: 147.1963529500309
+	- theta0_hb_1: 77.42440208763806
+	- theta0_hb_2: 169.9627241871682
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -49.866613097995604
+	- theta0_hb_7: 4.117709003830611
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 85:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.7475858102672275
+	- a_hb_1: -5.550994318830162
+	- a_hb_2: -14.183233597223888
+	- a_hb_3: 0.0
+	- a_hb_4: -22.126588640317706
+	- a_hb_7: -2.6845501227559847
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.014052156064463875
+	- delta_theta_star_hb_2: -0.34127408145171106
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.08591131502813854
+	- delta_theta_star_hb_7: -0.02315672321962277
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -149.1405670165167
+	- dr_c_hb: 154.15653042205108
+	- dr_high_hb: -0.0011767237813351302
+	- dr_low_hb: 0.6542841610229406
+	- eps_hb: 150.62398199655107
+	- theta0_hb_1: 79.29782930005821
+	- theta0_hb_2: 174.09638379224862
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -51.070199703440935
+	- theta0_hb_7: 4.237291257635649
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 86:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.934198810262243
+	- a_hb_1: -5.758840633529263
+	- a_hb_2: -14.717910625887662
+	- a_hb_3: 0.0
+	- a_hb_4: -22.94259509368892
+	- a_hb_7: -2.7799863504989215
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.014530639592984784
+	- delta_theta_star_hb_2: -0.35158834772905284
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.0887132011598677
+	- delta_theta_star_hb_7: -0.023624096041957143
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -156.3082664325854
+	- dr_c_hb: 160.29135935881317
+	- dr_high_hb: -0.001224958312861742
+	- dr_low_hb: 0.6518687332856602
+	- eps_hb: 156.0190569978587
+	- theta0_hb_1: 82.2448315014145
+	- theta0_hb_2: 180.61006849935794
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -52.96366075327681
+	- theta0_hb_7: 4.4314677301393814
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 87:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 3.9616364356353917
+	- a_hb_1: -4.673267492171111
+	- a_hb_2: -11.647077015016167
+	- a_hb_3: 0.0
+	- a_hb_4: -18.78602987738671
+	- a_hb_7: -2.1849701860535613
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.03215051956793489
+	- delta_theta_star_hb_2: -0.23681768950035237
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.08329735359981161
+	- delta_theta_star_hb_7: -0.017762899977855358
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -147.43333517630703
+	- dr_c_hb: 129.71009013194177
+	- dr_high_hb: -0.001888005881453163
+	- dr_low_hb: 0.9063445885799066
+	- eps_hb: 125.58157506316324
+	- theta0_hb_1: 66.2239942954063
+	- theta0_hb_2: 144.95080855517082
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -43.096238358661076
+	- theta0_hb_7: 4.578326546986276
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 88:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.19500774942557
+	- a_hb_1: -4.936643049402349
+	- a_hb_2: -12.30772254995542
+	- a_hb_3: 0.0
+	- a_hb_4: -19.833674023334353
+	- a_hb_7: -2.301022844067527
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.03354663262491459
+	- delta_theta_star_hb_2: -0.24756704683705294
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.08796544417522201
+	- delta_theta_star_hb_7: -0.018303975396727838
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -157.76585061348229
+	- dr_c_hb: 137.48936644799343
+	- dr_high_hb: -0.002039833404501432
+	- dr_low_hb: 0.9053169662386896
+	- eps_hb: 132.2777598772836
+	- theta0_hb_1: 69.91726083631121
+	- theta0_hb_2: 153.04456521043272
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -45.497471623016146
+	- theta0_hb_7: 4.9228248738509714
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 89:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.4849696261387555
+	- a_hb_1: -5.263296695151387
+	- a_hb_2: -13.128729256495536
+	- a_hb_3: 0.0
+	- a_hb_4: -21.129790281840787
+	- a_hb_7: -2.4447297722684134
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.03525040932582411
+	- delta_theta_star_hb_2: -0.2612625325501823
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.09375420544592306
+	- delta_theta_star_hb_7: -0.0190306382957727
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -170.69683241756942
+	- dr_c_hb: 147.17096595827144
+	- dr_high_hb: -0.0022362749010596903
+	- dr_low_hb: 0.9005688154587035
+	- eps_hb: 140.55744025219994
+	- theta0_hb_1: 74.49315792073152
+	- theta0_hb_2: 163.07829165890547
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -48.468013064234555
+	- theta0_hb_7: 5.363881767317408
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 90:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 4.8436427697757765
+	- a_hb_1: -5.666607589948642
+	- a_hb_2: -14.14436195763801
+	- a_hb_3: 0.0
+	- a_hb_4: -22.72553786978163
+	- a_hb_7: -2.6217413518356945
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.03732489105142607
+	- delta_theta_star_hb_2: -0.27849447231261637
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.10089639646376014
+	- delta_theta_star_hb_7: -0.01995176934753757
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -186.80334838782116
+	- dr_c_hb: 159.16656086463126
+	- dr_high_hb: -0.002487668077469922
+	- dr_low_hb: 0.891991927026115
+	- eps_hb: 150.74334533691206
+	- theta0_hb_1: 80.13623158665631
+	- theta0_hb_2: 175.45940072289358
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -52.12532105085483
+	- theta0_hb_7: 5.925513590701917
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 91:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: 3.108671291465697
+	- a_hb_1: -3.6233619973707536
+	- a_hb_2: -9.04994065606996
+	- a_hb_3: 0.0
+	- a_hb_4: -14.523263950840711
+	- a_hb_7: -1.669106732931641
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: -0.023367717856060736
+	- delta_theta_star_hb_2: -0.17608569059460177
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: -0.06455891345690157
+	- delta_theta_star_hb_7: -0.012428065523576452
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: -121.70000347136548
+	- dr_c_hb: 102.31645781200423
+	- dr_high_hb: -0.0016501180760520148
+	- dr_low_hb: 0.5183447734018429
+	- eps_hb: 95.98721190328297
+	- theta0_hb_1: 51.19560145328728
+	- theta0_hb_2: 112.1112975455001
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: -33.30429420147749
+	- theta0_hb_7: 3.899899767964607
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 92:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.358078607047777
+	- a_hb_1: 3.8961598406574915
+	- a_hb_2: 9.733006657928984
+	- a_hb_3: 0.0
+	- a_hb_4: 15.636852971065673
+	- a_hb_7: 1.7869620140661182
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.024447915998376896
+	- delta_theta_star_hb_2: 0.1865135203336205
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.06965049430773895
+	- delta_theta_star_hb_7: 0.01309491940802866
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 133.60993255416454
+	- dr_c_hb: -110.69545238557643
+	- dr_high_hb: 0.0018384766922736311
+	- dr_low_hb: -0.5063631039497518
+	- eps_hb: -102.83503401350221
+	- theta0_hb_1: -55.01027119933944
+	- theta0_hb_2: -120.47339832045593
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 35.83529049587353
+	- theta0_hb_7: -4.30775424949426
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 93:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.768977828965872
+	- a_hb_1: 4.176603956115762
+	- a_hb_2: 10.621646610086852
+	- a_hb_3: 0.0
+	- a_hb_4: 16.538943819672692
+	- a_hb_7: 1.983457944055205
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.009092228953439523
+	- delta_theta_star_hb_2: 0.18467914899180687
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.07625372471356462
+	- delta_theta_star_hb_7: 0.008628062685558383
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 127.62249311855426
+	- dr_c_hb: -122.10734557529943
+	- dr_high_hb: -0.0004723820405308566
+	- dr_low_hb: -0.48076069753281314
+	- eps_hb: -112.87420040082817
+	- theta0_hb_1: -59.688660210696916
+	- theta0_hb_2: -131.46478213779616
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 38.39839074073099
+	- theta0_hb_7: -5.562262447315637
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 94:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.9387799453225023
+	- a_hb_1: 4.345173834387348
+	- a_hb_2: 11.051229290363494
+	- a_hb_3: 0.0
+	- a_hb_4: 17.223139803677828
+	- a_hb_7: 2.0598304958559384
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.009379786757289808
+	- delta_theta_star_hb_2: 0.19101185064770437
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.07971081806956404
+	- delta_theta_star_hb_7: 0.008885380131253024
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 134.68776220020158
+	- dr_c_hb: -127.60416045375379
+	- dr_high_hb: -0.0005280849253531832
+	- dr_low_hb: -0.47975335788570866
+	- eps_hb: -117.34734628321178
+	- theta0_hb_1: -62.108770418814906
+	- theta0_hb_2: -136.8221886352142
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 39.99144801231226
+	- theta0_hb_7: -5.982941416228846
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 95:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.052831970367531
+	- a_hb_1: 4.4589578164903
+	- a_hb_2: 11.341339130280247
+	- a_hb_3: 0.0
+	- a_hb_4: 17.68364596493421
+	- a_hb_7: 2.111229204844131
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.009562071823761058
+	- delta_theta_star_hb_2: 0.19514943952393166
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08203290082269055
+	- delta_theta_star_hb_7: 0.009026490845642415
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 139.4540730003136
+	- dr_c_hb: -131.30253301940323
+	- dr_high_hb: -0.0005561199481789187
+	- dr_low_hb: -0.477835199866524
+	- eps_hb: -120.36104259175158
+	- theta0_hb_1: -63.74185027501973
+	- theta0_hb_2: -140.43635583097463
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 41.064640061892646
+	- theta0_hb_7: -6.235672794342935
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 96:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.107744321094737
+	- a_hb_1: 4.514429485599271
+	- a_hb_2: 11.482431497927944
+	- a_hb_3: 0.0
+	- a_hb_4: 17.906973323426268
+	- a_hb_7: 2.136097193065841
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.00963433838947006
+	- delta_theta_star_hb_2: 0.19694369511501325
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08315888607704025
+	- delta_theta_star_hb_7: 0.009091523319879818
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 141.71586030977835
+	- dr_c_hb: -133.08267323805023
+	- dr_high_hb: -0.0005569644677722383
+	- dr_low_hb: -0.47472689208646834
+	- eps_hb: -121.82269323182736
+	- theta0_hb_1: -64.53733934968614
+	- theta0_hb_2: -142.19248863665123
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 41.5859109201534
+	- theta0_hb_7: -6.313301262165308
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 97:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.105200505551808
+	- a_hb_1: 4.513157234568103
+	- a_hb_2: 11.478300843324368
+	- a_hb_3: 0.0
+	- a_hb_4: 17.89990727281305
+	- a_hb_7: 2.1351842895513733
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.009599255884164055
+	- delta_theta_star_hb_2: 0.19645400798877005
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08312546583736458
+	- delta_theta_star_hb_7: 0.009029756206429367
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 141.5198945528497
+	- dr_c_hb: -132.99516711634485
+	- dr_high_hb: -0.000532961783289525
+	- dr_low_hb: -0.4703820169523523
+	- eps_hb: -121.77525616255731
+	- theta0_hb_1: -64.51789492006155
+	- theta0_hb_2: -142.13990373129576
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 41.57076132502345
+	- theta0_hb_7: -6.223914571187685
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 98:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -4.051027675719038
+	- a_hb_1: 4.460859929922158
+	- a_hb_2: 11.343616704162665
+	- a_hb_3: 0.0
+	- a_hb_4: 17.68572901207075
+	- a_hb_7: 2.1111072831476796
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.009468577497798218
+	- delta_theta_star_hb_2: 0.19391970624121724
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08204964259103642
+	- delta_theta_star_hb_7: 0.008851808708599808
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 139.12015727754573
+	- dr_c_hb: -131.22995903764385
+	- dr_high_hb: -0.0004876377451431015
+	- dr_low_hb: -0.4650222024712925
+	- eps_hb: -120.37131275261149
+	- theta0_hb_1: -63.76569498092827
+	- theta0_hb_2: -140.46134990945959
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 41.073346542224606
+	- theta0_hb_7: -5.9882868169496914
+	- theta0_hb_8: 0.0
+- stacking
+Iteration 99:
+- coaxial_stacking
+- cross_stacking
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+	- a_hb: -3.3456200703950376
+	- a_hb_1: 3.748846502193529
+	- a_hb_2: 9.610756490280052
+	- a_hb_3: 0.0
+	- a_hb_4: 14.393057922554016
+	- a_hb_7: 1.7250847414555932
+	- a_hb_8: 0.0
+	- delta_theta_star_hb_1: 0.00513769294855089
+	- delta_theta_star_hb_2: 0.14881148109955983
+	- delta_theta_star_hb_3: 0.0
+	- delta_theta_star_hb_4: 0.08616918631515391
+	- delta_theta_star_hb_7: 0.0058285041075153525
+	- delta_theta_star_hb_8: 0.0
+	- dr0_hb: 130.59827888556447
+	- dr_c_hb: -108.92290629189883
+	- dr_high_hb: -0.0011803826593627625
+	- dr_low_hb: -0.27956952063424145
+	- eps_hb: -100.18096383907832
+	- theta0_hb_1: -53.21062933928711
+	- theta0_hb_2: -118.12129399680082
+	- theta0_hb_3: 0.0
+	- theta0_hb_4: 33.795706451315986
+	- theta0_hb_7: -7.751610793692003
+	- theta0_hb_8: 0.0
+- stacking
