@@ -13,7 +13,6 @@ ERR_PARAM_NOT_FOUND = "Parameter '{key}' not found in {class_name}"
 ERR_CALL_NOT_IMPLEMENTED = "Subclasses must implement this method"
 ERR_COMPOSED_ENERGY_FN_LEN_MISMATCH = "Weights must have the same length as energy functions"
 ERR_COMPOSED_ENERGY_FN_TYPE_ENERGY_FNS = "energy_fns must be a list of energy functions"
-ERR_UNSUPPORTED_OPERATION = "Unsupported operand type(s) for {op}: '{left}' and '{right}'"
 
 
 @chex.dataclass(frozen=True)
@@ -36,14 +35,14 @@ class BaseEnergyFunction:
     def __add__(self, other: "BaseEnergyFunction") -> "ComposedEnergyFunction":
         """Add two energy functions together to create a ComposedEnergyFunction."""
         if not isinstance(other, BaseEnergyFunction):
-            raise TypeError(ERR_UNSUPPORTED_OPERATION.format(op="+", left=type(self), right=type(other)))
+            return NotImplemented
 
         return ComposedEnergyFunction(energy_fns=[self, other])
 
     def __mul__(self, other: float) -> "ComposedEnergyFunction":
         """Multiply an energy function by a scalar to create a ComposedEnergyFunction."""
         if not isinstance(other, float | int):
-            raise TypeError(ERR_UNSUPPORTED_OPERATION.format(op="*", left=type(self), right=type(other)))
+            return NotImplemented
 
         return ComposedEnergyFunction(
             energy_fns=[self],
@@ -145,15 +144,15 @@ class ComposedEnergyFunction:
         if w_none and ow_none:
             weights = None
         elif not w_none and not ow_none:
-            weights = jnp.concatenate([self.weights, jnp.ones(len(energy_fn.energy_fns))])
+            weights = jnp.concatenate([self.weights, other_weights])
         else:
             this_weights = self.weights if not w_none else jnp.ones(len(energy_fn.energy_fns))
             other_weights = other_weights if not ow_none else jnp.ones(len(self.energy_fns))
             weights = jnp.concatenate([this_weights, other_weights])
 
         return ComposedEnergyFunction(
-            self.energy_fns + energy_fn.energy_fns,
-            weights,
+            energy_fns=self.energy_fns + energy_fn.energy_fns,
+            weights=weights,
         )
 
     def __add__(self, other: Union[BaseEnergyFunction, "ComposedEnergyFunction"]) -> "ComposedEnergyFunction":
@@ -166,7 +165,7 @@ class ComposedEnergyFunction:
         elif isinstance(other, ComposedEnergyFunction):
             energy_fn = self.add_composable_energy_fn
         else:
-            raise TypeError(ERR_UNSUPPORTED_OPERATION.format(op="+", left=type(self), right=type(other)))
+            return NotImplemented
 
         return energy_fn(other)
 

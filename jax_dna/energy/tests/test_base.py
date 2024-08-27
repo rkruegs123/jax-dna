@@ -9,6 +9,8 @@ import pytest
 
 from jax_dna.energy import base
 
+NOT_IMPLEMENTED_ERR = "^" + re.escape("unsupported operand type(s) for: ") + ".*"
+
 
 def _make_base_energy_function(
     with_displacement: bool = False,
@@ -46,8 +48,7 @@ def test_BaseEnergyFunction_add() -> None:
 def test_BaseEnergyFunction_add_raises() -> None:
     """Test the __add__ function for BaseEnergyFunction with invalid args."""
     be = _make_base_energy_function()
-    expected_err = re.escape(base.ERR_UNSUPPORTED_OPERATION.format(op="+", left=type(be), right=int))
-    with pytest.raises(TypeError, match=expected_err):
+    with pytest.raises(TypeError, match=NOT_IMPLEMENTED_ERR):
         be + 3
 
 
@@ -66,8 +67,7 @@ def test_BaseEnergyFunction_mul() -> None:
 def test_BaseEnergyFunction_mul_raises() -> None:
     """Test the __add__ function for BaseEnergyFunction with invalid args."""
     be = _make_base_energy_function()
-    expected_err = re.escape(base.ERR_UNSUPPORTED_OPERATION.format(op="*", left=type(be), right=type(be)))
-    with pytest.raises(TypeError, match=expected_err):
+    with pytest.raises(TypeError, match=NOT_IMPLEMENTED_ERR):
         be * be
 
 
@@ -127,6 +127,106 @@ def test_ComposedEnergyFunction_add_energy_function(
         assert cef.weights is None
     else:
         np.testing.assert_allclose(cef.weights, expected_weights)
+
+
+@pytest.mark.parametrize(
+    ("init_weights", "expected_weights"),
+    [
+        (None, None),
+        (np.array([1.0]), np.array([1.0, 1.0])),
+        (np.array([3.0]), np.array([3.0, 3.0])),
+    ],
+)
+def test_ComposedEnergyFunction_add_composable_energy_function(
+    init_weights: np.ndarray | None,
+    expected_weights: np.ndarray | None,
+) -> None:
+    """Test the add_composable_energy_function method of ComposedEnergyFunction."""
+
+    be = _make_base_energy_function()
+    cef = base.ComposedEnergyFunction(
+        energy_fns=[be],
+        weights=init_weights,
+    ).add_composable_energy_fn(
+        base.ComposedEnergyFunction(
+            energy_fns=[be],
+            weights=init_weights,
+        )
+    )
+
+    assert len(cef.energy_fns) == 2  # noqa: PLR2004 ignore magic number error
+    if init_weights is None:
+        assert cef.weights is None
+    else:
+        np.testing.assert_allclose(cef.weights, expected_weights)
+
+
+@pytest.mark.parametrize(
+    ("init_weights", "other", "expected_weights"),
+    [
+        (None, None, None),  # raises
+        (None, _make_base_energy_function(), None),
+        (np.array([1.0]), _make_base_energy_function(), np.array([1.0, 1.0])),
+        (np.array([3.0]), _make_base_energy_function(), np.array([3.0, 1.0])),
+        (None, base.ComposedEnergyFunction(energy_fns=[_make_base_energy_function()]), None),
+        (np.array([1.0]), base.ComposedEnergyFunction(energy_fns=[_make_base_energy_function()]), np.array([1.0, 1.0])),
+        (np.array([3.0]), base.ComposedEnergyFunction(energy_fns=[_make_base_energy_function()]), np.array([3.0, 1.0])),
+    ],
+)
+def test_ComposedEnergyFunction_add(
+    init_weights: np.ndarray | None,
+    other: base.BaseEnergyFunction | base.ComposedEnergyFunction | None,
+    expected_weights: np.ndarray | None,
+) -> None:
+    """Test the __add__ function for ComposedEnergyFunction."""
+    be = _make_base_energy_function()
+    cef = base.ComposedEnergyFunction(energy_fns=[be], weights=init_weights)
+
+    if other is None:
+        with pytest.raises(TypeError, match=NOT_IMPLEMENTED_ERR):
+            cef + other
+    else:
+        cef = cef + other
+
+        assert len(cef.energy_fns) == 2  # noqa: PLR2004 ignore magic number error
+        if init_weights is None:
+            assert cef.weights is None
+        else:
+            np.testing.assert_allclose(cef.weights, expected_weights)
+
+
+@pytest.mark.parametrize(
+    ("init_weights", "other", "expected_weights"),
+    [
+        (None, None, None),  # raises
+        (None, _make_base_energy_function(), None),
+        (np.array([1.0]), _make_base_energy_function(), np.array([1.0, 1.0])),
+        (np.array([3.0]), _make_base_energy_function(), np.array([3.0, 1.0])),
+        (None, base.ComposedEnergyFunction(energy_fns=[_make_base_energy_function()]), None),
+        (np.array([1.0]), base.ComposedEnergyFunction(energy_fns=[_make_base_energy_function()]), np.array([1.0, 1.0])),
+        (np.array([3.0]), base.ComposedEnergyFunction(energy_fns=[_make_base_energy_function()]), np.array([1.0, 3.0])),
+    ],
+)
+def test_ComposedEnergyFunction_radd(
+    init_weights: np.ndarray | None,
+    other: base.BaseEnergyFunction | base.ComposedEnergyFunction | None,
+    expected_weights: np.ndarray | None,
+) -> None:
+    """Test the __add__ function for ComposedEnergyFunction."""
+    be = _make_base_energy_function()
+    cef = base.ComposedEnergyFunction(energy_fns=[be], weights=init_weights)
+
+    if other is None:
+        with pytest.raises(TypeError, match=NOT_IMPLEMENTED_ERR):
+            other + cef
+    else:
+        cef = other + cef
+
+        assert len(cef.energy_fns) == 2  # noqa: PLR2004 ignore magic number error
+        if init_weights is None:
+            assert cef.weights is None
+        else:
+            np.testing.assert_allclose(cef.weights, expected_weights)
 
 
 if __name__ == "__main__":
