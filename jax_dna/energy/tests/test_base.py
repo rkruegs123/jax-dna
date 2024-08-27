@@ -9,7 +9,7 @@ import pytest
 
 from jax_dna.energy import base
 
-NOT_IMPLEMENTED_ERR = "^" + re.escape("unsupported operand type(s) for: ") + ".*"
+NOT_IMPLEMENTED_ERR = re.compile("unsupported operand type\(s\) for")  # noqa: W605 - Ignore the regex warning
 
 
 def _make_base_energy_function(
