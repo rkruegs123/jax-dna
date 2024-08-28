@@ -1,16 +1,13 @@
+# ruff: noqa: N802,FBT001
 """Tests for jax_dna.energy.configuration"""
 
-import re
-from collections.abc import Callable
 from typing import Any
 
 import chex
-import jax.numpy as jnp
-import jax_md
-import numpy as np
 import pytest
 
 from jax_dna.energy import configuration
+
 
 @chex.dataclass(frozen=True)
 class MockConfig(configuration.BaseConfiguration):
@@ -26,23 +23,33 @@ def test_BaseConfiguration_init_raises_missing_required_params() -> None:
     """Tests the initialization of BaseConfiguration."""
 
     with pytest.raises(ValueError, match=configuration.ERR_MISSING_REQUIRED_PARAMS.format(props="c")):
-        test_config = MockConfig(a=1, b=2)
+        MockConfig(a=1, b=2)
 
 
 def test_BaseConfiguration_init_unoptimizable_params():
     """Tests the initialization of BaseConfiguration."""
 
-    with pytest.raises(ValueError, match=configuration.ERR_OPT_DEPENDENT_PARAMS.format(req_params="a,b", given_params="d")):
-        test_config = MockConfig(a=1, b=2, c=4, params_to_optimize=("a", "b", "d"))
+    with pytest.raises(
+        ValueError, match=configuration.ERR_OPT_DEPENDENT_PARAMS.format(req_params="a,b", given_params="d")
+    ):
+        MockConfig(a=1, b=2, c=4, params_to_optimize=("a", "b", "d"))
 
-    test_config = MockConfig(a=1, b=2, c=4, params_to_optimize=configuration.BaseConfiguration.OPT_ALL)
+    MockConfig(a=1, b=2, c=4, params_to_optimize=configuration.BaseConfiguration.OPT_ALL)
 
 
 @pytest.mark.parametrize(
     ("in_config", "expected"),
     [
-        ({"a": 1, "b": 2, "c": 3, "params_to_optimize":("a",)}, {"a": 1,}),
-        ({"a": 1, "b": 2, "c": 3, "d": 4, "params_to_optimize": configuration.BaseConfiguration.OPT_ALL}, {"a": 1, "b": 2}),
+        (
+            {"a": 1, "b": 2, "c": 3, "params_to_optimize": ("a",)},
+            {
+                "a": 1,
+            },
+        ),
+        (
+            {"a": 1, "b": 2, "c": 3, "d": 4, "params_to_optimize": configuration.BaseConfiguration.OPT_ALL},
+            {"a": 1, "b": 2},
+        ),
         ({"a": 1, "b": 2, "c": 3, "d": 4, "params_to_optimize": ()}, {}),
     ],
 )
@@ -73,13 +80,12 @@ def test_BaseConfiguration_from_dict() -> None:
 @pytest.mark.parametrize(
     ("merged_object", "expected", "raises"),
     [
-        (MockConfig(a=4, b=5, c=6), {"a":4, "b":5, "c":6}, False),
-        ({"a":4, "b":5, "c":6}, {"a":4, "b":5, "c":6}, False),
+        (MockConfig(a=4, b=5, c=6), {"a": 4, "b": 5, "c": 6}, False),
+        ({"a": 4, "b": 5, "c": 6}, {"a": 4, "b": 5, "c": 6}, False),
         (3, {}, True),
     ],
 )
-def test_BaseConfiguration_or(merged_object:Any, expected:dict, raises:bool) -> None:
-
+def test_BaseConfiguration_or(merged_object: Any, expected: dict, raises: bool) -> None:
     init_config = MockConfig(a=1, b=2, c=3)
 
     if raises:
@@ -87,8 +93,8 @@ def test_BaseConfiguration_or(merged_object:Any, expected:dict, raises:bool) -> 
             init_config | merged_object
     else:
         out_config = init_config | merged_object
-        assert all(out_config[k]==expected[k] for k in expected.keys())
+        assert all(out_config[k] == expected[k] for k in expected)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     test_BaseConfiguration_opt_params()

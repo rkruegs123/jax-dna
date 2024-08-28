@@ -236,8 +236,8 @@ class MockEnergyFunction(base.BaseEnergyFunction):
         self,
         body: jax_md.rigid_body.RigidBody,
         seq: jnp.ndarray,  # noqa: ARG002
-        bonded_neighbors: jnp.ndarray, # noqa: ARG002
-        unbonded_neighbors: jnp.ndarray, # noqa: ARG002
+        bonded_neighbors: jnp.ndarray,  # noqa: ARG002
+        unbonded_neighbors: jnp.ndarray,  # noqa: ARG002
     ) -> float:
         return body.center.sum()
 
