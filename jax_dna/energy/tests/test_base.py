@@ -2,7 +2,9 @@
 """Tests for jax_dna.energy.base"""
 
 import re
+from collections.abc import Callable
 
+import jax.numpy as jnp
 import jax_md
 import numpy as np
 import pytest
@@ -227,6 +229,42 @@ def test_ComposedEnergyFunction_radd(
             assert cef.weights is None
         else:
             np.testing.assert_allclose(cef.weights, expected_weights)
+
+
+class MockEnergyFunction(base.BaseEnergyFunction):
+    def __call__(
+        self,
+        body: jax_md.rigid_body.RigidBody,
+        seq: jnp.ndarray,  # noqa: ARG002
+        bonded_neighbors: jnp.ndarray, # noqa: ARG002
+        unbonded_neighbors: jnp.ndarray, # noqa: ARG002
+    ) -> float:
+        return body.center.sum()
+
+
+@pytest.mark.parametrize(
+    ("rigid_body_transform_fn", "expected"),
+    [
+        (None, 4.0),
+        (lambda x: jax_md.rigid_body.RigidBody(center=x.center * 2, orientation=x.orientation), 8.0),
+    ],
+)
+def test_ComposedEnergyFunction_call(
+    rigid_body_transform_fn: Callable | None,
+    expected: float,
+) -> None:
+    """Test the __call__ function for ComposedEnergyFunction."""
+
+    displacement_fn, _ = jax_md.space.free()
+    be = MockEnergyFunction(displacement_fn=displacement_fn)
+    cef = base.ComposedEnergyFunction(energy_fns=[be], rigid_body_transform_fn=rigid_body_transform_fn)
+
+    body = jax_md.rigid_body.RigidBody(
+        center=jnp.array([[1.0, 1.0], [1.0, 1.0]]),
+        orientation=jnp.array([[1.0, 1.0], [1.0, 1.0]]),
+    )
+
+    assert cef(body, None, None, None) == expected
 
 
 if __name__ == "__main__":
