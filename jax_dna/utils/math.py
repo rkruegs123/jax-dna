@@ -84,5 +84,5 @@ def clamp(x: typ.ARR_OR_SCALAR, lo: typ.Scalar = -1.0, hi: typ.Scalar = 1.0) -> 
 # This is an idea to prototype a function that we ca use to benchmark different
 # implementations of the same function.
 def mult(a: typ.Arr_N, b: typ.Arr_N) -> typ.Arr_N:
-    """Element-wise multiplication of two arrays."""
+    """Element-wise multiplication of two arrays w/ sum reduction."""
     return jnp.einsum("ij, ij->i", a, b)
