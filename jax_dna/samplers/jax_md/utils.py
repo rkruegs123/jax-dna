@@ -1,3 +1,5 @@
+"""Utilities for JAX-MD samplers."""
+
 from typing import Protocol
 
 import chex
@@ -6,16 +8,26 @@ import jax_md
 
 
 class NeighborHelper(Protocol):
+    """Helper class for managing neighbor lists."""
+
     @property
-    def idx(self) -> jnp.ndarray: ...
+    def idx(self) -> jnp.ndarray:
+        """Return the indices of the unbonded neighbors."""
+        ...
 
-    def allocate(self, locs: jax_md.rigid_body.RigidBody) -> "NeighborHelper": ...
+    def allocate(self, locs: jax_md.rigid_body.RigidBody) -> "NeighborHelper":
+        """Allocate memory for the neighbor list."""
+        ...
 
-    def update(self, locs: jax_md.rigid_body.RigidBody) -> "NeighborHelper": ...
+    def update(self, locs: jax_md.rigid_body.RigidBody) -> "NeighborHelper":
+        """Update the neighbor list."""
+        ...
 
 
 @chex.dataclass
 class StaticSimulatorParams:
+    """Static parameters for the simulator."""
+
     # this is commonly referred to as `init_body` in the code
     R: jax_md.rigid_body.RigidBody
     seq: jnp.darray
@@ -25,6 +37,7 @@ class StaticSimulatorParams:
 
     @property
     def init_fn(self) -> dict[str, jax_md.rigid_body.RigidBody | jnp.ndarray]:
+        """Return the kwargs for initial state of the simulator."""
         return {
             "R": self.R,
             "seq": self.seq,
@@ -34,6 +47,7 @@ class StaticSimulatorParams:
 
     @property
     def step_fn(self) -> dict[str, jax_md.rigid_body.RigidBody | jnp.ndarray]:
+        """Return the kwargs for the step_fn of the simulator."""
         return {
             "seq": self.seq,
             "bonded_neighbors": self.bonded_neighbors,

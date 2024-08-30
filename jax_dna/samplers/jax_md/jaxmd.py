@@ -1,15 +1,14 @@
 """A sampler based on running a jax_md simulation routine."""
 
-from pathlib import Path
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import jax
+import jax_md
+
 import jax_dna.energy as jd_energy
-import jax_dna.input.toml as jd_toml
-import jax_dna.input.topology as jd_top
 import jax_dna.input.trajectory as jd_traj
 import jax_dna.samplers.jax_md.utils as jaxmd_utils
-import jax_md
 
 REQUIRED_KEYS = {
     "track_gradients",
@@ -25,7 +24,6 @@ SIM_STATE = tuple[jax_md.simulate.SimulationState, jaxmd_utils.NeighborHelper]
 
 
 def run(
-    opt_params: dict[str, Any],
     params: dict[str, Any],
     input_config: dict[str, Any],
 ) -> tuple[jd_traj.Trajectory, dict[str, Any]]:
@@ -35,15 +33,13 @@ def run(
     _validate_input_config(input_config)
 
     # load input files
-    sim_config = jd_toml.parse_toml(input_config["input_directory"])
-    energy_fn = input_config["energy_function"]
 
     # run simulation
 
-    # return trajectory and metadata
+    # return trajectory and metadata when done
 
 
-def build_run_fn(
+def _build_run_fn(
     energy_configs: list[jd_energy.base.BaseEnergyConfiguration],
     energy_fns: list[jd_energy.base.BaseEnergyFunction],
     simulator_params: jaxmd_utils.StaticSimulatorParams,
@@ -66,7 +62,7 @@ def build_run_fn(
                 displacement_fn=displacement_fn,
                 params=(config | param).init_params(),
             )
-            for param, config, energy_fn in zip(opt_params, energy_configs, energy_fns)
+            for param, config, energy_fn in zip(opt_params, energy_configs, energy_fns, strict=True)
         ]
 
         energy_fn = jd_energy.ComposedEnergyFunction(
@@ -76,7 +72,7 @@ def build_run_fn(
 
         init_fn, step_fn = simulator_init(energy_fn, shift_fn)
 
-        init_state = init_fn(
+        init_state = init_fn(  # noqa: F841, temp
             key=key,
             unbonded_neighbors=neighbors.idx,
             **simulator_params.init_fn,
