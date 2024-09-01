@@ -14,7 +14,7 @@ import jax.numpy as jnp
 from jax import vmap
 
 from jax_dna.common import utils
-from jax_dna.dna1 import model, oxdna_utils
+from jax_dna import dna1, dna2
 
 
 
@@ -97,9 +97,26 @@ def run(args):
     run_dir = output_dir / run_name
     run_dir.mkdir(parents=False, exist_ok=False)
 
+    params_str = ""
+    params_str += f"n_ref_states: {n_ref_states}\n"
+    for k, v in args.items():
+        params_str += f"{k}: {v}\n"
+    with open(run_dir / "params.txt", "w+") as f:
+        f.write(params_str)
+
     # Recompile once at the beginning with default parameters
-    params = deepcopy(model.EMPTY_BASE_PARAMS)
-    oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+    if interaction == "DNA_nomesh":
+        params = deepcopy(dna1.model.EMPTY_BASE_PARAMS)
+        dna1.oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+    elif interaction == "DNA2_nomesh":
+        params = deepcopy(dna2.model.default_base_params_seq_avg)
+        dna2.oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+    elif interaction == "RNA2":
+        # technically we don't have to recompile because we never do, but might as well
+        params = deepcopy(dna2.model.default_base_params_seq_avg)
+        dna2.oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+    else:
+        raise RuntimeError(f"Invalid interaction type: {interaction}")
 
     # Setup a run with bad weights
     initial_weights_dir = run_dir / "initial_weights"
@@ -119,7 +136,7 @@ def run(args):
         else:
             shutil.copy(conf_path_unbound, repeat_dir / "init.conf")
 
-        oxdna_utils.rewrite_input_file(
+        dna1.oxdna_utils.rewrite_input_file(
             input_template_path, repeat_dir,
             temp=f"{t_kelvin}K", steps=n_steps_per_sim,
             init_conf_path=str(repeat_dir / "init.conf"),
@@ -167,6 +184,8 @@ def run(args):
 
     # Plot trajectory of order parameters
     plt.plot(all_op_idxs)
+    for i in range(n_sims):
+        plt.axvline(y=i*n_ref_states_per_sim, linestyle="--", color="red")
     plt.savefig(initial_weights_dir / "op_trajectory.png")
     plt.clf()
 
@@ -236,7 +255,7 @@ def run(args):
             shutil.copy(conf_path_unbound, repeat_dir / "init.conf")
 
 
-        oxdna_utils.rewrite_input_file(
+        dna1.oxdna_utils.rewrite_input_file(
             input_template_path, repeat_dir,
             temp=f"{t_kelvin}K", steps=n_steps_per_sim,
             init_conf_path=str(repeat_dir / "init.conf"),
@@ -283,6 +302,8 @@ def run(args):
 
     # Plot trajectory of order parameters
     plt.plot(all_op_idxs)
+    for i in range(n_sims):
+        plt.axvline(y=i*n_ref_states_per_sim, linestyle="--", color="red")
     plt.savefig(check_weights_dir / "op_trajectory.png")
     plt.clf()
 
