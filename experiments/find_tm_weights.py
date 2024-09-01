@@ -14,7 +14,11 @@ import jax.numpy as jnp
 from jax import vmap
 
 from jax_dna.common import utils
-from jax_dna import dna1, dna2
+from jax_dna.dna1 import model as model1
+from jax_dna.dna1 import oxdna_utils as oxdna_utils1
+from jax_dna.dna2 import model as model2
+from jax_dna.dna2 import oxdna_utils as oxdna_utils2
+
 
 
 
@@ -106,15 +110,15 @@ def run(args):
 
     # Recompile once at the beginning with default parameters
     if interaction == "DNA_nomesh":
-        params = deepcopy(dna1.model.EMPTY_BASE_PARAMS)
-        dna1.oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+        params = deepcopy(model1.EMPTY_BASE_PARAMS)
+        oxdna_utils1.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
     elif interaction == "DNA2_nomesh":
-        params = deepcopy(dna2.model.default_base_params_seq_avg)
-        dna2.oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+        params = deepcopy(model2.default_base_params_seq_avg)
+        oxdna_utils2.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
     elif interaction == "RNA2":
         # technically we don't have to recompile because we never do, but might as well
-        params = deepcopy(dna2.model.default_base_params_seq_avg)
-        dna2.oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+        params = deepcopy(model2.default_base_params_seq_avg)
+        oxdna_utils2.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
     else:
         raise RuntimeError(f"Invalid interaction type: {interaction}")
 
@@ -136,7 +140,7 @@ def run(args):
         else:
             shutil.copy(conf_path_unbound, repeat_dir / "init.conf")
 
-        dna1.oxdna_utils.rewrite_input_file(
+        oxdna_utils1.rewrite_input_file(
             input_template_path, repeat_dir,
             temp=f"{t_kelvin}K", steps=n_steps_per_sim,
             init_conf_path=str(repeat_dir / "init.conf"),
@@ -255,7 +259,7 @@ def run(args):
             shutil.copy(conf_path_unbound, repeat_dir / "init.conf")
 
 
-        dna1.oxdna_utils.rewrite_input_file(
+        oxdna_utils1.rewrite_input_file(
             input_template_path, repeat_dir,
             temp=f"{t_kelvin}K", steps=n_steps_per_sim,
             init_conf_path=str(repeat_dir / "init.conf"),
