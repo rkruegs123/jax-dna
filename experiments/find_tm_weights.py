@@ -6,9 +6,12 @@ import shutil
 import pandas as pd
 import random
 import matplotlib.pyplot as plt
-import numpy as np
+import numpy as onp
 from tabulate import tabulate
 import subprocess
+
+import jax.numpy as jnp
+from jax import vmap
 
 from jax_dna.common import utils
 from jax_dna.dna1 import model, oxdna_utils
@@ -37,8 +40,8 @@ def run(args):
     beta = 1 / kT
     dt = 5e-3
 
-    extrapolate_temps = np.array([float(et) for et in args['extrapolate_temps']]) # in Kelvin
-    assert(np.all(extrapolate_temps[:-1] <= extrapolate_temps[1:])) # check that temps. are sorted
+    extrapolate_temps = jnp.array([float(et) for et in args['extrapolate_temps']]) # in Kelvin
+    assert(jnp.all(extrapolate_temps[:-1] <= extrapolate_temps[1:])) # check that temps. are sorted
     n_extrap_temps = len(extrapolate_temps)
     extrapolate_kts = vmap(utils.get_kt)(extrapolate_temps)
     extrapolate_temp_str = ', '.join([f"{tc}K" for tc in extrapolate_temps])
@@ -75,7 +78,7 @@ def run(args):
     # Process the weights information
     weights_df = pd.read_fwf(wfile_path, names=["op1", "op2", "weight"])
     num_ops = len(weights_df)
-    bins = np.arange(num_ops + 1) - 0.5
+    bins = onp.arange(num_ops + 1) - 0.5
     pair2idx = dict()
     idx2pair = dict()
     idx2weight = dict()
@@ -148,19 +151,19 @@ def run(args):
     all_weights = list()
     for i in range(n_sims):
         repeat_dir = initial_weights_dir / f"r{i}"
-        data = np.array(pd.read_fwf(repeat_dir / "energy.dat", header=None)[[5, 6, 7]])
+        data = onp.array(pd.read_fwf(repeat_dir / "energy.dat", header=None)[[5, 6, 7]])
 
         for j in range(data.shape[0]):
             op1 = data[j][0]
             op2 = data[j][1]
             pair_idx = pair2idx[(op1, op2)]
             weight = data[j][2]
-            assert(np.isclose(idx2weight[pair_idx], weight, atol=1e-3))
+            assert(onp.isclose(idx2weight[pair_idx], weight, atol=1e-3))
             all_op_idxs.append(pair_idx)
             all_weights.append(weight)
 
-    all_op_idxs = np.array(all_op_idxs)
-    all_weights = np.array(all_weights)
+    all_op_idxs = onp.array(all_op_idxs)
+    all_weights = onp.array(all_weights)
 
     # Plot trajectory of order parameters
     plt.plot(all_op_idxs)
@@ -184,10 +187,10 @@ def run(args):
     plt.clf()
 
     # Compute the optimal weights
-    probs = np.zeros(num_ops)
+    probs = onp.zeros(num_ops)
     for op_idx, op_weight in zip(all_op_idxs, all_weights):
         probs[op_idx] += 1/op_weight
-    assert(np.allclose(probs, probs_hist))
+    assert(onp.allclose(probs, probs_hist))
 
     normed = probs / sum(probs)
     optimal_weights = 1 / normed
@@ -264,19 +267,19 @@ def run(args):
     all_weights = list()
     for i in range(n_sims):
         repeat_dir = check_weights_dir / f"r{i}"
-        data = np.array(pd.read_fwf(repeat_dir / "energy.dat", header=None)[[5, 6, 7]])
+        data = onp.array(pd.read_fwf(repeat_dir / "energy.dat", header=None)[[5, 6, 7]])
 
         for j in range(data.shape[0]):
             op1 = data[j][0]
             op2 = data[j][1]
             pair_idx = pair2idx[(op1, op2)]
             weight = data[j][2]
-            assert(np.isclose(idx2weight[pair_idx], weight, atol=1e-3))
+            assert(onp.isclose(idx2weight[pair_idx], weight, atol=1e-3))
             all_op_idxs.append(pair_idx)
             all_weights.append(weight)
 
-    all_op_idxs = np.array(all_op_idxs)
-    all_weights = np.array(all_weights)
+    all_op_idxs = onp.array(all_op_idxs)
+    all_weights = onp.array(all_weights)
 
     # Plot trajectory of order parameters
     plt.plot(all_op_idxs)
