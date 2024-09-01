@@ -37,11 +37,32 @@ def run(args):
     beta = 1 / kT
     dt = 5e-3
 
-    n_bp = args['n_bp']
-    basedir = Path("data/sys-defs/tm-2op")
+    extrapolate_temps = jnp.array([float(et) for et in args['extrapolate_temps']]) # in Kelvin
+    assert(jnp.all(extrapolate_temps[:-1] <= extrapolate_temps[1:])) # check that temps. are sorted
+    n_extrap_temps = len(extrapolate_temps)
+    extrapolate_kts = vmap(utils.get_kt)(extrapolate_temps)
+    extrapolate_temp_str = ', '.join([f"{tc}K" for tc in extrapolate_temps])
 
-    tm_dir = basedir / f"{n_bp}bp"
+
+    # n_bp = args['n_bp']
+    # basedir = Path("data/sys-defs/tm-2op")
+
+    # tm_dir = basedir / f"{n_bp}bp"
+    # assert(tm_dir.exists())
+
+    tm_dir = args['tm_dir']
     assert(tm_dir.exists())
+
+    seq_dep = args['seq_dep']
+    assert(not seq_dep)
+
+    interaction = args['interaction']
+    if interaction == "DNA_nomesh" or interaction == "DNA2_nomesh":
+        salt = 0.5
+    elif interaction == "RNA2":
+        salt = 1.0
+    else:
+        raise RuntimeError(f"Invalid interaction type: {interaction}")
 
     conf_path_unbound = tm_dir / "init_unbound.conf"
     conf_path_bound = tm_dir / "init_bound.conf"
@@ -105,7 +126,10 @@ def run(args):
             no_stdout_energy=0, weights_file=str(repeat_dir / "wfile.txt"),
             op_file=str(repeat_dir / "op.txt"),
             log_file=str(repeat_dir / "sim.log"),
-            restart_step_counter=1 # Because we will not be concatenating the outputs, so we can equilibrate
+            restart_step_counter=1, # Because we will not be concatenating the outputs, so we can equilibrate
+            interaction_type=interaction,
+            salt_concentration=salt,
+            extrapolate_hist=extrapolate_temp_str
         )
 
         procs.append(subprocess.Popen([oxdna_exec_path, repeat_dir / "input"]))
@@ -219,7 +243,10 @@ def run(args):
             no_stdout_energy=0, weights_file=str(repeat_dir / "wfile.txt"),
             op_file=str(repeat_dir / "op.txt"),
             log_file=str(repeat_dir / "sim.log"),
-            restart_step_counter=1 # Because we will not be concatenating the outputs, so we can equilibrate
+            restart_step_counter=1, # Because we will not be concatenating the outputs, so we can equilibrate
+            interaction_type=interaction,
+            salt_concentration=salt,
+            extrapolate_hist=extrapolate_temp_str
         )
 
         procs.append(subprocess.Popen([oxdna_exec_path, repeat_dir / "input"]))
@@ -296,9 +323,24 @@ def get_parser():
                         help='oxDNA base directory')
     parser.add_argument('--temp', type=float, default=300.15,
                         help="Temperature in kelvin")
+    parser.add_argument('--extrapolate-temps', nargs='+',
+                        help='Temperatures for extrapolation in Kelvin in ascending order',
+                        default=[282.15, 285.15, 288.15, 291.15, 294.15, 297.15, 303.15, 306.15,
+                                 309.15, 312.15], # corresponding to 9C, 12C, 15C, 18C, 21C, 24C, 30C, 33C, 36C, 39C
+                        required=True)
 
-    parser.add_argument('--n-bp', type=int, default=5,
-                        help="Number of base pairs defining the duplex")
+    # parser.add_argument('--n-bp', type=int, default=5,
+    #                     help="Number of base pairs defining the duplex")
+
+    parser.add_argument('--tm-dir', type=str,
+                        default="data/sys-defs/tm-2op/5p",
+                        help='Directory for duplex system')
+
+    parser.add_argument('--interaction', type=str,
+                        default="DNA_nomesh", choices=["DNA_nomesh", "DNA2_nomesh", "RNA2"],
+                        help='Interaction type')
+
+    parser.add_argument('--seq-dep', action='store_true')
 
     return parser
 
