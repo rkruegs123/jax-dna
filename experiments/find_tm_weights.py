@@ -53,7 +53,7 @@ def run(args):
     # tm_dir = basedir / f"{n_bp}bp"
     # assert(tm_dir.exists())
 
-    tm_dir = args['tm_dir']
+    tm_dir = Path(args['tm_dir'])
     assert(tm_dir.exists())
 
     seq_dep = args['seq_dep']
