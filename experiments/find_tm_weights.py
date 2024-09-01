@@ -37,7 +37,7 @@ def run(args):
     beta = 1 / kT
     dt = 5e-3
 
-    extrapolate_temps = jnp.array([float(et) for et in args['extrapolate_temps']]) # in Kelvin
+    extrapolate_temps = np.array([float(et) for et in args['extrapolate_temps']]) # in Kelvin
     assert(jnp.all(extrapolate_temps[:-1] <= extrapolate_temps[1:])) # check that temps. are sorted
     n_extrap_temps = len(extrapolate_temps)
     extrapolate_kts = vmap(utils.get_kt)(extrapolate_temps)
@@ -333,7 +333,7 @@ def get_parser():
     #                     help="Number of base pairs defining the duplex")
 
     parser.add_argument('--tm-dir', type=str,
-                        default="data/sys-defs/tm-2op/5p",
+                        default="data/sys-defs/tm-2op/5bp",
                         help='Directory for duplex system')
 
     parser.add_argument('--interaction', type=str,
