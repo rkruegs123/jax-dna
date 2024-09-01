@@ -329,7 +329,9 @@ class TestRna2(unittest.TestCase):
             (self.test_data_basedir / "regr-rna2-2ht-293.15-ss", "sys.top", "output.dat", 293.15, 1.0, False),
             (self.test_data_basedir / "regr-rna2-2ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True),
             (self.test_data_basedir / "regr-rna2-2ht-296.15-ss", "sys.top", "output.dat", 296.15, 1.0, False),
-            (self.test_data_basedir / "regr-rna2-2ht-296.15-sa", "sys.top", "output.dat", 296.15, 1.0, True)
+            (self.test_data_basedir / "regr-rna2-2ht-296.15-sa", "sys.top", "output.dat", 296.15, 1.0, True),
+
+            (self.test_data_basedir / "regr-rna2-5ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True)
         ]
 
 

@@ -74,6 +74,8 @@ def run(args):
     max_approx_iters = args['max_approx_iters']
     no_delete = args['no_delete']
 
+    full_system = args['full_system']
+
     # t_kelvin = utils.DEFAULT_TEMP
     t_kelvin = 293.15
 
@@ -114,7 +116,10 @@ def run(args):
         f.write(params_str)
 
     # Load the system
-    sys_basedir = Path("data/templates/2ht-tc-rmse-rna")
+    if full_system:
+        sys_basedir = Path("data/templates/5ht-tc-rmse-rna")
+    else:
+        sys_basedir = Path("data/templates/2ht-tc-rmse-rna")
     input_template_path = sys_basedir / "input"
     ss_path = sys_basedir / "rna_sequence_dependent_parameters.txt"
 
@@ -461,18 +466,14 @@ def run(args):
     grad_fn = jit(grad_fn)
 
     # Initialize parameters
+    # params = deepcopy(EMPTY_BASE_PARAMS)
+    # params["coaxial_stacking"] = DEFAULT_BASE_PARAMS["coaxial_stacking"]
+    # params["cross_stacking"] = DEFAULT_BASE_PARAMS["cross_stacking"]
+    # params["stacking"] = DEFAULT_BASE_PARAMS["stacking"]
     params = deepcopy(EMPTY_BASE_PARAMS)
-    """
-    for key in DEFAULT_BASE_PARAMS["coaxial_stacking"]:
-        if key[0] == "a":
-            params["coaxial_stacking"][key] = DEFAULT_BASE_PARAMS["coaxial_stacking"][key]
-    """
-    params["coaxial_stacking"] = DEFAULT_BASE_PARAMS["coaxial_stacking"]
-    # for k in ['dr0_coax', 'dr_c_coax', 'dr_high_coax', 'dr_low_coax', 'k_coax']:
-    #     params["coaxial_stacking"][k] = DEFAULT_BASE_PARAMS["coaxial_stacking"][k]
-    params["cross_stacking"] = DEFAULT_BASE_PARAMS["cross_stacking"]
-    params["stacking"] = DEFAULT_BASE_PARAMS["stacking"]
-    
+    for opt_key in opt_keys:
+        params[opt_key] = deepcopy(DEFAULT_BASE_PARAMS[opt_key])
+
     init_params = deepcopy(params)
 
     optimizer = optax.adam(learning_rate=lr)
@@ -581,6 +582,15 @@ def get_parser():
                         help="Factor for determining min Neff")
 
     parser.add_argument('--no-delete', action='store_true')
+
+    parser.add_argument('--full-system', action='store_true')
+
+    parser.add_argument(
+        '--opt-keys',
+        nargs='*',  # Accept zero or more arguments
+        default=["stacking", "cross_stacking", "coaxial_stacking"],
+        help='Parameter keys to optimize'
+    )
 
     return parser
 
