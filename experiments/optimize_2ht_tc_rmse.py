@@ -74,6 +74,8 @@ def run(args):
     max_approx_iters = args['max_approx_iters']
     no_delete = args['no_delete']
 
+    opt_keys = args['opt_keys']
+
     full_system = args['full_system']
 
     # t_kelvin = utils.DEFAULT_TEMP
