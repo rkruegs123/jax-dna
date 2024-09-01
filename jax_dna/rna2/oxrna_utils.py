@@ -183,35 +183,35 @@ DEFAULT_VARIABLE_MAPPER = {
         "a_cross_1": "RNA_CRST_THETA1_A",
         "theta0_cross_1": "RNA_CRST_THETA1_T0",
         "delta_theta_star_cross_1": "RNA_CRST_THETA1_TS",
-        "b_cross_1": "RNA_THETA1_B",
+        "b_cross_1": "RNA_CRST_THETA1_B",
         "delta_theta_cross_1_c": "RNA_CRST_THETA1_TC",
 
         # f4(theta_2)
         "a_cross_2": "RNA_CRST_THETA2_A",
         "theta0_cross_2": "RNA_CRST_THETA2_T0",
         "delta_theta_star_cross_2": "RNA_CRST_THETA2_TS",
-        "b_cross_2": "RNA_THETA2_B",
+        "b_cross_2": "RNA_CRST_THETA2_B",
         "delta_theta_cross_2_c": "RNA_CRST_THETA2_TC",
 
         # f4(theta_3)
         "a_cross_3": "RNA_CRST_THETA3_A",
         "theta0_cross_3": "RNA_CRST_THETA3_T0",
         "delta_theta_star_cross_3": "RNA_CRST_THETA3_TS",
-        "b_cross_3": "RNA_THETA3_B",
+        "b_cross_3": "RNA_CRST_THETA3_B",
         "delta_theta_cross_3_c": "RNA_CRST_THETA3_TC",
 
         # f4(theta_7) + f4(pi - theta_7)
         "a_cross_7": "RNA_CRST_THETA7_A",
         "theta0_cross_7": "RNA_CRST_THETA7_T0",
         "delta_theta_star_cross_7": "RNA_CRST_THETA7_TS",
-        "b_cross_7": "RNA_THETA7_B",
+        "b_cross_7": "RNA_CRST_THETA7_B",
         "delta_theta_cross_7_c": "RNA_CRST_THETA7_TC",
 
         # f4(theta_8) + f4(pi - theta_8)
         "a_cross_8": "RNA_CRST_THETA8_A",
         "theta0_cross_8": "RNA_CRST_THETA8_T0",
         "delta_theta_star_cross_8": "RNA_CRST_THETA8_TS",
-        "b_cross_8": "RNA_THETA8_B",
+        "b_cross_8": "RNA_CRST_THETA8_B",
         "delta_theta_cross_8_c": "RNA_CRST_THETA8_TC"
     },
     "coaxial_stacking": {
