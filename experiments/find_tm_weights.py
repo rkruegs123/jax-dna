@@ -189,7 +189,7 @@ def run(args):
     # Plot trajectory of order parameters
     plt.plot(all_op_idxs)
     for i in range(n_sims):
-        plt.axvline(y=i*n_ref_states_per_sim, linestyle="--", color="red")
+        plt.axvline(x=i*n_ref_states_per_sim, linestyle="--", color="red")
     plt.savefig(initial_weights_dir / "op_trajectory.png")
     plt.clf()
 
