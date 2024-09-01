@@ -38,7 +38,7 @@ def run(args):
     dt = 5e-3
 
     extrapolate_temps = np.array([float(et) for et in args['extrapolate_temps']]) # in Kelvin
-    assert(jnp.all(extrapolate_temps[:-1] <= extrapolate_temps[1:])) # check that temps. are sorted
+    assert(np.all(extrapolate_temps[:-1] <= extrapolate_temps[1:])) # check that temps. are sorted
     n_extrap_temps = len(extrapolate_temps)
     extrapolate_kts = vmap(utils.get_kt)(extrapolate_temps)
     extrapolate_temp_str = ', '.join([f"{tc}K" for tc in extrapolate_temps])
