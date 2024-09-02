@@ -181,9 +181,15 @@ def run(args):
     bound_op_idxs_extended = onp.array(list(range(1, 1+n_bp)))
 
     def process_ops(unbiased_counts):
-        unbiased_unbound_counts = unbiased_counts[:, unbound_op_idxs_extended]
-        unbiased_bound_counts = unbiased_counts[:, bound_op_idxs_extended]
-        return jnp.concatenate([jnp.array([unbiased_unbound_counts.sum(axis=0)]), unbiased_bound_counts])
+
+        # Note: below wasn't working
+        # unbiased_unbound_counts = unbiased_counts[:, unbound_op_idxs_extended]
+        # unbiased_bound_counts = unbiased_counts[:, bound_op_idxs_extended]
+        # return jnp.concatenate([jnp.array([unbiased_unbound_counts.sum(axis=0)]), unbiased_bound_counts])
+
+        unbiased_unbound_count = unbiased_counts[unbound_op_idxs_extended].sum()
+        unbiased_bound_counts = unbiased_counts[bound_op_idxs_extended]
+        return jnp.concatenate([jnp.array([unbiased_unbound_count]), unbiased_bound_counts])
 
     max_seed_tries = 5
     seed_check_sample_freq = 10
@@ -559,7 +565,8 @@ def run(args):
         running_avg_iters = list()
         running_avg_tms = list()
         for running_avg_iter, running_avg_unb_counts in running_avg_mapper.items():
-            iter_unb_counts = process_ops(onp.array(running_avg_unb_counts))
+            # iter_unb_counts = process_ops(onp.array(running_avg_unb_counts))
+            iter_unb_counts = vmap(process_ops)(jnp.array(running_avg_unb_counts))
 
             iter_discrete_finfs = vmap(tm.compute_finf)(iter_unb_counts)
             iter_tm = tm.compute_tm(extrapolate_temps, iter_discrete_finfs)
@@ -572,7 +579,8 @@ def run(args):
         plt.clf()
 
         ## Compute final Tms and widths, log all, as well as time
-        all_unbiased_counts = process_ops(onp.array(all_unbiased_counts))
+        # all_unbiased_counts = process_ops(onp.array(all_unbiased_counts))
+        all_unbiased_counts = vmap(process_ops)(jnp.array(all_unbiased_counts))
         discrete_finfs = vmap(tm.compute_finf)(all_unbiased_counts)
 
         calc_tm = tm.compute_tm(extrapolate_temps, discrete_finfs)
@@ -681,7 +689,7 @@ def run(args):
                 return unb_counts.at[op_idx].add(weighted_add_term), None
 
             temp_unbiased_counts, _ = scan(unbias_scan_fn, jnp.zeros(num_ops), jnp.arange(n_ref_states))
-            temp_unbiased_counts_processed = process_ops(temp_unbiased_counts)
+            temp_unbiased_counts_processed = vmap(process_ops)(temp_unbiased_counts)
             temp_finfs = tm.compute_finf(temp_unbiased_counts_processed)
             return temp_finfs
 
