@@ -100,7 +100,7 @@ def traj_hist_running_avg_2d(traj_hist_files, n_bp, n_dist_thresholds, start_his
             t_unbound_count = unbound_unbiased_counts[t_idx].sum()
             t_bound_counts = bound_unbiased_counts[t_idx]
             t_unbiased_counts = jnp.concatenate([jnp.array([t_unbound_count]), t_bound_counts])
-            finf = compute_finf(m)
+            finf = compute_finf(t_unbiased_counts)
             finfs.append(finf)
         finfs = onp.array(finfs)
 
