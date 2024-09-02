@@ -320,7 +320,7 @@ def run(args):
         for r in range(n_sims):
             repeat_dir = iter_dir / f"r{r}"
             all_traj_hist_fpaths.append(repeat_dir / "traj_hist.dat")
-        all_running_tms, all_running_widths = tm.traj_hist_running_avg_1d(all_traj_hist_fpaths)
+        all_running_tms, all_running_widths = tm.traj_hist_running_avg_2d(all_traj_hist_fpaths, n_bp, n_dist_thresholds)
 
         plt.plot(all_running_tms)
         plt.xlabel("Iteration")
