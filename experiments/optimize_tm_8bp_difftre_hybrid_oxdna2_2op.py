@@ -156,7 +156,7 @@ def run(args):
     ## Process the weights information
     weights_df = pd.read_fwf(wfile_path, names=["op1", "op2", "weight"])
     num_ops = len(weights_df)
-    assert(len(weights_df.op1.unique()) == n_bp)
+    assert(len(weights_df.op1.unique()) == n_bp+1)
     n_dist_thresholds = len(weights_df.op2.unique())
     pair2idx = dict()
     idx2pair = dict()
