@@ -493,6 +493,7 @@ def run(args):
 
         ## Unbias counts for each temperature
         all_unbiased_counts = list()
+        all_unbiased_counts_ref = list()
         all_ops = list(zip(energy_df.op1.to_numpy(), energy_df.op2.to_numpy()))
         running_avg_min = 250
         running_avg_freq = 50
