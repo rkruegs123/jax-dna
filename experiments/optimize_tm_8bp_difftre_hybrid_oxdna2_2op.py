@@ -632,6 +632,12 @@ def run(args):
         all_op_weights = jnp.array(all_op_weights)
         all_op_idxs = jnp.array(all_op_idxs)
 
+        plt.plot(all_op_idxs)
+        for i in range(n_sims):
+            plt.axvline(x=i*n_ref_states_per_sim, linestyle="--", color="red")
+        plt.savefig(iter_dir / "op_trajectory.png")
+        plt.clf()
+
         if not no_archive:
             zip_file(str(iter_dir / "output.dat"), str(iter_dir / "output.dat.zip"))
             os.remove(str(iter_dir / "output.dat"))
