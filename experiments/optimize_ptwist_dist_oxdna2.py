@@ -551,7 +551,7 @@ def run(args):
         all_losses.append(loss)
         all_n_effs.append(n_eff)
         all_means.append(curr_mean)
-        all_vars.append(curr_vars)
+        all_vars.append(curr_var)
 
         if i % plot_every == 0 and i:
 
