@@ -419,6 +419,9 @@ def run(args):
         plt.clf()
 
 
+        ## Check uniformity across biased counts
+        fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+
         ### First, the periodic counts derived from the energy file(s)
         count_df = energy_df.groupby(['op1', 'op2', 'op_weight']).size().reset_index().rename(columns={0: "count"})
         op_names = list()

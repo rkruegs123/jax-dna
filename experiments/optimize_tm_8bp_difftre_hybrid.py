@@ -213,8 +213,8 @@ def run(args):
 
             if valid_seed is None:
                 raise RuntimeError(f"Could not find valid seed.")
-                
-            
+
+
             oxdna_utils.rewrite_input_file(
                 input_template_path, repeat_dir,
                 temp=f"{t_kelvin}K", steps=n_steps_per_sim,
@@ -287,9 +287,15 @@ def run(args):
         ref_states = utils.tree_stack(ref_states)
 
         ## Load the oxDNA energies
+        """
         energy_df_columns = [
             "time", "potential_energy", "kinetic_energy", "total_energy",
             "op_idx", "op", "op_weight"
+        ]
+        """
+        energy_df_columns = [
+            "time", "potential_energy", "acc_ratio_trans", "acc_ratio_rot",
+            "acc_ratio_vol", "op", "op_weight"
         ]
         energy_dfs = [pd.read_csv(iter_dir / f"r{r}" / "energy.dat", names=energy_df_columns,
                                   delim_whitespace=True)[1:] for r in range(n_sims)]
@@ -412,7 +418,7 @@ def run(args):
                 boltz_diff = jnp.exp(calc_energy/kT - calc_energy_temp/extrap_kt)
                 temp_unbiased_counts[op] += 1/op_weight * boltz_diff
 
-                
+
                 if rs_idx >= running_avg_min and rs_idx % running_avg_freq == 0:
                     if rs_idx not in running_avg_mapper:
                         running_avg_mapper[rs_idx] = [deepcopy(temp_unbiased_counts)]
@@ -471,7 +477,7 @@ def run(args):
         plt.title(f"Tm={ref_tm}, width={ref_width}")
         plt.savefig(iter_dir / "melting_curve.png")
         plt.clf()
-        
+
 
         end = time.time()
         analyze_time = end - start
