@@ -378,7 +378,7 @@ def run(args):
 
         xs_jaxopt = onp.linspace(mu_opt-4*sigma_opt, mu_opt+4*sigma_opt, 1000)
         ys_jaxopt = norm.pdf(xs_jaxopt, mu_opt, sigma_opt)
-        plt.plot(xs_jaxopt, ys_jaxopt, label=f"Curr fit, JAXopt (mu={onp.round(float(mu_opt), 3)}, sigma={onp.round(float(onp.sqrt(sigma_opt)), 3)})")
+        plt.plot(xs_jaxopt, ys_jaxopt, label=f"Curr fit, JAXopt (mu={onp.round(float(mu_opt), 3)}, sigma={onp.round(float(sigma_opt), 3)})")
 
         plt.legend()
         plt.savefig(iter_dir / "gaussian_fit.png")
