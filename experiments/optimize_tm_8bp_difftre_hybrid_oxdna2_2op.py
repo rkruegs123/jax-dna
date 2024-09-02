@@ -156,7 +156,7 @@ def run(args):
     ## Process the weights information
     weights_df = pd.read_fwf(wfile_path, names=["op1", "op2", "weight"])
     num_ops = len(weights_df)
-    n_stem_bp = len(weights_df.op1.unique())
+    assert(len(weights_df.op1.unique() == n_bp)
     n_dist_thresholds = len(weights_df.op2.unique())
     pair2idx = dict()
     idx2pair = dict()
@@ -320,7 +320,8 @@ def run(args):
         for r in range(n_sims):
             repeat_dir = iter_dir / f"r{r}"
             all_traj_hist_fpaths.append(repeat_dir / "traj_hist.dat")
-        all_running_tms, all_running_widths = tm.traj_hist_running_avg_2d(all_traj_hist_fpaths, n_bp, n_dist_thresholds)
+        all_running_tms, all_running_widths = tm.traj_hist_running_avg_2d(all_traj_hist_fpaths, n_bp, n_dist_thresholds,
+                                                                          start_hist_idx=10) # for debugging
 
         plt.plot(all_running_tms)
         plt.xlabel("Iteration")
