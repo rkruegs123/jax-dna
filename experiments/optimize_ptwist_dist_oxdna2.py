@@ -146,7 +146,7 @@ def run(args):
     grads_path = log_dir / "grads.txt"
     neff_path = log_dir / "neff.txt"
     mean_path = log_dir / "mean.txt"
-    std_path = log_dir / "std.txt"
+    var_path = log_dir / "var.txt"
     rel_diff_path = log_dir / "rel_diff.txt"
     angle_path = log_dir / "angle.txt"
     resample_log_path = log_dir / "resample_log.txt"
