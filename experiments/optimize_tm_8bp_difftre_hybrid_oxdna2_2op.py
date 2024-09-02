@@ -183,7 +183,7 @@ def run(args):
     def process_ops(unbiased_counts):
         unbiased_unbound_counts = unbiased_counts[:, unbound_op_idxs_extended]
         unbiased_bound_counts = unbiased_counts[:, bound_op_idxs_extended]
-        return jnp.concatenate([jnp.array([unbiased_unbound_counts.sum()]), unbiased_bound_counts])
+        return jnp.concatenate([jnp.array([unbiased_unbound_counts.sum(axis=0)]), unbiased_bound_counts])
 
     max_seed_tries = 5
     seed_check_sample_freq = 10
