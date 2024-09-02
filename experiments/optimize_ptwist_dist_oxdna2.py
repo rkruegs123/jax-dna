@@ -327,17 +327,17 @@ def run(args):
             energy_diffs.append(diff)
 
 
-        # Compute the pitches
+        # Compute the prop. twists
         analyze_start = time.time()
 
         ref_ptwists = compute_all_ptwists(traj_states)
 
-        running_avg = onp.cumsum(ref_ptwists) / onp.arange(1, n_traj_states + 1)
-        plt.plot(running_avg_pitches)
+        running_avg_ptwists = onp.cumsum(ref_ptwists) / onp.arange(1, n_traj_states + 1)
+        plt.plot(running_avg_ptwists)
         plt.savefig(iter_dir / f"running_avg.png")
         plt.clf()
 
-        plt.plot(running_avg_pitches[-int(n_traj_states // 2):])
+        plt.plot(running_avg_ptwists[-int(n_traj_states // 2):])
         plt.savefig(iter_dir / f"running_avg_second_half.png")
         plt.clf()
 
@@ -427,7 +427,7 @@ def run(args):
         denom = jnp.sum(boltzs)
         weights = boltzs / denom
 
-        # Compute the expected pitch
+        # Compute the expected ptwist
         expected_ptwist, expected_ptwist_var = compute_weighted_avg_and_var(ref_ptwists, weights)
 
         curr_kl_divergence = kl_divergence(target_mean, target_var, expected_ptwist, expected_ptwist_var)
