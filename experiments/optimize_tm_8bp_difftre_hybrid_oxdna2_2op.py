@@ -519,7 +519,7 @@ def run(args):
                 calc_energy_temp = energy_fn_temp(rs)
 
                 boltz_diff = jnp.exp(calc_energy/kT - calc_energy_temp/extrap_kt)
-                temp_unbiased_counts[op] += 1/op_weight * boltz_diff
+                temp_unbiased_counts[op_idx] += 1/op_weight * boltz_diff
 
 
                 if rs_idx >= running_avg_min and rs_idx % running_avg_freq == 0:
