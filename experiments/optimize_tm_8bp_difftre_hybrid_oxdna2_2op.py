@@ -689,9 +689,9 @@ def run(args):
                 return unb_counts.at[op_idx].add(weighted_add_term), None
 
             temp_unbiased_counts, _ = scan(unbias_scan_fn, jnp.zeros(num_ops), jnp.arange(n_ref_states))
-            temp_unbiased_counts_processed = vmap(process_ops)(temp_unbiased_counts)
-            temp_finfs = tm.compute_finf(temp_unbiased_counts_processed)
-            return temp_finfs
+            temp_unbiased_counts_processed = process_ops(temp_unbiased_counts)
+            temp_finf = tm.compute_finf(temp_unbiased_counts_processed)
+            return temp_finf
 
         finfs = vmap(compute_extrap_temp_finfs)(extrapolate_temps)
         curr_tm = tm.compute_tm(extrapolate_temps, finfs)
