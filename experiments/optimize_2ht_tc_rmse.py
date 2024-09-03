@@ -26,6 +26,7 @@ from jax_dna.common import utils, topology, trajectory, center_configuration, ch
 from jax_dna.rna2 import model, oxrna_utils
 from jax_dna.dna1.oxdna_utils import rewrite_input_file
 from jax_dna.rna2.load_params import read_seq_specific, DEFAULT_BASE_PARAMS, EMPTY_BASE_PARAMS
+import jax_dna.input.trajectory as jdt
 
 
 from jax.config import config
@@ -73,6 +74,7 @@ def run(args):
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
     no_delete = args['no_delete']
+    n_threads = args['n_threads']
 
     opt_keys = args['opt_keys']
 
@@ -242,11 +244,22 @@ def run(args):
 
         ## Load states from oxDNA simulation
         load_start = time.time()
+        """
         traj_info = trajectory.TrajectoryInfo(
             top_info, read_from_file=True,
             traj_path=traj_path,
             reverse_direction=False)
         traj_states = traj_info.get_states()
+        """
+        traj_ = jdt.from_file(
+            traj_path,
+            [seq_oh.shape[0]],
+            is_oxdna=False,
+            n_processes=n_threads
+        )
+        traj_states = [ns.to_rigid_body() for ns in traj_.states]
+
+
         n_traj_states = len(traj_states)
         traj_states = utils.tree_stack(traj_states)
         load_end = time.time()
@@ -593,6 +606,9 @@ def get_parser():
         default=["stacking", "cross_stacking", "coaxial_stacking"],
         help='Parameter keys to optimize'
     )
+
+    parser.add_argument('--n-threads', type=int, default=4,
+                        help="Number of threads for trajectory reading")
 
     return parser
 
