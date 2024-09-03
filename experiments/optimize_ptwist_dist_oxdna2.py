@@ -406,6 +406,8 @@ def run(args):
             zip_file(str(iter_dir / "output.dat"), str(iter_dir / "output.dat.zip"))
             os.remove(str(iter_dir / "output.dat"))
 
+        onp.save(iter_dir / "ptwists.npy", onp.array(ref_ptwists), allow_pickle=False)
+
         return traj_states, calc_energies, jnp.array(ref_ptwists), iter_dir
 
     # Construct the loss function
