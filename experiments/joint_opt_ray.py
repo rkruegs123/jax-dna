@@ -1114,7 +1114,7 @@ def run(args):
 
     start = time.time()
     prev_ref_basedir = None
-    stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, ref_iter_dir = get_ref_states(params, i=0, seed=30362, prev_states_force=None, prev_states_torque=None, prev_basedir=pref_ref_basedir)
+    stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, ref_iter_dir = get_ref_states(params, i=0, seed=30362, prev_states_force=None, prev_states_torque=None, prev_basedir=prev_ref_basedir)
     prev_ref_basedir = deepcopy(ref_iter_dir)
     end = time.time()
     with open(resample_log_path, "a") as f:
@@ -1147,7 +1147,7 @@ def run(args):
                 f.write(f"- min n_eff was {n_effs.min()}...")
 
             start = time.time()
-            stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_states_force=prev_last_states_force, prev_states_torque=prev_last_states_torque, prev_basedir=pref_ref_basedir)
+            stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_states_force=prev_last_states_force, prev_states_torque=prev_last_states_torque, prev_basedir=prev_ref_basedir)
             end = time.time()
             prev_ref_basedir = deepcopy(ref_iter_dir)
             with open(resample_log_path, "a") as f:
