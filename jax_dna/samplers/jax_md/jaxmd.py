@@ -1,6 +1,7 @@
 """A sampler based on running a jax_md simulation routine."""
 
 from collections.abc import Callable
+import functools
 from typing import Any
 
 import jax
@@ -90,6 +91,12 @@ def _build_run_fn(
             neighbors = neighbors.update(state.position.center)
 
             return (state, neighbors), state.position
+
+        scan_fn = jax.lax.scan if simulator_params.checkpoint_every <= 0 else functools.partial(jaxmd_utils.checkpoint_scan, checkpoint_every=simulator_params.checkpoint_every)
+
+
+
+
 
 
 def _validate_input_config(input_config: dict[str, Any]) -> None:
