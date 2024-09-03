@@ -24,7 +24,7 @@ from jax_md import space, rigid_body
 import optax
 
 from jax_dna.common.read_seq_specific import read_ss_oxdna
-from jax_dna.common import utils, topology, trajectory, checkpoint
+from jax_dna.common import utils, topology, trajectory, checkpoint, center_configuration
 from jax_dna.dna2 import model, lammps_utils
 import jax_dna.input.trajectory as jdt
 from jax_dna.dna1.oxdna_utils import rewrite_input_file
