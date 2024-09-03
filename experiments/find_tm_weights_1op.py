@@ -280,7 +280,7 @@ def run(args):
     all_weights = list()
     for i in range(n_sims):
         repeat_dir = check_weights_dir / f"r{i}"
-        data = onp.array(pd.read_fwf(repeat_dir / "energy.dat", header=None)[[5, 6, 7]])
+        data = onp.array(pd.read_fwf(repeat_dir / "energy.dat", header=None)[[5, 6]])
 
         for j in range(data.shape[0]):
             op = data[j][0]
