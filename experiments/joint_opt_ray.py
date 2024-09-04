@@ -291,7 +291,7 @@ def run(args):
 
         all_repeat_dirs = list()
         for r in range(n_sims_struc):
-            repeat_dir = struc_dir / / f"r{r}"
+            repeat_dir = struc_dir / f"r{r}"
             repeat_dir.mkdir(parents=False, exist_ok=False)
 
             all_repeat_dirs.append(repeat_dir)
