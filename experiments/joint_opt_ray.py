@@ -291,7 +291,7 @@ def run(args):
 
         all_repeat_dirs = list()
         for r in range(n_sims_struc):
-            repeat_dir = struc_dir / f"r{r}"
+            repeat_dir = struc_dir / "struc" / f"r{r}"
             repeat_dir.mkdir(parents=False, exist_ok=False)
 
             all_repeat_dirs.append(repeat_dir)
@@ -986,6 +986,12 @@ def run(args):
         # Run the simulations
         stretch_tors_tasks, all_sim_dirs = get_stretch_tors_tasks(iter_dir, params, prev_states_force, prev_states_torque)
         struc_tasks, all_sim_dirs_struc = get_struc_tasks(iter_dir, params, prev_basedir)
+
+        ## Archive the previous basedir now that we've loaded states from it
+        if not no_archive:
+            shutil.make_archive(prev_basedir, 'zip', prev_basedir)
+            shutil.rmtree(prev_basedir)
+
         all_ret_info = ray.get(stretch_tors_tasks)
         all_ret_info_struc = ray.get(struc_tasks) # FIXME: for now, not doing anything with this! Just want to run the simulations and see them. Then, we do analysis and what not.
 
@@ -1010,10 +1016,6 @@ def run(args):
 
         stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states = process_stretch_tors(iter_dir, params)
 
-        # Archive the iteration directory and delete the unzipped version
-        if not no_archive:
-            shutil.make_archive(iter_dir, 'zip', iter_dir)
-            shutil.rmtree(iter_dir)
 
         return stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states, iter_dir
 
