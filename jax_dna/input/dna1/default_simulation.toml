@@ -5,3 +5,5 @@ diff_coef = 2.5
 rot_diff_coef = 7.5
 nucleotide_mass = 1.0
 moment_of_inertia = [1.0, 1.0, 1.0]
+n_steps = 100
+checkpoint_interval = 0

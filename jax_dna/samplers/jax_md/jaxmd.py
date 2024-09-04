@@ -1,13 +1,15 @@
 """A sampler based on running a jax_md simulation routine."""
 
-from collections.abc import Callable
 import functools
-from typing import Any
+from collections.abc import Callable
 
+import chex
 import jax
+import jax.numpy as jnp
 import jax_md
 
-import jax_dna.energy as jd_energy
+import jax_dna.energy.base as jd_energy_fn
+import jax_dna.energy.configuration as jd_energy_cnfg
 import jax_dna.input.trajectory as jd_traj
 import jax_dna.samplers.jax_md.utils as jaxmd_utils
 
@@ -21,60 +23,77 @@ REQUIRED_KEYS = {
 
 ERR_MISSING_REQUIRED_KEYS = "Missing required keys: {}"
 
-SIM_STATE = tuple[jax_md.simulate.SimulationState, jaxmd_utils.NeighborHelper]
+SIM_STATE = tuple[jaxmd_utils.SimulationState, jaxmd_utils.NeighborHelper]
 
 
-def run(
-    params: dict[str, Any],
-    input_config: dict[str, Any],
-) -> tuple[jd_traj.Trajectory, dict[str, Any]]:
-    """Run a jax_md simulation."""
-    _ = params
+@chex.dataclass
+class JaxMDSampler:
+    """A sampler based on running a jax_md simulation routine."""
 
-    _validate_input_config(input_config)
+    energy_configs: list[jd_energy_cnfg.BaseConfiguration]
+    energy_fns: list[jd_energy_fn.BaseEnergyFunction]
+    simulator_params: jaxmd_utils.StaticSimulatorParams
+    space: jax_md.space.Space
+    transform_fn: Callable
+    simulator_init: Callable[[Callable, Callable], jax_md.simulate.Simulator]
+    neighbors: jaxmd_utils.NeighborHelper
 
-    # load input files
+    def __post_init__(self) -> None:
+        """Builds the run function using the provided parameters."""
+        self.run = build_sim_fn(
+            self.energy_configs,
+            self.energy_fns,
+            self.simulator_params,
+            self.space,
+            self.transform_fn,
+            self.simulator_init,
+            self.neighbors,
+        )
 
-    # run simulation
 
-    # return trajectory and metadata when done
-
-
-def _build_run_fn(
-    energy_configs: list[jd_energy.base.BaseEnergyConfiguration],
-    energy_fns: list[jd_energy.base.BaseEnergyFunction],
+def build_sim_fn(
+    energy_configs: list[jd_energy_cnfg.BaseConfiguration],
+    energy_fns: list[jd_energy_fn.BaseEnergyFunction],
     simulator_params: jaxmd_utils.StaticSimulatorParams,
     space: jax_md.space.Space,
     transform_fn: Callable,
     simulator_init: Callable[[Callable, Callable], jax_md.simulate.Simulator],
-    key: jax.random.PRNGKey,
-) -> Callable[[dict[str, float]], jd_traj.Trajectory]:
+    neighbors: jaxmd_utils.NeighborHelper,
+) -> Callable[[dict[str, float], jax_md.rigid_body.RigidBody, int, jax.random.PRNGKey], jd_traj.Trajectory]:
+    """Builds the run function for the jax_md simulation."""
     displacement_fn, shift_fn = space
+    scan_fn = (
+        jax.lax.scan
+        if simulator_params.checkpoint_every <= 0
+        else functools.partial(jaxmd_utils.checkpoint_scan, checkpoint_every=simulator_params.checkpoint_every)
+    )
 
-    # if there isn't a dynamic neighbor list, we can just use the static one
-    # which ends up being something like top_info.unbonded_nbrs.T
-    neighbors = jaxmd_utils.NeighborHelper()
-
-    def run_fn(opt_params: dict[str, float]) -> jd_traj.Trajectory:
+    def run_fn(
+        opt_params: dict[str, float],
+        init_body: jax_md.rigid_body.RigidBody,
+        n_steps: int,
+        key: jax.random.PRNGKey,
+    ) -> jd_traj.Trajectory:
         # The  energy function configuration init calls need to happen inside the function
         # so that if the gradient is calculated for this run it will be tracked
         transformed_fns = [
-            energy_fn(
+            e_fn(
                 displacement_fn=displacement_fn,
-                params=(config | param).init_params(),
+                params=(e_c | param).init_params(),
             )
-            for param, config, energy_fn in zip(opt_params, energy_configs, energy_fns, strict=True)
+            for param, e_c, e_fn in zip(opt_params, energy_configs, energy_fns, strict=True)
         ]
 
-        energy_fn = jd_energy.ComposedEnergyFunction(
-            transformed_fns,
+        energy_fn = jd_energy_fn.ComposedEnergyFunction(
+            energy_fns=transformed_fns,
             rigid_body_transform_fn=transform_fn,
         )
 
-        init_fn, step_fn = simulator_init(energy_fn, shift_fn)
+        init_fn, step_fn = simulator_init(energy_fn, shift_fn, **simulator_params.sim_init_fn)
 
-        init_state = init_fn(  # noqa: F841, temp
+        init_state = init_fn(
             key=key,
+            R=init_body,
             unbonded_neighbors=neighbors.idx,
             **simulator_params.init_fn,
         )
@@ -92,14 +111,8 @@ def _build_run_fn(
 
             return (state, neighbors), state.position
 
-        scan_fn = jax.lax.scan if simulator_params.checkpoint_every <= 0 else functools.partial(jaxmd_utils.checkpoint_scan, checkpoint_every=simulator_params.checkpoint_every)
+        _, trajectory = scan_fn(apply_fn, (init_state, neighbors), jnp.arange(n_steps))
 
+        return trajectory
 
-
-
-
-
-def _validate_input_config(input_config: dict[str, Any]) -> None:
-    missing_keys = REQUIRED_KEYS - input_config.keys()
-    if missing_keys:
-        raise ValueError(ERR_MISSING_REQUIRED_KEYS.format(missing_keys))
+    return run_fn
