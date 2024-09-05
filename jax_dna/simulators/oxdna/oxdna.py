@@ -38,8 +38,8 @@ class oxDNASimulator:  # noqa: N801 oxDNA is a special word
         input_directory:str,
     ) -> jd_traj.Trajectory:
         """Run an oxDNA simulation."""
-        # get the output file location from the input file
-        # run oxDNA from the target directory
+        # get the output file location from the input file, called "trajectory_file"
+        # run oxDNA from the target directory, assume that an env var
         # read the output trajectory file
         # return the trajectory
 
