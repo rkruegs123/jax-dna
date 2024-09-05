@@ -29,6 +29,21 @@ OXDNA_TOPOLOGY_FILE_KEY = "topology"
 class oxDNASimulator:  # noqa: N801 oxDNA is a special word
     """A sampler base on running an oxDNA simulation."""
 
+    oxdna_bin: Path
+
+    def __post_init__(self) -> None:
+        """Build the run function using the provided parameters."""
+
+    def run(
+        input_directory:str,
+    ) -> jd_traj.Trajectory:
+        """Run an oxDNA simulation."""
+        # get the output file location from the input file
+        # run oxDNA from the target directory
+        # read the output trajectory file
+        # return the trajectory
+
+
 
 def run(
     input_config: dict[str, Any], meta: dict[str, Any], params: dict[str, Any]

@@ -11,7 +11,7 @@ import jax_md
 import jax_dna.energy.base as jd_energy_fn
 import jax_dna.energy.configuration as jd_energy_cnfg
 import jax_dna.input.trajectory as jd_traj
-import jax_dna.samplers.jax_md.utils as jaxmd_utils
+import jax_dna.simulators.jax_md.utils as jaxmd_utils
 
 REQUIRED_KEYS = {
     "track_gradients",
@@ -27,7 +27,7 @@ SIM_STATE = tuple[jaxmd_utils.SimulationState, jaxmd_utils.NeighborHelper]
 
 
 @chex.dataclass
-class JaxMDSampler:
+class JaxMDSimulator:
     """A sampler based on running a jax_md simulation routine."""
 
     energy_configs: list[jd_energy_cnfg.BaseConfiguration]
