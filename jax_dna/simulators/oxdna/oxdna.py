@@ -7,6 +7,8 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+import chex
+
 import jax_dna.input.topology as jd_top
 import jax_dna.input.trajectory as jd_traj
 
@@ -21,6 +23,11 @@ ERR_INPUT_FILE_NOT_FOUND = "Input file not found: {}"
 ERR_OXDNA_FAILED = "OXDNA simulation failed"
 OXDNA_TRAJECTORY_FILE_KEY = "trajectory_file"
 OXDNA_TOPOLOGY_FILE_KEY = "topology"
+
+
+@chex.dataclass
+class oxDNASimulator:  # noqa: N801 oxDNA is a special word
+    """A sampler base on running an oxDNA simulation."""
 
 
 def run(

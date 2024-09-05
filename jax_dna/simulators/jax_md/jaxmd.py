@@ -40,7 +40,7 @@ class JaxMDSampler:
 
     def __post_init__(self) -> None:
         """Builds the run function using the provided parameters."""
-        self.run = build_sim_fn(
+        self.run = build_run_fn(
             self.energy_configs,
             self.energy_fns,
             self.simulator_params,
@@ -51,7 +51,7 @@ class JaxMDSampler:
         )
 
 
-def build_sim_fn(
+def build_run_fn(
     energy_configs: list[jd_energy_cnfg.BaseConfiguration],
     energy_fns: list[jd_energy_fn.BaseEnergyFunction],
     simulator_params: jaxmd_utils.StaticSimulatorParams,

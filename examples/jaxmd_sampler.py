@@ -33,6 +33,7 @@ if __name__=="__main__":
     displacement_fn, shift_fn = jax_md.space.free()
     key = jax.random.PRNGKey(0)
 
+    # change to R
     init_body = traj.states[0].to_rigid_body()
 
     dt = experiment_config["dt"]
@@ -104,9 +105,22 @@ if __name__=="__main__":
         neighbors=jmd.NoNeighborList(unbonded_nbrs=top.unbonded_neighbors),
     )
 
-    print(sampler.run(
-        opt_params,
-        init_body,
-        experiment_config["n_steps"],
-        key,
-    ))
+
+
+
+
+    # fn = jax.jit(lambda opts: sampler.run(opts, init_body, experiment_config["n_steps"], key))
+
+
+
+    # jax.grad(lambda opts: loss(fn(opts), target))
+
+    # def loss_fn(trajectory, target) -> float:
+    #     return trajectory - target
+
+    # grad_fn = jax.jit(jax.grad(lambda opts: loss_fn(opts, sim_fn)))
+
+
+    # graddable_fn = lambda op: sampler.run(op, init_body, experiment_config["n_steps"], key).center.sum()
+    # grad_fn = jax.jit(jax.grad(graddable_fn))
+    # print(grad_fn(opt_params))
