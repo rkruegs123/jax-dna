@@ -988,7 +988,7 @@ def run(args):
         struc_tasks, all_sim_dirs_struc = get_struc_tasks(iter_dir, params, prev_basedir)
 
         ## Archive the previous basedir now that we've loaded states from it
-        if not no_archive:
+        if not no_archive and prev_basedir is not None:
             shutil.make_archive(prev_basedir, 'zip', prev_basedir)
             shutil.rmtree(prev_basedir)
 
