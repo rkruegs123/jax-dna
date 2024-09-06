@@ -76,7 +76,8 @@ def run(args):
     no_delete = args['no_delete']
     n_threads = args['n_threads']
 
-    opt_keys = args['opt_keys']
+    seq_avg_opt_keys = args['seq_avg_opt_keys']
+    opt_seq_dep_stacking = args['opt_seq_dep_stacking']
 
     full_system = args['full_system']
 
@@ -166,7 +167,11 @@ def run(args):
 
             seq_dep_path = repeat_dir / "rna_sequence_dependent_parameters.txt"
             # shutil.copy(ss_path, seq_dep_path)
-            oxrna_utils.write_seq_specific(seq_dep_path, params, ss_hb_weights, ss_stack_weights, ss_cross_weights)
+            if "stacking" in params["seq_dep"]:
+                curr_stack_weights = params["seq_dep"]["stacking"]
+            else:
+                curr_stack_weights = ss_stack_weights
+            oxrna_utils.write_seq_specific(seq_dep_path, params["seq_avg"], ss_hb_weights, curr_stack_weights, ss_cross_weights)
 
             if prev_basedir is None:
                 init_conf_info = deepcopy(centered_conf_info)
@@ -185,7 +190,7 @@ def run(args):
             init_conf_info.write(repeat_dir / "init.conf", reverse=False, write_topology=False)
 
             external_model_fpath = repeat_dir / "external_model.txt"
-            oxrna_utils.write_external_model(params, t_kelvin, salt_conc, external_model_fpath)
+            oxrna_utils.write_external_model(params["seq_avg"], t_kelvin, salt_conc, external_model_fpath)
 
             split_energy_path = str(repeat_dir / "split_energy.dat")
             observables_str = default_observables_str.replace("split_energy.dat", split_energy_path)
@@ -282,8 +287,10 @@ def run(args):
 
         ## Generate an energy function
         em = model.EnergyModel(
-            displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_conc,
-            ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
+            displacement_fn, params["seq_avg"], t_kelvin=t_kelvin, salt_conc=salt_conc,
+            ss_hb_weights=ss_hb_weights,
+            # ss_stack_weights=ss_stack_weights)
+            ss_stack_weights=curr_stack_weights)
         energy_fn = lambda body: em.energy_fn(
             body,
             seq=seq_oh,
@@ -456,9 +463,16 @@ def run(args):
     # Construct the loss function
     @jit
     def loss_fn(params, ref_states, ref_energies, unweighted_rmses):
+        if "stacking" in params["seq_dep"]:
+            curr_stack_weights = params["seq_dep"]["stacking"]
+        else:
+            curr_stack_weights = ss_stack_weights
+        oxrna_utils.write_seq_specific(seq_dep_path, params["seq_avg"], ss_hb_weights, curr_stack_weights, ss_cross_weights)
         em = model.EnergyModel(
-            displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_conc,
-            ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
+            displacement_fn, params["seq_avg"], t_kelvin=t_kelvin, salt_conc=salt_conc,
+            ss_hb_weights=ss_hb_weights,
+            # ss_stack_weights=ss_stack_weights)
+            ss_stack_weights=curr_stack_weights)
         energy_fn = lambda body: em.energy_fn(
             body,
             seq=seq_oh,
@@ -481,13 +495,12 @@ def run(args):
     grad_fn = jit(grad_fn)
 
     # Initialize parameters
-    # params = deepcopy(EMPTY_BASE_PARAMS)
-    # params["coaxial_stacking"] = DEFAULT_BASE_PARAMS["coaxial_stacking"]
-    # params["cross_stacking"] = DEFAULT_BASE_PARAMS["cross_stacking"]
-    # params["stacking"] = DEFAULT_BASE_PARAMS["stacking"]
-    params = deepcopy(EMPTY_BASE_PARAMS)
-    for opt_key in opt_keys:
-        params[opt_key] = deepcopy(DEFAULT_BASE_PARAMS[opt_key])
+    seq_avg_params = deepcopy(EMPTY_BASE_PARAMS)
+    for opt_key in seq_avg_opt_keys:
+        seq_avg_params[opt_key] = deepcopy(DEFAULT_BASE_PARAMS[opt_key])
+    params = {"seq_avg": seq_avg_params, "seq_dep": dict()}
+    if opt_seq_dep_stacking:
+        params["seq_dep"]["stacking"] = jnp.array(ss_stack_weights)
 
     init_params = deepcopy(params)
 
@@ -601,11 +614,12 @@ def get_parser():
     parser.add_argument('--full-system', action='store_true')
 
     parser.add_argument(
-        '--opt-keys',
+        '--seq-avg-opt-keys',
         nargs='*',  # Accept zero or more arguments
         default=["stacking", "cross_stacking", "coaxial_stacking"],
         help='Parameter keys to optimize'
     )
+    parser.add_argument('--opt-seq-dep-stacking', action='store_true')
 
     parser.add_argument('--n-threads', type=int, default=4,
                         help="Number of threads for trajectory reading")
