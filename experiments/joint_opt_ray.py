@@ -30,6 +30,7 @@ import jax_dna.input.trajectory as jdt
 from jax_dna.dna1.oxdna_utils import rewrite_input_file
 from jax_dna.dna2.oxdna_utils import recompile_oxdna
 from jax_dna.dna1 import model as model1
+from jax_dna.loss import pitch, pitch2
 
 
 if "ip_head" in os.environ:
@@ -238,6 +239,7 @@ def run(args):
     s_eff_path = log_dir / "s_eff.txt"
     c_path = log_dir / "c.txt"
     g_path = log_dir / "g.txt"
+    pitch_path = log_dir / "pitch.txt"
     resample_log_path = log_dir / "resample_log.txt"
     iter_params_path = log_dir / "iter_params.txt"
     warnings_path = log_dir / "warnings.txt"
@@ -329,7 +331,121 @@ def run(args):
         struc_tasks = [run_oxdna_ray.remote(oxdna_exec_path, rdir) for rdir in all_repeat_dirs]
         return struc_tasks, all_repeat_dirs
 
+    def process_struc(iter_dir, params):
+        struc_dir = iter_dir / "struc"
+        combine_cmd = "cat "
+        for r in range(n_sims_struc):
+            repeat_dir = struc_dir / f"r{r}"
+            combine_cmd += f"{repeat_dir}/output.dat "
+        combine_cmd += f"> {struc_dir}/output.dat"
+        combine_proc = subprocess.run(combine_cmd, shell=True)
+        if combine_proc.returncode != 0:
+            raise RuntimeError(f"Combining trajectories failed with error code: {combine_proc.returncode}")
 
+        if not no_delete:
+            files_to_remove = ["output.dat"]
+            for r in range(n_sims_struc):
+                repeat_dir = struc_dir / f"r{r}"
+                for f_stem in files_to_remove:
+                    file_to_rem = repeat_dir / f_stem
+                    file_to_rem.unlink()
+
+
+        # Analyze
+
+        ## Load states from oxDNA simulation
+        load_start = time.time()
+        traj_info = trajectory.TrajectoryInfo(
+            top_info, read_from_file=True,
+            traj_path=struc_dir / "output.dat",
+            # reverse_direction=True)
+            reverse_direction=False)
+        traj_states = traj_info.get_states()
+        n_traj_states = len(traj_states)
+        traj_states = utils.tree_stack(traj_states)
+        load_end = time.time()
+
+        ## Load the oxDNA energies
+
+        energy_df_columns = ["time", "potential_energy", "kinetic_energy", "total_energy"]
+        energy_dfs = [pd.read_csv(iter_dir / f"r{r}" / "energy.dat", names=energy_df_columns,
+                                  delim_whitespace=True)[1:] for r in range(n_sims_struc)]
+        energy_df = pd.concat(energy_dfs, ignore_index=True)
+
+        ## Generate an energy function
+        em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin_struc)
+        energy_fn = lambda body: em.energy_fn(
+            body,
+            seq=seq_oh_struc,
+            bonded_nbrs=top_info_struc.bonded_nbrs,
+            unbonded_nbrs=top_info_struc.unbonded_nbrs.T,
+            is_end=top_info_struc.is_end
+        )
+        energy_fn = jit(energy_fn)
+
+        # Check energies
+
+        calc_start = time.time()
+        energy_scan_fn = lambda state, ts: (None, energy_fn(ts))
+        _, calc_energies = scan(energy_scan_fn, None, traj_states)
+        calc_end = time.time()
+
+        gt_energies = energy_df.potential_energy.to_numpy() * seq_oh_struc.shape[0]
+
+        energy_diffs = list()
+        for i, (calc, gt) in enumerate(zip(calc_energies, gt_energies)):
+            diff = onp.abs(calc - gt)
+            energy_diffs.append(diff)
+
+
+        # Compute the pitches
+        analyze_start = time.time()
+
+        n_quartets = quartets_struc.shape[0]
+        ref_avg_angles = list()
+        for rs_idx in range(n_traj_states):
+            body = traj_states[rs_idx]
+            angles = pitch2.get_all_angles(body, quartets_struc, displacement_fn, model.com_to_hb, model1.com_to_backbone, 0.0)
+            state_avg_angle = onp.mean(angles)
+            ref_avg_angles.append(state_avg_angle)
+        ref_avg_angles = onp.array(ref_avg_angles)
+
+        running_avg_angles = onp.cumsum(ref_avg_angles) / onp.arange(1, n_traj_states + 1)
+        running_avg_pitches = 2*onp.pi / running_avg_angles
+        plt.plot(running_avg_pitches)
+        plt.savefig(struc_dir / f"running_avg.png")
+        plt.clf()
+
+        plt.plot(running_avg_pitches[-int(n_traj_states // 2):])
+        plt.savefig(struc_dir / f"running_avg_second_half.png")
+        plt.clf()
+
+        # Plot the energies
+        sns.distplot(calc_energies, label="Calculated", color="red")
+        sns.distplot(gt_energies, label="Reference", color="green")
+        plt.legend()
+        plt.savefig(struc_dir / f"energies.png")
+        plt.clf()
+
+        # Plot the energy differences
+        sns.histplot(energy_diffs)
+        plt.savefig(struc_dir / f"energy_diffs.png")
+        plt.clf()
+
+        # Record the loss
+        with open(struc_dir / "summary.txt", "w+") as f:
+            f.write(f"Mean energy diff: {onp.mean(energy_diffs)}\n")
+            f.write(f"Calc. energy var.: {onp.var(calc_energies)}\n")
+            f.write(f"Ref. energy var.: {onp.var(gt_energies)}\n")
+            f.write(f"Pitch: {2*onp.pi / onp.mean(ref_avg_angles)} bp\n")
+
+        if not no_archive:
+            zip_file(str(struc_dir / "output.dat"), str(struc_dir / "output.dat.zip"))
+            os.remove(str(struc_dir / "output.dat"))
+
+        ref_info = (traj_states, calc_energies, jnp.array(ref_avg_angles))
+
+        return ref_info
 
     ## Setup LAMMPS stretch/torsionn system
     sys_basedir = Path("data/templates/lammps-stretch-tors")
@@ -971,7 +1087,7 @@ def run(args):
         ref_info = (all_force_t0_traj_states, all_force_t0_calc_energies, all_force_t0_distances,
                     all_force_t0_thetas, all_f2_torque_traj_states, all_f2_torque_calc_energies,
                     all_f2_torque_distances, all_f2_torque_thetas)
-        return ref_info, all_force_t0_last_states, all_f2_torque_last_states
+o        return ref_info, all_force_t0_last_states, all_f2_torque_last_states
 
 
 
@@ -1014,13 +1130,40 @@ def run(args):
                 raise RuntimeError(f"oxDNA simulation at path {rdir} failed with error code: {rc}")
 
 
+        struc_ref_info = process_struc(iter_dir, params)
         stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states = process_stretch_tors(iter_dir, params)
 
 
-        return stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states, iter_dir
+        return stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states, struc_ref_info, iter_dir
 
     @jit
-    def loss_fn(params, stretch_tors_ref_info):
+    def loss_fn(params, stretch_tors_ref_info, struc_ref_info):
+
+        # Pitch
+        ref_states, ref_energies, ref_avg_angles = struc_ref_info
+        em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin_struc)
+
+        energy_fn = lambda body: em.energy_fn(body,
+                                              seq=seq_oh_struc,
+                                              bonded_nbrs=top_info_struc.bonded_nbrs,
+                                              unbonded_nbrs=top_info_struc.unbonded_nbrs.T,
+                                              is_end=top_info_struc.is_end)
+        energy_fn = jit(energy_fn)
+        new_energies = vmap(energy_fn)(ref_states)
+        diffs = new_energies - ref_energies # element-wise subtraction
+        boltzs = jnp.exp(-beta_struc * diffs)
+        denom = jnp.sum(boltzs)
+        weights = boltzs / denom
+
+        expected_angle = jnp.dot(weights, ref_avg_angles)
+        expected_pitch = 2*jnp.pi / expected_angle
+        mse = (expected_pitch - target_pitch)**2
+        rmse_pitch = jnp.sqrt(mse)
+
+        n_eff_pitch = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
+
+
+        # Stretch-torsion
 
         all_ref_states_f, all_ref_energies_f, all_ref_dists_f, all_ref_thetas_f, all_ref_states_t, all_ref_energies_t, all_ref_dists_t, all_ref_thetas_t = stretch_tors_ref_info
 
@@ -1081,7 +1224,7 @@ def run(args):
 
         rmse = s_eff_coeff*rmse_s_eff + c_coeff*rmse_c + g_coeff*rmse_g
 
-        return rmse, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g)
+        return rmse, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -1116,7 +1259,7 @@ def run(args):
 
     start = time.time()
     prev_ref_basedir = None
-    stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, ref_iter_dir = get_ref_states(params, i=0, seed=30362, prev_states_force=None, prev_states_torque=None, prev_basedir=prev_ref_basedir)
+    stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, struc_ref_info, ref_iter_dir = get_ref_states(params, i=0, seed=30362, prev_states_force=None, prev_states_torque=None, prev_basedir=prev_ref_basedir)
     prev_ref_basedir = deepcopy(ref_iter_dir)
     end = time.time()
     with open(resample_log_path, "a") as f:
@@ -1125,7 +1268,7 @@ def run(args):
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
-        (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g)), grads = grad_fn(params, stretch_tors_ref_info)
+        (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info)
         num_resample_iters += 1
 
         if i == 0:
@@ -1149,13 +1292,13 @@ def run(args):
                 f.write(f"- min n_eff was {n_effs.min()}...")
 
             start = time.time()
-            stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_states_force=prev_last_states_force, prev_states_torque=prev_last_states_torque, prev_basedir=prev_ref_basedir)
+            stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, struc_ref_info, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_states_force=prev_last_states_force, prev_states_torque=prev_last_states_torque, prev_basedir=prev_ref_basedir)
             end = time.time()
             prev_ref_basedir = deepcopy(ref_iter_dir)
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
 
-            (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g)), grads = grad_fn(params, stretch_tors_ref_info)
+            (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
@@ -1166,6 +1309,8 @@ def run(args):
         iter_end = time.time()
 
 
+        with open(pitch_path, "a") as f:
+            f.write(f"{expected_pitch}\n")
         with open(g_path, "a") as f:
             f.write(f"{g}\n")
         with open(s_eff_path, "a") as f:
