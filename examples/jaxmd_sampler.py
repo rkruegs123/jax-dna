@@ -86,7 +86,7 @@ if __name__=="__main__":
     ]
 
 
-    sampler = jmd.JaxMDSampler(
+    sampler = jmd.JaxMDSimulator(
         energy_configs=configs,
         energy_fns=energy_fns,
         simulator_params=jmd.StaticSimulatorParams(
@@ -106,10 +106,9 @@ if __name__=="__main__":
     )
 
 
-
-
-
-    # fn = jax.jit(lambda opts: sampler.run(opts, init_body, experiment_config["n_steps"], key))
+    fn = jax.jit(lambda opts: sampler.run(opts, init_body, experiment_config["n_steps"], key))
+    opt_params = [c.opt_params for c in configs]
+    print(fn(opt_params))
 
 
 
