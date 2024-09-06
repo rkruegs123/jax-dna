@@ -10,7 +10,7 @@ import jax_dna.energy.dna1 as dna1_energy
 import jax_dna.energy.base as jdna_energy
 import jax_dna.energy.configuration as jdna_energy_config
 import jax_dna.utils.types as jdt
-import jax_dna.samplers.jax_md as jmd
+import jax_dna.simulators.jax_md as jmd
 
 jax.config.update("jax_enable_x64", True)
 
