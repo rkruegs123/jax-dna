@@ -116,7 +116,7 @@ def run(args):
         f.write(params_str)
 
     # Load the system
-    sys_basedir = Path("data/templates/tm-8bp")
+    sys_basedir = Path("data/templates/tm-8bp-rna")
     input_template_path = sys_basedir / "input"
 
     weight_path = sys_basedir / "wfile.txt"
