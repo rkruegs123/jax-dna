@@ -356,7 +356,7 @@ def run(args):
         ## Load states from oxDNA simulation
         load_start = time.time()
         traj_info = trajectory.TrajectoryInfo(
-            top_info, read_from_file=True,
+            top_info_struc, read_from_file=True,
             traj_path=struc_dir / "output.dat",
             # reverse_direction=True)
             reverse_direction=False)
