@@ -301,7 +301,7 @@ def run(args):
             if prev_basedir is None:
                 init_conf_info = deepcopy(centered_conf_info)
             else:
-                prev_repeat_dir = prev_basedir / f"r{r}"
+                prev_repeat_dir = prev_basedir / "struc" / f"r{r}"
                 prev_lastconf_path = prev_repeat_dir / "last_conf.dat"
                 prev_lastconf_info = trajectory.TrajectoryInfo(
                     top_info_struc,
