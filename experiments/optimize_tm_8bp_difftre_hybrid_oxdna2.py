@@ -80,6 +80,13 @@ def run(args):
     plot_every = args['plot_every']
     save_obj_every = args['save_obj_every']
 
+    opt_width = args['opt_width']
+    width_coeff = int(opt_width)
+    opt_tm = not args['no_opt_tm']
+    tm_coeff = int(opt_tm)
+    assert(opt_width or opt_tm)
+    target_width = args['target_width']
+
 
     # Setup the logging directory
     if run_name is None:
@@ -555,8 +562,6 @@ def run(args):
         denom = jnp.sum(boltzs)
         weights = boltzs / denom
 
-        # FIXME: use weights appropriately below
-
         def compute_extrap_temp_finfs(t_kelvin_extrap):
             extrap_kt = utils.get_kt(t_kelvin_extrap)
             em_temp = model2.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin_extrap, salt_conc=salt_concentration)
@@ -594,7 +599,10 @@ def run(args):
 
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
         aux = (curr_tm, curr_width, n_eff)
-        rmse = jnp.sqrt((target_tm - curr_tm)**2)
+
+        # rmse = jnp.sqrt((target_tm - curr_tm)**2)
+        rmse = tm_coeff*jnp.sqrt((target_tm - curr_tm)**2) + width_coeff*jnp.sqrt((target_width - curr_width)**2)
+
         return rmse, aux
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
@@ -785,6 +793,11 @@ def get_parser():
                         help="Frequency of saving numpy files")
     parser.add_argument('--plot-every', type=int, default=1,
                         help="Frequency of plotting data from gradient descent epochs")
+
+    parser.add_argument('--opt-width', action='store_true')
+    parser.add_argument('--target-width', type=float, default=14.0,
+                        help="Target width of melting temperature curve in Kelvin")
+    parser.add_argument('--no-opt-tm', action='store_true')
 
 
     return parser
