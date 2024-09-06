@@ -524,6 +524,7 @@ def run(args):
         summary_str += f"Calc. Tm: {calc_tm}\n"
         summary_str += f"Calc. width: {calc_width}\n"
         summary_str += f"Simulation finf: {sim_finf}\n"
+        summary_str += f"Mean energy diff: {onp.mean(energy_diffs)}\n"
         with open(iter_dir / "summary.txt", "w+") as f:
             f.write(summary_str)
 
