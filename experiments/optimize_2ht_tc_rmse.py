@@ -467,7 +467,6 @@ def run(args):
             curr_stack_weights = params["seq_dep"]["stacking"]
         else:
             curr_stack_weights = ss_stack_weights
-        oxrna_utils.write_seq_specific(seq_dep_path, params["seq_avg"], ss_hb_weights, curr_stack_weights, ss_cross_weights)
         em = model.EnergyModel(
             displacement_fn, params["seq_avg"], t_kelvin=t_kelvin, salt_conc=salt_conc,
             ss_hb_weights=ss_hb_weights,
