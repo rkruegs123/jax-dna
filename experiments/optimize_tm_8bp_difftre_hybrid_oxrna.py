@@ -532,6 +532,12 @@ def run(args):
             zip_file(str(iter_dir / "output.dat"), str(iter_dir / "output.dat.zip"))
             os.remove(str(iter_dir / "output.dat"))
 
+        plt.plot(all_ops)
+        for i in range(n_sims):
+            plt.axvline(x=i*n_ref_states_per_sim, linestyle="--", color="red")
+        plt.savefig(iter_dir / "op_trajectory.png")
+        plt.clf()
+
         return ref_states, ref_energies, jnp.array(all_ops), jnp.array(all_op_weights), iter_dir
 
 
