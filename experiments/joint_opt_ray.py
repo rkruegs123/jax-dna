@@ -17,6 +17,7 @@ import pandas as pd
 import socket
 import ray
 from collections import Counter
+import zipfile
 
 from jax import jit, vmap, lax, value_and_grad
 import jax.numpy as jnp
@@ -45,6 +46,11 @@ if checkpoint_every is None:
 else:
     scan = functools.partial(checkpoint.checkpoint_scan,
                              checkpoint_every=checkpoint_every)
+
+
+def zip_file(file_path, zip_name):
+    with zipfile.ZipFile(zip_name, 'w') as zipf:
+        zipf.write(file_path, os.path.basename(file_path))
 
 
 ## Helper functions for moduli calculation in LAMMPS
