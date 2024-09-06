@@ -214,6 +214,7 @@ def run(args):
     n_ref_states_per_sim_struc = n_steps_per_sim_struc // sample_every_struc
     n_ref_states_struc = n_ref_states_per_sim_struc * n_sims_struc
     offset_struc = args['offset_struc']
+    target_pitch = args['target_pitch']
 
 
     # Setup the logging directory
@@ -1543,6 +1544,8 @@ def get_parser():
     parser.add_argument('--oxdna-path', type=str,
                         default="/home/ryan/Documents/Harvard/research/brenner/oxdna-bin/oxDNA/",
                         help='oxDNA base directory')
+    parser.add_argument('--target-pitch', type=float, default=pitch.TARGET_AVG_PITCH,
+                        help="Target pitch in number of bps")
 
     return parser
 
