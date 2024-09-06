@@ -1087,7 +1087,7 @@ def run(args):
         ref_info = (all_force_t0_traj_states, all_force_t0_calc_energies, all_force_t0_distances,
                     all_force_t0_thetas, all_f2_torque_traj_states, all_f2_torque_calc_energies,
                     all_f2_torque_distances, all_f2_torque_thetas)
-o        return ref_info, all_force_t0_last_states, all_f2_torque_last_states
+        return ref_info, all_force_t0_last_states, all_f2_torque_last_states
 
 
 
