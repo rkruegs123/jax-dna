@@ -164,20 +164,20 @@ def run(args):
 
 
     # Moduli/LAMMPS arguments
-    sample_every = args['sample_every']
-    n_sims = args['n_sims']
+    sample_every_st = args['sample_every_st']
+    n_sims_st = args['n_sims_st']
 
-    n_eq_steps = args['n_eq_steps']
-    assert(n_eq_steps % sample_every == 0)
-    n_eq_states = n_eq_steps // sample_every
+    n_eq_steps_st = args['n_eq_steps_st']
+    assert(n_eq_steps_st % sample_every_st == 0)
+    n_eq_states = n_eq_steps_st // sample_every_st
 
-    n_sample_steps = args['n_sample_steps']
-    assert(n_sample_steps % sample_every == 0)
-    n_sample_states = n_sample_steps // sample_every
+    n_sample_steps_st = args['n_sample_steps_st']
+    assert(n_sample_steps_st % sample_every_st == 0)
+    n_sample_states_st = n_sample_steps_st // sample_every_st
 
-    n_total_steps = n_eq_steps + n_sample_steps
-    n_total_states = n_total_steps // sample_every
-    assert(n_total_states == n_sample_states + n_eq_states)
+    n_total_steps = n_eq_steps_st + n_sample_steps_st
+    n_total_states = n_total_steps // sample_every_st
+    assert(n_total_states == n_sample_states_st + n_eq_states)
 
     s_eff_coeff = args['s_eff_coeff']
     c_coeff = args['c_coeff']
@@ -204,6 +204,8 @@ def run(args):
     forces_pn = jnp.array(args['forces_pn'], dtype=jnp.float64)
     torques_pnnm = jnp.array(args['torques_pnnm'], dtype=jnp.float64)
 
+    compute_st = not args['no_compute_st']
+
 
     # Structural (60 bp) arguments
     n_sims_struc = args['n_sims_struc']
@@ -215,6 +217,7 @@ def run(args):
     n_ref_states_struc = n_ref_states_per_sim_struc * n_sims_struc
     offset_struc = args['offset_struc']
     target_pitch = args['target_pitch']
+    compute_struc = not args['no_compute_struc']
 
 
     # Setup the logging directory
@@ -252,7 +255,7 @@ def run(args):
     warnings_path = log_dir / "warnings.txt"
 
     params_str = ""
-    params_str += f"n_sample_states: {n_sample_states}\n"
+    params_str += f"n_sample_states_st: {n_sample_states_st}\n"
     for k, v in args.items():
         params_str += f"{k}: {v}\n"
     with open(run_dir / "params.txt", "w+") as f:
@@ -516,12 +519,12 @@ def run(args):
 
     def get_stretch_tors_tasks(iter_dir, params, prev_states_force, prev_states_torque):
         all_sim_dirs = list()
-        repeat_seeds = [random.randrange(1, 100) for _ in range(n_sims)]
+        repeat_seeds = [random.randrange(1, 100) for _ in range(n_sims_st)]
         for f_idx, force_pn in enumerate(forces_pn):
             sim_dir = iter_dir / f"sim-f{force_pn}"
             sim_dir.mkdir(parents=False, exist_ok=False)
 
-            for r in range(n_sims):
+            for r in range(n_sims_st):
                 repeat_dir = sim_dir / f"r{r}"
                 repeat_dir.mkdir(parents=False, exist_ok=False)
 
@@ -543,14 +546,14 @@ def run(args):
                 lammps_utils.stretch_tors_constructor(
                     params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
                     force_pn=force_pn, torque_pnnm=0,
-                    save_every=sample_every, n_steps=n_total_steps,
+                    save_every=sample_every_st, n_steps=n_total_steps,
                     seq_avg=seq_avg, seed=repeat_seed, timestep=timestep)
 
         for t_idx, torque_pnnm in enumerate(torques_pnnm):
             sim_dir = iter_dir / f"sim-t{torque_pnnm}"
             sim_dir.mkdir(parents=False, exist_ok=False)
 
-            for r in range(n_sims):
+            for r in range(n_sims_st):
                 repeat_dir = sim_dir / f"r{r}"
                 repeat_dir.mkdir(parents=False, exist_ok=False)
 
@@ -566,7 +569,7 @@ def run(args):
                 lammps_utils.stretch_tors_constructor(
                     params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
                     force_pn=2.0, torque_pnnm=torque_pnnm,
-                    save_every=sample_every, n_steps=n_total_steps,
+                    save_every=sample_every_st, n_steps=n_total_steps,
                     seq_avg=seq_avg, seed=repeat_seed)
 
         stretch_tors_tasks = [run_lammps_ray.remote(lammps_exec_path, rdir) for rdir in all_sim_dirs]
@@ -577,7 +580,7 @@ def run(args):
         # Convert via TacoxDNA
         for force_pn in forces_pn:
             sim_dir = iter_dir / f"sim-f{force_pn}"
-            for r in range(n_sims):
+            for r in range(n_sims_st):
                 repeat_dir = sim_dir / f"r{r}"
                 p = subprocess.Popen([tacoxdna_basedir / "src/LAMMPS_oxDNA.py", "data", "filename.dat"], cwd=repeat_dir)
                 p.wait()
@@ -587,7 +590,7 @@ def run(args):
 
         for torque_pnnm in torques_pnnm:
             sim_dir = iter_dir / f"sim-t{torque_pnnm}"
-            for r in range(n_sims):
+            for r in range(n_sims_st):
                 repeat_dir = sim_dir / f"r{r}"
                 p = subprocess.Popen([tacoxdna_basedir / "src/LAMMPS_oxDNA.py", "data", "filename.dat"], cwd=repeat_dir)
                 p.wait()
@@ -599,7 +602,7 @@ def run(args):
         for force_pn in forces_pn:
             sim_dir = iter_dir / f"sim-f{force_pn}"
             combine_cmd = "cat "
-            for r in range(n_sims):
+            for r in range(n_sims_st):
                 repeat_dir = sim_dir / f"r{r}"
                 combine_cmd += f"{repeat_dir}/data.oxdna "
             combine_cmd += f"> {sim_dir}/output.dat"
@@ -611,7 +614,7 @@ def run(args):
         for torque_pnnm in torques_pnnm:
             sim_dir = iter_dir / f"sim-t{torque_pnnm}"
             combine_cmd = "cat "
-            for r in range(n_sims):
+            for r in range(n_sims_st):
                 repeat_dir = sim_dir / f"r{r}"
                 combine_cmd += f"{repeat_dir}/data.oxdna "
             combine_cmd += f"> {sim_dir}/output.dat"
@@ -624,7 +627,7 @@ def run(args):
             files_to_remove = ["filename.dat", "data.oxdna", "dump.lammpstrj"]
             for force_pn in forces_pn:
                 sim_dir = iter_dir / f"sim-f{force_pn}"
-                for r in range(n_sims):
+                for r in range(n_sims_st):
                     repeat_dir = sim_dir / f"r{r}"
                     for f_stem in files_to_remove:
                         file_to_rem = repeat_dir / f_stem
@@ -632,7 +635,7 @@ def run(args):
 
             for torque_pnnm in torques_pnnm:
                 sim_dir = iter_dir / f"sim-t{torque_pnnm}"
-                for r in range(n_sims):
+                for r in range(n_sims_st):
                     repeat_dir = sim_dir / f"r{r}"
                     for f_stem in files_to_remove:
                         file_to_rem = repeat_dir / f_stem
@@ -658,22 +661,22 @@ def run(args):
             )
             full_traj_states = [ns.to_rigid_body() for ns in traj_.states]
 
-            assert(len(full_traj_states) == (1+n_total_states)*n_sims)
+            assert(len(full_traj_states) == (1+n_total_states)*n_sims_st)
             sim_freq = 1+n_total_states
             traj_states = list()
             force_last_states = list()
-            for r in range(n_sims):
+            for r in range(n_sims_st):
                 sim_states = full_traj_states[r*sim_freq:(r+1)*sim_freq]
                 sampled_sim_states = sim_states[1+n_eq_states:]
-                assert(len(sampled_sim_states) == n_sample_states)
+                assert(len(sampled_sim_states) == n_sample_states_st)
                 traj_states += sampled_sim_states
                 force_last_states.append(sampled_sim_states[-1])
-            assert(len(traj_states) == n_sample_states*n_sims)
+            assert(len(traj_states) == n_sample_states_st*n_sims_st)
             traj_states = utils.tree_stack(traj_states)
 
             ## Load the LAMMPS energies
             log_dfs = list()
-            for r in range(n_sims):
+            for r in range(n_sims_st):
                 repeat_dir = sim_dir / f"r{r}"
                 log_path = repeat_dir / "log.lammps"
                 rpt_log_df = lammps_utils.read_log(log_path)
@@ -732,7 +735,7 @@ def run(args):
 
             ## Compute the mean distance
             traj_distances = list()
-            for rs_idx in range(n_sample_states*n_sims):
+            for rs_idx in range(n_sample_states_st*n_sims_st):
                 ref_state = traj_states[rs_idx]
                 dist = compute_distance(ref_state)
                 traj_distances.append(dist)
@@ -741,7 +744,7 @@ def run(args):
 
             ## Compute the mean theta
             traj_thetas = list()
-            for rs_idx in range(n_sample_states*n_sims):
+            for rs_idx in range(n_sample_states_st*n_sims_st):
                 ref_state = traj_states[rs_idx]
                 theta = compute_theta(ref_state)
                 traj_thetas.append(theta)
@@ -753,13 +756,13 @@ def run(args):
             plt.savefig(sim_dir / "dist_traj.png")
             plt.clf()
 
-            running_avg = onp.cumsum(traj_distances) / onp.arange(1, (n_sample_states*n_sims)+1)
+            running_avg = onp.cumsum(traj_distances) / onp.arange(1, (n_sample_states_st*n_sims_st)+1)
             plt.plot(running_avg)
             plt.savefig(sim_dir / "running_avg_dist.png")
             plt.clf()
             running_avgs_force_dists.append(running_avg)
 
-            last_half = int((n_sample_states * n_sims) // 2)
+            last_half = int((n_sample_states_st * n_sims_st) // 2)
             plt.plot(running_avg[-last_half:])
             plt.savefig(sim_dir / "running_avg_dist_second_half.png")
             plt.clf()
@@ -769,12 +772,12 @@ def run(args):
             plt.savefig(sim_dir / "theta_traj.png")
             plt.clf()
 
-            running_avg = onp.cumsum(traj_thetas) / onp.arange(1, (n_sample_states*n_sims)+1)
+            running_avg = onp.cumsum(traj_thetas) / onp.arange(1, (n_sample_states_st*n_sims_st)+1)
             plt.plot(running_avg)
             plt.savefig(sim_dir / "running_avg_theta.png")
             plt.clf()
 
-            last_half = int((n_sample_states * n_sims) // 2)
+            last_half = int((n_sample_states_st * n_sims_st) // 2)
             plt.plot(running_avg[-last_half:])
             plt.savefig(sim_dir / "running_avg_theta_second_half.png")
             plt.clf()
@@ -808,10 +811,10 @@ def run(args):
         all_force_t0_thetas = utils.tree_stack(all_force_t0_thetas)
 
         # Compute running avg of a1, l0, and s_eff
-        running_avgs_force_dists = onp.array(running_avgs_force_dists) # (n_forces, n_sample_states*n_sims)
-        running_avg_idxs = onp.arange(n_sample_states*n_sims)
+        running_avgs_force_dists = onp.array(running_avgs_force_dists) # (n_forces, n_sample_states_st*n_sims)
+        running_avg_idxs = onp.arange(n_sample_states_st*n_sims_st)
         n_running_avg_points = 100
-        check_every = (n_sample_states*n_sims) // n_running_avg_points
+        check_every = (n_sample_states_st*n_sims_st) // n_running_avg_points
         check_idxs = onp.arange(n_running_avg_points) * check_every
         a1_running_avgs = list()
         l0_fit_running_avgs = list()
@@ -868,22 +871,22 @@ def run(args):
             full_traj_states = [ns.to_rigid_body() for ns in traj_.states]
 
 
-            assert(len(full_traj_states) == (1+n_total_states)*n_sims)
+            assert(len(full_traj_states) == (1+n_total_states)*n_sims_st)
             sim_freq = 1+n_total_states
             traj_states = list()
             torque_last_states = list()
-            for r in range(n_sims):
+            for r in range(n_sims_st):
                 sim_states = full_traj_states[r*sim_freq:(r+1)*sim_freq]
                 sampled_sim_states = sim_states[1+n_eq_states:]
-                assert(len(sampled_sim_states) == n_sample_states)
+                assert(len(sampled_sim_states) == n_sample_states_st)
                 traj_states += sampled_sim_states
                 torque_last_states.append(sampled_sim_states[-1])
-            assert(len(traj_states) == n_sample_states*n_sims)
+            assert(len(traj_states) == n_sample_states_st*n_sims_st)
             traj_states = utils.tree_stack(traj_states)
 
             ## Load the LAMMPS energies
             log_dfs = list()
-            for r in range(n_sims):
+            for r in range(n_sims_st):
                 repeat_dir = sim_dir / f"r{r}"
                 log_path = repeat_dir / "log.lammps"
                 rpt_log_df = lammps_utils.read_log(log_path)
@@ -942,7 +945,7 @@ def run(args):
 
             ## Compute the mean distance
             traj_distances = list()
-            for rs_idx in range(n_sample_states*n_sims):
+            for rs_idx in range(n_sample_states_st*n_sims_st):
                 ref_state = traj_states[rs_idx]
                 dist = compute_distance(ref_state)
                 traj_distances.append(dist)
@@ -951,7 +954,7 @@ def run(args):
 
             ## Compute the mean theta
             traj_thetas = list()
-            for rs_idx in range(n_sample_states*n_sims):
+            for rs_idx in range(n_sample_states_st*n_sims_st):
                 ref_state = traj_states[rs_idx]
                 theta = compute_theta(ref_state)
                 traj_thetas.append(theta)
@@ -963,12 +966,12 @@ def run(args):
             plt.savefig(sim_dir / "dist_traj.png")
             plt.clf()
 
-            running_avg = onp.cumsum(traj_distances) / onp.arange(1, (n_sample_states*n_sims)+1)
+            running_avg = onp.cumsum(traj_distances) / onp.arange(1, (n_sample_states_st*n_sims_st)+1)
             plt.plot(running_avg)
             plt.savefig(sim_dir / "running_avg_dist.png")
             plt.clf()
 
-            last_half = int((n_sample_states * n_sims) // 2)
+            last_half = int((n_sample_states_st * n_sims_st) // 2)
             plt.plot(running_avg[-last_half:])
             plt.savefig(sim_dir / "running_avg_dist_second_half.png")
             plt.clf()
@@ -978,12 +981,12 @@ def run(args):
             plt.savefig(sim_dir / "theta_traj.png")
             plt.clf()
 
-            running_avg = onp.cumsum(traj_thetas) / onp.arange(1, (n_sample_states*n_sims)+1)
+            running_avg = onp.cumsum(traj_thetas) / onp.arange(1, (n_sample_states_st*n_sims_st)+1)
             plt.plot(running_avg)
             plt.savefig(sim_dir / "running_avg_theta.png")
             plt.clf()
 
-            last_half = int((n_sample_states * n_sims) // 2)
+            last_half = int((n_sample_states_st * n_sims_st) // 2)
             plt.plot(running_avg[-last_half:])
             plt.savefig(sim_dir / "running_avg_theta_second_half.png")
             plt.clf()
@@ -1107,38 +1110,48 @@ def run(args):
             f.write(f"{pprint.pformat(params)}\n")
 
         # Run the simulations
-        stretch_tors_tasks, all_sim_dirs = get_stretch_tors_tasks(iter_dir, params, prev_states_force, prev_states_torque)
-        struc_tasks, all_sim_dirs_struc = get_struc_tasks(iter_dir, params, prev_basedir)
+        if compute_st:
+            stretch_tors_tasks, all_sim_dirs = get_stretch_tors_tasks(iter_dir, params, prev_states_force, prev_states_torque)
+        if compute_struc:
+            struc_tasks, all_sim_dirs_struc = get_struc_tasks(iter_dir, params, prev_basedir)
 
         ## Archive the previous basedir now that we've loaded states from it
         if not no_archive and prev_basedir is not None:
             shutil.make_archive(prev_basedir, 'zip', prev_basedir)
             shutil.rmtree(prev_basedir)
 
-        all_ret_info = ray.get(stretch_tors_tasks)
-        all_ret_info_struc = ray.get(struc_tasks) # FIXME: for now, not doing anything with this! Just want to run the simulations and see them. Then, we do analysis and what not.
+        if compute_st:
+            all_ret_info = ray.get(stretch_tors_tasks)
+        if compute_struc:
+            all_ret_info_struc = ray.get(struc_tasks) # FIXME: for now, not doing anything with this! Just want to run the simulations and see them. Then, we do analysis and what not.
 
-        all_rcs = [ret_info[0] for ret_info in all_ret_info]
-        all_times = [ret_info[1] for ret_info in all_ret_info]
-        all_hostnames = [ret_info[2] for ret_info in all_ret_info]
+        if compute_st:
+            all_rcs = [ret_info[0] for ret_info in all_ret_info]
+            all_times = [ret_info[1] for ret_info in all_ret_info]
+            all_hostnames = [ret_info[2] for ret_info in all_ret_info]
 
-        sns.distplot(all_times, color="green")
-        plt.savefig(iter_dir / f"sim_times.png")
-        plt.clf()
+            sns.distplot(all_times, color="green")
+            plt.savefig(iter_dir / f"sim_times.png")
+            plt.clf()
 
-        with open(resample_log_path, "a") as f:
-            f.write(f"Performed {len(all_sim_dirs)} simulations with Ray...\n")
-            f.write(f"Hostname distribution:\n{pprint.pformat(Counter(all_hostnames))}\n")
-            f.write(f"Min. time: {onp.min(all_times)}\n")
-            f.write(f"Max. time: {onp.max(all_times)}\n")
+            with open(resample_log_path, "a") as f:
+                f.write(f"Performed {len(all_sim_dirs)} simulations with Ray...\n")
+                f.write(f"Hostname distribution:\n{pprint.pformat(Counter(all_hostnames))}\n")
+                f.write(f"Min. time: {onp.min(all_times)}\n")
+                f.write(f"Max. time: {onp.max(all_times)}\n")
 
-        for rdir, rc in zip(all_sim_dirs, all_rcs):
-            if rc != 0:
-                raise RuntimeError(f"oxDNA simulation at path {rdir} failed with error code: {rc}")
+            for rdir, rc in zip(all_sim_dirs, all_rcs):
+                if rc != 0:
+                    raise RuntimeError(f"oxDNA simulation at path {rdir} failed with error code: {rc}")
 
-
-        struc_ref_info = process_struc(iter_dir, params)
-        stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states = process_stretch_tors(iter_dir, params)
+        if compute_struc:
+            struc_ref_info = process_struc(iter_dir, params)
+        else:
+            struc_ref_info = None
+        if compute_st:
+            stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states = process_stretch_tors(iter_dir, params)
+        else:
+            stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states = None, None, None
 
 
         return stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states, struc_ref_info, iter_dir
@@ -1147,87 +1160,98 @@ def run(args):
     def loss_fn(params, stretch_tors_ref_info, struc_ref_info):
 
         # Pitch
-        ref_states, ref_energies, ref_avg_angles = struc_ref_info
-        em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin_struc)
+        if compute_struc:
+            ref_states, ref_energies, ref_avg_angles = struc_ref_info
+            em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin_struc)
 
-        energy_fn = lambda body: em.energy_fn(body,
-                                              seq=seq_oh_struc,
-                                              bonded_nbrs=top_info_struc.bonded_nbrs,
-                                              unbonded_nbrs=top_info_struc.unbonded_nbrs.T,
-                                              is_end=top_info_struc.is_end)
-        energy_fn = jit(energy_fn)
-        new_energies = vmap(energy_fn)(ref_states)
-        diffs = new_energies - ref_energies # element-wise subtraction
-        boltzs = jnp.exp(-beta_struc * diffs)
-        denom = jnp.sum(boltzs)
-        weights = boltzs / denom
+            energy_fn = lambda body: em.energy_fn(body,
+                                                  seq=seq_oh_struc,
+                                                  bonded_nbrs=top_info_struc.bonded_nbrs,
+                                                  unbonded_nbrs=top_info_struc.unbonded_nbrs.T,
+                                                  is_end=top_info_struc.is_end)
+            energy_fn = jit(energy_fn)
+            new_energies = vmap(energy_fn)(ref_states)
+            diffs = new_energies - ref_energies # element-wise subtraction
+            boltzs = jnp.exp(-beta_struc * diffs)
+            denom = jnp.sum(boltzs)
+            weights = boltzs / denom
 
-        expected_angle = jnp.dot(weights, ref_avg_angles)
-        expected_pitch = 2*jnp.pi / expected_angle
-        mse = (expected_pitch - target_pitch)**2
-        rmse_pitch = jnp.sqrt(mse)
+            expected_angle = jnp.dot(weights, ref_avg_angles)
+            expected_pitch = 2*jnp.pi / expected_angle
+            mse = (expected_pitch - target_pitch)**2
+            rmse_pitch = jnp.sqrt(mse)
 
-        n_eff_pitch = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
+            n_eff_pitch = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
+        else:
+            expected_pitch = -1
+            rmse_pitch = 0.0
+            n_eff_pitch = n_ref_states_struc
 
 
         # Stretch-torsion
 
-        all_ref_states_f, all_ref_energies_f, all_ref_dists_f, all_ref_thetas_f, all_ref_states_t, all_ref_energies_t, all_ref_dists_t, all_ref_thetas_t = stretch_tors_ref_info
+        if compute_st:
+            all_ref_states_f, all_ref_energies_f, all_ref_dists_f, all_ref_thetas_f, all_ref_states_t, all_ref_energies_t, all_ref_dists_t, all_ref_thetas_t = stretch_tors_ref_info
 
-        # Setup energy function
-        em = model.EnergyModel(displacement_fn,
-                               params,
-                               t_kelvin=t_kelvin,
-                               salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq_avg,
-                               ignore_exc_vol_bonded=True # Because we're in LAMMPS
-        )
-        energy_fn = lambda body: em.energy_fn(
-            body,
-            seq=seq_oh,
-            bonded_nbrs=top_info.bonded_nbrs,
-            unbonded_nbrs=top_info.unbonded_nbrs.T)
-        energy_fn = jit(energy_fn)
-        energy_scan_fn = lambda state, rs: (None, energy_fn(rs))
+            # Setup energy function
+            em = model.EnergyModel(displacement_fn,
+                                   params,
+                                   t_kelvin=t_kelvin,
+                                   salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq_avg,
+                                   ignore_exc_vol_bonded=True # Because we're in LAMMPS
+            )
+            energy_fn = lambda body: em.energy_fn(
+                body,
+                seq=seq_oh,
+                bonded_nbrs=top_info.bonded_nbrs,
+                unbonded_nbrs=top_info.unbonded_nbrs.T)
+            energy_fn = jit(energy_fn)
+            energy_scan_fn = lambda state, rs: (None, energy_fn(rs))
 
-        def get_expected_vals(ref_states, ref_energies, ref_dists, ref_thetas):
-            _, new_energies = scan(energy_scan_fn, None, ref_states)
+            def get_expected_vals(ref_states, ref_energies, ref_dists, ref_thetas):
+                _, new_energies = scan(energy_scan_fn, None, ref_states)
 
-            diffs = new_energies - ref_energies
-            boltzs = jnp.exp(-beta * diffs)
-            denom = jnp.sum(boltzs)
-            weights = boltzs / denom
+                diffs = new_energies - ref_energies
+                boltzs = jnp.exp(-beta * diffs)
+                denom = jnp.sum(boltzs)
+                weights = boltzs / denom
 
-            expected_dist = jnp.dot(weights, ref_dists)
-            expected_theta = jnp.dot(weights, ref_thetas)
-            n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
-            return expected_dist, expected_theta, n_eff
+                expected_dist = jnp.dot(weights, ref_dists)
+                expected_theta = jnp.dot(weights, ref_thetas)
+                n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
+                return expected_dist, expected_theta, n_eff
 
-        expected_dists_f, expected_thetas_f, n_effs_f = vmap(get_expected_vals, (0, 0, 0, 0))(all_ref_states_f, all_ref_energies_f, all_ref_dists_f, all_ref_thetas_f)
-        expected_dists_f_nm = expected_dists_f * utils.nm_per_oxdna_length
+            expected_dists_f, expected_thetas_f, n_effs_f = vmap(get_expected_vals, (0, 0, 0, 0))(all_ref_states_f, all_ref_energies_f, all_ref_dists_f, all_ref_thetas_f)
+            expected_dists_f_nm = expected_dists_f * utils.nm_per_oxdna_length
 
-        xs_to_fit = jnp.stack([jnp.ones_like(forces_pn), forces_pn], axis=1)
-        fit_ = jnp.linalg.lstsq(xs_to_fit, expected_dists_f_nm)
-        a1 = fit_[0][1]
-        l0_fit = fit_[0][0]
+            xs_to_fit = jnp.stack([jnp.ones_like(forces_pn), forces_pn], axis=1)
+            fit_ = jnp.linalg.lstsq(xs_to_fit, expected_dists_f_nm)
+            a1 = fit_[0][1]
+            l0_fit = fit_[0][0]
 
 
-        expected_dists_t, expected_thetas_t, n_effs_t = vmap(get_expected_vals, (0, 0, 0, 0))(all_ref_states_t, all_ref_energies_t, all_ref_dists_t, all_ref_thetas_t)
-        expected_dists_t_nm = expected_dists_t * utils.nm_per_oxdna_length
+            expected_dists_t, expected_thetas_t, n_effs_t = vmap(get_expected_vals, (0, 0, 0, 0))(all_ref_states_t, all_ref_energies_t, all_ref_dists_t, all_ref_thetas_t)
+            expected_dists_t_nm = expected_dists_t * utils.nm_per_oxdna_length
 
-        xs_to_fit = jnp.stack([jnp.ones_like(torques_pnnm), torques_pnnm], axis=1)
-        fit_ = jnp.linalg.lstsq(xs_to_fit, expected_dists_t_nm)
-        a3 = fit_[0][1]
+            xs_to_fit = jnp.stack([jnp.ones_like(torques_pnnm), torques_pnnm], axis=1)
+            fit_ = jnp.linalg.lstsq(xs_to_fit, expected_dists_t_nm)
+            a3 = fit_[0][1]
 
-        fit_ = jnp.linalg.lstsq(xs_to_fit, expected_thetas_t)
-        a4 = fit_[0][1]
+            fit_ = jnp.linalg.lstsq(xs_to_fit, expected_thetas_t)
+            a4 = fit_[0][1]
 
-        s_eff = l0_fit / a1
-        c = a1 * l0_fit / (a4*a1 - a3**2)
-        g = -(a3 * l0_fit) / (a4 * a1 - a3**2)
+            s_eff = l0_fit / a1
+            c = a1 * l0_fit / (a4*a1 - a3**2)
+            g = -(a3 * l0_fit) / (a4 * a1 - a3**2)
 
-        rmse_s_eff = rmse_uncertainty(s_eff, s_eff_lo, s_eff_hi)
-        rmse_c = rmse_uncertainty(c, c_lo, c_hi)
-        rmse_g = rmse_uncertainty(g, g_lo, g_hi)
+            rmse_s_eff = rmse_uncertainty(s_eff, s_eff_lo, s_eff_hi)
+            rmse_c = rmse_uncertainty(c, c_lo, c_hi)
+            rmse_g = rmse_uncertainty(g, g_lo, g_hi)
+        else:
+            rmse_s_eff, rmse_c, rmse_g = 0.0, 0.0, 0.0
+            s_eff, c, g = -1, -1, -1
+            a1, a3, a4 = -1, -1, -1
+            n_effs_f, n_effs_t = n_sample_states_st*n_sims_st, n_sample_states_st*n_sims_st
 
         rmse = s_eff_coeff*rmse_s_eff + c_coeff*rmse_c + g_coeff*rmse_g
 
@@ -1247,7 +1271,7 @@ def run(args):
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
 
-    min_n_eff = int(n_sample_states*n_sims * min_neff_factor)
+    min_n_eff = int(n_sample_states_st*n_sims_st * min_neff_factor)
 
     all_losses = list()
     all_n_effs = list()
@@ -1471,13 +1495,13 @@ def get_parser():
 
 
     # LAMMPS/moduli information
-    parser.add_argument('--n-sample-steps', type=int, default=3000000,
-                        help="Number of steps per simulation")
-    parser.add_argument('--n-eq-steps', type=int, default=100000,
-                        help="Number of equilibration steps")
-    parser.add_argument('--sample-every', type=int, default=500,
-                        help="Frequency of sampling reference states.")
-    parser.add_argument('--n-sims', type=int, default=2,
+    parser.add_argument('--n-sample-steps-st', type=int, default=3000000,
+                        help="Number of steps per simulation for stretch-torsion")
+    parser.add_argument('--n-eq-steps-st', type=int, default=100000,
+                        help="Number of equilibration steps for stretch-torsion")
+    parser.add_argument('--sample-every-st', type=int, default=500,
+                        help="Frequency of sampling reference states for stretch-torsion.")
+    parser.add_argument('--n-sims-st', type=int, default=2,
                         help="Number of simulations per force")
 
 
@@ -1528,6 +1552,8 @@ def get_parser():
         help="List of torques in pnnm"
     )
 
+    parser.add_argument('--no-compute-st', action='store_true')
+
 
     # Structural information
 
@@ -1546,6 +1572,8 @@ def get_parser():
                         help='oxDNA base directory')
     parser.add_argument('--target-pitch', type=float, default=pitch.TARGET_AVG_PITCH,
                         help="Target pitch in number of bps")
+
+    parser.add_argument('--no-compute-struc', action='store_true')
 
     return parser
 
