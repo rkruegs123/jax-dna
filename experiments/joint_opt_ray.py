@@ -1598,8 +1598,10 @@ def get_parser():
     parser.add_argument('--oxdna-path', type=str,
                         default="/home/ryan/Documents/Harvard/research/brenner/oxdna-bin/oxDNA/",
                         help='oxDNA base directory')
-    parser.add_argument('--target-pitch', type=float, default=pitch.TARGET_AVG_PITCH,
+    parser.add_argument('--target-pitch', type=float, default=10.25,
                         help="Target pitch in number of bps")
+    parser.add_argument('--pitch-uncertainty', type=float, default=0.25,
+                        help="Uncertainty for pitch")
 
     parser.add_argument('--no-compute-struc', action='store_true')
     parser.add_argument('--pitch-coeff', type=float, default=0.0,
