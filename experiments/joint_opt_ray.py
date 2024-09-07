@@ -1199,7 +1199,8 @@ def run(args):
             n_eff_pitch = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
         else:
             expected_pitch = -1
-            rmse_pitch = 0.0
+            # rmse_pitch = 0.0
+            rel_diff_pitch = 0.0
             n_eff_pitch = n_ref_states_struc
 
 
@@ -1266,7 +1267,8 @@ def run(args):
             rel_diff_g = abs_relative_diff_uncertainty(g, g_lo, g_hi)
             # rmse_g = rmse_uncertainty(g, g_lo, g_hi)
         else:
-            rmse_s_eff, rmse_c, rmse_g = 0.0, 0.0, 0.0
+            # rmse_s_eff, rmse_c, rmse_g = 0.0, 0.0, 0.0
+            rel_diff_s_eff, rel_diff_c, rel_diff_g = 0.0, 0.0, 0.0
             s_eff, c, g = -1, -1, -1
             a1, a3, a4 = -1, -1, -1
             n_effs_f, n_effs_t = n_sample_states_st*n_sims_st, n_sample_states_st*n_sims_st
