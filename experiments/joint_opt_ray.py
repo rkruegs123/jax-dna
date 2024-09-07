@@ -1276,7 +1276,8 @@ def run(args):
         # rmse = s_eff_coeff*rmse_s_eff + c_coeff*rmse_c + g_coeff*rmse_g
         rel_diff = s_eff_coeff*rel_diff_s_eff + c_coeff*rel_diff_c + g_coeff*rel_diff_g + pitch_coeff*rel_diff_pitch
 
-        return rmse, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch)
+        # return rmse, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch)
+        return rel_diff, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
