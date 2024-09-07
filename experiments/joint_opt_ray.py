@@ -53,6 +53,18 @@ def zip_file(file_path, zip_name):
         zipf.write(file_path, os.path.basename(file_path))
 
 
+def abs_relative_diff(target, current):
+    rel_diff = (current - target) / target
+    return jnp.sqrt(rel_diff**2)
+
+
+def abs_relative_diff_uncertainty(val, lo_val, hi_val):
+    abs_rel_diff = jnp.where(val < lo_val, abs_relative_diff(lo_val, val),
+                         jnp.where(val > hi_val, abs_relative_diff(hi_val, val),
+                                   0.0))
+    return abs_rel_diff
+
+
 ## Helper functions for moduli calculation in LAMMPS
 
 @ray.remote
@@ -175,9 +187,9 @@ def run(args):
     assert(n_sample_steps_st % sample_every_st == 0)
     n_sample_states_st = n_sample_steps_st // sample_every_st
 
-    n_total_steps = n_eq_steps_st + n_sample_steps_st
-    n_total_states = n_total_steps // sample_every_st
-    assert(n_total_states == n_sample_states_st + n_eq_states)
+    n_total_steps_st = n_eq_steps_st + n_sample_steps_st
+    n_total_states_st = n_total_steps_st // sample_every_st
+    assert(n_total_states_st == n_sample_states_st + n_eq_states)
 
     s_eff_coeff = args['s_eff_coeff']
     c_coeff = args['c_coeff']
@@ -218,6 +230,7 @@ def run(args):
     offset_struc = args['offset_struc']
     target_pitch = args['target_pitch']
     compute_struc = not args['no_compute_struc']
+    pitch_coeff = args['pitch_coeff']
 
 
     # Setup the logging directory
@@ -546,7 +559,7 @@ def run(args):
                 lammps_utils.stretch_tors_constructor(
                     params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
                     force_pn=force_pn, torque_pnnm=0,
-                    save_every=sample_every_st, n_steps=n_total_steps,
+                    save_every=sample_every_st, n_steps=n_total_steps_st,
                     seq_avg=seq_avg, seed=repeat_seed, timestep=timestep)
 
         for t_idx, torque_pnnm in enumerate(torques_pnnm):
@@ -569,7 +582,7 @@ def run(args):
                 lammps_utils.stretch_tors_constructor(
                     params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
                     force_pn=2.0, torque_pnnm=torque_pnnm,
-                    save_every=sample_every_st, n_steps=n_total_steps,
+                    save_every=sample_every_st, n_steps=n_total_steps_st,
                     seq_avg=seq_avg, seed=repeat_seed)
 
         stretch_tors_tasks = [run_lammps_ray.remote(lammps_exec_path, rdir) for rdir in all_sim_dirs]
@@ -661,8 +674,8 @@ def run(args):
             )
             full_traj_states = [ns.to_rigid_body() for ns in traj_.states]
 
-            assert(len(full_traj_states) == (1+n_total_states)*n_sims_st)
-            sim_freq = 1+n_total_states
+            assert(len(full_traj_states) == (1+n_total_states_st)*n_sims_st)
+            sim_freq = 1+n_total_states_st
             traj_states = list()
             force_last_states = list()
             for r in range(n_sims_st):
@@ -688,7 +701,7 @@ def run(args):
                     if n_warnings > 0:
                         with open(warnings_path, "a") as f:
                             f.write(f"Ignored {n_warnings} at the {i}th iteration, force {force_pn}, repeat {r}...\n")
-                assert(rpt_log_df.shape[0] == n_total_states+1)
+                assert(rpt_log_df.shape[0] == n_total_states_st+1)
                 rpt_log_df = rpt_log_df[1+n_eq_states:]
                 log_dfs.append(rpt_log_df)
             log_df = pd.concat(log_dfs, ignore_index=True)
@@ -871,8 +884,8 @@ def run(args):
             full_traj_states = [ns.to_rigid_body() for ns in traj_.states]
 
 
-            assert(len(full_traj_states) == (1+n_total_states)*n_sims_st)
-            sim_freq = 1+n_total_states
+            assert(len(full_traj_states) == (1+n_total_states_st)*n_sims_st)
+            sim_freq = 1+n_total_states_st
             traj_states = list()
             torque_last_states = list()
             for r in range(n_sims_st):
@@ -898,7 +911,7 @@ def run(args):
                     if n_warnings > 0:
                         with open(warnings_path, "a") as f:
                             f.write(f"Ignored {n_warnings} at the {i}th iteration, torque {torque_pnnm}, repeat {r}...\n")
-                assert(rpt_log_df.shape[0] == n_total_states+1)
+                assert(rpt_log_df.shape[0] == n_total_states_st+1)
                 rpt_log_df = rpt_log_df[1+n_eq_states:]
                 log_dfs.append(rpt_log_df)
             log_df = pd.concat(log_dfs, ignore_index=True)
@@ -1178,8 +1191,10 @@ def run(args):
 
             expected_angle = jnp.dot(weights, ref_avg_angles)
             expected_pitch = 2*jnp.pi / expected_angle
-            mse = (expected_pitch - target_pitch)**2
-            rmse_pitch = jnp.sqrt(mse)
+
+            # mse = (expected_pitch - target_pitch)**2
+            # rmse_pitch = jnp.sqrt(mse)
+            rel_diff_pitch = abs_relative_diff(target_pitch, expected_pitch)
 
             n_eff_pitch = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
         else:
@@ -1244,16 +1259,20 @@ def run(args):
             c = a1 * l0_fit / (a4*a1 - a3**2)
             g = -(a3 * l0_fit) / (a4 * a1 - a3**2)
 
-            rmse_s_eff = rmse_uncertainty(s_eff, s_eff_lo, s_eff_hi)
-            rmse_c = rmse_uncertainty(c, c_lo, c_hi)
-            rmse_g = rmse_uncertainty(g, g_lo, g_hi)
+            rel_diff_s_eff = abs_relative_diff_uncertainty(s_eff, s_eff_lo, s_eff_hi)
+            # rmse_s_eff = rmse_uncertainty(s_eff, s_eff_lo, s_eff_hi)
+            rel_diff_c = abs_relative_diff_uncertainty(c, c_lo, c_hi)
+            # rmse_c = rmse_uncertainty(c, c_lo, c_hi)
+            rel_diff_g = abs_relative_diff_uncertainty(g, g_lo, g_hi)
+            # rmse_g = rmse_uncertainty(g, g_lo, g_hi)
         else:
             rmse_s_eff, rmse_c, rmse_g = 0.0, 0.0, 0.0
             s_eff, c, g = -1, -1, -1
             a1, a3, a4 = -1, -1, -1
             n_effs_f, n_effs_t = n_sample_states_st*n_sims_st, n_sample_states_st*n_sims_st
 
-        rmse = s_eff_coeff*rmse_s_eff + c_coeff*rmse_c + g_coeff*rmse_g
+        # rmse = s_eff_coeff*rmse_s_eff + c_coeff*rmse_c + g_coeff*rmse_g
+        rel_diff = s_eff_coeff*rel_diff_s_eff + c_coeff*rel_diff_c + g_coeff*rel_diff_g + pitch_coeff*rel_diff_pitch
 
         return rmse, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
@@ -1574,6 +1593,8 @@ def get_parser():
                         help="Target pitch in number of bps")
 
     parser.add_argument('--no-compute-struc', action='store_true')
+    parser.add_argument('--pitch-coeff', type=float, default=0.0,
+                        help="Coefficient for pitch component")
 
     return parser
 
