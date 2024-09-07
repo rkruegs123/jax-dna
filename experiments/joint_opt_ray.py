@@ -280,19 +280,21 @@ def run(args):
 
     # Setup systems
 
+    displacement_fn_free, shift_fn_free = space.free() # FIXME: could use box size from top_info, but not sure how the centering works.
+
     ## Setup structural system (60 bp)
 
-    sys_basedir = Path("data/templates/simple-helix-60bp")
-    input_template_path = sys_basedir / "input"
+    sys_basedir_struc = Path("data/templates/simple-helix-60bp")
+    input_template_path_struc = sys_basedir_struc / "input"
 
-    top_path_struc = sys_basedir / "sys.top"
+    top_path_struc = sys_basedir_struc / "sys.top"
     top_info_struc = topology.TopologyInfo(top_path_struc, reverse_direction=False)
     seq_oh_struc = jnp.array(utils.get_one_hot(top_info_struc.seq), dtype=jnp.float64)
 
     quartets_struc = utils.get_all_quartets(n_nucs_per_strand=seq_oh_struc.shape[0] // 2)
     quartets_struc = quartets_struc[offset_struc:-offset_struc-1]
 
-    conf_path = sys_basedir / "init.conf"
+    conf_path = sys_basedir_struc / "init.conf"
     conf_info = trajectory.TrajectoryInfo(
         top_info_struc,
         read_from_file=True, traj_path=conf_path,
@@ -344,7 +346,7 @@ def run(args):
             init_conf_info.write(repeat_dir / "init.conf", reverse=False, write_topology=False)
 
             rewrite_input_file(
-                input_template_path, repeat_dir,
+                input_template_path_struc, repeat_dir,
                 temp=f"{t_kelvin_struc}K", steps=n_steps_per_sim_struc,
                 init_conf_path=str(repeat_dir / "init.conf"),
                 top_path=str(repeat_dir / "sys.top"),
@@ -399,7 +401,7 @@ def run(args):
         energy_df = pd.concat(energy_dfs, ignore_index=True)
 
         ## Generate an energy function
-        em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin_struc)
+        em = model.EnergyModel(displacement_fn_free, params, t_kelvin=t_kelvin_struc)
         energy_fn = lambda body: em.energy_fn(
             body,
             seq=seq_oh_struc,
@@ -431,7 +433,7 @@ def run(args):
         ref_avg_angles = list()
         for rs_idx in range(n_traj_states):
             body = traj_states[rs_idx]
-            angles = pitch2.get_all_angles(body, quartets_struc, displacement_fn, model.com_to_hb, model1.com_to_backbone, 0.0)
+            angles = pitch2.get_all_angles(body, quartets_struc, displacement_fn_free, model.com_to_hb, model1.com_to_backbone, 0.0)
             state_avg_angle = onp.mean(angles)
             ref_avg_angles.append(state_avg_angle)
         ref_avg_angles = onp.array(ref_avg_angles)
@@ -474,8 +476,8 @@ def run(args):
         return ref_info
 
     ## Setup LAMMPS stretch/torsionn system
-    sys_basedir = Path("data/templates/lammps-stretch-tors")
-    lammps_data_rel_path = sys_basedir / "data"
+    sys_basedir_st = Path("data/templates/lammps-stretch-tors")
+    lammps_data_rel_path = sys_basedir_st / "data"
     lammps_data_abs_path = os.getcwd() / lammps_data_rel_path
 
     p = subprocess.Popen([tacoxdna_basedir / "src/LAMMPS_oxDNA.py", lammps_data_abs_path], cwd=run_dir)
@@ -488,32 +490,31 @@ def run(args):
     assert(init_conf_fpath.exists())
     os.rename(init_conf_fpath, run_dir / "init.conf")
 
-    top_fpath = run_dir / "data.top"
-    assert(top_fpath.exists())
-    os.rename(top_fpath, run_dir / "sys.top")
-    top_fpath = run_dir / "sys.top"
+    top_fpath_st = run_dir / "data.top"
+    assert(top_fpath_st.exists())
+    os.rename(top_fpath_st, run_dir / "sys_st.top")
+    top_fpath_st = run_dir / "sys_st.top"
 
-    top_info = topology.TopologyInfo(top_fpath, reverse_direction=False)
-    seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
-    seq = top_info.seq
-    n = seq_oh.shape[0]
-    assert(n % 2 == 0)
-    n_bp = n // 2
-    strand_length = int(seq_oh.shape[0] // 2)
+    top_info_st = topology.TopologyInfo(top_fpath_st, reverse_direction=False)
+    seq_oh_st = jnp.array(utils.get_one_hot(top_info_st.seq), dtype=jnp.float64)
+    seq_st = top_info_st.seq
+    n_st = seq_oh_st.shape[0]
+    assert(n_st % 2 == 0)
+    n_bp_st = n_st // 2
+    strand_length_st = int(seq_oh_st.shape[0] // 2)
 
     strand1_start = 0
-    strand1_end = n_bp-1
-    strand2_start = n_bp
-    strand2_end = n_bp*2-1
+    strand1_end = n_bp_st-1
+    strand2_start = n_bp_st
+    strand2_end = n_bp_st*2-1
 
     ### The region for which theta and distance are measured
-    quartets = utils.get_all_quartets(n_nucs_per_strand=n_bp)
-    quartets = quartets[4:n_bp-5]
+    quartets_st = utils.get_all_quartets(n_nucs_per_strand=n_bp_st)
+    quartets_st = quartets_st[4:n_bp_st-5]
 
     bp1_meas = [4, strand2_end-4]
     bp2_meas = [strand1_end-4, strand2_start+4]
 
-    displacement_fn, shift_fn = space.free() # FIXME: could use box size from top_info, but not sure how the centering works.
 
     @jit
     def compute_distance(body):
@@ -524,14 +525,14 @@ def run(args):
 
     @jit
     def compute_theta(body):
-        pitches = compute_pitches(body, quartets, displacement_fn, model.com_to_hb)
+        pitches = compute_pitches(body, quartets_st, displacement_fn_free, model.com_to_hb)
         return pitches.sum()
 
-    t_kelvin = 300.0
-    kT = utils.get_kt(t_kelvin)
-    beta = 1 / kT
-    salt_conc = 0.15
-    q_eff = 0.815
+    t_kelvin_st = 300.0
+    kT_st = utils.get_kt(t_kelvin_st)
+    beta_st = 1 / kT_st
+    salt_conc_st = 0.15
+    q_eff_st = 0.815
 
     def get_stretch_tors_tasks(iter_dir, params, prev_states_force, prev_states_torque):
         all_sim_dirs = list()
@@ -557,10 +558,10 @@ def run(args):
                     print(type(prev_states_force[f_idx]))
                     print(len(prev_states_force[f_idx]))
                     print(type(prev_states_force[f_idx][r]))
-                    lammps_utils.stretch_tors_data_constructor(prev_states_force[f_idx][r], seq, repeat_dir / "data")
+                    lammps_utils.stretch_tors_data_constructor(prev_states_force[f_idx][r], seq_st, repeat_dir / "data")
                 lammps_in_fpath = repeat_dir / "in"
                 lammps_utils.stretch_tors_constructor(
-                    params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
+                    params, lammps_in_fpath, kT=kT_st, salt_conc=salt_conc_st, qeff=q_eff_st,
                     force_pn=force_pn, torque_pnnm=0,
                     save_every=sample_every_st, n_steps=n_total_steps_st,
                     seq_avg=seq_avg, seed=repeat_seed, timestep=timestep)
@@ -580,10 +581,10 @@ def run(args):
                 if prev_states_torque is None:
                     shutil.copy(lammps_data_abs_path, repeat_dir / "data")
                 else:
-                    lammps_utils.stretch_tors_data_constructor(prev_states_torque[t_idx][r], seq, repeat_dir / "data")
+                    lammps_utils.stretch_tors_data_constructor(prev_states_torque[t_idx][r], seq_st, repeat_dir / "data")
                 lammps_in_fpath = repeat_dir / "in"
                 lammps_utils.stretch_tors_constructor(
-                    params, lammps_in_fpath, kT=kT, salt_conc=salt_conc, qeff=q_eff,
+                    params, lammps_in_fpath, kT=kT_st, salt_conc=salt_conc_st, qeff=q_eff_st,
                     force_pn=2.0, torque_pnnm=torque_pnnm,
                     save_every=sample_every_st, n_steps=n_total_steps_st,
                     seq_avg=seq_avg, seed=repeat_seed)
@@ -671,7 +672,7 @@ def run(args):
 
             traj_ = jdt.from_file(
                 sim_dir / "output.dat",
-                [strand_length, strand_length],
+                [strand_length_st, strand_length_st],
                 is_oxdna=False,
                 n_processes=n_threads,
             )
@@ -721,20 +722,20 @@ def run(args):
                     model.default_base_params_seq_dep['stacking']['eps_stack_base'],
                     model.default_base_params_seq_dep['stacking']['eps_stack_kt_coeff'],
                     enforce_symmetry=False,
-                    t_kelvin=t_kelvin
+                    t_kelvin=t_kelvin_st
                 )
-            em = model.EnergyModel(displacement_fn,
+            em = model.EnergyModel(displacement_fn_free,
                                    params,
-                                   t_kelvin=t_kelvin,
+                                   t_kelvin=t_kelvin_st,
                                    ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights,
-                                   salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq_avg,
+                                   salt_conc=salt_conc_st, q_eff=q_eff_st, seq_avg=seq_avg,
                                    ignore_exc_vol_bonded=True # Because we're in LAMMPS
             )
             energy_fn = lambda body: em.energy_fn(
                 body,
-                seq=seq_oh,
-                bonded_nbrs=top_info.bonded_nbrs,
-                unbonded_nbrs=top_info.unbonded_nbrs.T)
+                seq=seq_oh_st,
+                bonded_nbrs=top_info_st.bonded_nbrs,
+                unbonded_nbrs=top_info_st.unbonded_nbrs.T)
             energy_fn = jit(energy_fn)
 
             ## Compute the energies via our energy function
@@ -742,7 +743,7 @@ def run(args):
             _, calc_energies = scan(energy_scan_fn, None, traj_states)
 
             ## Check energies
-            gt_energies = (log_df.PotEng * seq_oh.shape[0]).to_numpy()
+            gt_energies = (log_df.PotEng * seq_oh_st.shape[0]).to_numpy()
             energy_diffs = list()
             for idx, (calc, gt) in enumerate(zip(calc_energies, gt_energies)):
                 diff = onp.abs(calc - gt)
@@ -880,7 +881,7 @@ def run(args):
 
             traj_ = jdt.from_file(
                 sim_dir / "output.dat",
-                [strand_length, strand_length],
+                [strand_length_st, strand_length_st],
                 is_oxdna=False,
                 n_processes=n_threads,
             )
@@ -931,20 +932,20 @@ def run(args):
                     model.default_base_params_seq_dep['stacking']['eps_stack_base'],
                     model.default_base_params_seq_dep['stacking']['eps_stack_kt_coeff'],
                     enforce_symmetry=False,
-                    t_kelvin=t_kelvin
+                    t_kelvin=t_kelvin_st
                 )
-            em = model.EnergyModel(displacement_fn,
+            em = model.EnergyModel(displacement_fn_free,
                                    params,
-                                   t_kelvin=t_kelvin,
+                                   t_kelvin=t_kelvin_st,
                                    ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights,
-                                   salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq_avg,
+                                   salt_conc=salt_conc_st, q_eff=q_eff_st, seq_avg=seq_avg,
                                    ignore_exc_vol_bonded=True # Because we're in LAMMPS
             )
             energy_fn = lambda body: em.energy_fn(
                 body,
-                seq=seq_oh,
-                bonded_nbrs=top_info.bonded_nbrs,
-                unbonded_nbrs=top_info.unbonded_nbrs.T)
+                seq=seq_oh_st,
+                bonded_nbrs=top_info_st.bonded_nbrs,
+                unbonded_nbrs=top_info_st.unbonded_nbrs.T)
             energy_fn = jit(energy_fn)
 
             ## Compute the energies via our energy function
@@ -952,7 +953,7 @@ def run(args):
             _, calc_energies = scan(energy_scan_fn, None, traj_states)
 
             ## Check energies
-            gt_energies = (log_df.PotEng * seq_oh.shape[0]).to_numpy()
+            gt_energies = (log_df.PotEng * seq_oh_st.shape[0]).to_numpy()
             energy_diffs = list()
             for idx, (calc, gt) in enumerate(zip(calc_energies, gt_energies)):
                 diff = onp.abs(calc - gt)
@@ -1178,7 +1179,7 @@ def run(args):
         # Pitch
         if compute_struc:
             ref_states, ref_energies, ref_avg_angles = struc_ref_info
-            em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin_struc)
+            em = model.EnergyModel(displacement_fn_free, params, t_kelvin=t_kelvin_struc)
 
             energy_fn = lambda body: em.energy_fn(body,
                                                   seq=seq_oh_struc,
@@ -1213,17 +1214,17 @@ def run(args):
             all_ref_states_f, all_ref_energies_f, all_ref_dists_f, all_ref_thetas_f, all_ref_states_t, all_ref_energies_t, all_ref_dists_t, all_ref_thetas_t = stretch_tors_ref_info
 
             # Setup energy function
-            em = model.EnergyModel(displacement_fn,
+            em = model.EnergyModel(displacement_fn_free,
                                    params,
-                                   t_kelvin=t_kelvin,
-                                   salt_conc=salt_conc, q_eff=q_eff, seq_avg=seq_avg,
+                                   t_kelvin=t_kelvin_st,
+                                   salt_conc=salt_conc_st, q_eff=q_eff_st, seq_avg=seq_avg,
                                    ignore_exc_vol_bonded=True # Because we're in LAMMPS
             )
             energy_fn = lambda body: em.energy_fn(
                 body,
-                seq=seq_oh,
-                bonded_nbrs=top_info.bonded_nbrs,
-                unbonded_nbrs=top_info.unbonded_nbrs.T)
+                seq=seq_oh_st,
+                bonded_nbrs=top_info_st.bonded_nbrs,
+                unbonded_nbrs=top_info_st.unbonded_nbrs.T)
             energy_fn = jit(energy_fn)
             energy_scan_fn = lambda state, rs: (None, energy_fn(rs))
 
@@ -1231,7 +1232,7 @@ def run(args):
                 _, new_energies = scan(energy_scan_fn, None, ref_states)
 
                 diffs = new_energies - ref_energies
-                boltzs = jnp.exp(-beta * diffs)
+                boltzs = jnp.exp(-beta_st * diffs)
                 denom = jnp.sum(boltzs)
                 weights = boltzs / denom
 
