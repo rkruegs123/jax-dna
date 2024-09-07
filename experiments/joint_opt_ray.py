@@ -258,7 +258,7 @@ def run(args):
     loss_path = log_dir / "loss.txt"
     times_path = log_dir / "times.txt"
     grads_path = log_dir / "grads.txt"
-    neffs_path = log_dir / "neffs.txt"
+    neffs_st_path = log_dir / "neffs_st.txt"
     a1_path = log_dir / "a1.txt"
     a3_path = log_dir / "a3.txt"
     a4_path = log_dir / "a4.txt"
@@ -1300,7 +1300,7 @@ def run(args):
     min_n_eff_st = int(n_sample_states_st*n_sims_st * min_neff_factor)
 
     all_losses = list()
-    all_n_effs = list()
+    all_n_effs_st = list()
     all_seffs = list()
     all_cs = list()
     all_gs = list()
@@ -1348,7 +1348,7 @@ def run(args):
             num_resample_iters = 0
             with open(resample_log_path, "a") as f:
                 f.write(f"Iteration {i}\n")
-                f.write(f"- min n_eff was {n_effs.min()}...")
+                f.write(f"- min n_eff_st was {n_effs_st.min()}...")
 
             start = time.time()
             stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, struc_ref_info, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_states_force=prev_last_states_force, prev_states_torque=prev_last_states_torque, prev_basedir=prev_ref_basedir)
@@ -1384,8 +1384,8 @@ def run(args):
             f.write(f"{a4}\n")
         with open(loss_path, "a") as f:
             f.write(f"{loss}\n")
-        with open(neffs_path, "a") as f:
-            f.write(f"{n_effs}\n")
+        with open(neffs_st_path, "a") as f:
+            f.write(f"{n_effs_st}\n")
         with open(times_path, "a") as f:
             f.write(f"{iter_end - iter_start}\n")
 
@@ -1409,7 +1409,7 @@ def run(args):
         all_seffs.append(s_eff)
         all_cs.append(c)
         all_gs.append(g)
-        all_n_effs.append(n_effs)
+        all_n_effs_st.append(n_effs_st)
 
         if i % plot_every == 0 and i:
             plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
