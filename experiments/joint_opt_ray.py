@@ -31,7 +31,7 @@ import jax_dna.input.trajectory as jdt
 from jax_dna.dna1.oxdna_utils import rewrite_input_file
 from jax_dna.dna2.oxdna_utils import recompile_oxdna
 from jax_dna.dna1 import model as model1
-from jax_dna.loss import pitch, pitch2
+from jax_dna.loss import pitch, pitch2, tm
 
 
 if "ip_head" in os.environ:
@@ -214,7 +214,9 @@ def run(args):
     timestep = args['timestep']
 
     forces_pn = jnp.array(args['forces_pn'], dtype=jnp.float64)
+    n_forces = forces_pn.shape[0]
     torques_pnnm = jnp.array(args['torques_pnnm'], dtype=jnp.float64)
+    n_torques = torques_pnnm.shape[0]
 
     compute_st = not args['no_compute_st']
 
@@ -231,6 +233,7 @@ def run(args):
     target_pitch = args['target_pitch']
     compute_struc = not args['no_compute_struc']
     pitch_coeff = args['pitch_coeff']
+    min_n_eff_struc = int(n_ref_states_struc * min_neff_factor)
 
 
     # Setup the logging directory
@@ -1271,13 +1274,14 @@ def run(args):
             rel_diff_s_eff, rel_diff_c, rel_diff_g = 0.0, 0.0, 0.0
             s_eff, c, g = -1, -1, -1
             a1, a3, a4 = -1, -1, -1
-            n_effs_f, n_effs_t = n_sample_states_st*n_sims_st, n_sample_states_st*n_sims_st
+            n_effs_f, n_effs_t = jnp.full((n_forces,), n_sample_states_st*n_sims_st), jnp.full((n_torques,), n_sample_states_st*n_sims_st)
+            # n_effs_f, n_effs_t = n_sample_states_st*n_sims_st, n_sample_states_st*n_sims_st
 
         # rmse = s_eff_coeff*rmse_s_eff + c_coeff*rmse_c + g_coeff*rmse_g
         rel_diff = s_eff_coeff*rel_diff_s_eff + c_coeff*rel_diff_c + g_coeff*rel_diff_g + pitch_coeff*rel_diff_pitch
 
         # return rmse, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch)
-        return rel_diff, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch)
+        return rel_diff, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -1293,7 +1297,7 @@ def run(args):
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
 
-    min_n_eff = int(n_sample_states_st*n_sims_st * min_neff_factor)
+    min_n_eff_st = int(n_sample_states_st*n_sims_st * min_neff_factor)
 
     all_losses = list()
     all_n_effs = list()
@@ -1321,7 +1325,7 @@ def run(args):
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
-        (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info)
+        (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info)
         num_resample_iters += 1
 
         if i == 0:
@@ -1332,11 +1336,13 @@ def run(args):
             all_ref_gs.append(g)
 
         resample = False
-        n_effs = jnp.concatenate([n_effs_f, n_effs_t])
-        for n_eff in n_effs:
-            if n_eff < min_n_eff:
+        n_effs_st = jnp.concatenate([n_effs_f, n_effs_t])
+        for n_eff in n_effs_st:
+            if n_eff < min_n_eff_st:
                 resample = True
                 break
+        if n_eff_pitch < min_n_eff_struc:
+            resample = True
 
         if resample or num_resample_iters >= max_approx_iters:
             num_resample_iters = 0
@@ -1351,7 +1357,7 @@ def run(args):
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
 
-            (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info)
+            (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
