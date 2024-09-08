@@ -48,6 +48,85 @@ else:
                              checkpoint_every=checkpoint_every)
 
 
+def hairpin_tm_running_avg(traj_hist_files, n_stem_bp, n_dist_thresholds):
+    n_files = len(traj_hist_files)
+    num_ops = 2
+    n_skip_lines = 2 + num_ops
+
+    # Open the first file to read relevant statistics
+    with open(traj_hist_files[0], 'r') as f:
+        repr_lines = f.readlines()
+
+    assert(repr_lines[0][0] == "#")
+    lines_per_hist = 1
+    for l in repr_lines[1:]:
+        if l[0] != '#':
+            lines_per_hist += 1
+        else:
+            break
+
+    n_lines = len(repr_lines)
+    assert(n_lines % lines_per_hist == 0)
+    n_hists = n_lines // lines_per_hist
+
+    nvalues = lines_per_hist - 1
+    ntemps = len(repr_lines[1].split()) - n_skip_lines # number of *extrapolated* temps
+
+    ## extrapolated temperatures in celsius
+    extrapolated_temps = [float(x) * 3000. - 273.15 for x in repr_lines[0].split()[-ntemps:]]
+    extrapolated_temps = onp.array(extrapolated_temps)
+
+    # Load contents of all files
+    all_flines = list()
+    for fname in traj_hist_files:
+        with open(fname, 'r') as f:
+            all_flines.append(f.readlines())
+
+    # Compute running averages
+    all_tms = list()
+    all_widths = list()
+    start_hist_idx = 50
+    # start_hist_idx = 5
+    assert(n_hists > start_hist_idx)
+    for hist_idx in tqdm(range(start_hist_idx, n_hists), desc="Traj. histogram running avg."):
+        start_line = hist_idx * lines_per_hist
+        end_line = start_line + lines_per_hist
+
+        # Construct a matrix of unbiased counts for each temperature and order parameter
+        unbiased_counts = onp.zeros((ntemps, nvalues))
+        for f_idx in range(n_files):
+            f_hist_lines = all_flines[f_idx][start_line:end_line]
+            for op_idx, op_line in enumerate(f_hist_lines[1:]): # ignore the header
+                tokens = op_line.split()
+                op_unbiased_temp_counts = onp.array([float(t) for t in tokens[n_skip_lines:]])
+                unbiased_counts[:, op_idx] += op_unbiased_temp_counts
+
+
+        unbound_op_idxs_extended = onp.array([n_stem_bp*d_idx for d_idx in range(n_dist_thresholds)])
+        # bound_op_idxs_extended = onp.array(list(range(1, 1+n_stem_bp)))
+        bound_op_idxs_extended = onp.array(list(range(1, n_stem_bp)))
+
+        unbound_unbiased_counts = unbiased_counts[:, unbound_op_idxs_extended]
+        bound_unbiased_counts = unbiased_counts[:, bound_op_idxs_extended]
+
+        ratios = list()
+        for t_idx in range(len(extrapolated_temps)):
+            unbound_count = unbound_unbiased_counts[t_idx].sum()
+            bound_count = bound_unbiased_counts[t_idx].sum()
+
+            ratio = bound_count / unbound_count
+            ratios.append(ratio)
+        ratios = onp.array(ratios)
+
+        tm_ = tm.compute_tm(extrapolated_temps, ratios)
+        width_ = tm.compute_width(extrapolated_temps, ratios)
+
+        all_tms.append(tm_)
+        all_widths.append(width_)
+
+    return all_tms, all_widths
+
+
 def zip_file(file_path, zip_name):
     with zipfile.ZipFile(zip_name, 'w') as zipf:
         zipf.write(file_path, os.path.basename(file_path))
