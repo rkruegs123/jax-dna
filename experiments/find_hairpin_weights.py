@@ -235,7 +235,7 @@ def run(args):
             op_file=str(repeat_dir / "op.txt"),
             log_file=str(repeat_dir / "sim.log"),
             restart_step_counter=1, # Because we will not be concatenating the outputs, so we can equilibrate
-            interaction_type="DNA2_nomesh",,
+            interaction_type="DNA2_nomesh",
             salt_concentration=salt_concentration
         )
 
