@@ -236,6 +236,33 @@ def run(args):
     min_n_eff_struc = int(n_ref_states_struc * min_neff_factor)
 
 
+    # Hairpin Tm arguments
+    n_sims_hpin = args['n_sims_hpin']
+    n_steps_per_sim_hpin = args['n_steps_per_sim_hpin']
+    n_eq_steps_hpin = args['n_eq_steps_hpin']
+    sample_every_hpin = args['sample_every_hpin']
+    assert(n_steps_per_sim_hpin % sample_every_hpin == 0)
+    n_ref_states_per_sim_hpin = n_steps_per_sim_hpin // sample_every_hpin
+    n_ref_states_hpin = n_ref_states_per_sim_hpin * n_sims_hpin
+
+    t_kelvin_hpin = args['temp_hpin']
+    extrapolate_temps_hpin = jnp.array([float(et) for et in args['extrapolate_temps_hpin']]) # in Kelvin
+    assert(jnp.all(extrapolate_temps_hpin[:-1] <= extrapolate_temps_hpin[1:])) # check that temps. are sorted
+    n_extrap_temps_hpin = len(extrapolate_temps_hpin)
+    extrapolate_kts_hpin = vmap(utils.get_kt)(extrapolate_temps_hpin)
+    extrapolate_temp_str_hpin = ', '.join([f"{tc}K" for tc in extrapolate_temps_hpin])
+
+    salt_concentration_hpin = args['salt_concentration_hpin']
+
+    target_tm_hpin = args['target_tm_hpin']
+
+    stem_bp_hpin = args['stem_bp_hpin']
+    loop_nt_hpin = args['loop_nt_hpin']
+
+    compute_hpin = not args['no_compute_hpin']
+
+
+
     # Setup the logging directory
     if run_name is None:
         raise RuntimeError(f"Must set run name")
@@ -311,10 +338,11 @@ def run(args):
 
 
 
-    def get_struc_tasks(iter_dir, params, prev_basedir):
-        recompile_start = time.time()
-        recompile_oxdna(params, oxdna_path, t_kelvin_struc, num_threads=n_threads)
-        recompile_end = time.time()
+    def get_struc_tasks(iter_dir, params, prev_basedir, recompile=True):
+        if recompile:
+            recompile_start = time.time()
+            recompile_oxdna(params, oxdna_path, t_kelvin_struc, num_threads=n_threads)
+            recompile_end = time.time()
 
         struc_dir = iter_dir / "struc"
         struc_dir.mkdir(parents=False, exist_ok=False)
@@ -473,6 +501,511 @@ def run(args):
 
         ref_info = (traj_states, calc_energies, jnp.array(ref_avg_angles))
 
+        return ref_info
+
+
+    ## Setup hairpin Tm system
+    hairpin_basedir = Path("data/templates/hairpins")
+    sys_basedir_hpin = hairpin_basedir / f"{stem_bp_hpin}bp_stem_{loop_nt_hpin}nt_loop"
+    assert(sys_basedir_hpin.exists())
+    conf_path_unbound_hpin = sys_basedir_hpin / "init_unbound.conf"
+    conf_path_bound_hpin = sys_basedir_hpin / "init_bound.conf"
+    top_path_hpin = sys_basedir_hpin / "sys.top"
+    input_template_path_hpin = sys_basedir_hpin / "input"
+    op_path_hpin = sys_basedir_hpin / "op.txt"
+    wfile_path_hpin = sys_basedir_hpin / "wfile.txt"
+
+    top_info_hpin = topology.TopologyInfo(
+        top_path_hpin,
+        reverse_direction=False
+        # reverse_direction=True
+    )
+    seq_oh_hpin = jnp.array(utils.get_one_hot(top_info_hpin.seq), dtype=jnp.float64)
+    n_nt_hpin = seq_oh_hpin.shape[0]
+    assert(n_nt_hpin == 2*stem_bp_hpin + loop_nt_hpin)
+
+
+    conf_info_unbound_hpin = trajectory.TrajectoryInfo(
+        top_info_hpin, read_from_file=True, traj_path=conf_path_unbound_hpin,
+        # reverse_direction=True
+        reverse_direction=False
+    )
+    conf_info_bound_hpin = trajectory.TrajectoryInfo(
+        top_info_hpin, read_from_file=True, traj_path=conf_path_bound_hpin,
+        # reverse_direction=True
+        reverse_direction=False
+    )
+    box_size_hpin = conf_info_bound_hpin.box_size
+
+    kT_hpin = utils.get_kt(t_kelvin_hpin)
+    beta_hpin = 1 / kT_hpin
+
+    ### Process the weights information
+    weights_df_hpin = pd.read_fwf(wfile_path_hpin, names=["op1", "op2", "weight"])
+    num_ops_hpin = len(weights_df_hpin)
+    n_stem_bp_hpin = len(weights_df_hpin.op1.unique())
+    n_dist_thresholds_hpin = len(weights_df_hpin.op2.unique())
+    pair2idx_hpin = dict()
+    idx2pair_hpin = dict()
+    idx2weight_hpin = dict()
+    unbound_op_idxs_hpin = list()
+    bound_op_idxs_hpin = list()
+    for row_idx, row in weights_df_hpin.iterrows():
+        op1 = int(row.op1)
+        op2 = int(row.op2)
+        pair2idx_hpin[(op1, op2)] = row_idx
+        idx2pair_hpin[row_idx] = (op1, op2)
+        idx2weight_hpin[row_idx] = row.weight
+
+        if op1 == 0:
+            unbound_op_idxs_hpin.append(row_idx)
+        else:
+            bound_op_idxs_hpin.append(row_idx)
+    bound_op_idxs_hpin = onp.array(bound_op_idxs_hpin)
+    unbound_op_idxs_hpin = onp.array(unbound_op_idxs_hpin)
+
+    def compute_ratio_hpin(ub_counts):
+        ub_unbiased_counts = ub_counts[unbound_op_idxs_hpin]
+        ub_biased_counts = ub_counts[bound_op_idxs_hpin]
+
+        return ub_biased_counts.sum() / ub_unbiased_counts.sum()
+
+    max_seed_tries_hpin = 5
+    seed_check_sample_freq_hpin = 10
+    seed_check_steps_hpin = 100
+
+
+    def get_hpin_tasks(iter_dir, params, recompile=False):
+        if recompile:
+            recompile_start = time.time()
+            recompile_oxdna(params, oxdna_path, t_kelvin_hpin, num_threads=n_threads)
+            recompile_end = time.time()
+
+        hpin_dir = iter_dir / "hpin"
+        hpin_dir.mkdir(parents=False, exist_ok=False)
+
+        all_repeat_dirs = list()
+        for r in range(n_sims_hpin):
+            repeat_dir = hpin_dir / f"r{r}"
+            repeat_dir.mkdir(parents=False, exist_ok=False)
+
+            all_repeat_dirs.append(repeat_dir)
+
+            shutil.copy(top_path_hpin, repeat_dir / "sys.top")
+            shutil.copy(wfile_path_hpin, repeat_dir / "wfile.txt")
+            shutil.copy(op_path_hpin, repeat_dir / "op.txt")
+
+            if r % 2 == 0:
+                conf_info_copy = deepcopy(conf_info_bound_hpin)
+            else:
+                conf_info_copy = deepcopy(conf_info_unbound_hpin)
+
+            conf_info_copy.traj_df.t = onp.full(seq_oh_hpin.shape[0], r*n_steps_per_sim_hpin)
+
+            conf_info_copy.write(repeat_dir / "init.conf",
+                                 reverse=False,
+                                 # reverse=True,
+                                 write_topology=False)
+
+
+            check_seed_dir = repeat_dir / "check_seed"
+            check_seed_dir.mkdir(parents=False, exist_ok=False)
+            s_idx = 0
+            valid_seed = None
+            while s_idx < max_seed_tries_hpin and valid_seed is None:
+                seed_try = random.randrange(10000)
+                seed_dir = check_seed_dir / f"s{seed_try}"
+                seed_dir.mkdir(parents=False, exist_ok=False)
+
+                rewrite_input_file(
+                    input_template_path_hpin, seed_dir,
+                    temp=f"{t_kelvin_hpin}K", steps=seed_check_steps_hpin,
+                    init_conf_path=str(repeat_dir / "init.conf"),
+                    top_path=str(repeat_dir / "sys.top"),
+                    save_interval=seed_check_sample_freq_hpin, seed=seed_try,
+                    equilibration_steps=0,
+                    no_stdout_energy=0, extrapolate_hist=extrapolate_temp_str_hpin,
+                    weights_file=str(repeat_dir / "wfile.txt"),
+                    op_file=str(repeat_dir / "op.txt"),
+                    log_file=str(repeat_dir / "sim.log"),
+                    interaction_type="DNA2_nomesh",
+                    salt_concentration=salt_concentration_hpin
+                )
+
+                seed_proc = subprocess.Popen([oxdna_exec_path, seed_dir / "input"])
+                seed_proc.wait()
+                seed_rc = seed_proc.returncode
+
+                if seed_rc == 0:
+                    valid_seed = seed_try
+
+                s_idx += 1
+
+            if valid_seed is None:
+                raise RuntimeError(f"Could not find valid seed.")
+
+
+            rewrite_input_file(
+                input_template_path_hpin, repeat_dir,
+                temp=f"{t_kelvin_hpin}K", steps=n_steps_per_sim_hpin,
+                init_conf_path=str(repeat_dir / "init.conf"),
+                top_path=str(repeat_dir / "sys.top"),
+                save_interval=sample_every_hpin, seed=valid_seed,
+                equilibration_steps=n_eq_steps_hpin,
+                no_stdout_energy=0, extrapolate_hist=extrapolate_temp_str_hpin,
+                weights_file=str(repeat_dir / "wfile.txt"),
+                op_file=str(repeat_dir / "op.txt"),
+                log_file=str(repeat_dir / "sim.log"),
+                interaction_type="DNA2_nomesh",
+                salt_concentration=salt_concentration_hpin
+            )
+
+        hpin_tasks = [run_oxdna_ray.remote(oxdna_exec_path, rdir) for rdir in all_repeat_dirs]
+        return hpin_tasks, all_repeat_dirs
+
+    def process_hpin(iter_dir, params):
+        hpin_dir = iter_dir / "hpin"
+
+        ## Combine the output files
+        combine_cmd = "cat "
+        for r in range(n_sims_hpin):
+            repeat_dir = hpin_dir / f"r{r}"
+            combine_cmd += f"{repeat_dir}/output.dat "
+        combine_cmd += f"> {hpin_dir}/output.dat"
+        combine_proc = subprocess.run(combine_cmd, shell=True)
+        if combine_proc.returncode != 0:
+            raise RuntimeError(f"Combining trajectories failed with error code: {combine_proc.returncode}")
+
+        if not no_delete:
+            files_to_remove = ["output.dat"]
+            for r in range(n_sims_hpin):
+                repeat_dir = hpin_dir / f"r{r}"
+                for f_stem in files_to_remove:
+                    file_to_rem = repeat_dir / f_stem
+                    file_to_rem.unlink()
+
+        ## Compute running avg. from `traj_hist.dat`
+        all_traj_hist_fpaths = list()
+        for r in range(n_sims_hpin):
+            repeat_dir = hpin_dir / f"r{r}"
+            all_traj_hist_fpaths.append(repeat_dir / "traj_hist.dat")
+
+        ### Note: the below should really go in its own loss file
+        all_running_tms, all_running_widths = hairpin_tm_running_avg(
+            all_traj_hist_fpaths, n_stem_bp_hpin, n_dist_thresholds_hpin)
+
+        plt.plot(all_running_tms)
+        plt.xlabel("Iteration")
+        plt.ylabel("Tm (C)")
+        plt.savefig(hpin_dir / "traj_hist_running_tm.png")
+        # plt.show()
+        plt.clf()
+
+        plt.plot(all_running_widths)
+        plt.xlabel("Iteration")
+        plt.ylabel("Width (C)")
+        plt.savefig(hpin_dir / "traj_hist_running_width.png")
+        # plt.show()
+        plt.clf()
+
+        ## Load states from oxDNA simulation
+        traj_info = trajectory.TrajectoryInfo(
+            top_info_hpin, read_from_file=True,
+            traj_path=hpin_dir / "output.dat",
+            reverse_direction=False
+            # reverse_direction=True
+        )
+        ref_states = traj_info.get_states()
+        assert(len(ref_states) == n_ref_states_hpin)
+        ref_states = utils.tree_stack(ref_states)
+
+
+        ## Load the oxDNA energies
+        energy_df_columns = [
+            "time", "potential_energy", "acc_ratio_trans", "acc_ratio_rot",
+            "acc_ratio_vol", "op1", "op2", "op_weight"
+        ]
+        energy_dfs = [pd.read_csv(hpin_dir / f"r{r}" / "energy.dat", names=energy_df_columns,
+                                  delim_whitespace=True)[1:] for r in range(n_sims_hpin)]
+        energy_df = pd.concat(energy_dfs, ignore_index=True)
+
+
+        ## Load all last_hist.dat and combine
+        last_hist_columns = ["num_bp", "dist_threshold_idx", "count_biased", "count_unbiased"] \
+                            + [str(et) for et in extrapolate_temps_hpin]
+        last_hist_df = None
+        for r in range(n_sims_hpin):
+            repeat_dir = hpin_dir / f"r{r}"
+            last_hist_fpath = repeat_dir / "last_hist.dat"
+            repeat_last_hist_df = pd.read_csv(
+                last_hist_fpath, delim_whitespace=True, skiprows=[0], header=None,
+                names=last_hist_columns)
+
+            if last_hist_df is None:
+                last_hist_df = repeat_last_hist_df
+                orig_num_bp_col = deepcopy(last_hist_df['num_bp'])
+                orig_dist_threshold_idx_col = deepcopy(last_hist_df['dist_threshold_idx'])
+            else:
+                last_hist_df = last_hist_df.add(repeat_last_hist_df)
+        last_hist_df['num_bp'] = orig_num_bp_col
+        last_hist_df['dist_threshold_idx'] = orig_dist_threshold_idx_col
+
+
+        ## Check energies
+        em_base = model.EnergyModel(displacement_fn_free, params, t_kelvin=t_kelvin_hpin, salt_conc=salt_concentration_hpin)
+        energy_fn = lambda body: em_base.energy_fn(
+            body,
+            seq=seq_oh_hpin,
+            bonded_nbrs=top_info_hpin.bonded_nbrs,
+            unbonded_nbrs=top_info_hpin.unbonded_nbrs.T,
+            is_end=top_info_hpin.is_end
+        )
+        energy_fn = jit(energy_fn)
+
+        ref_energies = list()
+        for rs_idx in tqdm(range(n_ref_states_hpin), desc="Calculating energies"):
+            rs = ref_states[rs_idx]
+            ref_energies.append(energy_fn(rs))
+        ref_energies = jnp.array(ref_energies)
+
+        gt_energies = energy_df.potential_energy.to_numpy() * seq_oh_hpin.shape[0]
+
+        atol_places = 3
+        tol = 10**(-atol_places)
+        energy_diffs = list()
+        for i, (calc, gt) in enumerate(zip(ref_energies, gt_energies)):
+            diff = onp.abs(calc - gt)
+            if diff > tol:
+                print(f"WARNING: energy difference of {diff}")
+                # pdb.set_trace() # note: in practice, we wouldn't set a trace
+            energy_diffs.append(diff)
+
+        sns.distplot(ref_energies, label="Calculated", color="red")
+        sns.distplot(gt_energies, label="Reference", color="green")
+        plt.legend()
+        # plt.show()
+        plt.savefig(hpin_dir / "energies.png")
+        plt.clf()
+
+        sns.histplot(energy_diffs)
+        plt.savefig(hpin_dir / "energy_diffs.png")
+        # plt.show()
+        plt.clf()
+
+
+        ## Check uniformity across biased counts
+        fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+
+        ### First, the periodic counts derived from the energy file(s)
+        count_df = energy_df.groupby(['op1', 'op2', 'op_weight']).size().reset_index().rename(columns={0: "count"})
+        op_names = list()
+        op_weights = list()
+        op_counts_periodic = list()
+        for row_idx, row in weights_df_hpin.iterrows():
+            op1 = int(row.op1)
+            op2 = int(row.op2)
+            op_name = f"({op1}, {op2})"
+
+            count_row = count_df[(count_df.op1 == op1) & (count_df.op2 == op2)]
+            if count_row.empty:
+                op_count = 0
+            else:
+                op_count = count_row['count'].to_numpy()[0]
+
+            op_names.append(op_name)
+            op_counts_periodic.append(op_count)
+            op_weights.append(row.weight)
+        op_counts_periodic = onp.array(op_counts_periodic)
+        op_weights = onp.array(op_weights)
+
+        sns.barplot(x=op_names, y=op_counts_periodic, ax=ax[0])
+        ax[0].set_title("Periodic Counts")
+        ax[0].set_xlabel("O.P.")
+
+        ### Then, the frequent counts from the histogram
+        op_counts_frequent = list()
+        for row_idx, row in weights_df_hpin.iterrows():
+            op1 = int(row.op1)
+            op2 = int(row.op2)
+
+            last_hist_row = last_hist_df[(last_hist_df.num_bp == op1) \
+                                         & (last_hist_df.dist_threshold_idx == op2)]
+            assert(not last_hist_row.empty)
+            op_count = last_hist_row['count_biased'].to_numpy()[0]
+
+            op_counts_frequent.append(op_count)
+        op_counts_frequent = onp.array(op_counts_frequent)
+
+        sns.barplot(x=op_names, y=op_counts_frequent, ax=ax[1])
+        ax[1].set_title("Frequent Counts")
+
+        plt.savefig(hpin_dir / "biased_counts.png")
+        plt.clf()
+
+
+        ## Unbias reference counts
+        fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+
+        op_counts_periodic_unbiased = op_counts_periodic / op_weights
+        sns.barplot(x=op_names, y=op_counts_periodic_unbiased, ax=ax[0])
+        ax[0].set_title(f"Periodic Counts, Reference T={t_kelvin_hpin}K")
+        ax[0].set_xlabel("O.P.")
+
+        op_counts_frequent_unbiased = op_counts_frequent / op_weights
+
+        sns.barplot(x=op_names, y=op_counts_frequent_unbiased, ax=ax[1])
+        ax[1].set_title(f"Frequent Counts, Reference T={t_kelvin_hpin}K")
+
+        plt.savefig(hpin_dir / "unbiased_counts.png")
+        plt.clf()
+
+
+        ## Unbias counts for each temperature
+        all_ops = list(zip(energy_df.op1.to_numpy(), energy_df.op2.to_numpy()))
+        all_unbiased_counts = list()
+        all_unbiased_counts_ref = list()
+        for extrap_t_kelvin, extrap_kt in zip(extrapolate_temps_hpin, extrapolate_kts_hpin):
+            em_temp = model.EnergyModel(displacement_fn_free, params, t_kelvin=extrap_t_kelvin, salt_conc=salt_concentration_hpin)
+            energy_fn_temp = lambda body: em_temp.energy_fn(
+                body,
+                seq=seq_oh_hpin,
+                bonded_nbrs=top_info_hpin.bonded_nbrs,
+                unbonded_nbrs=top_info_hpin.unbonded_nbrs.T,
+                is_end=top_info_hpin.is_end
+            )
+            energy_fn_temp = jit(energy_fn_temp)
+
+            temp_unbiased_counts = onp.zeros(num_ops_hpin)
+            for rs_idx in tqdm(range(n_ref_states_hpin), desc=f"Extrapolating to {extrap_t_kelvin}K"):
+                rs = ref_states[rs_idx]
+                op1, op2 = all_ops[rs_idx]
+                op_idx = pair2idx_hpin[(op1, op2)]
+                op_weight = idx2weight_hpin[int(op_idx)]
+
+                calc_energy = ref_energies[rs_idx]
+                calc_energy_temp = energy_fn_temp(rs)
+
+                boltz_diff = jnp.exp(calc_energy/kT_hpin - calc_energy_temp/extrap_kt)
+                temp_unbiased_counts[op_idx] += 1/op_weight * boltz_diff
+
+            all_unbiased_counts.append(temp_unbiased_counts)
+
+            fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+            sns.barplot(x=op_names, y=temp_unbiased_counts, ax=ax[0])
+            ax[0].set_title(f"Periodic Counts, T={extrap_t_kelvin}K")
+            ax[0].set_xlabel("O.P.")
+
+            # Get the frequent counts at the extrapolated temp. from the oxDNA histogram
+            frequent_extrap_counts = list()
+            for row_idx, row in weights_df_hpin.iterrows():
+                op1 = int(row.op1)
+                op2 = int(row.op2)
+
+                last_hist_row = last_hist_df[(last_hist_df.num_bp == op1) \
+                                             & (last_hist_df.dist_threshold_idx == op2)]
+                frequent_extrap_counts.append(last_hist_row[str(extrap_t_kelvin)].to_numpy()[0])
+            frequent_extrap_counts = onp.array(frequent_extrap_counts)
+            all_unbiased_counts_ref.append(frequent_extrap_counts)
+
+            sns.barplot(x=op_names, y=frequent_extrap_counts, ax=ax[1])
+            ax[1].set_title(f"Frequent Counts, T={extrap_t_kelvin}K")
+
+            plt.savefig(hpin_dir / f"unbiased_counts_{extrap_t_kelvin}K_extrap.png")
+            plt.clf()
+
+        all_unbiased_counts = onp.array(all_unbiased_counts)
+        all_unbiased_counts_ref = onp.array(all_unbiased_counts_ref)
+
+        # Compute the final Tms and widths
+
+        unbound_unbiased_counts = all_unbiased_counts[:, unbound_op_idxs]
+        bound_unbiased_counts = all_unbiased_counts[:, bound_op_idxs]
+
+        ratios = list()
+        for t_idx in range(len(extrapolate_temps_hpin)):
+            unbound_count = unbound_unbiased_counts[t_idx].sum()
+            bound_count = bound_unbiased_counts[t_idx].sum()
+
+            ratio = bound_count / unbound_count
+            ratios.append(ratio)
+        ratios = onp.array(ratios)
+
+        calc_tm = tm.compute_tm(extrapolate_temps_hpin, ratios)
+        calc_width = tm.compute_width(extrapolate_temps_hpin, ratios)
+
+        rev_ratios = jnp.flip(ratios)
+        rev_temps = jnp.flip(extrapolate_temps_hpin)
+        ratios_extrap = jnp.arange(0.1, 1., 0.05)
+        temps_extrap = jnp.interp(ratios_extrap, rev_ratios, rev_temps)
+        plt.plot(temps_extrap, ratios_extrap)
+        plt.xlabel("T/K")
+        plt.ylabel("Hairpin Yield")
+        plt.title(f"Tm={onp.round(calc_tm, 2)}, width={onp.round(calc_width, 2)}")
+        plt.savefig(hpin_dir / "melting_curve_calc.png")
+        plt.clf()
+
+
+        unbound_unbiased_counts_ref = all_unbiased_counts_ref[:, unbound_op_idxs]
+        bound_unbiased_counts_ref = all_unbiased_counts_ref[:, bound_op_idxs]
+        ratios_ref = list()
+        for t_idx in range(len(extrapolate_temps_hpin)):
+            unbound_count_ref = unbound_unbiased_counts_ref[t_idx].sum()
+            bound_count_ref = bound_unbiased_counts_ref[t_idx].sum()
+
+            ratio_ref = bound_count_ref / unbound_count_ref
+            ratios_ref.append(ratio_ref)
+        ratios_ref = onp.array(ratios_ref)
+
+        calc_tm_ref = tm.compute_tm(extrapolate_temps_hpin, ratios_ref)
+        calc_width_ref = tm.compute_width(extrapolate_temps_hpin, ratios_ref)
+
+        rev_ratios = jnp.flip(ratios_ref)
+        rev_temps = jnp.flip(extrapolate_temps_hpin)
+        ratios_extrap = jnp.arange(0.1, 1., 0.05)
+        temps_extrap = jnp.interp(ratios_extrap, rev_ratios, rev_temps)
+        plt.plot(temps_extrap, ratios_extrap)
+        plt.xlabel("T/K")
+        plt.ylabel("Hairpin Yield")
+        plt.title(f"Tm={onp.round(calc_tm_ref, 2)}, width={onp.round(calc_width_ref, 2)}")
+        plt.savefig(hpin_dir / "melting_curve_ref.png")
+        plt.clf()
+
+        end = time.time()
+        analyze_time = end - start
+
+        summary_str = ""
+        summary_str += f"Simulation time: {sim_time}\n"
+        summary_str += f"Analyze time: {analyze_time}\n"
+        summary_str += f"Reference Tm: {calc_tm_ref}\n"
+        summary_str += f"Reference width: {calc_width_ref}\n"
+        summary_str += f"Calc. Tm: {calc_tm}\n"
+        summary_str += f"Calc. width: {calc_width}\n"
+        with open(hpin_dir / "summary.txt", "w+") as f:
+            f.write(summary_str)
+
+        all_op_weights = list()
+        all_op_idxs = list()
+        for op1, op2 in all_ops:
+            op_idx = pair2idx_hpin[(op1, op2)]
+            op_weight = idx2weight_hpin[int(op_idx)]
+            all_op_weights.append(op_weight)
+            all_op_idxs.append(op_idx)
+
+        all_ops = jnp.array(all_ops).astype(jnp.int32)
+        all_op_weights = jnp.array(all_op_weights)
+        all_op_idxs = jnp.array(all_op_idxs)
+
+        if not no_archive:
+            zip_file(str(hpin_dir / "output.dat"), str(hpin_dir / "output.dat.zip"))
+            os.remove(str(hpin_dir / "output.dat"))
+
+        plt.plot(all_ops_idx)
+        for i in range(n_sims_hpin):
+            plt.axvline(x=i*n_ref_states_per_sim_hpin, linestyle="--", color="red")
+        plt.savefig(hpin_dir / "op_trajectory.png")
+        plt.clf()
+
+        ref_info = (ref_states, ref_energies, all_ops, all_op_weights, all_op_idxs)
         return ref_info
 
     ## Setup LAMMPS stretch/torsionn system
@@ -1132,6 +1665,9 @@ def run(args):
         if compute_struc:
             struc_tasks, all_sim_dirs_struc = get_struc_tasks(iter_dir, params, prev_basedir)
 
+        if compute_hpin:
+            hpin_tasks, all_sim_dirs_hpin = get_hpin_tasks(iter_dir, params, recompile=(not compute_struc))
+
         ## Archive the previous basedir now that we've loaded states from it
         if not no_archive and prev_basedir is not None:
             shutil.make_archive(prev_basedir, 'zip', prev_basedir)
@@ -1141,6 +1677,8 @@ def run(args):
             all_ret_info = ray.get(stretch_tors_tasks)
         if compute_struc:
             all_ret_info_struc = ray.get(struc_tasks) # FIXME: for now, not doing anything with this! Just want to run the simulations and see them. Then, we do analysis and what not.
+        if compute_hpin:
+            all_ret_info_hpin = ray.get(hpin_tasks)
 
         if compute_st:
             all_rcs = [ret_info[0] for ret_info in all_ret_info]
@@ -1169,9 +1707,12 @@ def run(args):
             stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states = process_stretch_tors(iter_dir, params)
         else:
             stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states = None, None, None
+        if compute_hpin:
+            hpin_ref_info = process_hpin(iter_dir, params)
+        else:
+            hpin_ref_info = None
 
-
-        return stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states, struc_ref_info, iter_dir
+        return stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states, struc_ref_info, hpin_ref_info, iter_dir
 
     @jit
     def loss_fn(params, stretch_tors_ref_info, struc_ref_info):
@@ -1317,7 +1858,7 @@ def run(args):
 
     start = time.time()
     prev_ref_basedir = None
-    stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, struc_ref_info, ref_iter_dir = get_ref_states(params, i=0, seed=30362, prev_states_force=None, prev_states_torque=None, prev_basedir=prev_ref_basedir)
+    stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, struc_ref_info, hpin_ref_info, ref_iter_dir = get_ref_states(params, i=0, seed=30362, prev_states_force=None, prev_states_torque=None, prev_basedir=prev_ref_basedir)
     prev_ref_basedir = deepcopy(ref_iter_dir)
     end = time.time()
     with open(resample_log_path, "a") as f:
@@ -1352,7 +1893,7 @@ def run(args):
                 f.write(f"- min n_eff_st was {n_effs_st.min()}...")
 
             start = time.time()
-            stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, struc_ref_info, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_states_force=prev_last_states_force, prev_states_torque=prev_last_states_torque, prev_basedir=prev_ref_basedir)
+            stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, struc_ref_info, hpin_ref_info, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_states_force=prev_last_states_force, prev_states_torque=prev_last_states_torque, prev_basedir=prev_ref_basedir)
             end = time.time()
             prev_ref_basedir = deepcopy(ref_iter_dir)
             with open(resample_log_path, "a") as f:
@@ -1607,6 +2148,33 @@ def get_parser():
     parser.add_argument('--no-compute-struc', action='store_true')
     parser.add_argument('--pitch-coeff', type=float, default=0.0,
                         help="Coefficient for pitch component")
+
+
+    # Hairpin Tm information
+    parser.add_argument('--n-sims-hpin', type=int, default=2,
+                        help="Number of individual simulations for hairpin tm")
+    parser.add_argument('--n-steps-per-sim-hpin', type=int, default=int(5e6),
+                        help="Number of steps per simulation")
+    parser.add_argument('--n-eq-steps-hpin', type=int, default=0,
+                        help="Number of equilibration steps")
+    parser.add_argument('--sample-every-hpin', type=int, default=int(1e3),
+                        help="Frequency of sampling reference states.")
+    parser.add_argument('--temp-hpin', type=float, default=330.15,
+                        help="Temperature in kelvin")
+    parser.add_argument('--extrapolate-temps-hpin', nargs='+',
+                        help='Temperatures for extrapolation in Kelvin in ascending order',
+                        required=True)
+    parser.add_argument('--salt-concentration-hpin', type=float, default=0.25,
+                        help="Salt concentration in molar (M)")
+
+    parser.add_argument('--stem-bp-hpin', type=int, default=6,
+                        help="Number of base pairs comprising the stem")
+    parser.add_argument('--loop-nt-hpin', type=int, default=6,
+                        help="Number of nucleotides comprising the loop")
+    parser.add_argument('--target-tm-hpin', type=float, required=True,
+                        help="Target melting temperature in Kelvin")
+
+    parser.add_argument('--no-compute-hpin', action='store_true')
 
     return parser
 
