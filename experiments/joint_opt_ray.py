@@ -1922,7 +1922,7 @@ def run(args):
             _, new_energies = scan(energy_scan_fn, None, ref_states)
 
             diffs = new_energies - ref_energies # element-wise subtraction
-            boltzs = jnp.exp(-beta * diffs)
+            boltzs = jnp.exp(-beta_hpin * diffs)
             denom = jnp.sum(boltzs)
             weights = boltzs / denom
 
