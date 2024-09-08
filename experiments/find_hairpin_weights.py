@@ -153,6 +153,8 @@ def run(args):
 
     # Plot trajectory of order parameters
     plt.plot(all_op_idxs)
+    for i in range(n_sims):
+        plt.axvline(x=i*n_ref_states_per_sim, linestyle="--", color="red")
     plt.savefig(initial_weights_dir / "op_trajectory.png")
     plt.clf()
 
@@ -268,6 +270,8 @@ def run(args):
 
     # Plot trajectory of order parameters
     plt.plot(all_op_idxs)
+    for i in range(n_sims):
+        plt.axvline(x=i*n_ref_states_per_sim, linestyle="--", color="red")
     plt.savefig(check_weights_dir / "op_trajectory.png")
     plt.clf()
 
@@ -309,7 +313,7 @@ def get_parser():
     parser.add_argument('--oxdna-path', type=str,
                         default="/home/ryan/Documents/Harvard/research/brenner/oxdna-bin/oxDNA/",
                         help='oxDNA base directory')
-    parser.add_argument('--temp', type=float, default=330.0,
+    parser.add_argument('--temp', type=float, default=330.15,
                         help="Temperature in kelvin")
 
     parser.add_argument('--stem-bp', type=int, default=4,
