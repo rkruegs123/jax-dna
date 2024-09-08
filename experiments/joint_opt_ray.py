@@ -229,6 +229,7 @@ def run(args):
     n_iters = args['n_iters']
     lr = args['lr']
     min_neff_factor = args['min_neff_factor']
+    min_neff_factor_hpin = args['min_neff_factor_hpin']
     max_approx_iters = args['max_approx_iters']
     seq_avg = not args['seq_dep']
     assert(seq_avg)
@@ -326,6 +327,7 @@ def run(args):
     assert(n_steps_per_sim_hpin % sample_every_hpin == 0)
     n_ref_states_per_sim_hpin = n_steps_per_sim_hpin // sample_every_hpin
     n_ref_states_hpin = n_ref_states_per_sim_hpin * n_sims_hpin
+    min_n_eff_hpin = int(n_ref_states_hpin * min_neff_factor_hpin)
 
     t_kelvin_hpin = args['temp_hpin']
     extrapolate_temps_hpin = jnp.array([float(et) for et in args['extrapolate_temps_hpin']]) # in Kelvin
@@ -372,6 +374,8 @@ def run(args):
     times_path = log_dir / "times.txt"
     grads_path = log_dir / "grads.txt"
     neffs_st_path = log_dir / "neffs_st.txt"
+    neff_struc_path = log_dir / "neff_struc.txt"
+    neff_hpin_path = log_dir / "neff_hpin.txt"
     a1_path = log_dir / "a1.txt"
     a3_path = log_dir / "a3.txt"
     a4_path = log_dir / "a4.txt"
@@ -1765,7 +1769,7 @@ def run(args):
 
 
 
-    def get_ref_states(params, i, seed, prev_states_force, prev_states_torque, prev_basedir):
+    def get_ref_states(params, i, seed, prev_states_force, prev_states_torque, prev_basedir, resample_hpin):
         random.seed(seed)
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
@@ -1779,7 +1783,7 @@ def run(args):
         if compute_struc:
             struc_tasks, all_sim_dirs_struc = get_struc_tasks(iter_dir, params, prev_basedir)
 
-        if compute_hpin:
+        if compute_hpin and resample_hpin:
             hpin_tasks, all_sim_dirs_hpin = get_hpin_tasks(iter_dir, params, recompile=(not compute_struc))
 
         ## Archive the previous basedir now that we've loaded states from it
@@ -1791,7 +1795,7 @@ def run(args):
             all_ret_info = ray.get(stretch_tors_tasks)
         if compute_struc:
             all_ret_info_struc = ray.get(struc_tasks) # FIXME: for now, not doing anything with this! Just want to run the simulations and see them. Then, we do analysis and what not.
-        if compute_hpin:
+        if compute_hpin and resample_hpin:
             all_ret_info_hpin = ray.get(hpin_tasks)
 
         if compute_st:
@@ -1821,7 +1825,7 @@ def run(args):
             stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states = process_stretch_tors(iter_dir, params)
         else:
             stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states = None, None, None
-        if compute_hpin:
+        if compute_hpin and resample_hpin:
             hpin_ref_info = process_hpin(iter_dir, params)
         else:
             hpin_ref_info = None
@@ -2046,7 +2050,7 @@ def run(args):
 
     start = time.time()
     prev_ref_basedir = None
-    stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, struc_ref_info, hpin_ref_info, ref_iter_dir = get_ref_states(params, i=0, seed=30362, prev_states_force=None, prev_states_torque=None, prev_basedir=prev_ref_basedir)
+    stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, struc_ref_info, hpin_ref_info, ref_iter_dir = get_ref_states(params, i=0, seed=30362, prev_states_force=None, prev_states_torque=None, prev_basedir=prev_ref_basedir, resample_hpin=True)
     prev_ref_basedir = deepcopy(ref_iter_dir)
     end = time.time()
     with open(resample_log_path, "a") as f:
@@ -2076,6 +2080,10 @@ def run(args):
                 break
         if n_eff_pitch < min_n_eff_struc:
             resample = True
+        resample_hpin = False
+        if n_eff_hpin < min_n_eff_hpin:
+            resample = True
+            resample_hpin = True
 
         if resample or num_resample_iters >= max_approx_iters:
             num_resample_iters = 0
@@ -2084,8 +2092,10 @@ def run(args):
                 f.write(f"- min n_eff_st was {n_effs_st.min()}...")
 
             start = time.time()
-            stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, struc_ref_info, hpin_ref_info, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_states_force=prev_last_states_force, prev_states_torque=prev_last_states_torque, prev_basedir=prev_ref_basedir)
+            stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, struc_ref_info, new_hpin_ref_info, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_states_force=prev_last_states_force, prev_states_torque=prev_last_states_torque, prev_basedir=prev_ref_basedir, resample_hpin=resample_hpin)
             end = time.time()
+            if resample_hpin:
+                hpin_ref_info = deepcopy(new_hpin_ref_info)
             prev_ref_basedir = deepcopy(ref_iter_dir)
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
@@ -2126,6 +2136,10 @@ def run(args):
             f.write(f"{loss}\n")
         with open(neffs_st_path, "a") as f:
             f.write(f"{n_effs_st}\n")
+        with open(neff_struc_path, "a") as f:
+            f.write(f"{n_eff_pitch}\n")
+        with open(neff_hpin_path, "a") as f:
+            f.write(f"{n_eff_hpin}\n")
         with open(times_path, "a") as f:
             f.write(f"{iter_end - iter_start}\n")
 
@@ -2382,7 +2396,7 @@ def get_parser():
     parser.add_argument('--extrapolate-temps-hpin', nargs='+',
                         help='Temperatures for extrapolation in Kelvin in ascending order',
                         required=True)
-    parser.add_argument('--salt-concentration-hpin', type=float, default=0.25,
+    parser.add_argument('--salt-concentration-hpin', type=float, default=0.5,
                         help="Salt concentration in molar (M)")
 
     parser.add_argument('--stem-bp-hpin', type=int, default=6,
@@ -2397,6 +2411,9 @@ def get_parser():
     parser.add_argument('--no-compute-hpin', action='store_true')
     parser.add_argument('--hpin-coeff', type=float, default=0.0,
                         help="Coefficient for hairpin Tm")
+
+    parser.add_argument('--min-neff-factor-hpin', type=float, default=0.85,
+                        help="Factor for determining min Neff for hairpin")
 
     return parser
 
