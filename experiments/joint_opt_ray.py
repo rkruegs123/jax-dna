@@ -1049,12 +1049,7 @@ def run(args):
         plt.savefig(hpin_dir / "melting_curve_ref.png")
         plt.clf()
 
-        end = time.time()
-        analyze_time = end - start
-
         summary_str = ""
-        summary_str += f"Simulation time: {sim_time}\n"
-        summary_str += f"Analyze time: {analyze_time}\n"
         summary_str += f"Reference Tm: {calc_tm_ref}\n"
         summary_str += f"Reference width: {calc_width_ref}\n"
         summary_str += f"Calc. Tm: {calc_tm}\n"
