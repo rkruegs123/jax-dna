@@ -2024,7 +2024,7 @@ def run(args):
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
-        (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info)
+        (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info, hpin_ref_info)
         num_resample_iters += 1
 
         if i == 0:
@@ -2059,7 +2059,7 @@ def run(args):
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
 
-            (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info)
+            (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info, hpin_ref_info)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
