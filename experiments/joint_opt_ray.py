@@ -997,8 +997,8 @@ def run(args):
 
         # Compute the final Tms and widths
 
-        unbound_unbiased_counts = all_unbiased_counts[:, unbound_op_idxs]
-        bound_unbiased_counts = all_unbiased_counts[:, bound_op_idxs]
+        unbound_unbiased_counts = all_unbiased_counts[:, unbound_op_idxs_hpin]
+        bound_unbiased_counts = all_unbiased_counts[:, bound_op_idxs_hpin]
 
         ratios = list()
         for t_idx in range(len(extrapolate_temps_hpin)):
@@ -1024,8 +1024,8 @@ def run(args):
         plt.clf()
 
 
-        unbound_unbiased_counts_ref = all_unbiased_counts_ref[:, unbound_op_idxs]
-        bound_unbiased_counts_ref = all_unbiased_counts_ref[:, bound_op_idxs]
+        unbound_unbiased_counts_ref = all_unbiased_counts_ref[:, unbound_op_idxs_hpin]
+        bound_unbiased_counts_ref = all_unbiased_counts_ref[:, bound_op_idxs_hpin]
         ratios_ref = list()
         for t_idx in range(len(extrapolate_temps_hpin)):
             unbound_count_ref = unbound_unbiased_counts_ref[t_idx].sum()
