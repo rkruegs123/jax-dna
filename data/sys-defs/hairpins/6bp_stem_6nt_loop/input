@@ -22,6 +22,9 @@ safe_weights = 0
 default_weight = 0
 small_system = 1
 
+salt_concentration = 0.5
+dh_half_charged_ends = 1
+
 # Define sequence dependence
 use_average_seq = 1
 
