@@ -952,6 +952,8 @@ def run(args):
         all_ops = list(zip(energy_df.op1.to_numpy(), energy_df.op2.to_numpy()))
         all_unbiased_counts = list()
         all_unbiased_counts_ref = list()
+        compute_running_avg_every = 100
+        all_running_avg_ratios = list()
         for extrap_t_kelvin, extrap_kt in zip(extrapolate_temps_hpin, extrapolate_kts_hpin):
             em_temp = model.EnergyModel(displacement_fn_free, params, t_kelvin=extrap_t_kelvin, salt_conc=salt_concentration_hpin)
             energy_fn_temp = lambda body: em_temp.energy_fn(
@@ -964,6 +966,7 @@ def run(args):
             energy_fn_temp = jit(energy_fn_temp)
 
             temp_unbiased_counts = onp.zeros(num_ops_hpin)
+            temp_running_avg_ratios = list()
             for rs_idx in tqdm(range(n_ref_states_hpin), desc=f"Extrapolating to {extrap_t_kelvin}K"):
                 rs = ref_states[rs_idx]
                 op1, op2 = all_ops[rs_idx]
@@ -976,7 +979,14 @@ def run(args):
                 boltz_diff = jnp.exp(calc_energy/kT_hpin - calc_energy_temp/extrap_kt)
                 temp_unbiased_counts[op_idx] += 1/op_weight * boltz_diff
 
+                if rs_idx and rs_idx % compute_running_avg_every == 0:
+                    curr_unbound_count = temp_unbiased_counts[unbound_op_idxs_hpin].sum()
+                    curr_bound_count = temp_unbiased_counts[bound_op_idxs_hpin].sum()
+                    curr_ratio = curr_bound_count / curr_unbound_count
+                    temp_running_avg_ratios.append(curr_ratio)
+
             all_unbiased_counts.append(temp_unbiased_counts)
+            all_running_avg_ratios.append(temp_running_avg_ratios)
 
             fig, ax = plt.subplots(1, 2, figsize=(12, 5))
             sns.barplot(x=op_names, y=temp_unbiased_counts, ax=ax[0])
@@ -1003,6 +1013,27 @@ def run(args):
 
         all_unbiased_counts = onp.array(all_unbiased_counts)
         all_unbiased_counts_ref = onp.array(all_unbiased_counts_ref)
+
+        all_running_avg_ratios = onp.array(all_running_avg_ratios) # n_temps x n_running_avg_points_hpin
+        n_running_avg_points_hpin = all_running_avg_ratios.shape[1]
+        running_tms = list()
+        running_widths = list()
+        for ra_idx in range(n_running_avg_points_hpin):
+            curr_ratios = all_running_avg_ratios[:, ra_idx]
+
+            curr_tm = tm.compute_tm(extrapolate_temps_hpin, curr_ratios)
+            running_tms.append(curr_tm)
+
+            curr_width = tm.compute_width(extrapolate_temps_hpin, curr_ratios)
+            running_widths.append(curr_width)
+
+        plt.plot(running_tms)
+        plt.savefig(hpin_dir / "discrete_running_avg_tm.png")
+        plt.clf()
+
+        plt.plot(running_widths)
+        plt.savefig(hpin_dir / "discrete_running_avg_width.png")
+        plt.clf()
 
         # Compute the final Tms and widths
 
