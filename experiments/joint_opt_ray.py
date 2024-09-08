@@ -1958,9 +1958,9 @@ def run(args):
                 temp_ratios = compute_ratio(temp_unbiased_counts)
                 return temp_ratios
 
-            ratios = vmap(compute_extrap_temp_ratios)(extrapolate_temps)
-            curr_tm = tm.compute_tm(extrapolate_temps, ratios)
-            curr_width = tm.compute_width(extrapolate_temps, ratios)
+            ratios = vmap(compute_extrap_temp_ratios)(extrapolate_temps_hpin)
+            curr_tm = tm.compute_tm(extrapolate_temps_hpin, ratios)
+            curr_width = tm.compute_width(extrapolate_temps_hpin, ratios)
 
             n_eff_hpin = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
             rel_diff_hpin = abs_relative_diff_uncertainty(curr_tm, tm_hpin_lo, tm_hpin_hi)
