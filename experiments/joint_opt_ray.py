@@ -1955,7 +1955,7 @@ def run(args):
                     return unb_counts.at[op_idx].add(weighted_add_term), None
 
                 temp_unbiased_counts, _ = scan(unbias_scan_fn, jnp.zeros(num_ops_hpin), jnp.arange(n_ref_states_hpin))
-                temp_ratios = compute_ratio(temp_unbiased_counts)
+                temp_ratios = compute_ratio_hpin(temp_unbiased_counts)
                 return temp_ratios
 
             ratios = vmap(compute_extrap_temp_ratios)(extrapolate_temps_hpin)
