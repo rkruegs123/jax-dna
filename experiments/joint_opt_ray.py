@@ -2364,7 +2364,7 @@ def get_parser():
                         help="Uncertainty for hairpin Tm")
 
     parser.add_argument('--no-compute-hpin', action='store_true')
-    parser.add_argument('--hpin-coeff', type=float, default=1.0,
+    parser.add_argument('--hpin-coeff', type=float, default=0.0,
                         help="Coefficient for hairpin Tm")
 
     return parser
