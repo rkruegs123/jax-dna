@@ -313,6 +313,9 @@ def run(args):
     compute_struc = not args['no_compute_struc']
     pitch_coeff = args['pitch_coeff']
     min_n_eff_struc = int(n_ref_states_struc * min_neff_factor)
+    pitch_uncertainty = args['pitch_uncertainty']
+    pitch_lo = target_pitch - pitch_uncertainty
+    pitch_hi = target_pitch + pitch_uncertainty
 
 
     # Hairpin Tm arguments
@@ -334,11 +337,15 @@ def run(args):
     salt_concentration_hpin = args['salt_concentration_hpin']
 
     target_tm_hpin = args['target_tm_hpin']
+    tm_hpin_uncertainty = args['tm_hpin_uncertainty']
+    tm_hpin_lo = target_tm_hpin - tm_hpin_uncertainty
+    tm_hpin_hi = target_tm_hpin + tm_hpin_uncertainty
 
     stem_bp_hpin = args['stem_bp_hpin']
     loop_nt_hpin = args['loop_nt_hpin']
 
     compute_hpin = not args['no_compute_hpin']
+    hpin_coeff = args['hpin_coeff']
 
 
 
@@ -375,6 +382,8 @@ def run(args):
     resample_log_path = log_dir / "resample_log.txt"
     iter_params_path = log_dir / "iter_params.txt"
     warnings_path = log_dir / "warnings.txt"
+    tm_path = log_dir / "tm.txt"
+    width_path = log_dir / "width.txt"
 
     params_str = ""
     params_str += f"n_sample_states_st: {n_sample_states_st}\n"
@@ -1073,7 +1082,7 @@ def run(args):
             zip_file(str(hpin_dir / "output.dat"), str(hpin_dir / "output.dat.zip"))
             os.remove(str(hpin_dir / "output.dat"))
 
-        plt.plot(all_ops_idx)
+        plt.plot(all_op_idxs)
         for i in range(n_sims_hpin):
             plt.axvline(x=i*n_ref_states_per_sim_hpin, linestyle="--", color="red")
         plt.savefig(hpin_dir / "op_trajectory.png")
@@ -1789,7 +1798,7 @@ def run(args):
         return stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states, struc_ref_info, hpin_ref_info, iter_dir
 
     @jit
-    def loss_fn(params, stretch_tors_ref_info, struc_ref_info):
+    def loss_fn(params, stretch_tors_ref_info, struc_ref_info, hpin_ref_info):
 
         # Pitch
         if compute_struc:
@@ -1813,7 +1822,8 @@ def run(args):
 
             # mse = (expected_pitch - target_pitch)**2
             # rmse_pitch = jnp.sqrt(mse)
-            rel_diff_pitch = abs_relative_diff(target_pitch, expected_pitch)
+            # rel_diff_pitch = abs_relative_diff(target_pitch, expected_pitch)
+            rel_diff_pitch = abs_relative_diff_uncertainty(expected_pitch, pitch_lo, pitch_hi)
 
             n_eff_pitch = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
         else:
@@ -1893,11 +1903,78 @@ def run(args):
             n_effs_f, n_effs_t = jnp.full((n_forces,), n_sample_states_st*n_sims_st), jnp.full((n_torques,), n_sample_states_st*n_sims_st)
             # n_effs_f, n_effs_t = n_sample_states_st*n_sims_st, n_sample_states_st*n_sims_st
 
+
+        # Hairpin
+
+        ref_states, ref_energies, all_ops, all_op_weights, all_op_idxs = hpin_ref_info
+
+        if compute_hpin:
+            em = model.EnergyModel(displacement_fn_free, params, t_kelvin=t_kelvin_hpin, salt_conc=salt_concentration_hpin)
+            energy_fn = lambda body: em.energy_fn(
+                body,
+                seq=seq_oh_hpin,
+                bonded_nbrs=top_info_hpin.bonded_nbrs,
+                unbonded_nbrs=top_info_hpin.unbonded_nbrs.T,
+                is_end=top_info_hpin.is_end)
+            energy_fn = jit(energy_fn)
+
+            energy_scan_fn = lambda state, rs: (None, energy_fn(rs))
+            _, new_energies = scan(energy_scan_fn, None, ref_states)
+
+            diffs = new_energies - ref_energies # element-wise subtraction
+            boltzs = jnp.exp(-beta * diffs)
+            denom = jnp.sum(boltzs)
+            weights = boltzs / denom
+
+            def compute_extrap_temp_ratios(t_kelvin_extrap):
+                extrap_kt = utils.get_kt(t_kelvin_extrap)
+                em_temp = model.EnergyModel(displacement_fn_free, params, t_kelvin=t_kelvin_extrap, salt_conc=salt_concentration_hpin)
+                energy_fn_temp = lambda body: em_temp.energy_fn(
+                    body,
+                    seq=seq_oh_hpin,
+                    bonded_nbrs=top_info_hpin.bonded_nbrs,
+                    unbonded_nbrs=top_info_hpin.unbonded_nbrs.T,
+                    is_end=top_info_hpin.is_end)
+                energy_fn_temp = jit(energy_fn_temp)
+
+                def unbias_scan_fn(unb_counts, rs_idx):
+                    rs = ref_states[rs_idx]
+                    op1, op2 = all_ops[rs_idx]
+                    op_idx = all_op_idxs[rs_idx]
+                    op_weight = all_op_weights[rs_idx]
+
+                    # calc_energy = ref_energies[rs_idx] # this is wrong
+                    calc_energy = new_energies[rs_idx]
+                    calc_energy_temp = energy_fn_temp(rs)
+
+                    boltz_diff = jnp.exp(calc_energy/kT_hpin - calc_energy_temp/extrap_kt)
+
+                    difftre_weight = weights[rs_idx]
+                    # weighted_add_term = n_ref_states/difftre_weight * 1/op_weight * boltz_diff
+                    weighted_add_term = n_ref_states_hpin*difftre_weight * 1/op_weight * boltz_diff
+                    return unb_counts.at[op_idx].add(weighted_add_term), None
+
+                temp_unbiased_counts, _ = scan(unbias_scan_fn, jnp.zeros(num_ops_hpin), jnp.arange(n_ref_states_hpin))
+                temp_ratios = compute_ratio(temp_unbiased_counts)
+                return temp_ratios
+
+            ratios = vmap(compute_extrap_temp_ratios)(extrapolate_temps)
+            curr_tm = tm.compute_tm(extrapolate_temps, ratios)
+            curr_width = tm.compute_width(extrapolate_temps, ratios)
+
+            n_eff_hpin = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
+            rel_diff_hpin = abs_relative_diff_uncertainty(curr_tm, tm_hpin_lo, tm_hpin_hi)
+        else:
+            curr_tm, curr_width = -1
+            n_eff_hpin = n_ref_states_hpin
+            rel_diff_hpin = 0.0
+
+
         # rmse = s_eff_coeff*rmse_s_eff + c_coeff*rmse_c + g_coeff*rmse_g
-        rel_diff = s_eff_coeff*rel_diff_s_eff + c_coeff*rel_diff_c + g_coeff*rel_diff_g + pitch_coeff*rel_diff_pitch
+        rel_diff = s_eff_coeff*rel_diff_s_eff + c_coeff*rel_diff_c + g_coeff*rel_diff_g + pitch_coeff*rel_diff_pitch + hpin_coeff*rel_diff_hpin
 
         # return rmse, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch)
-        return rel_diff, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch)
+        return rel_diff, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch, curr_tm, curr_width, n_eff_hpin)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -1920,12 +1997,18 @@ def run(args):
     all_seffs = list()
     all_cs = list()
     all_gs = list()
+    all_pitches = list()
+    all_tms = list()
+    all_widths = list()
 
     all_ref_losses = list()
     all_ref_times = list()
     all_ref_seffs = list()
     all_ref_cs = list()
     all_ref_gs = list()
+    all_ref_pitches = list()
+    all_ref_tms = list()
+    all_ref_widths = list()
 
     with open(resample_log_path, "a") as f:
         f.write(f"Generating initial reference states and energies...\n")
@@ -1941,7 +2024,7 @@ def run(args):
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
-        (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info)
+        (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info)
         num_resample_iters += 1
 
         if i == 0:
@@ -1950,6 +2033,9 @@ def run(args):
             all_ref_seffs.append(s_eff)
             all_ref_cs.append(c)
             all_ref_gs.append(g)
+            all_ref_pitches.append(expected_pitch)
+            all_ref_tms.append(expected_tm)
+            all_ref_widths.append(expected_width)
 
         resample = False
         n_effs_st = jnp.concatenate([n_effs_f, n_effs_t])
@@ -1973,17 +2059,24 @@ def run(args):
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
 
-            (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info)
+            (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
             all_ref_seffs.append(s_eff)
             all_ref_cs.append(c)
             all_ref_gs.append(g)
+            all_ref_pitches.append(expected_pitch)
+            all_ref_tms.append(expected_tm)
+            all_ref_widths.append(expected_width)
 
         iter_end = time.time()
 
 
+        with open(tm_path, "a") as f:
+            f.write(f"{expected_tm}\n")
+        with open(width_path, "a") as f:
+            f.write(f"{expected_width}\n")
         with open(pitch_path, "a") as f:
             f.write(f"{expected_pitch}\n")
         with open(g_path, "a") as f:
@@ -2025,6 +2118,9 @@ def run(args):
         all_seffs.append(s_eff)
         all_cs.append(c)
         all_gs.append(g)
+        all_pitches.append(expected_pitch)
+        all_tms.append(expected_tm)
+        all_widths.append(expected_width)
         all_n_effs_st.append(n_effs_st)
 
         if i % plot_every == 0 and i:
@@ -2082,6 +2178,15 @@ def run(args):
             onp.save(obj_dir / f"ref_cs_i{i}.npy", onp.array(all_ref_cs), allow_pickle=False)
             onp.save(obj_dir / f"cs_i{i}.npy", onp.array(all_cs), allow_pickle=False)
 
+            onp.save(obj_dir / f"ref_pitches_i{i}.npy", onp.array(all_ref_pitches), allow_pickle=False)
+            onp.save(obj_dir / f"pitches_i{i}.npy", onp.array(all_pitches), allow_pickle=False)
+
+            onp.save(obj_dir / f"ref_tms_i{i}.npy", onp.array(all_ref_tms), allow_pickle=False)
+            onp.save(obj_dir / f"tms_i{i}.npy", onp.array(all_tms), allow_pickle=False)
+
+            onp.save(obj_dir / f"ref_widths_i{i}.npy", onp.array(all_ref_widths), allow_pickle=False)
+            onp.save(obj_dir / f"widths_i{i}.npy", onp.array(all_widths), allow_pickle=False)
+
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
 
@@ -2096,6 +2201,14 @@ def run(args):
     onp.save(obj_dir / f"fin_ref_cs.npy", onp.array(all_ref_cs), allow_pickle=False)
     onp.save(obj_dir / f"fin_cs.npy", onp.array(all_cs), allow_pickle=False)
 
+    onp.save(obj_dir / f"fin_ref_pitches.npy", onp.array(all_ref_pitches), allow_pickle=False)
+    onp.save(obj_dir / f"fin_pitches.npy", onp.array(all_pitches), allow_pickle=False)
+
+    onp.save(obj_dir / f"fin_ref_tms.npy", onp.array(all_ref_tms), allow_pickle=False)
+    onp.save(obj_dir / f"fin_tms.npy", onp.array(all_tms), allow_pickle=False)
+
+    onp.save(obj_dir / f"fin_ref_widths.npy", onp.array(all_ref_widths), allow_pickle=False)
+    onp.save(obj_dir / f"fin_widths.npy", onp.array(all_widths), allow_pickle=False)
 
 
 def get_parser():
@@ -2247,8 +2360,12 @@ def get_parser():
                         help="Number of nucleotides comprising the loop")
     parser.add_argument('--target-tm-hpin', type=float, required=True,
                         help="Target melting temperature in Kelvin")
+    parser.add_argument('--tm-hpin-uncertainty', type=float, default=0.5,
+                        help="Uncertainty for hairpin Tm")
 
     parser.add_argument('--no-compute-hpin', action='store_true')
+    parser.add_argument('--hpin-coeff', type=float, default=1.0,
+                        help="Coefficient for hairpin Tm")
 
     return parser
 
