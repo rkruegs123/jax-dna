@@ -2374,6 +2374,23 @@ def run(args):
             plt.savefig(img_dir / f"seff_iter{i}.png")
             plt.clf()
 
+            plt.plot(onp.arange(i+1), all_tms, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_tms, marker='o', label="Resample points", color="blue")
+            plt.axhline(y=target_tm, linestyle='--', label="Target Tm", color='red')
+            plt.legend()
+            plt.ylabel("Expected Tm")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"tms_iter{i}.png")
+            plt.clf()
+
+            plt.plot(onp.arange(i+1), all_widths, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_widths, marker='o', label="Resample points", color="blue")
+            plt.legend()
+            plt.ylabel("Expected Melting Width")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"widths_iter{i}.png")
+            plt.clf()
+
 
         if i % save_obj_every == 0 and i:
             onp.save(obj_dir / f"ref_iters_i{i}.npy", onp.array(all_ref_times), allow_pickle=False)
