@@ -2547,7 +2547,7 @@ def get_parser():
                         help="Coefficient for pitch component")
 
     ## Persistence length (uses same simulation)
-    parser.add_argument('--target-lp', type=float,
+    parser.add_argument('--target-lp', type=float, default=42.0,
                         help="Target persistence length in nanometers")
     parser.add_argument('--lp-uncertainty', type=float, default=2.0,
                         help="Uncertainty for Lp in nanometers")
