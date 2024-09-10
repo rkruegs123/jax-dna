@@ -31,7 +31,7 @@ import jax_dna.input.trajectory as jdt
 from jax_dna.dna1.oxdna_utils import rewrite_input_file
 from jax_dna.dna2.oxdna_utils import recompile_oxdna
 from jax_dna.dna1 import model as model1
-from jax_dna.loss import pitch, pitch2, tm
+from jax_dna.loss import pitch, pitch2, tm, persistence_length, rise
 
 
 if "ip_head" in os.environ:
@@ -47,6 +47,9 @@ else:
     scan = functools.partial(checkpoint.checkpoint_scan,
                              checkpoint_every=checkpoint_every)
 
+
+compute_all_curves = vmap(persistence_length.get_correlation_curve, (0, None, None))
+compute_all_rises = vmap(rise.get_avg_rises, (0, None, None, None))
 
 def hairpin_tm_running_avg(traj_hist_files, n_stem_bp, n_dist_thresholds):
     n_files = len(traj_hist_files)
@@ -302,21 +305,30 @@ def run(args):
 
 
     # Structural (60 bp) arguments
-    n_sims_struc = args['n_sims_struc']
-    n_steps_per_sim_struc = args['n_steps_per_sim_struc']
-    n_eq_steps_struc = args['n_eq_steps_struc']
-    sample_every_struc = args['sample_every_struc']
-    assert(n_steps_per_sim_struc % sample_every_struc == 0)
-    n_ref_states_per_sim_struc = n_steps_per_sim_struc // sample_every_struc
-    n_ref_states_struc = n_ref_states_per_sim_struc * n_sims_struc
-    offset_struc = args['offset_struc']
+    n_sims_60bp = args['n_sims_60bp']
+    n_steps_per_sim_60bp = args['n_steps_per_sim_60bp']
+    n_eq_steps_60bp = args['n_eq_steps_60bp']
+    sample_every_60bp = args['sample_every_60bp']
+    assert(n_steps_per_sim_60bp % sample_every_60bp == 0)
+    n_ref_states_per_sim_60bp = n_steps_per_sim_60bp // sample_every_60bp
+    n_ref_states_60bp = n_ref_states_per_sim_60bp * n_sims_60bp
+    offset_60bp = args['offset_60bp']
     target_pitch = args['target_pitch']
-    compute_struc = not args['no_compute_struc']
+    compute_60bp = not args['no_compute_60bp']
     pitch_coeff = args['pitch_coeff']
-    min_n_eff_struc = int(n_ref_states_struc * min_neff_factor)
+    min_n_eff_60bp = int(n_ref_states_60bp * min_neff_factor)
     pitch_uncertainty = args['pitch_uncertainty']
     pitch_lo = target_pitch - pitch_uncertainty
     pitch_hi = target_pitch + pitch_uncertainty
+
+    ## Persistence length arguments (uses same simulation)
+    target_lp = args['target_lp']
+    truncation_lp = args['truncation_lp']
+    base_site = jnp.array([model.com_to_hb, 0.0, 0.0])
+    lp_coeff = args['lp_coeff']
+    lp_uncertainty = args['lp_uncertainty']
+    lp_lo = target_lp - lp_uncertainty
+    lp_hi = target_lp + lp_uncertainty
 
 
     # Hairpin Tm arguments
@@ -374,7 +386,7 @@ def run(args):
     times_path = log_dir / "times.txt"
     grads_path = log_dir / "grads.txt"
     neffs_st_path = log_dir / "neffs_st.txt"
-    neff_struc_path = log_dir / "neff_struc.txt"
+    neff_60bp_path = log_dir / "neff_60bp.txt"
     neff_hpin_path = log_dir / "neff_hpin.txt"
     a1_path = log_dir / "a1.txt"
     a3_path = log_dir / "a3.txt"
@@ -383,6 +395,7 @@ def run(args):
     c_path = log_dir / "c.txt"
     g_path = log_dir / "g.txt"
     pitch_path = log_dir / "pitch.txt"
+    rise_path = log_dir / "rise.txt"
     resample_log_path = log_dir / "resample_log.txt"
     iter_params_path = log_dir / "iter_params.txt"
     warnings_path = log_dir / "warnings.txt"
@@ -403,97 +416,98 @@ def run(args):
 
     ## Setup structural system (60 bp)
 
-    sys_basedir_struc = Path("data/templates/simple-helix-60bp")
-    input_template_path_struc = sys_basedir_struc / "input"
+    sys_basedir_60bp = Path("data/templates/simple-helix-60bp")
+    input_template_path_60bp = sys_basedir_60bp / "input"
 
-    top_path_struc = sys_basedir_struc / "sys.top"
-    top_info_struc = topology.TopologyInfo(top_path_struc, reverse_direction=False)
-    seq_oh_struc = jnp.array(utils.get_one_hot(top_info_struc.seq), dtype=jnp.float64)
+    top_path_60bp = sys_basedir_60bp / "sys.top"
+    top_info_60bp = topology.TopologyInfo(top_path_60bp, reverse_direction=False)
+    seq_oh_60bp = jnp.array(utils.get_one_hot(top_info_60bp.seq), dtype=jnp.float64)
+    strand_length_60bp = int(seq_oh_60bp.shape[0] // 2)
 
-    quartets_struc = utils.get_all_quartets(n_nucs_per_strand=seq_oh_struc.shape[0] // 2)
-    quartets_struc = quartets_struc[offset_struc:-offset_struc-1]
+    quartets_60bp = utils.get_all_quartets(n_nucs_per_strand=seq_oh_60bp.shape[0] // 2)
+    quartets_60bp = quartets_60bp[offset_60bp:-offset_60bp-1]
 
-    conf_path = sys_basedir_struc / "init.conf"
+    conf_path = sys_basedir_60bp / "init.conf"
     conf_info = trajectory.TrajectoryInfo(
-        top_info_struc,
+        top_info_60bp,
         read_from_file=True, traj_path=conf_path,
         # reverse_direction=True
         reverse_direction=False
     )
-    centered_conf_info = center_configuration.center_conf(top_info_struc, conf_info)
+    centered_conf_info = center_configuration.center_conf(top_info_60bp, conf_info)
 
-    dt_struc = 5e-3
-    t_kelvin_struc = utils.DEFAULT_TEMP
-    kT_struc = utils.get_kt(t_kelvin_struc)
-    beta_struc = 1 / kT_struc
-
-
+    dt_60bp = 5e-3
+    t_kelvin_60bp = utils.DEFAULT_TEMP
+    kT_60bp = utils.get_kt(t_kelvin_60bp)
+    beta_60bp = 1 / kT_60bp
 
 
-    def get_struc_tasks(iter_dir, params, prev_basedir, recompile=True):
+
+
+    def get_60bp_tasks(iter_dir, params, prev_basedir, recompile=True):
         if recompile:
             recompile_start = time.time()
-            recompile_oxdna(params, oxdna_path, t_kelvin_struc, num_threads=n_threads)
+            recompile_oxdna(params, oxdna_path, t_kelvin_60bp, num_threads=n_threads)
             recompile_end = time.time()
 
-        struc_dir = iter_dir / "struc"
-        struc_dir.mkdir(parents=False, exist_ok=False)
+        bp60_dir = iter_dir / "ds60"
+        bp60_dir.mkdir(parents=False, exist_ok=False)
 
         all_repeat_dirs = list()
-        for r in range(n_sims_struc):
-            repeat_dir = struc_dir / f"r{r}"
+        for r in range(n_sims_60bp):
+            repeat_dir = bp60_dir / f"r{r}"
             repeat_dir.mkdir(parents=False, exist_ok=False)
 
             all_repeat_dirs.append(repeat_dir)
 
-            shutil.copy(top_path_struc, repeat_dir / "sys.top")
+            shutil.copy(top_path_60bp, repeat_dir / "sys.top")
 
             if prev_basedir is None:
                 init_conf_info = deepcopy(centered_conf_info)
             else:
-                prev_repeat_dir = prev_basedir / "struc" / f"r{r}"
+                prev_repeat_dir = prev_basedir / "ds60" / f"r{r}"
                 prev_lastconf_path = prev_repeat_dir / "last_conf.dat"
                 prev_lastconf_info = trajectory.TrajectoryInfo(
-                    top_info_struc,
+                    top_info_60bp,
                     read_from_file=True, traj_path=prev_lastconf_path,
                     # reverse_direction=True
                     reverse_direction=False
                 )
                 init_conf_info = center_configuration.center_conf(
-                    top_info_struc, prev_lastconf_info)
+                    top_info_60bp, prev_lastconf_info)
 
-            init_conf_info.traj_df.t = onp.full(seq_oh_struc.shape[0], r*n_steps_per_sim_struc)
+            init_conf_info.traj_df.t = onp.full(seq_oh_60bp.shape[0], r*n_steps_per_sim_60bp)
             init_conf_info.write(repeat_dir / "init.conf", reverse=False, write_topology=False)
 
             rewrite_input_file(
-                input_template_path_struc, repeat_dir,
-                temp=f"{t_kelvin_struc}K", steps=n_steps_per_sim_struc,
+                input_template_path_60bp, repeat_dir,
+                temp=f"{t_kelvin_60bp}K", steps=n_steps_per_sim_60bp,
                 init_conf_path=str(repeat_dir / "init.conf"),
                 top_path=str(repeat_dir / "sys.top"),
-                save_interval=sample_every_struc, seed=random.randrange(100),
-                equilibration_steps=n_eq_steps_struc, dt=dt_struc,
+                save_interval=sample_every_60bp, seed=random.randrange(100),
+                equilibration_steps=n_eq_steps_60bp, dt=dt_60bp,
                 no_stdout_energy=0, backend="CPU",
                 log_file=str(repeat_dir / "sim.log"),
                 interaction_type="DNA2_nomesh"
             )
-        struc_tasks = [run_oxdna_ray.remote(oxdna_exec_path, rdir) for rdir in all_repeat_dirs]
-        return struc_tasks, all_repeat_dirs
+        bp60_tasks = [run_oxdna_ray.remote(oxdna_exec_path, rdir) for rdir in all_repeat_dirs]
+        return bp60_tasks, all_repeat_dirs
 
-    def process_struc(iter_dir, params):
-        struc_dir = iter_dir / "struc"
+    def process_60bp(iter_dir, params):
+        bp60_dir = iter_dir / "ds60"
         combine_cmd = "cat "
-        for r in range(n_sims_struc):
-            repeat_dir = struc_dir / f"r{r}"
+        for r in range(n_sims_60bp):
+            repeat_dir = bp60_dir / f"r{r}"
             combine_cmd += f"{repeat_dir}/output.dat "
-        combine_cmd += f"> {struc_dir}/output.dat"
+        combine_cmd += f"> {bp60_dir}/output.dat"
         combine_proc = subprocess.run(combine_cmd, shell=True)
         if combine_proc.returncode != 0:
             raise RuntimeError(f"Combining trajectories failed with error code: {combine_proc.returncode}")
 
         if not no_delete:
             files_to_remove = ["output.dat"]
-            for r in range(n_sims_struc):
-                repeat_dir = struc_dir / f"r{r}"
+            for r in range(n_sims_60bp):
+                repeat_dir = bp60_dir / f"r{r}"
                 for f_stem in files_to_remove:
                     file_to_rem = repeat_dir / f_stem
                     file_to_rem.unlink()
@@ -503,12 +517,21 @@ def run(args):
 
         ## Load states from oxDNA simulation
         load_start = time.time()
+        """
         traj_info = trajectory.TrajectoryInfo(
-            top_info_struc, read_from_file=True,
-            traj_path=struc_dir / "output.dat",
+            top_info_60bp, read_from_file=True,
+            traj_path=bp60_dir / "output.dat",
             # reverse_direction=True)
             reverse_direction=False)
         traj_states = traj_info.get_states()
+        """
+        traj_ = jdt.from_file(
+            bp60_dir / "output.dat",
+            [strand_length_60bp, strand_length_60bp],
+            is_oxdna=False,
+            n_processes=n_threads,
+        )
+        traj_states = [ns.to_rigid_body() for ns in traj_.states]
         n_traj_states = len(traj_states)
         traj_states = utils.tree_stack(traj_states)
         load_end = time.time()
@@ -516,18 +539,18 @@ def run(args):
         ## Load the oxDNA energies
 
         energy_df_columns = ["time", "potential_energy", "kinetic_energy", "total_energy"]
-        energy_dfs = [pd.read_csv(struc_dir / f"r{r}" / "energy.dat", names=energy_df_columns,
-                                  delim_whitespace=True)[1:] for r in range(n_sims_struc)]
+        energy_dfs = [pd.read_csv(bp60_dir / f"r{r}" / "energy.dat", names=energy_df_columns,
+                                  delim_whitespace=True)[1:] for r in range(n_sims_60bp)]
         energy_df = pd.concat(energy_dfs, ignore_index=True)
 
         ## Generate an energy function
-        em = model.EnergyModel(displacement_fn_free, params, t_kelvin=t_kelvin_struc)
+        em = model.EnergyModel(displacement_fn_free, params, t_kelvin=t_kelvin_60bp)
         energy_fn = lambda body: em.energy_fn(
             body,
-            seq=seq_oh_struc,
-            bonded_nbrs=top_info_struc.bonded_nbrs,
-            unbonded_nbrs=top_info_struc.unbonded_nbrs.T,
-            is_end=top_info_struc.is_end
+            seq=seq_oh_60bp,
+            bonded_nbrs=top_info_60bp.bonded_nbrs,
+            unbonded_nbrs=top_info_60bp.unbonded_nbrs.T,
+            is_end=top_info_60bp.is_end
         )
         energy_fn = jit(energy_fn)
 
@@ -538,22 +561,33 @@ def run(args):
         _, calc_energies = scan(energy_scan_fn, None, traj_states)
         calc_end = time.time()
 
-        gt_energies = energy_df.potential_energy.to_numpy() * seq_oh_struc.shape[0]
+        gt_energies = energy_df.potential_energy.to_numpy() * seq_oh_60bp.shape[0]
 
         energy_diffs = list()
         for i, (calc, gt) in enumerate(zip(calc_energies, gt_energies)):
             diff = onp.abs(calc - gt)
             energy_diffs.append(diff)
 
+        # Plot the energies
+        sns.distplot(calc_energies, label="Calculated", color="red")
+        sns.distplot(gt_energies, label="Reference", color="green")
+        plt.legend()
+        plt.savefig(bp60_dir / f"energies.png")
+        plt.clf()
+
+        # Plot the energy differences
+        sns.histplot(energy_diffs)
+        plt.savefig(bp60_dir / f"energy_diffs.png")
+        plt.clf()
 
         # Compute the pitches
         analyze_start = time.time()
 
-        n_quartets = quartets_struc.shape[0]
+        n_quartets = quartets_60bp.shape[0]
         ref_avg_angles = list()
         for rs_idx in range(n_traj_states):
             body = traj_states[rs_idx]
-            angles = pitch2.get_all_angles(body, quartets_struc, displacement_fn_free, model.com_to_hb, model1.com_to_backbone, 0.0)
+            angles = pitch2.get_all_angles(body, quartets_60bp, displacement_fn_free, model.com_to_hb, model1.com_to_backbone, 0.0)
             state_avg_angle = onp.mean(angles)
             ref_avg_angles.append(state_avg_angle)
         ref_avg_angles = onp.array(ref_avg_angles)
@@ -561,37 +595,112 @@ def run(args):
         running_avg_angles = onp.cumsum(ref_avg_angles) / onp.arange(1, n_traj_states + 1)
         running_avg_pitches = 2*onp.pi / running_avg_angles
         plt.plot(running_avg_pitches)
-        plt.savefig(struc_dir / f"running_avg.png")
+        plt.savefig(bp60_dir / f"running_avg.png")
         plt.clf()
 
         plt.plot(running_avg_pitches[-int(n_traj_states // 2):])
-        plt.savefig(struc_dir / f"running_avg_second_half.png")
+        plt.savefig(bp60_dir / f"running_avg_second_half.png")
         plt.clf()
 
-        # Plot the energies
-        sns.distplot(calc_energies, label="Calculated", color="red")
-        sns.distplot(gt_energies, label="Reference", color="green")
+        # Compute the rise
+        all_state_rises = compute_all_rises(traj_states, quartets_60bp, displacement_fn_free, model.com_to_hb)
+        avg_rise = jnp.mean(all_state_rises)
+
+
+        # Compute the persistence lengths
+        unweighted_corr_curves, unweighted_l0_avgs = compute_all_curves(traj_states, quartets_60bp, base_site)
+        mean_corr_curve = jnp.mean(unweighted_corr_curves, axis=0)
+        mean_l0 = jnp.mean(unweighted_l0_avgs)
+        mean_Lp_truncated, offset = persistence_length.persistence_length_fit(mean_corr_curve[:truncation_lp], mean_l0)
+
+
+        compute_every = 10
+        n_curves = unweighted_corr_curves.shape[0]
+        all_inter_lps = list()
+        all_inter_lps_truncated = list()
+        for i in range(0, n_curves, compute_every):
+            inter_mean_corr_curve = jnp.mean(unweighted_corr_curves[:i], axis=0)
+
+            inter_mean_Lp_truncated, _ = persistence_length.persistence_length_fit(inter_mean_corr_curve[:truncation_lp], mean_l0)
+            all_inter_lps_truncated.append(inter_mean_Lp_truncated * utils.nm_per_oxdna_length)
+
+            inter_mean_Lp, _ = persistence_length.persistence_length_fit(inter_mean_corr_curve, mean_l0)
+            all_inter_lps.append(inter_mean_Lp * utils.nm_per_oxdna_length)
+
+        plt.plot(list(range(0, n_curves, compute_every)), all_inter_lps)
+        plt.ylabel("Lp (nm)")
+        plt.xlabel("# Samples")
+        plt.title("Lp running average")
+        plt.savefig(bp60_dir / "running_avg.png")
+        plt.clf()
+
+        plt.plot(list(range(0, n_curves, compute_every)), all_inter_lps_truncated)
+        plt.ylabel("Lp (nm)")
+        plt.xlabel("# Samples")
+        plt.title("Lp running average, truncated")
+        plt.savefig(bp60_dir / "running_avg_truncated.png")
+        plt.clf()
+
+        plt.plot(mean_corr_curve)
+        plt.axvline(x=truncation_lp, linestyle='--', label="Truncation")
         plt.legend()
-        plt.savefig(struc_dir / f"energies.png")
+        plt.title("Full Correlation Curve")
+        plt.savefig(bp60_dir / "full_corr_curve.png")
         plt.clf()
 
-        # Plot the energy differences
-        sns.histplot(energy_diffs)
-        plt.savefig(struc_dir / f"energy_diffs.png")
+        plt.plot(jnp.log(mean_corr_curve))
+        plt.title("Full Log-Correlation Curve")
+        plt.axvline(x=truncation_lp, linestyle='--', label="Truncation")
+        plt.xlabel("Nuc. Index")
+        plt.ylabel("Log-Correlation")
+        plt.legend()
+        plt.savefig(bp60_dir / "full_log_corr_curve.png")
         plt.clf()
+
+        # fit_fn = lambda n: -n * mean_l0 / (mean_Lp_truncated/utils.nm_per_oxdna_length) + offset
+        fit_fn = lambda n: -n * (mean_l0 / mean_Lp_truncated) + offset
+        plt.plot(jnp.log(mean_corr_curve)[:truncation_lp])
+        # neg_inverse_slope = (mean_Lp_truncated / utils.nm_per_oxdna_length) / mean_l0 # in nucleotides
+        neg_inverse_slope = mean_Lp_truncated / mean_l0 # in nucleotides
+        rounded_offset = onp.round(offset, 3)
+        rounded_neg_inverse_slope = onp.round(neg_inverse_slope, 3)
+        fit_str = f"fit, -n/{rounded_neg_inverse_slope} + {rounded_offset}"
+        plt.plot(fit_fn(jnp.arange(truncation_lp)), linestyle='--', label=fit_str)
+
+        plt.title(f"Log-Correlation Curve, Truncated.")
+        plt.xlabel("Nuc. Index")
+        plt.ylabel("Log-Correlation")
+        plt.legend()
+        plt.savefig(bp60_dir / "log_corr_curve.png")
+        plt.clf()
+
+
+
+
 
         # Record the loss
-        with open(struc_dir / "summary.txt", "w+") as f:
+        with open(bp60_dir / "summary.txt", "w+") as f:
             f.write(f"Mean energy diff: {onp.mean(energy_diffs)}\n")
+            f.write(f"Max energy diff: {onp.max(energy_diffs)}\n")
+            f.write(f"Min energy diff: {onp.min(energy_diffs)}\n")
             f.write(f"Calc. energy var.: {onp.var(calc_energies)}\n")
             f.write(f"Ref. energy var.: {onp.var(gt_energies)}\n")
-            f.write(f"Pitch: {2*onp.pi / onp.mean(ref_avg_angles)} bp\n")
+            f.write(f"\nPitch: {2*onp.pi / onp.mean(ref_avg_angles)} bp\n")
+            f.write(f"\nMean Rise (nm): {avg_rise * utils.nm_per_oxdna_length}\n")
+
+            f.write(f"\nMean Lp truncated (oxDNA units): {mean_Lp_truncated}\n")
+            f.write(f"Mean L0 (oxDNA units): {mean_l0}\n")
+            f.write(f"Mean Rise (oxDNA units): {avg_rise}\n")
+            f.write(f"Mean Lp truncated (num bp via oxDNA units): {mean_Lp_truncated / avg_rise}\n")
+
+            f.write(f"\nMean Lp truncated (nm): {mean_Lp_truncated * utils.nm_per_oxdna_length}\n")
+            f.write(f"Mean L0 (nm): {mean_l0 * utils.nm_per_oxdna_length}\n")
 
         if not no_archive:
-            zip_file(str(struc_dir / "output.dat"), str(struc_dir / "output.dat.zip"))
-            os.remove(str(struc_dir / "output.dat"))
+            zip_file(str(bp60_dir / "output.dat"), str(bp60_dir / "output.dat.zip"))
+            os.remove(str(bp60_dir / "output.dat"))
 
-        ref_info = (traj_states, calc_energies, jnp.array(ref_avg_angles))
+        ref_info = (traj_states, calc_energies, jnp.array(ref_avg_angles), unweighted_corr_curves, unweighted_l0_avgs, all_state_rises)
 
         return ref_info
 
@@ -1780,11 +1889,11 @@ def run(args):
         # Run the simulations
         if compute_st:
             stretch_tors_tasks, all_sim_dirs = get_stretch_tors_tasks(iter_dir, params, prev_states_force, prev_states_torque)
-        if compute_struc:
-            struc_tasks, all_sim_dirs_struc = get_struc_tasks(iter_dir, params, prev_basedir)
+        if compute_60bp:
+            bp60_tasks, all_sim_dirs_60bp = get_60bp_tasks(iter_dir, params, prev_basedir)
 
         if compute_hpin and resample_hpin:
-            hpin_tasks, all_sim_dirs_hpin = get_hpin_tasks(iter_dir, params, recompile=(not compute_struc))
+            hpin_tasks, all_sim_dirs_hpin = get_hpin_tasks(iter_dir, params, recompile=(not compute_60bp))
 
         ## Archive the previous basedir now that we've loaded states from it
         if not no_archive and prev_basedir is not None:
@@ -1793,8 +1902,8 @@ def run(args):
 
         if compute_st:
             all_ret_info = ray.get(stretch_tors_tasks)
-        if compute_struc:
-            all_ret_info_struc = ray.get(struc_tasks) # FIXME: for now, not doing anything with this! Just want to run the simulations and see them. Then, we do analysis and what not.
+        if compute_60bp:
+            all_ret_info_60bp = ray.get(bp60_tasks) # FIXME: for now, not doing anything with this! Just want to run the simulations and see them. Then, we do analysis and what not.
         if compute_hpin and resample_hpin:
             all_ret_info_hpin = ray.get(hpin_tasks)
 
@@ -1817,10 +1926,10 @@ def run(args):
                 if rc != 0:
                     raise RuntimeError(f"oxDNA simulation at path {rdir} failed with error code: {rc}")
 
-        if compute_struc:
-            struc_ref_info = process_struc(iter_dir, params)
+        if compute_60bp:
+            bp60_ref_info = process_60bp(iter_dir, params)
         else:
-            struc_ref_info = None
+            bp60_ref_info = None
         if compute_st:
             stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states = process_stretch_tors(iter_dir, params)
         else:
@@ -1830,25 +1939,25 @@ def run(args):
         else:
             hpin_ref_info = None
 
-        return stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states, struc_ref_info, hpin_ref_info, iter_dir
+        return stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states, bp60_ref_info, hpin_ref_info, iter_dir
 
     @jit
-    def loss_fn(params, stretch_tors_ref_info, struc_ref_info, hpin_ref_info):
+    def loss_fn(params, stretch_tors_ref_info, bp60_ref_info, hpin_ref_info):
 
-        # Pitch
-        if compute_struc:
-            ref_states, ref_energies, ref_avg_angles = struc_ref_info
-            em = model.EnergyModel(displacement_fn_free, params, t_kelvin=t_kelvin_struc)
+        # 60bp simulation (Pitch, Rise, Persistence Length)
+        if compute_60bp:
+            ref_states, ref_energies, ref_avg_angles, unweighted_corr_curves, unweighted_l0_avgs, unweighted_rises = bp60_ref_info
+            em = model.EnergyModel(displacement_fn_free, params, t_kelvin=t_kelvin_60bp)
 
             energy_fn = lambda body: em.energy_fn(body,
-                                                  seq=seq_oh_struc,
-                                                  bonded_nbrs=top_info_struc.bonded_nbrs,
-                                                  unbonded_nbrs=top_info_struc.unbonded_nbrs.T,
-                                                  is_end=top_info_struc.is_end)
+                                                  seq=seq_oh_60bp,
+                                                  bonded_nbrs=top_info_60bp.bonded_nbrs,
+                                                  unbonded_nbrs=top_info_60bp.unbonded_nbrs.T,
+                                                  is_end=top_info_60bp.is_end)
             energy_fn = jit(energy_fn)
             new_energies = vmap(energy_fn)(ref_states)
             diffs = new_energies - ref_energies # element-wise subtraction
-            boltzs = jnp.exp(-beta_struc * diffs)
+            boltzs = jnp.exp(-beta_60bp * diffs)
             denom = jnp.sum(boltzs)
             weights = boltzs / denom
 
@@ -1860,12 +1969,35 @@ def run(args):
             # rel_diff_pitch = abs_relative_diff(target_pitch, expected_pitch)
             rel_diff_pitch = abs_relative_diff_uncertainty(expected_pitch, pitch_lo, pitch_hi)
 
-            n_eff_pitch = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
+
+            expected_rise = jnp.dot(unweighted_rises, weights)
+            expected_rise *= utils.nm_per_oxdna_length
+
+            weighted_corr_curves = vmap(lambda v, w: v * w)(unweighted_corr_curves, weights)
+            expected_corr_curve = jnp.sum(weighted_corr_curves, axis=0)
+            expected_l0_avg = jnp.dot(unweighted_l0_avgs, weights)
+            expected_lp, expected_offset = persistence_length.persistence_length_fit(
+                expected_corr_curve[:truncation_lp],
+                expected_l0_avg)
+            expected_lp = expected_lp * utils.nm_per_oxdna_length
+            expected_lp_n_bp = expected_lp / expected_rise
+
+            rel_diff_lp = abs_relative_diff_uncertainty(expected_lp, lp_lo, lp_hi) # note that this is in nm
+
+            n_eff_60bp = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
         else:
             expected_pitch = -1
             # rmse_pitch = 0.0
             rel_diff_pitch = 0.0
-            n_eff_pitch = n_ref_states_struc
+
+            expected_rise = -1
+
+            expected_lp = -1
+            expected_lp_n_bp = -1
+            expected_offset = -1
+            rel_diff_lp = -1
+
+            n_eff_60bp = n_ref_states_60bp
 
 
         # Stretch-torsion
@@ -2005,11 +2137,10 @@ def run(args):
             rel_diff_hpin = 0.0
 
 
-        # rmse = s_eff_coeff*rmse_s_eff + c_coeff*rmse_c + g_coeff*rmse_g
-        rel_diff = s_eff_coeff*rel_diff_s_eff + c_coeff*rel_diff_c + g_coeff*rel_diff_g + pitch_coeff*rel_diff_pitch + hpin_coeff*rel_diff_hpin
+        # loss = s_eff_coeff*rmse_s_eff + c_coeff*rmse_c + g_coeff*rmse_g
+        loss = s_eff_coeff*rel_diff_s_eff + c_coeff*rel_diff_c + g_coeff*rel_diff_g + pitch_coeff*rel_diff_pitch + hpin_coeff*rel_diff_hpin + lp_coeff*rel_diff_lp
 
-        # return rmse, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch)
-        return rel_diff, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch, curr_tm, curr_width, n_eff_hpin)
+        return loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, expected_rise, expected_lp, expected_lp_n_bp, n_eff_60bp, curr_tm, curr_width, n_eff_hpin)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -2033,8 +2164,11 @@ def run(args):
     all_cs = list()
     all_gs = list()
     all_pitches = list()
+    all_rises = list()
     all_tms = list()
     all_widths = list()
+    all_lps = list()
+    all_l0s = list()
 
     all_ref_losses = list()
     all_ref_times = list()
@@ -2042,15 +2176,18 @@ def run(args):
     all_ref_cs = list()
     all_ref_gs = list()
     all_ref_pitches = list()
+    all_ref_rises = list()
     all_ref_tms = list()
     all_ref_widths = list()
+    all_ref_lps = list()
+    all_ref_l0s = list()
 
     with open(resample_log_path, "a") as f:
         f.write(f"Generating initial reference states and energies...\n")
 
     start = time.time()
     prev_ref_basedir = None
-    stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, struc_ref_info, hpin_ref_info, ref_iter_dir = get_ref_states(params, i=0, seed=30362, prev_states_force=None, prev_states_torque=None, prev_basedir=prev_ref_basedir, resample_hpin=True)
+    stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, bp60_ref_info, hpin_ref_info, ref_iter_dir = get_ref_states(params, i=0, seed=30362, prev_states_force=None, prev_states_torque=None, prev_basedir=prev_ref_basedir, resample_hpin=True)
     prev_ref_basedir = deepcopy(ref_iter_dir)
     end = time.time()
     with open(resample_log_path, "a") as f:
@@ -2059,7 +2196,7 @@ def run(args):
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
-        (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info, hpin_ref_info)
+        (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, expected_rise, curr_lp, curr_lp_n_bp, n_eff_60bp, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, bp60_ref_info, hpin_ref_info)
         num_resample_iters += 1
 
         if i == 0:
@@ -2069,8 +2206,11 @@ def run(args):
             all_ref_cs.append(c)
             all_ref_gs.append(g)
             all_ref_pitches.append(expected_pitch)
+            all_ref_rises.append(expected_rise)
             all_ref_tms.append(expected_tm)
             all_ref_widths.append(expected_width)
+            all_ref_lps.append(curr_lp)
+            all_ref_l0s.append(curr_l0_avg)
 
         resample = False
         n_effs_st = jnp.concatenate([n_effs_f, n_effs_t])
@@ -2078,7 +2218,7 @@ def run(args):
             if n_eff < min_n_eff_st:
                 resample = True
                 break
-        if n_eff_pitch < min_n_eff_struc:
+        if n_eff_60bp < min_n_eff_60bp:
             resample = True
         resample_hpin = False
         if n_eff_hpin < min_n_eff_hpin:
@@ -2092,7 +2232,7 @@ def run(args):
                 f.write(f"- min n_eff_st was {n_effs_st.min()}...")
 
             start = time.time()
-            stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, struc_ref_info, new_hpin_ref_info, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_states_force=prev_last_states_force, prev_states_torque=prev_last_states_torque, prev_basedir=prev_ref_basedir, resample_hpin=resample_hpin)
+            stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, bp60_ref_info, new_hpin_ref_info, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_states_force=prev_last_states_force, prev_states_torque=prev_last_states_torque, prev_basedir=prev_ref_basedir, resample_hpin=resample_hpin)
             end = time.time()
             if resample_hpin:
                 hpin_ref_info = deepcopy(new_hpin_ref_info)
@@ -2100,7 +2240,7 @@ def run(args):
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
 
-            (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, n_eff_pitch, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, struc_ref_info, hpin_ref_info)
+            (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, expected_rise, curr_lp, curr_lp_n_bp, n_eff_60bp, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, bp60_ref_info, hpin_ref_info)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
@@ -2108,8 +2248,11 @@ def run(args):
             all_ref_cs.append(c)
             all_ref_gs.append(g)
             all_ref_pitches.append(expected_pitch)
+            all_ref_rises.append(expected_rise)
             all_ref_tms.append(expected_tm)
             all_ref_widths.append(expected_width)
+            all_ref_lps.append(curr_lp)
+            all_ref_l0s.append(curr_l0_avg)
 
         iter_end = time.time()
 
@@ -2120,6 +2263,8 @@ def run(args):
             f.write(f"{expected_width}\n")
         with open(pitch_path, "a") as f:
             f.write(f"{expected_pitch}\n")
+        with open(rise_path, "a") as f:
+            f.write(f"{expected_rise}\n")
         with open(g_path, "a") as f:
             f.write(f"{g}\n")
         with open(s_eff_path, "a") as f:
@@ -2136,8 +2281,8 @@ def run(args):
             f.write(f"{loss}\n")
         with open(neffs_st_path, "a") as f:
             f.write(f"{n_effs_st}\n")
-        with open(neff_struc_path, "a") as f:
-            f.write(f"{n_eff_pitch}\n")
+        with open(neff_60bp_path, "a") as f:
+            f.write(f"{n_eff_60bp}\n")
         with open(neff_hpin_path, "a") as f:
             f.write(f"{n_eff_hpin}\n")
         with open(times_path, "a") as f:
@@ -2167,6 +2312,8 @@ def run(args):
         all_tms.append(expected_tm)
         all_widths.append(expected_width)
         all_n_effs_st.append(n_effs_st)
+        all_lps.append(curr_lp)
+        all_l0s.append(curr_l0_avg)
 
         if i % plot_every == 0 and i:
             plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
@@ -2226,11 +2373,20 @@ def run(args):
             onp.save(obj_dir / f"ref_pitches_i{i}.npy", onp.array(all_ref_pitches), allow_pickle=False)
             onp.save(obj_dir / f"pitches_i{i}.npy", onp.array(all_pitches), allow_pickle=False)
 
+            onp.save(obj_dir / f"ref_rises_i{i}.npy", onp.array(all_ref_rises), allow_pickle=False)
+            onp.save(obj_dir / f"rises_i{i}.npy", onp.array(all_rises), allow_pickle=False)
+
             onp.save(obj_dir / f"ref_tms_i{i}.npy", onp.array(all_ref_tms), allow_pickle=False)
             onp.save(obj_dir / f"tms_i{i}.npy", onp.array(all_tms), allow_pickle=False)
 
             onp.save(obj_dir / f"ref_widths_i{i}.npy", onp.array(all_ref_widths), allow_pickle=False)
             onp.save(obj_dir / f"widths_i{i}.npy", onp.array(all_widths), allow_pickle=False)
+
+            onp.save(obj_dir / f"ref_lps_i{i}.npy", onp.array(all_ref_lps), allow_pickle=False)
+            onp.save(obj_dir / f"lps_i{i}.npy", onp.array(all_lps), allow_pickle=False)
+
+            onp.save(obj_dir / f"ref_l0s_i{i}.npy", onp.array(all_ref_l0s), allow_pickle=False)
+            onp.save(obj_dir / f"l0s_i{i}.npy", onp.array(all_l0s), allow_pickle=False)
 
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
@@ -2249,11 +2405,20 @@ def run(args):
     onp.save(obj_dir / f"fin_ref_pitches.npy", onp.array(all_ref_pitches), allow_pickle=False)
     onp.save(obj_dir / f"fin_pitches.npy", onp.array(all_pitches), allow_pickle=False)
 
+    onp.save(obj_dir / f"fin_ref_rises.npy", onp.array(all_ref_rises), allow_pickle=False)
+    onp.save(obj_dir / f"fin_rises.npy", onp.array(all_rises), allow_pickle=False)
+
     onp.save(obj_dir / f"fin_ref_tms.npy", onp.array(all_ref_tms), allow_pickle=False)
     onp.save(obj_dir / f"fin_tms.npy", onp.array(all_tms), allow_pickle=False)
 
     onp.save(obj_dir / f"fin_ref_widths.npy", onp.array(all_ref_widths), allow_pickle=False)
     onp.save(obj_dir / f"fin_widths.npy", onp.array(all_widths), allow_pickle=False)
+
+    onp.save(obj_dir / f"fin_ref_lps.npy", onp.array(all_ref_lps), allow_pickle=False)
+    onp.save(obj_dir / f"fin_lps.npy", onp.array(all_lps), allow_pickle=False)
+
+    onp.save(obj_dir / f"fin_ref_l0s.npy", onp.array(all_ref_l0s), allow_pickle=False)
+    onp.save(obj_dir / f"fin_l0s.npy", onp.array(all_l0s), allow_pickle=False)
 
 
 def get_parser():
@@ -2359,15 +2524,15 @@ def get_parser():
 
     # Structural information
 
-    parser.add_argument('--n-steps-per-sim-struc', type=int, default=100000,
+    parser.add_argument('--n-steps-per-sim-60bp', type=int, default=100000,
                         help="Number of steps for sampling reference states per simulation for structural info")
-    parser.add_argument('--n-eq-steps-struc', type=int, default=0,
+    parser.add_argument('--n-eq-steps-60bp', type=int, default=0,
                         help="Number of equilibration steps for structural info")
-    parser.add_argument('--sample-every-struc', type=int, default=1000,
+    parser.add_argument('--sample-every-60bp', type=int, default=1000,
                         help="Frequency of sampling reference states.")
-    parser.add_argument('--n-sims-struc', type=int, default=1,
+    parser.add_argument('--n-sims-60bp', type=int, default=1,
                         help="Number of individual simulations")
-    parser.add_argument('--offset-struc', type=int, default=4,
+    parser.add_argument('--offset-60bp', type=int, default=4,
                         help="Offset for number of quartets to skip on either end of the duplex")
     parser.add_argument('--oxdna-path', type=str,
                         default="/home/ryan/Documents/Harvard/research/brenner/oxdna-bin/oxDNA/",
@@ -2377,9 +2542,19 @@ def get_parser():
     parser.add_argument('--pitch-uncertainty', type=float, default=0.25,
                         help="Uncertainty for pitch")
 
-    parser.add_argument('--no-compute-struc', action='store_true')
+    parser.add_argument('--no-compute-60bp', action='store_true')
     parser.add_argument('--pitch-coeff', type=float, default=0.0,
                         help="Coefficient for pitch component")
+
+    ## Persistence length (uses same simulation)
+    parser.add_argument('--target-lp', type=float,
+                        help="Target persistence length in nanometers")
+    parser.add_argument('--lp-uncertainty', type=float, default=2.0,
+                        help="Uncertainty for Lp in nanometers")
+    parser.add_argument('--truncation-lp', type=int, default=40,
+                        help="Truncation of quartets for fitting correlatoin curve")
+    parser.add_argument('--lp-coeff', type=float, default=0.0,
+                        help="Coefficient for Lp component")
 
 
     # Hairpin Tm information
