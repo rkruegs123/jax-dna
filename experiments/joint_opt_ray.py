@@ -2073,9 +2073,9 @@ def run(args):
 
         # Hairpin
 
-        ref_states, ref_energies, all_ops, all_op_weights, all_op_idxs = hpin_ref_info
-
         if compute_hpin:
+            ref_states, ref_energies, all_ops, all_op_weights, all_op_idxs = hpin_ref_info
+
             em = model.EnergyModel(displacement_fn_free, params, t_kelvin=t_kelvin_hpin, salt_conc=salt_concentration_hpin)
             energy_fn = lambda body: em.energy_fn(
                 body,
