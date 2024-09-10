@@ -2,6 +2,7 @@ from typing import Protocol
 
 import chex
 import jax.numpy as jnp
+
 import jax_dna.input.trajectory as jd_traj
 
 

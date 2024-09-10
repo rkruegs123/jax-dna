@@ -30,18 +30,10 @@ BIN_PATH_ENV_VAR = "OXDNA_BIN_PATH"
 ERR_BIN_PATH_NOT_SET = "OXDNA_BIN_PATH environment variable not set"
 
 
-@chex.dataclass(frozen=True, init=False)
+@chex.dataclass(frozen=True)
 class oxDNASimulator:  # noqa: N801 oxDNA is a special word
+    input_dir: str
     """A sampler base on running an oxDNA simulation."""
-
-    def __init__(self, input_dir:str|Path, **kwargs):
-        """Initialize the oxDNA simulator.
-
-        We override the __init__ method so we can throw away the kwargs that other
-        simulators might need.
-        """
-        pass
-
 
     def run(
         self,
@@ -63,16 +55,16 @@ class oxDNASimulator:  # noqa: N801 oxDNA is a special word
         completed_proc = subprocess.run(
             [  # noqa: S603
                 os.environ[BIN_PATH_ENV_VAR],
-                str(input_file),
+                "input",
             ],
             stderr=subprocess.STDOUT,
+            stdout=subprocess.PIPE,
             check=True,
+            cwd=init_dir,
         )
 
-        if completed_proc.returncode != 0:
-            with Path(init_dir / "oxdna.log").open("w") as f:
-                f.write(completed_proc.stdout)
-            raise RuntimeError(ERR_OXDNA_FAILED)
+        with Path(init_dir / "oxdna.log").open("w") as f:
+            f.write(completed_proc.stdout.decode("utf-8"))
 
         # read the output trajectory file
         topology = jd_top.from_oxdna_file(init_dir / oxdna_config["topology"])

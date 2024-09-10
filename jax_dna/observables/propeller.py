@@ -4,6 +4,7 @@ import functools
 import chex
 import jax
 import jax.numpy as jnp
+
 import jax_dna.input.trajectory as jd_traj
 import jax_dna.observables.base as jd_obs
 import jax_dna.utils.math as jd_math

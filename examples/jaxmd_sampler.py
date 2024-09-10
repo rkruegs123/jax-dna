@@ -108,7 +108,25 @@ if __name__=="__main__":
 
     fn = jax.jit(lambda opts: sampler.run(opts, init_body, experiment_config["n_steps"], key))
     opt_params = [c.opt_params for c in configs]
-    print(fn(opt_params))
+
+
+
+    transformed_fns = [
+        e_fn(
+            displacement_fn=displacement_fn,
+            params=(e_c | param).init_params(),
+        )
+        for param, e_c, e_fn in zip(opt_params, configs, energy_fns, strict=True)
+    ]
+
+    composed_energy_fn = jdna_energy.ComposedEnergyFunction(
+        energy_fns=transformed_fns,
+        rigid_body_transform_fn=transform_fn,
+    )
+    outs = fn(opt_params)
+    print(outs.center.shape, outs.orientation.vec.shape)
+    ce = jax.vmap(lambda x: composed_energy_fn(x, seq, top.bonded_neighbors, top.unbonded_neighbors.T))(outs)
+    print(ce[:5])
 
 
 

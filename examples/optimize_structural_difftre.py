@@ -1,4 +1,5 @@
 import functools
+import os
 
 import jax
 import jax.numpy as jnp
@@ -8,7 +9,7 @@ import numpy as np
 import optax
 
 import jax_dna.energy.dna1 as dna1_energy
-import jax_dna.gradient_estimators.difftre as difftre
+import jax_dna.gradient_estimators as grad_est
 import jax_dna.input.topology as topology
 import jax_dna.input.trajectory as trajectory
 import jax_dna.input.toml as toml_reader
@@ -16,7 +17,8 @@ import jax_dna.simulators.oxdna as oxdna
 import jax_dna.losses.observable_wrappers as loss_wrapper
 import jax_dna.observables as obs
 
-
+# chnage this to the path to your oxDNA binary
+os.environ[oxdna.BIN_PATH_ENV_VAR] = os.path.expanduser("~/repos/oxDNA/build/bin/oxDNA")
 
 def main() -> None:
     topology_fname = "data/templates/simple-helix/sys.top"
@@ -25,9 +27,9 @@ def main() -> None:
     energy_config = "jax_dna/input/dna1/default_energy.toml"
     input_dir = "data/templates/simple-helix"
 
-    n_eq_steps = 10_000
+    n_eq_steps = 100
     n_samples_steps = 100_000
-    sample_every = 1_000
+    sample_every = 100
     lr  = 0.001
     min_n_eff_factor = 0.95
     seed = 0
@@ -89,7 +91,10 @@ def main() -> None:
     sim_init_fn = functools.partial(
         oxdna.oxDNASimulator,
         input_dir=input_dir,
+
     )
+    sim_init_fn = lambda **kwargs: oxdna.oxDNASimulator(input_dir=input_dir)
+
 
 
     geometry = energy_config["geometry"]
@@ -100,7 +105,7 @@ def main() -> None:
         com_to_stacking=geometry["com_to_stacking"],
     )
 
-    ge = difftre.DiffTRe(
+    ge = grad_est.DiffTRe(
         beta=1/kT,
         n_eq_steps = n_eq_steps,
         min_n_eff = int(n_ref_states * min_n_eff_factor),
@@ -114,9 +119,9 @@ def main() -> None:
         sim_init_fn = sim_init_fn,
         n_sim_steps = n_samples_steps,
         key = key,
+        init_state = traj.states[0].to_rigid_body(),
         ref_states = None,
         ref_energies = None,
-
     ).intialize(opt_params)
 
     optimizer = optax.adam(learning_rate=lr)
@@ -136,4 +141,5 @@ def main() -> None:
 
 
 if __name__=="__main__":
+    # difftre.DiffTRe()
     main()

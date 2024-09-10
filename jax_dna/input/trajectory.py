@@ -1,14 +1,14 @@
 """Trajectory information for RNA/DNA strands."""
 
 import concurrent.futures as cf
-import dataclasses as dc
 import functools
 import itertools
 import multiprocessing as mp
 from pathlib import Path
 
-import jax_md
+import chex
 import jax.numpy as jnp
+import jax_md
 import numpy as np
 
 import jax_dna.utils.math as jdm
@@ -32,7 +32,7 @@ ERR_NUCLEOTIDE_STATE_SHAPE = "Invalid shape for nucleotide states:"
 ERR_FIXED_BOX_SIZE = "Only trajecories in a fixed box size are supported"
 
 
-@dc.dataclass(frozen=True)
+@chex.dataclass(frozen=True)
 class Trajectory:
     """Trajectory information for a RNA/DNA strand."""
 
@@ -69,8 +69,28 @@ class Trajectory:
     def state_rigid_bodies(self) -> list[jax_md.rigid_body.RigidBody]:
         return [state.to_rigid_body() for state in self.states]
 
+    @property
+    def state_rigid_body(self) -> jax_md.rigid_body.RigidBody:
+        return jax_md.rigid_body.RigidBody(
+            center=jnp.stack([state.com for state in self.states]),
+            orientation=jax_md.rigid_body.Quaternion(jnp.stack([state.quaternions for state in self.states])),
+        )
 
-@dc.dataclass(frozen=True)
+    def __repr__(self) -> str:
+        """Return a string representation of the trajectory."""
+        return "\n".join(
+            [
+                "Trajectory:",
+                f"n_nucleotides: {self.n_nucleotides}",
+                f"strand_lengths: {self.strand_lengths}",
+                f"# times: {len(self.times)}",
+                f"# energies: {len(self.energies)}",
+                f"# states: {len(self.states)}",
+            ]
+        )
+
+
+@chex.dataclass(frozen=True)
 class NucleotideState:
     """State information for the nucleotides in a single state."""
 
@@ -213,7 +233,7 @@ def from_file(
         strand_lengths=strand_lengths,
         times=np.array(ts, dtype=np.float64),
         energies=np.array(es, dtype=np.float64),
-        states=list(map(NucleotideState, states)),
+        states=list(map(lambda s: NucleotideState(array=s), states)),
     )
 
 

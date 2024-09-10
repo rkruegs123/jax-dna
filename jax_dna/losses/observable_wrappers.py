@@ -1,7 +1,7 @@
-from typing_extensions import override
-
 import chex
 import jax.numpy as jnp
+from typing_extensions import override
+
 import jax_dna.input.trajectory as jd_traj
 import jax_dna.observables.base as jd_obs_base
 

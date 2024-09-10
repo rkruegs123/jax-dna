@@ -71,7 +71,7 @@ class ComposedEnergyFunction:
         to into something that can be used by the energy functions like a DNA1 nucleotide
     """
 
-    energy_fns: list[BaseEnergyFunction]
+    energy_fns: tuple[BaseEnergyFunction]
     weights: jnp.ndarray | None = None
     rigid_body_transform_fn: Callable[[jax_md.rigid_body.RigidBody], Any] | None = None
 
@@ -80,6 +80,7 @@ class ComposedEnergyFunction:
         if not isinstance(self.energy_fns, list) or not all(
             isinstance(fn, BaseEnergyFunction) for fn in self.energy_fns
         ):
+            print([isinstance(fn, BaseEnergyFunction) for fn in self.energy_fns])
             raise TypeError(ERR_COMPOSED_ENERGY_FN_TYPE_ENERGY_FNS)
 
         if self.weights is not None and len(self.weights) != len(self.energy_fns):
