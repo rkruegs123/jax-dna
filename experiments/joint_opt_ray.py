@@ -495,6 +495,14 @@ def run(args):
 
     def process_60bp(iter_dir, params):
         bp60_dir = iter_dir / "ds60"
+
+        pitch_dir = bp60_dir / "pitch"
+        pitch_dir.mkdir(parents=False, exist_ok=False)
+        lp_dir = bp60_dir / "lp"
+        lp_dir.mkdir(parents=False, exist_ok=False)
+        rise_dir = bp60_dir / "rise"
+        rise_dir.mkdir(parents=False, exist_ok=False)
+
         combine_cmd = "cat "
         for r in range(n_sims_60bp):
             repeat_dir = bp60_dir / f"r{r}"
@@ -595,16 +603,25 @@ def run(args):
         running_avg_angles = onp.cumsum(ref_avg_angles) / onp.arange(1, n_traj_states + 1)
         running_avg_pitches = 2*onp.pi / running_avg_angles
         plt.plot(running_avg_pitches)
-        plt.savefig(bp60_dir / f"running_avg.png")
+        plt.savefig(pitch_dir / f"running_avg.png")
         plt.clf()
 
         plt.plot(running_avg_pitches[-int(n_traj_states // 2):])
-        plt.savefig(bp60_dir / f"running_avg_second_half.png")
+        plt.savefig(pitch_dir / f"running_avg_second_half.png")
         plt.clf()
 
         # Compute the rise
         all_state_rises = compute_all_rises(traj_states, quartets_60bp, displacement_fn_free, model.com_to_hb)
         avg_rise = jnp.mean(all_state_rises)
+
+        running_avg_rises = onp.cumsum(all_state_rises) / onp.arange(1, n_traj_states + 1)
+        plt.plot(running_avg_rises)
+        plt.savefig(rise_dir / f"running_avg.png")
+        plt.clf()
+
+        plt.plot(running_avg_rises[-int(n_traj_states // 2):])
+        plt.savefig(rise_dir / f"running_avg_second_half.png")
+        plt.clf()
 
 
         # Compute the persistence lengths
@@ -631,21 +648,21 @@ def run(args):
         plt.ylabel("Lp (nm)")
         plt.xlabel("# Samples")
         plt.title("Lp running average")
-        plt.savefig(bp60_dir / "running_avg.png")
+        plt.savefig(lp_dir / "running_avg.png")
         plt.clf()
 
         plt.plot(list(range(0, n_curves, compute_every)), all_inter_lps_truncated)
         plt.ylabel("Lp (nm)")
         plt.xlabel("# Samples")
         plt.title("Lp running average, truncated")
-        plt.savefig(bp60_dir / "running_avg_truncated.png")
+        plt.savefig(lp_dir / "running_avg_truncated.png")
         plt.clf()
 
         plt.plot(mean_corr_curve)
         plt.axvline(x=truncation_lp, linestyle='--', label="Truncation")
         plt.legend()
         plt.title("Full Correlation Curve")
-        plt.savefig(bp60_dir / "full_corr_curve.png")
+        plt.savefig(lp_dir / "full_corr_curve.png")
         plt.clf()
 
         plt.plot(jnp.log(mean_corr_curve))
@@ -654,7 +671,7 @@ def run(args):
         plt.xlabel("Nuc. Index")
         plt.ylabel("Log-Correlation")
         plt.legend()
-        plt.savefig(bp60_dir / "full_log_corr_curve.png")
+        plt.savefig(lp_dir / "full_log_corr_curve.png")
         plt.clf()
 
         # fit_fn = lambda n: -n * mean_l0 / (mean_Lp_truncated/utils.nm_per_oxdna_length) + offset
@@ -671,7 +688,7 @@ def run(args):
         plt.xlabel("Nuc. Index")
         plt.ylabel("Log-Correlation")
         plt.legend()
-        plt.savefig(bp60_dir / "log_corr_curve.png")
+        plt.savefig(lp_dir / "log_corr_curve.png")
         plt.clf()
 
 
