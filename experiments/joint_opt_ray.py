@@ -2149,7 +2149,7 @@ def run(args):
             n_eff_hpin = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
             rel_diff_hpin = abs_relative_diff_uncertainty(curr_tm, tm_hpin_lo, tm_hpin_hi)
         else:
-            curr_tm, curr_width = -1
+            curr_tm, curr_width = -1, -1
             n_eff_hpin = n_ref_states_hpin
             rel_diff_hpin = 0.0
 
