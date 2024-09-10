@@ -1,0 +1,3 @@
+
+class BaseGradientEsitmator:
+    pass

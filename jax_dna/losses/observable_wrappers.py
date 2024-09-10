@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing_extensions import override
 
 import chex
 import jax.numpy as jnp
@@ -7,12 +7,13 @@ import jax_dna.observables.base as jd_obs_base
 
 
 @chex.dataclass
-class LossFn(Protocol):
+class LossFn:
     def __call__(self, actual: jnp.ndarray, target: jnp.ndarray, weights: jnp.ndarray) -> float:
         pass
 
 
 class SquaredError(LossFn):
+    @override
     def __call__(self, actual: jnp.ndarray, target: jnp.ndarray, weights: jnp.ndarray) -> float:
         return jnp.sum(weights * (actual - target) ** 2)
 

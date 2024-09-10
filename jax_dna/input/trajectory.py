@@ -8,6 +8,7 @@ import multiprocessing as mp
 from pathlib import Path
 
 import jax_md
+import jax.numpy as jnp
 import numpy as np
 
 import jax_dna.utils.math as jdm
@@ -63,6 +64,10 @@ class Trajectory:
             or self.energies.shape[1] != TRAJECTORY_ENERGIES_SHAPE[1]
         ):
             raise ValueError(ERR_TRAJECTORY_ENERGIES_SHAPE)
+
+    @property
+    def state_rigid_bodies(self) -> list[jax_md.rigid_body.RigidBody]:
+        return [state.to_rigid_body() for state in self.states]
 
 
 @dc.dataclass(frozen=True)
