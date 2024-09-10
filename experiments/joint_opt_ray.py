@@ -2013,6 +2013,7 @@ def run(args):
             expected_lp_n_bp = -1
             expected_offset = -1
             rel_diff_lp = -1
+            expected_l0_avg = -1
 
             n_eff_60bp = n_ref_states_60bp
 
@@ -2157,7 +2158,7 @@ def run(args):
         # loss = s_eff_coeff*rmse_s_eff + c_coeff*rmse_c + g_coeff*rmse_g
         loss = s_eff_coeff*rel_diff_s_eff + c_coeff*rel_diff_c + g_coeff*rel_diff_g + pitch_coeff*rel_diff_pitch + hpin_coeff*rel_diff_hpin + lp_coeff*rel_diff_lp
 
-        return loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, expected_rise, expected_lp, expected_lp_n_bp, n_eff_60bp, curr_tm, curr_width, n_eff_hpin)
+        return loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, expected_rise, expected_lp, expected_l0_avg, expected_lp_n_bp, n_eff_60bp, curr_tm, curr_width, n_eff_hpin)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -2213,7 +2214,7 @@ def run(args):
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
-        (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, expected_rise, curr_lp, curr_lp_n_bp, n_eff_60bp, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, bp60_ref_info, hpin_ref_info)
+        (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, expected_rise, curr_lp, curr_l0_avg, curr_lp_n_bp, n_eff_60bp, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, bp60_ref_info, hpin_ref_info)
         num_resample_iters += 1
 
         if i == 0:
@@ -2257,7 +2258,7 @@ def run(args):
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
 
-            (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, expected_rise, curr_lp, curr_lp_n_bp, n_eff_60bp, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, bp60_ref_info, hpin_ref_info)
+            (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, expected_rise, curr_lp, curr_l0_avg, curr_lp_n_bp, n_eff_60bp, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, bp60_ref_info, hpin_ref_info)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
