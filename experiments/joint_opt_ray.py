@@ -236,6 +236,13 @@ def run(args):
     max_approx_iters = args['max_approx_iters']
     seq_avg = not args['seq_dep']
     assert(seq_avg)
+    standardize = not args['no_standardize']
+
+
+    if standardize:
+        uncertainty_loss_fn = lambda val, lo_val, hi_val: abs_relative_diff_uncertainty(val, lo_val, hi_val)
+    else:
+        uncertainty_loss_fn = lambda val, lo_val, hi_val: rmse_uncertainty(val, lo_val, hi_val)
 
     opt_keys = args['opt_keys']
     n_threads = args['n_threads']
@@ -403,6 +410,13 @@ def run(args):
     width_path = log_dir / "width.txt"
     lp_path = log_dir / "lp.txt"
     l0_avg_path = log_dir / "l0_avg.txt"
+
+    s_eff_loss_path = log_dir / "s_eff_loss.txt"
+    c_loss_path = log_dir / "c_loss.txt"
+    g_loss_path = log_dir / "g_loss.txt"
+    pitch_loss_path = log_dir / "pitch_loss.txt"
+    hpin_loss_path = log_dir / "hpin_loss.txt"
+    lp_loss_path = log_dir / "lp_loss.txt"
 
     params_str = ""
     params_str += f"n_sample_states_st: {n_sample_states_st}\n"
@@ -1983,10 +1997,11 @@ def run(args):
             expected_angle = jnp.dot(weights, ref_avg_angles)
             expected_pitch = 2*jnp.pi / expected_angle
 
+            loss_pitch = uncertainty_loss_fn(expected_pitch, pitch_lo, pitch_hi)
             # mse = (expected_pitch - target_pitch)**2
             # rmse_pitch = jnp.sqrt(mse)
             # rel_diff_pitch = abs_relative_diff(target_pitch, expected_pitch)
-            rel_diff_pitch = abs_relative_diff_uncertainty(expected_pitch, pitch_lo, pitch_hi)
+            # rel_diff_pitch = abs_relative_diff_uncertainty(expected_pitch, pitch_lo, pitch_hi)
 
 
             expected_rise = jnp.dot(unweighted_rises, weights)
@@ -2001,20 +2016,23 @@ def run(args):
             expected_lp = expected_lp * utils.nm_per_oxdna_length
             expected_lp_n_bp = expected_lp / expected_rise
 
-            rel_diff_lp = abs_relative_diff_uncertainty(expected_lp, lp_lo, lp_hi) # note that this is in nm
+            # rel_diff_lp = abs_relative_diff_uncertainty(expected_lp, lp_lo, lp_hi) # note that this is in nm
+            loss_lp = uncertainty_loss_fn(expected_lp, lp_lo, lp_hi)
 
             n_eff_60bp = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
         else:
             expected_pitch = -1
             # rmse_pitch = 0.0
-            rel_diff_pitch = 0.0
+            # rel_diff_pitch = 0.0
+            loss_pitch = 0.0
 
             expected_rise = -1
 
             expected_lp = -1
             expected_lp_n_bp = -1
             expected_offset = -1
-            rel_diff_lp = -1
+            # rel_diff_lp = -1
+            loss_lp = 0.0
             expected_l0_avg = -1
 
             n_eff_60bp = n_ref_states_60bp
@@ -2076,15 +2094,21 @@ def run(args):
             c = a1 * l0_fit / (a4*a1 - a3**2)
             g = -(a3 * l0_fit) / (a4 * a1 - a3**2)
 
-            rel_diff_s_eff = abs_relative_diff_uncertainty(s_eff, s_eff_lo, s_eff_hi)
+            # rel_diff_s_eff = abs_relative_diff_uncertainty(s_eff, s_eff_lo, s_eff_hi)
             # rmse_s_eff = rmse_uncertainty(s_eff, s_eff_lo, s_eff_hi)
-            rel_diff_c = abs_relative_diff_uncertainty(c, c_lo, c_hi)
+            loss_s_eff = uncertainty_loss_fn(s_eff, s_eff_lo, s_eff_hi)
+
+            # rel_diff_c = abs_relative_diff_uncertainty(c, c_lo, c_hi)
             # rmse_c = rmse_uncertainty(c, c_lo, c_hi)
-            rel_diff_g = abs_relative_diff_uncertainty(g, g_lo, g_hi)
+            loss_c = uncertainty_loss_fn(c, c_lo, c_hi)
+
+            # rel_diff_g = abs_relative_diff_uncertainty(g, g_lo, g_hi)
             # rmse_g = rmse_uncertainty(g, g_lo, g_hi)
+            loss_g = uncertainty_loss_fn(g, g_lo, g_hi)
         else:
             # rmse_s_eff, rmse_c, rmse_g = 0.0, 0.0, 0.0
-            rel_diff_s_eff, rel_diff_c, rel_diff_g = 0.0, 0.0, 0.0
+            # rel_diff_s_eff, rel_diff_c, rel_diff_g = 0.0, 0.0, 0.0
+            loss_s_eff, loss_c, loss_g = 0.0, 0.0, 0.0
             s_eff, c, g = -1, -1, -1
             a1, a3, a4 = -1, -1, -1
             n_effs_f, n_effs_t = jnp.full((n_forces,), n_sample_states_st*n_sims_st), jnp.full((n_torques,), n_sample_states_st*n_sims_st)
@@ -2150,17 +2174,20 @@ def run(args):
             curr_width = tm.compute_width(extrapolate_temps_hpin, ratios)
 
             n_eff_hpin = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
-            rel_diff_hpin = abs_relative_diff_uncertainty(curr_tm, tm_hpin_lo, tm_hpin_hi)
+            # rel_diff_hpin = abs_relative_diff_uncertainty(curr_tm, tm_hpin_lo, tm_hpin_hi)
+            loss_hpin = uncertainty_loss_fn(curr_tm, tm_hpin_lo, tm_hpin_hi)
         else:
             curr_tm, curr_width = -1, -1
             n_eff_hpin = n_ref_states_hpin
-            rel_diff_hpin = 0.0
+            # rel_diff_hpin = 0.0
+            loss_hpin = 0.0
 
 
         # loss = s_eff_coeff*rmse_s_eff + c_coeff*rmse_c + g_coeff*rmse_g
-        loss = s_eff_coeff*rel_diff_s_eff + c_coeff*rel_diff_c + g_coeff*rel_diff_g + pitch_coeff*rel_diff_pitch + hpin_coeff*rel_diff_hpin + lp_coeff*rel_diff_lp
+        # loss = s_eff_coeff*rel_diff_s_eff + c_coeff*rel_diff_c + g_coeff*rel_diff_g + pitch_coeff*rel_diff_pitch + hpin_coeff*rel_diff_hpin + lp_coeff*rel_diff_lp
+        loss = s_eff_coeff*loss_s_eff + c_coeff*loss_c + g_coeff*loss_g + pitch_coeff*loss_pitch + hpin_coeff*loss_hpin + lp_coeff*loss_lp
 
-        return loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, expected_rise, expected_lp, expected_l0_avg, expected_lp_n_bp, n_eff_60bp, curr_tm, curr_width, n_eff_hpin)
+        return loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, expected_rise, expected_lp, expected_l0_avg, expected_lp_n_bp, n_eff_60bp, curr_tm, curr_width, n_eff_hpin, loss_s_eff, loss_c, loss_g, loss_pitch, loss_hpin, loss_lp)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -2216,7 +2243,7 @@ def run(args):
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
-        (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, expected_rise, curr_lp, curr_l0_avg, curr_lp_n_bp, n_eff_60bp, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, bp60_ref_info, hpin_ref_info)
+        (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, expected_rise, curr_lp, curr_l0_avg, curr_lp_n_bp, n_eff_60bp, expected_tm, expected_width, n_eff_hpin, loss_s_eff, loss_c, loss_g, loss_pitch, loss_hpin, loss_lp)), grads = grad_fn(params, stretch_tors_ref_info, bp60_ref_info, hpin_ref_info)
         num_resample_iters += 1
 
         if i == 0:
@@ -2260,7 +2287,7 @@ def run(args):
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
 
-            (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, expected_rise, curr_lp, curr_l0_avg, curr_lp_n_bp, n_eff_60bp, expected_tm, expected_width, n_eff_hpin)), grads = grad_fn(params, stretch_tors_ref_info, bp60_ref_info, hpin_ref_info)
+            (loss, (n_effs_f, n_effs_t, a1, a3, a4, s_eff, c, g, expected_pitch, expected_rise, curr_lp, curr_l0_avg, curr_lp_n_bp, n_eff_60bp, expected_tm, expected_width, n_eff_hpin, loss_s_eff, loss_c, loss_g, loss_pitch, loss_hpin, loss_lp)), grads = grad_fn(params, stretch_tors_ref_info, bp60_ref_info, hpin_ref_info)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
@@ -2277,6 +2304,18 @@ def run(args):
         iter_end = time.time()
 
 
+        with open(s_eff_loss_path, "a") as f:
+            f.write(f"{loss_s_eff}\n")
+        with open(c_loss_path, "a") as f:
+            f.write(f"{loss_c}\n")
+        with open(g_loss_path, "a") as f:
+            f.write(f"{loss_g}\n")
+        with open(pitch_loss_path, "a") as f:
+            f.write(f"{loss_pitch}\n")
+        with open(hpin_loss_path, "a") as f:
+            f.write(f"{loss_hpin}\n")
+        with open(lp_loss_path, "a") as f:
+            f.write(f"{loss_lp}\n")
         with open(lp_path, "a") as f:
             f.write(f"{curr_lp}\n")
         with open(l0_avg_path, "a") as f:
@@ -2630,6 +2669,9 @@ def get_parser():
 
     parser.add_argument('--min-neff-factor-hpin', type=float, default=0.85,
                         help="Factor for determining min Neff for hairpin")
+
+
+    parser.add_argument('--no-standardize', action='store_true')
 
     return parser
 
