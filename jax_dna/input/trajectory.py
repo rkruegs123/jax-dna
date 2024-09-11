@@ -76,6 +76,16 @@ class Trajectory:
             orientation=jax_md.rigid_body.Quaternion(jnp.stack([state.quaternions for state in self.states])),
         )
 
+    def slice(self, key: int | slice) -> "Trajectory":
+        """Get a subset of the trajectory."""
+        return Trajectory(
+            n_nucleotides=self.n_nucleotides,
+            strand_lengths=self.strand_lengths,
+            times=self.times[key],
+            energies=self.energies[key],
+            states=self.states[key],
+        )
+
     def __repr__(self) -> str:
         """Return a string representation of the trajectory."""
         return "\n".join(

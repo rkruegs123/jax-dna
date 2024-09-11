@@ -16,6 +16,7 @@ import jax_dna.input.toml as toml_reader
 import jax_dna.simulators.oxdna as oxdna
 import jax_dna.losses.observable_wrappers as loss_wrapper
 import jax_dna.observables as obs
+from tqdm import tqdm
 
 # chnage this to the path to your oxDNA binary
 os.environ[oxdna.BIN_PATH_ENV_VAR] = os.path.expanduser("~/repos/oxDNA/build/bin/oxDNA")
@@ -36,7 +37,11 @@ def main() -> None:
     n_epochs = 100
 
     key = jax.random.PRNGKey(seed)
-    n_ref_states = n_samples_steps // sample_every
+    # TODO(ryanhausen): needs to be corrected
+    # oxdna already samples every, so if we set it here we have to set it twice
+    # for nref_states to be right
+    n_ref_states = n_samples_steps // sample_every // sample_every
+
 
     top = topology.from_oxdna_file(topology_fname)
     seq = jnp.array(top.seq_one_hot)
@@ -76,10 +81,19 @@ def main() -> None:
         dna1_energy.CoaxialStacking,
     ]
 
+    geometry = energy_config["geometry"]
+    transform_fn = functools.partial(
+        dna1_energy.Nucleotide.from_rigid_body,
+        com_to_backbone=geometry["com_to_backbone"],
+        com_to_hb=geometry["com_to_hb"],
+        com_to_stacking=geometry["com_to_stacking"],
+    )
+
     loss_fns = [
         functools.partial(
             loss_wrapper.ObservableLossFn(
                 observable=obs.propeller.PropellerTwist(
+                    rigid_body_transform_fn=transform_fn,
                     h_bonded_base_pairs=jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
                 ),
                 loss_fn=loss_wrapper.SquaredError(),
@@ -93,17 +107,8 @@ def main() -> None:
         input_dir=input_dir,
 
     )
+
     sim_init_fn = lambda **kwargs: oxdna.oxDNASimulator(input_dir=input_dir)
-
-
-
-    geometry = energy_config["geometry"]
-    transform_fn = functools.partial(
-        dna1_energy.Nucleotide.from_rigid_body,
-        com_to_backbone=geometry["com_to_backbone"],
-        com_to_hb=geometry["com_to_hb"],
-        com_to_stacking=geometry["com_to_stacking"],
-    )
 
     ge = grad_est.DiffTRe(
         beta=1/kT,
@@ -122,6 +127,7 @@ def main() -> None:
         init_state = traj.states[0].to_rigid_body(),
         ref_states = None,
         ref_energies = None,
+        trajectory = None,
     ).intialize(opt_params)
 
     optimizer = optax.adam(learning_rate=lr)

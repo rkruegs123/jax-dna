@@ -5,10 +5,14 @@ import chex
 import jax
 import jax.numpy as jnp
 
+import jax_dna.energy.dna1 as jd_energy
+import jax_dna.input.toml as jd_toml
 import jax_dna.input.trajectory as jd_traj
 import jax_dna.observables.base as jd_obs
 import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as jd_types
+
+ERR_RIGID_BODY_TRANSFORM_FN_REQUIRED = "rigid_body_transform_fn must be provided"
 
 TARGETS = {
     "oxDNA": 21.7,
@@ -48,6 +52,10 @@ class PropellerTwist(jd_obs.BaseObservable):
         hash=False
     )  # a 2-dimensional array containing the indices of the h-bonded nucleotides
 
+    def __post_init__(self):
+        if self.rigid_body_transform_fn is None:
+            raise ValueError(ERR_RIGID_BODY_TRANSFORM_FN_REQUIRED)
+
     def __call__(self, trajectory: jd_traj.Trajectory) -> jd_types.ARR_OR_SCALAR:
         """Calculate the twist of the propeller in degrees.
 
@@ -58,23 +66,37 @@ class PropellerTwist(jd_obs.BaseObservable):
             jd_types.ARR_OR_SCALAR: the propeller twist in degrees for each state and for each
             base pair, so expect a size of (n_states, n_base_pairs)
         """
+        nucleotides = jax.vmap(self.rigid_body_transform_fn)(trajectory.state_rigid_body)
 
-        base_normals = jnp.stack(list(map(lambda body: body.base_normal, trajectory.states)))
-        ptwist_rad = jax.vmap(lambda normals: single_propeller_twist_rad(self.h_bonded_base_pairs, normals))(
-            base_normals
+        base_normals = nucleotides.base_normals
+        # ptwist_rad = single_propeller_twist_rad(self.h_bonded_base_pairs, base_normals)
+        ptwist_rad_fn = jax.vmap(
+            lambda bn: 180.0 - single_propeller_twist_rad(self.h_bonded_base_pairs, bn) * 180.0 / jnp.pi
         )
 
-        return 180.0 - (ptwist_rad * 180.0 / jnp.pi)
+        return jnp.mean(ptwist_rad_fn(base_normals), axis=1)
 
 
 if __name__ == "__main__":
     import jax_dna.input.topology as jd_top
 
-    top = jd_top.from_oxdna_file("data/sys-defs/simple-helix/sys.top")
+    test_geometry = jd_toml.parse_toml("jax_dna/input/dna1/default_energy.toml")["geometry"]
+    tranform_fn = functools.partial(
+        jd_energy.Nucleotide.from_rigid_body,
+        com_to_backbone=test_geometry["com_to_backbone"],
+        com_to_hb=test_geometry["com_to_hb"],
+        com_to_stacking=test_geometry["com_to_stacking"],
+    )
+
+    top = jd_top.from_oxdna_file("data/templates/simple-helix/sys.top")
     test_traj = jd_traj.from_file(
-        path="data/sys-defs/simple-helix/bound_relaxed.conf",
+        path="data/templates/simple-helix/init.conf",
         strand_lengths=top.strand_counts,
     )
+
     simple_helix_bps = jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
-    prop_twist = PropellerTwist(h_bonded_base_pairs=simple_helix_bps)
+    print("input rigid body", test_traj.state_rigid_body.center.shape, test_traj.state_rigid_body.orientation.vec.shape)
+    prop_twist = PropellerTwist(rigid_body_transform_fn=tranform_fn, h_bonded_base_pairs=simple_helix_bps)
+    output_prop_twist = prop_twist(test_traj)
+    print("output prop twist shape", output_prop_twist.shape)
     print(prop_twist(test_traj))  # expect a 2D array of shape (n_states, n_base_pairs)
