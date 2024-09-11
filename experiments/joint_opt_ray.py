@@ -2377,7 +2377,7 @@ def run(args):
 
             plt.plot(onp.arange(i+1), all_tms, linestyle="--", color="blue")
             plt.scatter(all_ref_times, all_ref_tms, marker='o', label="Resample points", color="blue")
-            plt.axhline(y=target_tm, linestyle='--', label="Target Tm", color='red')
+            plt.axhline(y=target_tm_hpin, linestyle='--', label="Target Tm", color='red')
             plt.legend()
             plt.ylabel("Expected Tm")
             plt.xlabel("Iteration")
