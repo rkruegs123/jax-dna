@@ -127,7 +127,8 @@ def run(args):
     sys_basedir = Path("data/templates/tm-8bp")
     input_template_path = sys_basedir / "input"
 
-    weight_path = sys_basedir / "wfile.txt"
+    # weight_path = sys_basedir / "wfile.txt"
+    weight_path = sys_basedir / "wfile-oxdna2.txt"
     weight_df = pd.read_csv(weight_path, delim_whitespace=True, names=["op", "weight"])
     weight_mapper = dict(zip(weight_df.op, weight_df.weight))
 
