@@ -171,7 +171,10 @@ def run(args):
     top_path = sys_basedir / "sys.top"
     input_template_path = sys_basedir / "input"
     op_path = sys_basedir / "op.txt"
-    wfile_path = sys_basedir / "wfile.txt"
+
+    wfile_path = sys_basedir / "wfile-oxdna2.txt"
+    if not wfile_path.exists():
+        wfile_path = sys_basedir / "wfile.txt"
 
     top_info = topology.TopologyInfo(top_path,
                                      reverse_direction=False
