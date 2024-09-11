@@ -514,11 +514,17 @@ def run(args):
         rev_temps = jnp.flip(extrapolate_temps)
         finfs_extrap = jnp.arange(0.1, 1., 0.05)
         temps_extrap = jnp.interp(finfs_extrap, rev_finfs, rev_temps)
-        plt.plot(temps_extrap, finfs_extrap)
+        plt.plot(temps_extrap, finfs_extrap, label="Reference")
+
+        rev_finfs = jnp.flip(discrete_finfs)
+        temps_extrap = jnp.interp(finfs_extrap, rev_finfs, rev_temps)
+        plt.plot(temps_extrap, finfs_extrap, label="Discrete")
+
         plt.xlabel("T/K")
         plt.ylabel("Duplex Yield")
         plt.title(f"Tm={ref_tm}, width={ref_width}")
-        plt.savefig(iter_dir / "melting_curve.png")
+        plt.legend()
+        plt.savefig(iter_dir / "melting_curves.png")
         plt.clf()
 
 
