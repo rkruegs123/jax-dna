@@ -401,6 +401,8 @@ def run(args):
     warnings_path = log_dir / "warnings.txt"
     tm_path = log_dir / "tm.txt"
     width_path = log_dir / "width.txt"
+    lp_path = log_dir / "lp.txt"
+    l0_avg_path = log_dir / "l0_avg.txt"
 
     params_str = ""
     params_str += f"n_sample_states_st: {n_sample_states_st}\n"
@@ -2275,6 +2277,10 @@ def run(args):
         iter_end = time.time()
 
 
+        with open(lp_path, "a") as f:
+            f.write(f"{curr_lp}\n")
+        with open(l0_avg_path, "a") as f:
+            f.write(f"{curr_l0_avg}\n")
         with open(tm_path, "a") as f:
             f.write(f"{expected_tm}\n")
         with open(width_path, "a") as f:
