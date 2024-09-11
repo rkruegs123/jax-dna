@@ -65,7 +65,7 @@ class DiffTRe:
         initialized_energy_fns = [
             e_fn(
                 displacement_fn=self.displacement_fn,
-                params=e_c.init_params() | op,
+                params=(e_c | op).init_params(),
             )
             for op, e_fn, e_c in zip(opt_params, self.energy_fns, self.energy_configs)
         ]
@@ -75,9 +75,9 @@ class DiffTRe:
             rigid_body_transform_fn=self.rigid_body_transform_fn,
         )
 
-        return lambda R: energy_fn(
-            R,
-            seq=self.topology.seq_one_hot,
+        return lambda rigid_body: energy_fn(
+            rigid_body,
+            seq=jnp.array(self.topology.seq_one_hot),
             bonded_neighbors=self.topology.bonded_neighbors,
             unbonded_neighbors=self.topology.unbonded_neighbors.T,
         )
@@ -103,8 +103,6 @@ class DiffTRe:
             )
             .state_rigid_body[self.n_eq_steps :: self.sample_every]
         )
-        # get the reference energies
-
         #  calculate
         ref_energies = jax.vmap(self.build_energy_fn(params))(ref_states)
 
