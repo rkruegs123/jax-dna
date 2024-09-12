@@ -24,6 +24,9 @@ import jax.numpy as jnp
 from jax_md import space, rigid_body
 import optax
 
+import orbax.checkpoint
+from flax.training import orbax_utils
+
 from jax_dna.common.read_seq_specific import read_ss_oxdna
 from jax_dna.common import utils, topology, trajectory, checkpoint, center_configuration
 from jax_dna.dna2 import model, lammps_utils
@@ -237,6 +240,8 @@ def run(args):
     seq_avg = not args['seq_dep']
     assert(seq_avg)
     standardize = not args['no_standardize']
+    orbax_ckpt_path = args['orbax_ckpt_path']
+    ckpt_freq = args['ckpt_freq']
 
 
     if standardize:
@@ -2203,6 +2208,27 @@ def run(args):
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
 
+
+    # Setup orbax checkpointing
+    ex_ckpt = {"params": params, "optimizer": optimizer, "opt_state": opt_state}
+    save_args = orbax_utils.save_args_from_target(ex_ckpt)
+
+    ckpt_dir = dp.run_dir / "ckpt/orbax/managed/"
+    ckpt_dir.mkdir(parents=True, exist_ok=False)
+    print(bcolors.WARNING + f"Created directory at location: {ckpt_dir}" + bcolors.ENDC)
+
+    orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
+    options = orbax.checkpoint.CheckpointManagerOptions(max_to_keep=10, create=True)
+    checkpoint_manager = orbax.checkpoint.CheckpointManager(str(ckpt_dir.resolve()), orbax_checkpointer, options) # note: checkpoint directory has to be an absoltue path
+
+    ## Load orbax checkpoint if necessary
+    if orbax_ckpt_path is not None:
+        state_restored = orbax_checkpointer.restore(orbax_ckpt_path, item=ex_ckpt)
+        params = state_restored["params"]
+        # optimizer = state_restored["optimizer"]
+        opt_state = state_restored["opt_state"]
+
+
     min_n_eff_st = int(n_sample_states_st*n_sims_st * min_neff_factor)
 
     all_losses = list()
@@ -2377,6 +2403,10 @@ def run(args):
         all_n_effs_st.append(n_effs_st)
         all_lps.append(curr_lp)
         all_l0s.append(curr_l0_avg)
+
+        if i % ckpt_freq == 0:
+            ckpt = {"params": params, "optimizer": optimizer, "opt_state": opt_state}
+            checkpoint_manager.save(i, ckpt, save_kwargs={'save_args': save_args})
 
         if i % plot_every == 0 and i:
             plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
@@ -2670,8 +2700,12 @@ def get_parser():
     parser.add_argument('--min-neff-factor-hpin', type=float, default=0.85,
                         help="Factor for determining min Neff for hairpin")
 
-
     parser.add_argument('--no-standardize', action='store_true')
+
+    parser.add_argument('--ckpt-freq', type=int, default=5,
+                        help='Checkpointing frequency')
+    parser.add_argument('--orbax-ckpt-path', type=str, required=False,
+                        help='Optional path to orbax checkpoint directory')
 
     return parser
 
