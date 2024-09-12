@@ -10,7 +10,9 @@ import jax_md
 
 import jax_dna.energy.base as jd_energy_fn
 import jax_dna.energy.configuration as jd_energy_cnfg
+import jax_dna.input.topology as jd_topology
 import jax_dna.input.trajectory as jd_traj
+import jax_dna.simulators.io as jd_sio
 import jax_dna.simulators.jax_md.utils as jaxmd_utils
 
 REQUIRED_KEYS = {
@@ -37,10 +39,7 @@ class JaxMDSimulator:
     transform_fn: Callable
     simulator_init: Callable[[Callable, Callable], jax_md.simulate.Simulator]
     neighbors: jaxmd_utils.NeighborHelper
-    traj_n_nucleotides: int
-    traj_strand_length: list[int]
-    traj_times: jnp.ndarray
-    traj_energies: jnp.ndarray
+    topology: jd_topology.Topology
 
     def __post_init__(self) -> None:
         """Builds the run function using the provided parameters."""
@@ -52,7 +51,7 @@ class JaxMDSimulator:
             self.transform_fn,
             self.simulator_init,
             self.neighbors,
-            self,
+            self.topology,
         )
 
 
@@ -64,7 +63,7 @@ def build_run_fn(
     transform_fn: Callable,
     simulator_init: Callable[[Callable, Callable], jax_md.simulate.Simulator],
     neighbors: jaxmd_utils.NeighborHelper,
-    sim_obj: JaxMDSimulator,
+    topology: jd_topology.Topology,
 ) -> Callable[[dict[str, float], jax_md.rigid_body.RigidBody, int, jax.random.PRNGKey], jd_traj.Trajectory]:
     """Builds the run function for the jax_md simulation."""
     displacement_fn, shift_fn = space
@@ -79,7 +78,7 @@ def build_run_fn(
         init_state: jax_md.rigid_body.RigidBody,
         n_steps: int,
         key: jax.random.PRNGKey,
-    ) -> jd_traj.Trajectory:
+    ) -> jd_sio.SimulatorTrajectory:
         # The  energy function configuration init calls need to happen inside the function
         # so that if the gradient is calculated for this run it will be tracked
         transformed_fns = [
@@ -119,14 +118,11 @@ def build_run_fn(
 
         _, trajectory = scan_fn(apply_fn, (init_state, neighbors), jnp.arange(n_steps))
 
-        jd_traj.Trajectory(
-            states=trajectory,
-            n_nucleotides=sim_obj.traj_n_nucleotides,
-            strand_length=sim_obj.traj_strand_length,
-            times=sim_obj.traj_times,
-            energies=sim_obj.traj_energies,
+        return jd_sio.SimulatorTrajectory(
+            sequence=topology.seq,
+            seq_oh=topology.seq_one_hot,
+            strand_lengths=topology.strand_counts,
+            rigid_body=trajectory,
         )
-
-        return trajectory
 
     return run_fn

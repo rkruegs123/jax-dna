@@ -1,3 +1,4 @@
+from collections.abc import Callable
 import functools
 import os
 
@@ -20,9 +21,9 @@ import jax_dna.losses.observable_wrappers as loss_wrapper
 import jax_dna.observables as obs
 from tqdm import tqdm
 
-jax.config.update("jax_enable_x64", True)
 
-def main() -> None:
+
+def main():
     topology_fname = "data/templates/simple-helix/sys.top"
     traj_fname = "data/templates/simple-helix/init.conf"
     simulation_config = "jax_dna/input/dna1/default_simulation.toml"
@@ -85,8 +86,6 @@ def main() -> None:
         com_to_stacking=geometry["com_to_stacking"],
     )
 
-
-    # change to R
     init_body = traj.states[0].to_rigid_body()
 
     dt = experiment_config["dt"]
@@ -116,7 +115,6 @@ def main() -> None:
         ),
     ]
 
-
     sim_init_fn = functools.partial(
         jmd.JaxMDSimulator,
         simulator_params=jmd.StaticSimulatorParams(
@@ -136,41 +134,18 @@ def main() -> None:
         topology=top,
     )
 
-    ge = grad_est.DiffTRe(
-        beta=1/kT,
-        n_eq_steps = n_eq_steps,
-        min_n_eff = int(n_ref_states * min_n_eff_factor),
-        sample_every = sample_every,
-        space = jax_md.space.free(),
-        topology = top,
-        rigid_body_transform_fn = transform_fn,
-        energy_configs = energy_configs,
-        energy_fns = energy_fns,
-        loss_fns = loss_fns,
-        sim_init_fn = sim_init_fn,
-        n_sim_steps = n_samples_steps,
-        key = key,
-        init_state = init_body,
-        ref_states = None,
-        ref_energies = None,
-        trajectory = None,
-    ).intialize(opt_params)
 
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(opt_params)
 
-    loss_vals = []
     for _ in tqdm(range(n_epochs)):
-        ge, grads, loss, losses = ge(opt_params, loss_fns, key)
-        updates, opt_state = optimizer.update(grads, opt_state)
-        opt_params = optax.apply_updates(opt_params, updates)
-        loss_vals.append(loss)
+        pass
 
 
-    import matplotlib.pyplot as plt
-    plt.plot(loss_vals)
-    plt.show()
 
-if __name__=="__main__":
+
+
+
+
+if __name__ == "__main__":
     main()
-

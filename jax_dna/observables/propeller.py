@@ -9,6 +9,7 @@ import jax_dna.energy.dna1 as jd_energy
 import jax_dna.input.toml as jd_toml
 import jax_dna.input.trajectory as jd_traj
 import jax_dna.observables.base as jd_obs
+import jax_dna.simulators.io as jd_sio
 import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as jd_types
 
@@ -56,7 +57,7 @@ class PropellerTwist(jd_obs.BaseObservable):
         if self.rigid_body_transform_fn is None:
             raise ValueError(ERR_RIGID_BODY_TRANSFORM_FN_REQUIRED)
 
-    def __call__(self, trajectory: jd_traj.Trajectory) -> jd_types.ARR_OR_SCALAR:
+    def __call__(self, trajectory: jd_sio.SimulatorTrajectory) -> jd_types.ARR_OR_SCALAR:
         """Calculate the twist of the propeller in degrees.
 
         Args:
@@ -66,14 +67,13 @@ class PropellerTwist(jd_obs.BaseObservable):
             jd_types.ARR_OR_SCALAR: the propeller twist in degrees for each state and for each
             base pair, so expect a size of (n_states, n_base_pairs)
         """
-        nucleotides = jax.vmap(self.rigid_body_transform_fn)(trajectory.state_rigid_body)
+        nucleotides = jax.vmap(self.rigid_body_transform_fn)(trajectory.rigid_body)
 
         base_normals = nucleotides.base_normals
         # ptwist_rad = single_propeller_twist_rad(self.h_bonded_base_pairs, base_normals)
         ptwist_rad_fn = jax.vmap(
             lambda bn: 180.0 - single_propeller_twist_rad(self.h_bonded_base_pairs, bn) * 180.0 / jnp.pi
         )
-
         return jnp.mean(ptwist_rad_fn(base_normals), axis=1)
 
 
@@ -94,9 +94,33 @@ if __name__ == "__main__":
         strand_lengths=top.strand_counts,
     )
 
+    sim_traj = jd_sio.SimulatorTrajectory(
+        sequence=jnp.array(top.seq_one_hot),
+        seq_oh=jnp.array(top.seq_one_hot),
+        strand_lengths=top.strand_counts,
+        rigid_body=test_traj.state_rigid_body,
+    )
+
     simple_helix_bps = jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
-    print("input rigid body", test_traj.state_rigid_body.center.shape, test_traj.state_rigid_body.orientation.vec.shape)
+    print("input rigid body", sim_traj.rigid_body.center.shape, sim_traj.rigid_body.orientation.vec.shape)
     prop_twist = PropellerTwist(rigid_body_transform_fn=tranform_fn, h_bonded_base_pairs=simple_helix_bps)
-    output_prop_twist = prop_twist(test_traj)
+    output_prop_twist = prop_twist(sim_traj)
     print("output prop twist shape", output_prop_twist.shape)
-    print(prop_twist(test_traj))  # expect a 2D array of shape (n_states, n_base_pairs)
+    import jax_md
+    # concate multiple states together to simulate a longer trajectory
+
+    sim_traj = jd_sio.SimulatorTrajectory(
+        sequence=jnp.array(top.seq_one_hot),
+        seq_oh=jnp.array(top.seq_one_hot),
+        strand_lengths=top.strand_counts,
+        rigid_body=jax_md.rigid_body.RigidBody(
+            center=jnp.concatenate([sim_traj.rigid_body.center, sim_traj.rigid_body.center], axis=0),
+            orientation=jax_md.rigid_body.Quaternion(
+                vec=jnp.concatenate([sim_traj.rigid_body.orientation.vec, sim_traj.rigid_body.orientation.vec], axis=0),
+            ),
+        ),
+    )
+
+    print("input rigid body", sim_traj.rigid_body.center.shape, sim_traj.rigid_body.orientation.vec.shape)
+
+    print(prop_twist(sim_traj))  # expect a 2D array of shape (n_states, n_base_pairs)

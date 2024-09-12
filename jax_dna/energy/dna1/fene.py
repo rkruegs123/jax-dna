@@ -24,6 +24,10 @@ class FeneConfiguration(config.BaseConfiguration):
     # override
     required_params: tuple[str] = ("eps_backbone", "r0_backbone", "delta_backbone", "fmax", "finf")
 
+    @override
+    def init_params(self) -> "FeneConfiguration":
+        return self
+
 
 @chex.dataclass(frozen=True)
 class Fene(je_base.BaseEnergyFunction):

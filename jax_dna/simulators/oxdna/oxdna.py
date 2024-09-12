@@ -13,6 +13,7 @@ import jax
 import jax_dna.input.oxdna_input as jd_oxdna
 import jax_dna.input.topology as jd_top
 import jax_dna.input.trajectory as jd_traj
+import jax_dna.simulators.io as jd_sio
 
 REQUIRED_KEYS = {
     "oxnda_bin",
@@ -69,4 +70,11 @@ class oxDNASimulator:  # noqa: N801 oxDNA is a special word
         # read the output trajectory file
         topology = jd_top.from_oxdna_file(init_dir / oxdna_config["topology"])
         # return the trajectory
-        return jd_traj.from_file(output_file, topology.strand_counts, is_oxdna=True)
+        trajectory = jd_traj.from_file(output_file, topology.strand_counts, is_oxdna=True)
+
+        return jd_sio.Trajectory(
+            sequence=topology.seq,
+            seq_oh=topology.seq_one_hot,
+            strand_lengths=topology.strand_lengths,
+            rigid_body=trajectory.state_rigid_body,
+        )
