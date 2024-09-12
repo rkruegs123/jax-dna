@@ -157,7 +157,7 @@ def run(args):
     )
     box_size = conf_info_bound.box_size
 
-    weights_path = sys_basedir / "wfile.txt"
+    # weights_path = sys_basedir / "wfile.txt"
     op_path = sys_basedir / "op.txt"
 
     displacement_fn, shift_fn = space.periodic(box_size)
@@ -183,7 +183,7 @@ def run(args):
             repeat_dir.mkdir(parents=False, exist_ok=False)
 
             shutil.copy(top_path, repeat_dir / "sys.top")
-            shutil.copy(weights_path, repeat_dir / "wfile.txt")
+            shutil.copy(weight_path, repeat_dir / "wfile.txt")
             shutil.copy(op_path, repeat_dir / "op.txt")
 
             if prev_basedir is None or True: # FIXME: just doing this every time

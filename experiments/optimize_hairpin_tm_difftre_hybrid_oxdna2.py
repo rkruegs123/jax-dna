@@ -716,7 +716,7 @@ def run(args):
             os.remove(str(iter_dir / "output.dat"))
 
 
-        plt.plot(all_ops_idx)
+        plt.plot(all_op_idxs)
         for i in range(n_sims):
             plt.axvline(x=i*n_ref_states_per_sim, linestyle="--", color="red")
         plt.savefig(iter_dir / "op_trajectory.png")
