@@ -611,7 +611,7 @@ def run(args):
         onp.save(iter_dir / f"melting_temps_reference.npy", onp.array(temps_extrap), allow_pickle=False)
         onp.save(iter_dir / f"melting_finfs.npy", onp.array(finfs_extrap), allow_pickle=False)
 
-        rev_finfs = jnp.flip(calc_finfs)
+        rev_finfs = jnp.flip(discrete_finfs)
         temps_extrap = jnp.interp(finfs_extrap, rev_finfs, rev_temps)
         plt.plot(temps_extrap, finfs_extrap, label="Calculate")
 
