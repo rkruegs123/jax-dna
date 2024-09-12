@@ -15,6 +15,7 @@ import pandas as pd
 import random
 import seaborn as sns
 
+import jax
 import jax.numpy as jnp
 from jax_md import space
 from jax import vmap, jit, lax
@@ -24,8 +25,9 @@ from jax_dna.common import utils, topology, trajectory, center_configuration, ch
 from jax_dna.loss import persistence_length
 from jax_dna.dna1 import model, oxdna_utils
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 ALL_FORCES = [0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.375] # per nucleotide
@@ -167,7 +169,7 @@ def simulate(args):
     dt = 5e-3
     kT = utils.get_kt(t_kelvin)
     beta = 1 / kT
-        
+
 
     # Do the simulation
     random.seed(key)
@@ -196,7 +198,7 @@ def simulate(args):
         sims_to_add = n_sims_per_force
         if force in low_forces:
             sims_to_add *= low_force_multiplier
-            
+
         for f_sim_idx in range(sims_to_add):
             sim_length = n_steps_per_sim
 
@@ -463,7 +465,7 @@ def analyze(args):
         plt.title(f"Cumulative average, force={force*2}")
         plt.savefig(single_force_dir / f"pdist_running_avg_{force*2}_trunc.png")
         plt.clf()
-        
+
         if force in low_forces:
             f_running_averages_sampled = f_running_averages[::(running_avg_interval*low_force_multiplier)]
         else:
@@ -483,7 +485,7 @@ def analyze(args):
                 else:
                     f_lens.append(tom_extensions[float(fx2)])
             f_lens = jnp.array(f_lens)
-            
+
             # gn = GaussNewton(residual_fun=WLC)
             # gn_sol = gn.run(x_init, x_data=f_lens, force_data=TOTAL_FORCES, kT=kT).params
             gn_sol = get_wlc_params(f_lens)
@@ -543,7 +545,7 @@ def analyze(args):
         plt.xlabel("Time")
         plt.savefig(single_force_dir / f"wlc_fit_running_avg_{force*2}_truncanted_lp_fixed.png")
         plt.clf()
-                    
+
         all_running_avg_pdists[force] = f_running_averages_sampled
 
 

@@ -11,6 +11,7 @@ import pandas as pd
 import shutil
 import seaborn as sns
 
+import jax
 import optax
 import jax.numpy as jnp
 from jax import jit, vmap, random, grad, value_and_grad, lax
@@ -20,8 +21,9 @@ from jax_dna.common import utils, topology, trajectory, center_configuration
 from jax_dna.loss import geometry, pitch, propeller
 from jax_dna.dna1 import model, oxdna_utils
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 

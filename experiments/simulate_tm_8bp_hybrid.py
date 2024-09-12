@@ -12,6 +12,7 @@ import random
 from copy import deepcopy
 import seaborn as sns
 
+import jax
 import jax.numpy as jnp
 from jax_md import space
 from jax import vmap, jit, lax
@@ -20,8 +21,9 @@ from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.dna1 import model, oxdna_utils
 from jax_dna.loss import tm
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 def run(args):

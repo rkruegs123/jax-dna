@@ -17,8 +17,9 @@ from jax_dna.common import utils, topology, trajectory
 from jax_dna.dna1 import model
 from jax_dna.loss import persistence_length
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 def tree_stack(trees):

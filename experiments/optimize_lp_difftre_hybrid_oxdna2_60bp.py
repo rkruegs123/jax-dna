@@ -20,7 +20,7 @@ import seaborn as sns
 import zipfile
 import os
 
-
+import jax
 import optax
 import jax.numpy as jnp
 from jax_md import space
@@ -34,9 +34,11 @@ from jax_dna.dna2.oxdna_utils import recompile_oxdna
 from jax_dna.dna1.oxdna_utils import rewrite_input_file
 import jax_dna.input.trajectory as jdt
 
-from jax.config import config
-config.update("jax_enable_x64", True)
-config.update('jax_platform_name', 'cpu')
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+# config.update('jax_platform_name', 'cpu')
+jax.config.update("jax_enable_x64", True)
+jax.config.update("jax_platform_name", 'cpu')
 
 
 checkpoint_every = 50

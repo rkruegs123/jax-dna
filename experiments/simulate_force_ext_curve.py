@@ -18,8 +18,9 @@ from jax_md import space, simulate, rigid_body
 from jax_dna.common import utils, topology, trajectory, ext_force
 from jax_dna.dna1 import model
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 
@@ -178,7 +179,7 @@ def run(args):
     num_points_low_forces = num_points * low_force_factor
     running_avg_interval = args['running_avg_interval']
     min_running_avg_idx = args['min_running_avg_idx']
-    
+
 
     # Setup the logging directoroy
     if run_name is None:
@@ -204,7 +205,7 @@ def run(args):
             force_n_steps_per_batch = n_steps_per_batch * low_force_factor
         else:
             force_n_steps_per_batch = n_steps_per_batch
-        
+
         f_key, key = random.split(key)
         start = time.time()
         f_traj = sim_force(force, f_key, n_eq_steps, sample_every, force_n_steps_per_batch,

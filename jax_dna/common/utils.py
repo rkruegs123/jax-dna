@@ -1,11 +1,13 @@
 import pdb
 import numpy as onp
 
+import jax
 from jax import vmap, jit, tree_util
 import jax.numpy as jnp
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 DNA_ALPHA = "ACGT"

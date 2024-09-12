@@ -7,6 +7,7 @@ from copy import deepcopy
 from pathlib import Path
 import functools
 
+import jax
 import jax.numpy as jnp
 from jax import vmap, jit, value_and_grad, grad, random, tree_util
 from jax_md import rigid_body, space, simulate
@@ -16,8 +17,9 @@ from jax_dna.cgdna import marginals, oxdna_to_cgdna
 from jax_dna.common import topology, trajectory, utils, checkpoint
 from jax_dna.dna1 import model
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 checkpoint_every = 10
@@ -144,7 +146,7 @@ def run():
     loss_path = "test_loss.txt"
     params_path = "test_params.txt"
     grads_path = "test_grads.txt"
-    
+
     for i in tqdm(range(n_epochs)):
         key, iter_key = random.split(key)
         iter_key, eq_key = random.split(iter_key)

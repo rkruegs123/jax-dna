@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as onp
 from io import StringIO
 
+import jax
 from jax import jit, random, lax, grad, value_and_grad, vmap
 import jax.numpy as jnp
 from jax_md import space, simulate, rigid_body
@@ -23,8 +24,9 @@ from jax_dna.common import utils, topology, trajectory
 from jax_dna.rna2.load_params import load, _process, read_seq_specific, \
     DEFAULT_BASE_PARAMS, EMPTY_BASE_PARAMS, get_full_base_params
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 

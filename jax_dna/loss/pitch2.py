@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as onp
 import matplotlib.pyplot as plt
 
+import jax
 from jax import vmap
 import jax.numpy as jnp
 from jax_md import rigid_body, util, space
@@ -13,8 +14,9 @@ from jax_dna.common import utils, topology, trajectory
 from jax_dna.dna1 import model as model1
 from jax_dna.dna2 import model as model2
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 

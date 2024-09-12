@@ -9,6 +9,7 @@ import argparse
 import numpy as onp
 import os
 
+import jax
 import optax
 import jax.numpy as jnp
 from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util
@@ -21,8 +22,9 @@ from jax_dna.dna2 import model as model2
 from jax_dna import dna2, loss
 from jax_dna.loss import pitch, pitch2
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 

@@ -3,8 +3,9 @@ import jax
 from jax import tree_util, lax
 import jax.numpy as jnp
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 def _split_n_stack(x, n):

@@ -6,14 +6,15 @@ import pdb
 import unittest
 from itertools import combinations
 
+import jax
 import jax.numpy as jnp
-import jax.debug
 from jax_md.partition import NeighborListFormat, neighbor_list
 
 from jax_dna.common.utils import bcolors, DNA_ALPHA, RNA_ALPHA
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 

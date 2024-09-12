@@ -17,6 +17,7 @@ import functools
 from oxDNA_analysis_tools.UTILS.RyeReader import describe, get_confs
 from oxDNA_analysis_tools.deviations import deviations
 
+import jax
 import optax
 import jax.numpy as jnp
 from jax import jit, vmap, grad, value_and_grad, lax, tree_util
@@ -28,9 +29,9 @@ from jax_dna.dna1.oxdna_utils import rewrite_input_file
 from jax_dna.rna2.load_params import read_seq_specific, DEFAULT_BASE_PARAMS, EMPTY_BASE_PARAMS
 import jax_dna.input.trajectory as jdt
 
-
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 checkpoint_every = 50

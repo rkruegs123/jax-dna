@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as onp
 from io import StringIO
 
+import jax
 from jax import jit, random, lax, grad, value_and_grad, vmap
 import jax.numpy as jnp
 from jax_md import space, simulate, rigid_body
@@ -22,8 +23,9 @@ from jax_dna.common import utils, topology, trajectory
 from jax_dna.dna2.load_params import load, _process
 from jax_dna.dna2 import lammps_utils
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 default_base_params_seq_avg = load(seq_avg=True, process=False)

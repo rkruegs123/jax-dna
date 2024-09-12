@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as onp
 import subprocess
 
+import jax
 import optax
 import jax.numpy as jnp
 from jax import jit, vmap, random, grad, value_and_grad, lax, lax, tree_util
@@ -21,8 +22,9 @@ from jax_dna.common.topology import TopologyInfo
 from jax_dna.loss import geometry, pitch, propeller
 from jax_dna.dna1 import model, oxdna_utils
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 
@@ -51,7 +53,7 @@ def run(args):
     n_threads = args['n_threads']
     oxdna_cuda_device = args['oxdna_cuda_device']
     oxdna_cuda_list = args['oxdna_cuda_list']
-    
+
     if run_name is None:
         raise RuntimeError(f"Must set a run name")
     output_dir = Path("output/")
@@ -63,8 +65,8 @@ def run(args):
         params_str += f"{k}: {v}\n"
     with open(run_dir / "params.txt", "w+") as f:
         f.write(params_str)
-    
-    
+
+
     # Load the system
     sys_basedir = Path("data/sys-defs/simple-helix")
     top_path = sys_basedir / "sys.top"
@@ -93,10 +95,10 @@ def run(args):
     params = deepcopy(model.EMPTY_BASE_PARAMS)
     params = tree_util.tree_map(lambda x: jnp.array(x, dtype=jnp.float64), params)
     key = random.PRNGKey(0)
-    
+
     # JAX-MD Simulation
     init_body = conf_info.get_states()[0]
-    
+
     em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
     init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
     init_state = init_fn(key, init_body, mass=mass, seq=seq_oh,
@@ -114,7 +116,7 @@ def run(args):
     for i in tqdm(range(n_steps)):
         if i == post_compilation_index:
             post_comp_start = time.time()
-        
+
         step_start = time.time()
         state = step_fn(state,
                         seq=seq_oh,
@@ -122,7 +124,7 @@ def run(args):
                         unbonded_nbrs=top_info.unbonded_nbrs.T)
         step_end = time.time()
         timestep_times.append(step_end - step_start)
-        
+
         trajectory.append(state.position)
     post_comp_end = time.time()
     end = time.time()
@@ -130,7 +132,7 @@ def run(args):
     print(f"Post compilation took {post_comp_end - post_comp_start} seconds")
 
     pdb.set_trace()
-    
+
     ## Option 2: Scan
 
     @jit
@@ -143,7 +145,7 @@ def run(args):
 
     sim_fn = lambda: scan(scan_fn, init_state, jnp.arange(n_steps))
     sim_fn = jit(sim_fn)
-    
+
     start = time.time()
     # fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_steps))
     fin_state, traj = sim_fn()
@@ -203,7 +205,7 @@ def run(args):
 
 
 
-    
+
 
     # Run with oxDNA standalone code on CPU
     sys_basedir_template = Path("data/templates/simple-helix")
@@ -248,12 +250,12 @@ def run(args):
         raise RuntimeError(f"oxDNA simulation failed with error code: {rc}")
     end = time.time()
     print(f"Standalone simulation tooke {end - start} seconds")
-    
+
 
 
 
     return
-    
+
 
 
 
@@ -276,5 +278,5 @@ if __name__ == "__main__":
                         help="CUDA neighbor lists")
 
     args = vars(parser.parse_args())
-    
+
     run(args)

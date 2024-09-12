@@ -14,6 +14,7 @@ import seaborn as sns
 import pprint
 import functools
 
+import jax
 import jax.numpy as jnp
 from jax_md import space
 from jax import vmap, jit, lax, grad, value_and_grad
@@ -23,8 +24,9 @@ from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.dna1 import model, oxdna_utils
 from jax_dna.loss import tm
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 checkpoint_every = 25

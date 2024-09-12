@@ -16,6 +16,7 @@ import functools
 import zipfile
 import os
 
+import jax
 import jax.numpy as jnp
 from jax_md import space
 from jax import vmap, jit, lax, grad, value_and_grad
@@ -28,8 +29,9 @@ from jax_dna.dna1.oxdna_utils import rewrite_input_file
 from jax_dna.dna2.oxdna_utils import recompile_oxdna
 from jax_dna.loss import tm
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 checkpoint_every = 25

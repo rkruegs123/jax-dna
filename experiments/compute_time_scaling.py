@@ -9,6 +9,7 @@ import argparse
 import numpy as onp
 import os
 
+import jax
 import optax
 import jax.numpy as jnp
 from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util
@@ -20,8 +21,9 @@ from jax_dna.dna2 import model
 from jax_dna import dna2, loss
 from jax_dna.loss import geometry, pitch, propeller
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 
@@ -177,7 +179,7 @@ def run(args):
                 fin_state, traj = sim_scan(scan_fn, init_state, jnp.arange(n_steps))
             return fin_state.position, traj
         return sim_fn
-            
+
     def get_time(n_steps, checkpoint_every):
 
         sim_fn_no_ckpt = get_sim_fn(n_steps, gamma, checkpoint=False)

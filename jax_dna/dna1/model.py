@@ -7,6 +7,7 @@ from copy import deepcopy
 import pandas as pd
 import numpy as onp
 
+import jax
 from jax import jit, random, lax, grad, value_and_grad
 import jax.numpy as jnp
 from jax_md import space, simulate, rigid_body
@@ -19,8 +20,9 @@ from jax_dna.common.interactions import v_fene_smooth, stacking, exc_vol_bonded,
 from jax_dna.common import utils, topology, trajectory
 from jax_dna.dna1.load_params import load, _process
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 DEFAULT_BASE_PARAMS = load(process=False) # Note: only processing depends on temperature
