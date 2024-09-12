@@ -2215,7 +2215,6 @@ def run(args):
 
     ckpt_dir = run_dir / "ckpt/orbax/managed/"
     ckpt_dir.mkdir(parents=True, exist_ok=False)
-    print(bcolors.WARNING + f"Created directory at location: {ckpt_dir}" + bcolors.ENDC)
 
     orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
     options = orbax.checkpoint.CheckpointManagerOptions(max_to_keep=10, create=True)
