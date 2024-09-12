@@ -181,18 +181,22 @@ def run(args):
     bound_op_idxs = onp.array(bound_op_idxs)
     unbound_op_idxs = onp.array(unbound_op_idxs)
 
-    unbound_op_idxs_extended = onp.array([n_bp*d_idx for d_idx in range(n_dist_thresholds)])
+    unbound_op_idxs_extended = onp.array([(1+n_bp)*d_idx for d_idx in range(n_dist_thresholds)])
     bound_op_idxs_extended = onp.array(list(range(1, 1+n_bp)))
 
-    def process_ops(unbiased_counts):
+    def process_ops(unbiased_counts, extended=False):
 
         # Note: below wasn't working
         # unbiased_unbound_counts = unbiased_counts[:, unbound_op_idxs_extended]
         # unbiased_bound_counts = unbiased_counts[:, bound_op_idxs_extended]
         # return jnp.concatenate([jnp.array([unbiased_unbound_counts.sum(axis=0)]), unbiased_bound_counts])
 
-        unbiased_unbound_count = unbiased_counts[unbound_op_idxs_extended].sum()
-        unbiased_bound_counts = unbiased_counts[bound_op_idxs_extended]
+        if extended:
+            unbiased_unbound_count = unbiased_counts[unbound_op_idxs_extended].sum()
+            unbiased_bound_counts = unbiased_counts[bound_op_idxs_extended]
+        else:
+            unbiased_unbound_count = unbiased_counts[unbound_op_idxs].sum()
+            unbiased_bound_counts = unbiased_counts[bound_op_idxs]
         return jnp.concatenate([jnp.array([unbiased_unbound_count]), unbiased_bound_counts])
 
     max_seed_tries = 5
@@ -591,7 +595,8 @@ def run(args):
         calc_width = tm.compute_width(extrapolate_temps, discrete_finfs)
 
         last_hist_extrap_counts = last_hist_df.to_numpy()[:, -n_extrap_temps:].T
-        last_hist_extrap_counts_processed = vmap(process_ops)(last_hist_extrap_counts)
+        # last_hist_extrap_counts_processed = vmap(process_ops)(last_hist_extrap_counts)
+        last_hist_extrap_counts_processed = vmap(process_ops, (0, None))(last_hist_extrap_counts, True)
         ref_finfs = vmap(tm.compute_finf)(last_hist_extrap_counts_processed)
 
         ref_tm = tm.compute_tm(extrapolate_temps, ref_finfs)
@@ -602,11 +607,22 @@ def run(args):
         rev_temps = jnp.flip(extrapolate_temps)
         finfs_extrap = jnp.arange(0.1, 1., 0.05)
         temps_extrap = jnp.interp(finfs_extrap, rev_finfs, rev_temps)
-        plt.plot(temps_extrap, finfs_extrap)
+        plt.plot(temps_extrap, finfs_extrap, label="Reference")
+
+        onp.save(iter_dir / f"melting_temps_reference.npy", onp.array(temps_extrap), allow_pickle=False)
+        onp.save(iter_dir / f"melting_finfs.npy", onp.array(finfs_extrap), allow_pickle=False)
+
+        rev_finfs = jnp.flip(calc_finfs)
+        temps_extrap = jnp.interp(finfs_extrap, rev_finfs, rev_temps)
+        plt.plot(temps_extrap, finfs_extrap, label="Calculate")
+
+        onp.save(iter_dir / f"melting_temps_discrete.npy", onp.array(temps_extrap), allow_pickle=False)
+
         plt.xlabel("T/K")
         plt.ylabel("Duplex Yield")
         plt.title(f"Tm={ref_tm}, width={ref_width}")
-        plt.savefig(iter_dir / "melting_curve.png")
+        plt.legend()
+        plt.savefig(iter_dir / "melting_curves.png")
         plt.clf()
 
 
