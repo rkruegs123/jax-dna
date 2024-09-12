@@ -37,6 +37,10 @@ class JaxMDSimulator:
     transform_fn: Callable
     simulator_init: Callable[[Callable, Callable], jax_md.simulate.Simulator]
     neighbors: jaxmd_utils.NeighborHelper
+    traj_n_nucleotides: int
+    traj_strand_length: list[int]
+    traj_times: jnp.ndarray
+    traj_energies: jnp.ndarray
 
     def __post_init__(self) -> None:
         """Builds the run function using the provided parameters."""
@@ -48,6 +52,7 @@ class JaxMDSimulator:
             self.transform_fn,
             self.simulator_init,
             self.neighbors,
+            self,
         )
 
 
@@ -59,6 +64,7 @@ def build_run_fn(
     transform_fn: Callable,
     simulator_init: Callable[[Callable, Callable], jax_md.simulate.Simulator],
     neighbors: jaxmd_utils.NeighborHelper,
+    sim_obj: JaxMDSimulator,
 ) -> Callable[[dict[str, float], jax_md.rigid_body.RigidBody, int, jax.random.PRNGKey], jd_traj.Trajectory]:
     """Builds the run function for the jax_md simulation."""
     displacement_fn, shift_fn = space
@@ -70,7 +76,7 @@ def build_run_fn(
 
     def run_fn(
         opt_params: dict[str, float],
-        init_body: jax_md.rigid_body.RigidBody,
+        init_state: jax_md.rigid_body.RigidBody,
         n_steps: int,
         key: jax.random.PRNGKey,
     ) -> jd_traj.Trajectory:
@@ -93,7 +99,7 @@ def build_run_fn(
 
         init_state = init_fn(
             key=key,
-            R=init_body,
+            R=init_state,
             unbonded_neighbors=neighbors.idx,
             **simulator_params.init_fn,
         )
@@ -112,6 +118,14 @@ def build_run_fn(
             return (state, neighbors), state.position
 
         _, trajectory = scan_fn(apply_fn, (init_state, neighbors), jnp.arange(n_steps))
+
+        jd_traj.Trajectory(
+            states=trajectory,
+            n_nucleotides=sim_obj.traj_n_nucleotides,
+            strand_length=sim_obj.traj_strand_length,
+            times=sim_obj.traj_times,
+            energies=sim_obj.traj_energies,
+        )
 
         return trajectory
 

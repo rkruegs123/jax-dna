@@ -85,7 +85,6 @@ if __name__=="__main__":
         dna1_energy.CoaxialStacking,
     ]
 
-
     sampler = jmd.JaxMDSimulator(
         energy_configs=configs,
         energy_fns=energy_fns,
@@ -108,8 +107,6 @@ if __name__=="__main__":
 
     fn = jax.jit(lambda opts: sampler.run(opts, init_body, experiment_config["n_steps"], key))
     opt_params = [c.opt_params for c in configs]
-
-
 
     transformed_fns = [
         e_fn(

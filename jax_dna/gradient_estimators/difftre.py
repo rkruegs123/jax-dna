@@ -108,10 +108,16 @@ class DiffTRe:
             # source: https://github.com/ssec-jhu/jax-dna/blob/addc621dc61f212029a0ab9aa4761dedc3f5513e/experiments/optimize_structural_difftre.py#L237
             init_state=self.init_state,
             n_steps=self.n_sim_steps,
-            seed=key,
+            key=key,
         )
         #  calculate
-        ref_states = trajectory.slice(self.slicer or slice(self.n_eq_steps, None, self.sample_every)).state_rigid_body
+        if self.sim_returns_traj:
+            ref_states = trajectory.slice(
+                self.slicer or slice(self.n_eq_steps, None, self.sample_every)
+            ).state_rigid_body
+        else:
+            ref_states = trajectory[self.slicer or slice(self.n_eq_steps, None, self.sample_every)]
+        print("ref_states", ref_states.center.shape, ref_states.orientation.vec.shape)
         ref_energies = self.build_energy_fn(params)(ref_states)
 
         return trajectory, ref_states, ref_energies
