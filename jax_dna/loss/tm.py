@@ -87,7 +87,7 @@ def traj_hist_running_avg_2d(traj_hist_files, n_bp, n_dist_thresholds, start_his
                 unbiased_counts[:, op_idx] += op_unbiased_temp_counts
 
 
-        unbound_op_idxs_extended = onp.array([n_bp*d_idx for d_idx in range(n_dist_thresholds)])
+        unbound_op_idxs_extended = onp.array([(1+n_bp)*d_idx for d_idx in range(n_dist_thresholds)])
         bound_op_idxs_extended = onp.array(list(range(1, 1+n_bp)))
 
         unbound_unbiased_counts = unbiased_counts[:, unbound_op_idxs_extended]
