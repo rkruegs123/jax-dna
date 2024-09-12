@@ -47,9 +47,6 @@ def zip_file(file_path, zip_name):
 
 def run(args):
 
-    if True:
-        raise RuntimeError(f"Not using for now -- grads are 0 and it is slower because of the second OP")
-
     # Load parameters
     n_threads = args['n_threads']
     key = args['key']
