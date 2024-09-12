@@ -2213,7 +2213,7 @@ def run(args):
     ex_ckpt = {"params": params, "optimizer": optimizer, "opt_state": opt_state}
     save_args = orbax_utils.save_args_from_target(ex_ckpt)
 
-    ckpt_dir = dp.run_dir / "ckpt/orbax/managed/"
+    ckpt_dir = run_dir / "ckpt/orbax/managed/"
     ckpt_dir.mkdir(parents=True, exist_ok=False)
     print(bcolors.WARNING + f"Created directory at location: {ckpt_dir}" + bcolors.ENDC)
 
