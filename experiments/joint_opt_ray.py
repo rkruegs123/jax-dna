@@ -108,9 +108,9 @@ def hairpin_tm_running_avg(traj_hist_files, n_stem_bp, n_dist_thresholds):
                 unbiased_counts[:, op_idx] += op_unbiased_temp_counts
 
 
-        unbound_op_idxs_extended = onp.array([n_stem_bp*d_idx for d_idx in range(n_dist_thresholds)])
+        unbound_op_idxs_extended = onp.array([(1+n_stem_bp)*d_idx for d_idx in range(n_dist_thresholds)])
         # bound_op_idxs_extended = onp.array(list(range(1, 1+n_stem_bp)))
-        bound_op_idxs_extended = onp.array(list(range(1, n_stem_bp)))
+        bound_op_idxs_extended = onp.array(list(range(1, 1+n_stem_bp)))
 
         unbound_unbiased_counts = unbiased_counts[:, unbound_op_idxs_extended]
         bound_unbiased_counts = unbiased_counts[:, bound_op_idxs_extended]
