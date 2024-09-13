@@ -7,6 +7,7 @@ import chex
 import jax
 import jax.numpy as jnp
 import jax_md
+from tqdm import tqdm
 
 import jax_dna.energy.base as jd_energy_fn
 import jax_dna.energy.configuration as jd_energy_cnfg
@@ -73,6 +74,10 @@ def build_run_fn(
         else functools.partial(jaxmd_utils.checkpoint_scan, checkpoint_every=simulator_params.checkpoint_every)
     )
 
+    # @functools.partial(
+    #     jax.jit,
+    #     static_argnames=("n_steps",),
+    # )
     def run_fn(
         opt_params: dict[str, float],
         init_state: jax_md.rigid_body.RigidBody,
@@ -81,6 +86,7 @@ def build_run_fn(
     ) -> jd_sio.SimulatorTrajectory:
         # The  energy function configuration init calls need to happen inside the function
         # so that if the gradient is calculated for this run it will be tracked
+
         transformed_fns = [
             e_fn(
                 displacement_fn=displacement_fn,
@@ -88,6 +94,8 @@ def build_run_fn(
             )
             for param, e_c, e_fn in zip(opt_params, energy_configs, energy_fns, strict=True)
         ]
+
+
 
         energy_fn = jd_energy_fn.ComposedEnergyFunction(
             energy_fns=transformed_fns,
@@ -105,7 +113,6 @@ def build_run_fn(
 
         def apply_fn(in_state: SIM_STATE, _: int) -> tuple[SIM_STATE, jax_md.rigid_body.RigidBody]:
             state, neighbors = in_state
-
             state = step_fn(
                 state,
                 unbonded_neighbors=neighbors.idx,
@@ -116,10 +123,9 @@ def build_run_fn(
 
             return (state, neighbors), state.position
 
-        _, trajectory = scan_fn(apply_fn, (init_state, neighbors), jnp.arange(n_steps))
+        _, trajectory = scan_fn(jax.jit(apply_fn), (init_state, neighbors), jnp.arange(n_steps))
 
         return jd_sio.SimulatorTrajectory(
-            sequence=topology.seq,
             seq_oh=topology.seq_one_hot,
             strand_lengths=topology.strand_counts,
             rigid_body=trajectory,

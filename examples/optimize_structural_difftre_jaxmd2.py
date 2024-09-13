@@ -1,6 +1,7 @@
 from collections.abc import Callable
 import functools
 import os
+import time
 
 import jax
 import jax.numpy as jnp
@@ -21,16 +22,18 @@ import jax_dna.losses.observable_wrappers as loss_wrapper
 import jax_dna.observables as obs
 from tqdm import tqdm
 
-
+jax.config.update("jax_enable_x64", True)
+# jax.config.update("jax_disable_jit", True)
 
 def main():
+    start = time.time()
     topology_fname = "data/templates/simple-helix/sys.top"
     traj_fname = "data/templates/simple-helix/init.conf"
     simulation_config = "jax_dna/input/dna1/default_simulation.toml"
     energy_config = "jax_dna/input/dna1/default_energy.toml"
 
     n_eq_steps = 100
-    n_samples_steps = 100_000
+    n_samples_steps = 15000
     sample_every = 100
     lr  = 0.00005
     min_n_eff_factor = 0.95
@@ -115,6 +118,19 @@ def main():
         ),
     ]
 
+    space = jax_md.space.free()
+
+    energy_fn_builder = functools.partial(
+        grad_est.difftre2.build_energy_function,
+        displacement_fn=space[0],
+        energy_fns=energy_fns,
+        energy_configs=energy_configs,
+        rigid_body_transform_fn=transform_fn,
+        seq_one_hot=seq,
+        bonded_neighbors=top.bonded_neighbors,
+        unbonded_neighbors=top.unbonded_neighbors.T,
+    )
+
     sim_init_fn = functools.partial(
         jmd.JaxMDSimulator,
         simulator_params=jmd.StaticSimulatorParams(
@@ -127,7 +143,7 @@ def main():
             kT=kT,
             gamma=gamma,
         ),
-        space=jax_md.space.free(),
+        space=space,
         simulator_init=jax_md.simulate.nvt_langevin,
         neighbors=jmd.NoNeighborList(unbonded_nbrs=top.unbonded_neighbors),
         transform_fn=transform_fn,
@@ -138,10 +154,32 @@ def main():
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(opt_params)
 
+    key, split = jax.random.split(key)
+    ge = grad_est.difftre2.DiffTRe(
+        energy_fn_builder=energy_fn_builder,
+        beta=jnp.array(1/kT),
+        min_n_eff=jnp.array(int(n_ref_states * min_n_eff_factor)),
+        loss_fns=tuple(loss_fns),
+        losses_reduce_fn=jnp.mean,
+        sim_init_fn = sim_init_fn,
+        energy_configs=tuple(energy_configs),
+        energy_fns=tuple(energy_fns),
+        init_state=init_body,
+        n_steps=n_samples_steps,
+        n_eq_steps=n_eq_steps,
+        sample_every=sample_every,
+    ).initialize(opt_params, split)
+
+    loss_vals = []
     for _ in tqdm(range(n_epochs)):
-        pass
+        ge, grads, loss, losses = ge(opt_params, key)
+        updates, opt_state = optimizer.update(grads, opt_state)
+        opt_params = optax.apply_updates(opt_params, updates)
+        loss_vals.append(loss)
 
-
+    import matplotlib.pyplot as plt
+    plt.plot(loss_vals)
+    plt.show()
 
 
 

@@ -21,7 +21,7 @@ class LossFn:
 class SquaredError(LossFn):
     @override
     def __call__(self, actual: jnp.ndarray, target: jnp.ndarray, weights: jnp.ndarray) -> float:
-        return jnp.mean(weights * (actual - target) ** 2)
+        return jnp.mean(weights * ((actual - target) ** 2) ** 0.5)
 
 
 @chex.dataclass

@@ -1,5 +1,6 @@
 import functools
 import os
+import time
 
 import jax
 import jax.numpy as jnp
@@ -21,6 +22,7 @@ import jax_dna.observables as obs
 from tqdm import tqdm
 
 jax.config.update("jax_enable_x64", True)
+# jax.config.update("jax_disable_jit", True)
 
 def main() -> None:
     topology_fname = "data/templates/simple-helix/sys.top"
@@ -29,7 +31,7 @@ def main() -> None:
     energy_config = "jax_dna/input/dna1/default_energy.toml"
 
     n_eq_steps = 100
-    n_samples_steps = 100_000
+    n_samples_steps = 15000
     sample_every = 100
     lr  = 0.00005
     min_n_eff_factor = 0.95
@@ -136,7 +138,7 @@ def main() -> None:
         topology=top,
     )
 
-    ge = grad_est.DiffTRe(
+    ge = grad_est.difftre.DiffTRe(
         beta=1/kT,
         n_eq_steps = n_eq_steps,
         min_n_eff = int(n_ref_states * min_n_eff_factor),
