@@ -15,6 +15,7 @@ import pprint
 import functools
 import zipfile
 import os
+from tabulate import tabulate
 
 import jax
 import jax.numpy as jnp
@@ -205,21 +206,21 @@ def run(args):
     dt = 5e-3
 
     ## Process the weights information
-    weights_df = pd.read_fwf(wfile_path, names=["op1", "op2", "weight"])
+    init_weights_df = pd.read_fwf(wfile_path, names=["op1", "op2", "weight"])
     num_ops = len(weights_df)
     n_stem_bp = len(weights_df.op1.unique())
     n_dist_thresholds = len(weights_df.op2.unique())
-    pair2idx = dict()
-    idx2pair = dict()
-    idx2weight = dict()
+    # pair2idx = dict()
+    # idx2pair = dict()
+    # idx2weight = dict()
     unbound_op_idxs = list()
     bound_op_idxs = list()
-    for row_idx, row in weights_df.iterrows():
+    for row_idx, row in init_weights_df.iterrows():
         op1 = int(row.op1)
         op2 = int(row.op2)
-        pair2idx[(op1, op2)] = row_idx
-        idx2pair[row_idx] = (op1, op2)
-        idx2weight[row_idx] = row.weight
+        # pair2idx[(op1, op2)] = row_idx
+        # idx2pair[row_idx] = (op1, op2)
+        # idx2weight[row_idx] = row.weight
 
         if op1 == 0:
             unbound_op_idxs.append(row_idx)
@@ -251,6 +252,9 @@ def run(args):
     log_dir = run_dir / "log"
     log_dir.mkdir(parents=False, exist_ok=False)
 
+    weights_dir = run_dir / "weights"
+    weights_dir.mkdir(parents=False, exist_ok=False)
+
     obj_dir = run_dir / "obj"
     obj_dir.mkdir(parents=False, exist_ok=False)
 
@@ -279,6 +283,23 @@ def run(args):
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
 
+        if i == 0:
+            iter_weights_path = wfile_path
+        else:
+            iter_weights_path = weights_dir / f"weights_i{i-1}.txt"
+
+
+        weights_df = pd.read_fwf(wfile_path, names=["op1", "op2", "weight"])
+        pair2idx = dict()
+        idx2pair = dict()
+        idx2weight = dict()
+        for row_idx, row in weights_df.iterrows():
+            op1 = int(row.op1)
+            op2 = int(row.op2)
+            pair2idx[(op1, op2)] = row_idx
+            idx2pair[row_idx] = (op1, op2)
+            idx2weight[row_idx] = row.weight
+
         recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
 
         procs = list()
@@ -289,7 +310,8 @@ def run(args):
             repeat_dir.mkdir(parents=False, exist_ok=False)
 
             shutil.copy(top_path, repeat_dir / "sys.top")
-            shutil.copy(wfile_path, repeat_dir / "wfile.txt")
+            # shutil.copy(wfile_path, repeat_dir / "wfile.txt")
+            shutil.copy(iter_weights_path, repeat_dir / "wfile.txt")
             shutil.copy(op_path, repeat_dir / "op.txt")
 
             if prev_basedir is None or True: # FIXME: just doing this every time
@@ -709,6 +731,25 @@ def run(args):
             all_op_weights.append(op_weight)
             all_op_idxs.append(op_idx)
 
+
+        ## Write the new weights file
+        probs = onp.zeros(num_ops)
+        for op_idx, op_weight in zip(all_op_idxs, all_op_weights):
+            probs[op_idx] += 1/op_weight
+        normed = probs / sum(probs)
+        optimal_weights = 1 / normed
+
+        updated_weights_df = weights_df.copy(deep=True)
+        updated_weights_df.weight = optimal_weights
+
+        optimal_wfile_path = weights_dir / "weights_i{i}.txt"
+        with open(optimal_wfile_path, "w") as of:
+            content = tabulate(updated_weights_df.values.tolist(),
+                               tablefmt="plain", numalign="left")
+            of.write(content + "\n")
+
+
+
         all_ops = jnp.array(all_ops).astype(jnp.int32)
         all_op_weights = jnp.array(all_op_weights)
         all_op_idxs = jnp.array(all_op_idxs)
@@ -723,6 +764,7 @@ def run(args):
             plt.axvline(x=i*n_ref_states_per_sim, linestyle="--", color="red")
         plt.savefig(iter_dir / "op_trajectory.png")
         plt.clf()
+
 
         return ref_states, ref_energies, all_ops, all_op_weights, all_op_idxs, iter_dir
 
