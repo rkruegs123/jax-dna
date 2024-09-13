@@ -207,9 +207,9 @@ def run(args):
 
     ## Process the weights information
     init_weights_df = pd.read_fwf(wfile_path, names=["op1", "op2", "weight"])
-    num_ops = len(weights_df)
-    n_stem_bp = len(weights_df.op1.unique())
-    n_dist_thresholds = len(weights_df.op2.unique())
+    num_ops = len(init_weights_df)
+    n_stem_bp = len(init_weights_df.op1.unique())
+    n_dist_thresholds = len(init_weights_df.op2.unique())
     # pair2idx = dict()
     # idx2pair = dict()
     # idx2weight = dict()
