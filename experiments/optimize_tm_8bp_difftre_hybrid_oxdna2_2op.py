@@ -929,7 +929,7 @@ def get_parser():
     parser.add_argument('--opt-width', action='store_true')
     parser.add_argument('--target-width', type=float, default=14.0,
                         help="Target width of melting temperature curve in Kelvin")
-    parser.add_argument('--no-opt-tm', action='store_true)'
+    parser.add_argument('--no-opt-tm', action='store_true')
 
 
     return parser
