@@ -593,7 +593,7 @@ def run(args):
         gt_energies = energy_df.potential_energy.to_numpy() * seq_oh_60bp.shape[0]
 
         energy_diffs = list()
-        for i, (calc, gt) in enumerate(zip(calc_energies, gt_energies)):
+        for e_idx, (calc, gt) in enumerate(zip(calc_energies, gt_energies)):
             diff = onp.abs(calc - gt)
             energy_diffs.append(diff)
 
@@ -656,8 +656,8 @@ def run(args):
         n_curves = unweighted_corr_curves.shape[0]
         all_inter_lps = list()
         all_inter_lps_truncated = list()
-        for i in range(0, n_curves, compute_every):
-            inter_mean_corr_curve = jnp.mean(unweighted_corr_curves[:i], axis=0)
+        for c_idx in range(0, n_curves, compute_every):
+            inter_mean_corr_curve = jnp.mean(unweighted_corr_curves[:c_idx], axis=0)
 
             inter_mean_Lp_truncated, _ = persistence_length.persistence_length_fit(inter_mean_corr_curve[:truncation_lp], mean_l0)
             all_inter_lps_truncated.append(inter_mean_Lp_truncated * utils.nm_per_oxdna_length)
@@ -1012,7 +1012,7 @@ def run(args):
         atol_places = 3
         tol = 10**(-atol_places)
         energy_diffs = list()
-        for i, (calc, gt) in enumerate(zip(ref_energies, gt_energies)):
+        for e_idx, (calc, gt) in enumerate(zip(ref_energies, gt_energies)):
             diff = onp.abs(calc - gt)
             if diff > tol:
                 print(f"WARNING: energy difference of {diff}")
@@ -1265,8 +1265,8 @@ def run(args):
             os.remove(str(hpin_dir / "output.dat"))
 
         plt.plot(all_op_idxs)
-        for i in range(n_sims_hpin):
-            plt.axvline(x=i*n_ref_states_per_sim_hpin, linestyle="--", color="red")
+        for s_idx in range(n_sims_hpin):
+            plt.axvline(x=s_idx*n_ref_states_per_sim_hpin, linestyle="--", color="red")
         plt.savefig(hpin_dir / "op_trajectory.png")
         plt.clf()
 
