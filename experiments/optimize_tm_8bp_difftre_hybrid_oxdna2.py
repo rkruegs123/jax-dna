@@ -551,6 +551,13 @@ def run(args):
         with open(iter_dir / "summary.txt", "w+") as f:
             f.write(summary_str)
 
+
+        plt.plot(all_ops)
+        for s_idx in range(n_sims):
+            plt.axvline(x=s_idx*n_ref_states_per_sim, linestyle="--", color="red")
+        plt.savefig(iter_dir / "op_trajectory.png")
+        plt.clf()
+
         if not no_archive:
             zip_file(str(iter_dir / "output.dat"), str(iter_dir / "output.dat.zip"))
             os.remove(str(iter_dir / "output.dat"))
