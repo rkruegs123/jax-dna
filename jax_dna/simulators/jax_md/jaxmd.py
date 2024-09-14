@@ -95,8 +95,6 @@ def build_run_fn(
             for param, e_c, e_fn in zip(opt_params, energy_configs, energy_fns, strict=True)
         ]
 
-
-
         energy_fn = jd_energy_fn.ComposedEnergyFunction(
             energy_fns=transformed_fns,
             rigid_body_transform_fn=transform_fn,

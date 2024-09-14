@@ -20,8 +20,8 @@ class LossFn:
 
 class SquaredError(LossFn):
     @override
-    def __call__(self, actual: jnp.ndarray, target: jnp.ndarray, weights: jnp.ndarray) -> float:
-        return jnp.mean(weights * ((actual - target) ** 2) ** 0.5)
+    def __call__(self, actual: jnp.ndarray, target: jnp.ndarray) -> float:
+        return (target - actual) ** 2
 
 
 @chex.dataclass
@@ -31,8 +31,9 @@ class ObservableLossFn:
     return_observable: bool = False
 
     def __call__(self, trajectory: jd_sio.SimulatorTrajectory, target: jnp.ndarray, weights: jnp.ndarray) -> float:
+        observable = jnp.sum(self.observable(trajectory) * weights)
+        loss = self.loss_fn(observable, target)
         if self.return_observable:
-            observable = self.observable(trajectory)
-            return self.loss_fn(observable, target, weights), observable
+            return loss, observable
         else:
-            return self.loss_fn(self.observable(trajectory), target, weights)
+            return loss

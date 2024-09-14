@@ -67,14 +67,16 @@ class PropellerTwist(jd_obs.BaseObservable):
             jd_types.ARR_OR_SCALAR: the propeller twist in degrees for each state and for each
             base pair, so expect a size of (n_states, n_base_pairs)
         """
+        # TODO(ryanhausen): move this out to be jitted
         nucleotides = jax.vmap(self.rigid_body_transform_fn)(trajectory.rigid_body)
 
         base_normals = nucleotides.base_normals
         # ptwist_rad = single_propeller_twist_rad(self.h_bonded_base_pairs, base_normals)
-        ptwist_rad_fn = jax.vmap(
-            lambda bn: 180.0 - single_propeller_twist_rad(self.h_bonded_base_pairs, bn) * 180.0 / jnp.pi
+        ptwist = jax.vmap(
+            lambda bn: 180.0 - (single_propeller_twist_rad(self.h_bonded_base_pairs, bn) * 180.0 / jnp.pi)
         )
-        return jnp.mean(ptwist_rad_fn(base_normals), axis=1)
+        print("outs", jnp.mean(ptwist(base_normals), axis=1))
+        return jnp.mean(ptwist(base_normals), axis=1)
 
 
 if __name__ == "__main__":
@@ -95,7 +97,6 @@ if __name__ == "__main__":
     )
 
     sim_traj = jd_sio.SimulatorTrajectory(
-        sequence=jnp.array(top.seq_one_hot),
         seq_oh=jnp.array(top.seq_one_hot),
         strand_lengths=top.strand_counts,
         rigid_body=test_traj.state_rigid_body,
@@ -110,7 +111,6 @@ if __name__ == "__main__":
     # concate multiple states together to simulate a longer trajectory
 
     sim_traj = jd_sio.SimulatorTrajectory(
-        sequence=jnp.array(top.seq_one_hot),
         seq_oh=jnp.array(top.seq_one_hot),
         strand_lengths=top.strand_counts,
         rigid_body=jax_md.rigid_body.RigidBody(
@@ -123,4 +123,4 @@ if __name__ == "__main__":
 
     print("input rigid body", sim_traj.rigid_body.center.shape, sim_traj.rigid_body.orientation.vec.shape)
 
-    print(prop_twist(sim_traj))  # expect a 2D array of shape (n_states, n_base_pairs)
+    print(prop_twist(sim_traj))

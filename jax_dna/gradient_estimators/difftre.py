@@ -4,8 +4,8 @@ DiffTRe: https://www.nature.com/articles/s41467-021-27241-4
 """
 
 import functools
-from collections.abc import Callable
 import time
+from collections.abc import Callable
 from typing import Any
 
 import chex
@@ -19,6 +19,7 @@ import jax_dna.input.topology as jd_topology
 import jax_dna.input.trajectory as jd_traj
 import jax_dna.simulators.io as jd_sio
 import jax_dna.utils.types as jd_types
+
 
 @chex.dataclass(frozen=True)
 class DiffTRe:
@@ -36,6 +37,7 @@ class DiffTRe:
     n_sim_steps: int
     key: jax.random.PRNGKey
     init_state: jax_md.rigid_body.RigidBody
+    observables: tuple[Callable] | None = None
     slicer: slice | None = None
     trajectory: jd_traj.Trajectory | None = None
     ref_states: tuple[jd_traj.NucleotideState, ...] | None = None
@@ -109,7 +111,8 @@ class DiffTRe:
         )
         print("Running for n steps", self.n_sim_steps, "with init state", self.init_state.center.shape)
         start = time.time()
-        trajectory= trajectory.run(
+        # TODO(ryanhausen): add batch support with pmap/vmap here
+        trajectory = trajectory.run(
             opt_params=params,
             # TODO(ryanhausen): why -1 here and not zero?
             # source: https://github.com/ssec-jhu/jax-dna/blob/addc621dc61f212029a0ab9aa4761dedc3f5513e/experiments/optimize_structural_difftre.py#L237
@@ -171,6 +174,7 @@ class DiffTRe:
         # reference states and energies.
         if n_eff >= self.min_n_eff:
             new_obj = self
+            observable = None
         else:
             key, split = jax.random.split(key)
             trajectory, ref_states, ref_energies = self.compute_states_energies(opt_params, split)
@@ -181,4 +185,4 @@ class DiffTRe:
 
             new_obj = self.replace(ref_states=ref_states, ref_energies=ref_energies, trajectory=trajectory, key=key)
 
-        return new_obj, grads, loss, losses
+        return new_obj, grads, loss, losses, observable
