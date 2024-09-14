@@ -49,8 +49,8 @@ def zip_file(file_path, zip_name):
 
 def hairpin_tm_running_avg(traj_hist_files, n_stem_bp, n_dist_thresholds):
     n_files = len(traj_hist_files)
-    num_ops = 2
-    n_skip_lines = 2 + num_ops
+    num_op_types = 2
+    n_skip_lines = 2 + num_op_types
 
     # Open the first file to read relevant statistics
     with open(traj_hist_files[0], 'r') as f:
@@ -164,6 +164,8 @@ def run(args):
     no_archive = args['no_archive']
     plot_every = args['plot_every']
     save_obj_every = args['save_obj_every']
+
+    update_weights = not args['no_update_weights']
 
     # Load the system
     hairpin_basedir = Path("data/templates/hairpins")
@@ -283,7 +285,7 @@ def run(args):
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
 
-        if i == 0:
+        if i == 0 or not update_weights:
             iter_weights_path = wfile_path
         else:
             iter_weights_path = weights_dir / f"weights_i{i-1}.txt"
@@ -742,11 +744,12 @@ def run(args):
         updated_weights_df = weights_df.copy(deep=True)
         updated_weights_df.weight = optimal_weights
 
-        optimal_wfile_path = weights_dir / f"weights_i{i}.txt"
-        with open(optimal_wfile_path, "w") as of:
-            content = tabulate(updated_weights_df.values.tolist(),
-                               tablefmt="plain", numalign="left")
-            of.write(content + "\n")
+        if update_weights:
+            optimal_wfile_path = weights_dir / f"weights_i{i}.txt"
+            with open(optimal_wfile_path, "w") as of:
+                content = tabulate(updated_weights_df.values.tolist(),
+                                   tablefmt="plain", numalign="left")
+                of.write(content + "\n")
 
 
 
@@ -1035,6 +1038,8 @@ def get_parser():
                         help="Frequency of saving numpy files")
     parser.add_argument('--plot-every', type=int, default=1,
                         help="Frequency of plotting data from gradient descent epochs")
+
+    parser.add_argument('--no-update-weights', action='store_true')
 
     return parser
 
