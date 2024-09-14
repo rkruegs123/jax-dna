@@ -9,6 +9,39 @@ from pathlib import Path
 
 import jax.numpy as jnp
 
+from jax_dna.common.utils import nm_per_oxdna_length
+
+
+AVOGADRO_NUMBER = 6.022e23  # particles per mole
+def calculate_box_side_length_oxdna(concentration):
+    """
+    Calculate the side length of a cubic simulation box in oxDNA units for a given concentration of a single strand.
+
+    Args:
+    - concentration (float): Concentration in M (mol/L)
+
+    Returns:
+    - side_length_oxdna (float): Side length of the box in oxDNA units
+    """
+
+    # Number of moles for a single strand (1 particle)
+    moles_single_strand = 1 / AVOGADRO_NUMBER
+
+    # Convert concentration to per nm³
+    concentration_per_nm3 = concentration * 1e3 / 1e27  # Moles per nm³
+
+    # Calculate volume in cubic nanometers for one particle
+    volume_nm3_single_strand = moles_single_strand / concentration_per_nm3
+
+    # Calculate the side length in nanometers for one particle
+    side_length_nm_single_strand = volume_nm3_single_strand ** (1 / 3)
+
+    # Convert to oxDNA units
+    side_length_oxdna_units_single_strand = side_length_nm_single_strand / nm_per_oxdna_length
+
+    return side_length_oxdna_units_single_strand
+
+
 
 def compute_tm(temps, finfs):
     x = jnp.flip(finfs)

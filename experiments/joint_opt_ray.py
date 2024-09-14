@@ -820,12 +820,13 @@ def run(args):
     seed_check_steps_hpin = 100
 
 
-    def get_hpin_tasks(i, iter_dir, params, recompile=False):
+    def get_hpin_tasks(i, iter_dir, params, recompile=False, last_hpin_iter=None):
 
         if i == 0 or not update_weights:
             iter_weights_path = wfile_path_hpin
         else:
-            iter_weights_path = weights_dir / f"weights_i{i-1}.txt"
+            # iter_weights_path = weights_dir / f"weights_i{i-1}.txt"
+            iter_weights_path = weights_dir / f"weights_i{last_hpin_iter}.txt"
 
 
         if recompile:
@@ -1969,7 +1970,7 @@ def run(args):
 
 
 
-    def get_ref_states(params, i, seed, prev_states_force, prev_states_torque, prev_basedir, resample_hpin):
+    def get_ref_states(params, i, seed, prev_states_force, prev_states_torque, prev_basedir, resample_hpin, last_hpin_iter):
         random.seed(seed)
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
@@ -1983,8 +1984,10 @@ def run(args):
         if compute_60bp:
             bp60_tasks, all_sim_dirs_60bp = get_60bp_tasks(iter_dir, params, prev_basedir)
 
+        did_compute_hpin = False
         if compute_hpin and resample_hpin:
-            hpin_tasks, all_sim_dirs_hpin = get_hpin_tasks(i, iter_dir, params, recompile=(not compute_60bp))
+            did_compute_hpin = True
+            hpin_tasks, all_sim_dirs_hpin = get_hpin_tasks(i, iter_dir, params, recompile=(not compute_60bp), last_hpin_iter=last_hpin_iter)
 
         ## Archive the previous basedir now that we've loaded states from it
         if not no_archive and prev_basedir is not None:
@@ -2030,7 +2033,7 @@ def run(args):
         else:
             hpin_ref_info = None
 
-        return stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states, bp60_ref_info, hpin_ref_info, iter_dir
+        return stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states, bp60_ref_info, hpin_ref_info, iter_dir, did_compute_hpin
 
     @jit
     def loss_fn(params, stretch_tors_ref_info, bp60_ref_info, hpin_ref_info):
@@ -2312,7 +2315,10 @@ def run(args):
 
     start = time.time()
     prev_ref_basedir = None
-    stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, bp60_ref_info, hpin_ref_info, ref_iter_dir = get_ref_states(params, i=0, seed=30362, prev_states_force=None, prev_states_torque=None, prev_basedir=prev_ref_basedir, resample_hpin=True)
+    last_hpin_iter = None
+    stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, bp60_ref_info, hpin_ref_info, ref_iter_dir, did_compute_hpin = get_ref_states(params, i=0, seed=30362, prev_states_force=None, prev_states_torque=None, prev_basedir=prev_ref_basedir, resample_hpin=True, last_hpin_iter=last_hpin_iter)
+    if did_compute_hpin:
+        last_hpin_iter = 0
     prev_ref_basedir = deepcopy(ref_iter_dir)
     end = time.time()
     with open(resample_log_path, "a") as f:
@@ -2357,8 +2363,10 @@ def run(args):
                 f.write(f"- min n_eff_st was {n_effs_st.min()}...")
 
             start = time.time()
-            stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, bp60_ref_info, new_hpin_ref_info, ref_iter_dir = get_ref_states(params, i=i, seed=i, prev_states_force=prev_last_states_force, prev_states_torque=prev_last_states_torque, prev_basedir=prev_ref_basedir, resample_hpin=resample_hpin)
+            stretch_tors_ref_info, prev_last_states_force, prev_last_states_torque, bp60_ref_info, new_hpin_ref_info, ref_iter_dir, did_compute_hpin = get_ref_states(params, i=i, seed=i, prev_states_force=prev_last_states_force, prev_states_torque=prev_last_states_torque, prev_basedir=prev_ref_basedir, resample_hpin=resample_hpin, last_hpin_iter=last_hpin_iter)
             end = time.time()
+            if did_compute_hpin:
+                last_hpin_iter = i
             if resample_hpin:
                 hpin_ref_info = deepcopy(new_hpin_ref_info)
             prev_ref_basedir = deepcopy(ref_iter_dir)
