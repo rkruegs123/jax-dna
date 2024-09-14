@@ -18,6 +18,7 @@ import socket
 import ray
 from collections import Counter
 import zipfile
+from tabulate import tabulate
 
 from jax import jit, vmap, lax, value_and_grad
 import jax.numpy as jnp
@@ -269,6 +270,8 @@ def run(args):
     oxdna_path = Path(args['oxdna_path'])
     oxdna_exec_path = oxdna_path / "build/bin/oxDNA"
 
+    update_weights = not args['no_update_weights']
+
 
     # Moduli/LAMMPS arguments
     sample_every_st = args['sample_every_st']
@@ -387,6 +390,9 @@ def run(args):
 
     log_dir = run_dir / "log"
     log_dir.mkdir(parents=False, exist_ok=False)
+
+    weights_dir = run_dir / "weights"
+    weights_dir.mkdir(parents=False, exist_ok=False)
 
     obj_dir = run_dir / "obj"
     obj_dir.mkdir(parents=False, exist_ok=False)
@@ -780,21 +786,21 @@ def run(args):
     beta_hpin = 1 / kT_hpin
 
     ### Process the weights information
-    weights_df_hpin = pd.read_fwf(wfile_path_hpin, names=["op1", "op2", "weight"])
-    num_ops_hpin = len(weights_df_hpin)
-    n_stem_bp_hpin = len(weights_df_hpin.op1.unique())
-    n_dist_thresholds_hpin = len(weights_df_hpin.op2.unique())
-    pair2idx_hpin = dict()
-    idx2pair_hpin = dict()
-    idx2weight_hpin = dict()
+    init_weights_df_hpin = pd.read_fwf(wfile_path_hpin, names=["op1", "op2", "weight"])
+    num_ops_hpin = len(init_weights_df_hpin)
+    n_stem_bp_hpin = len(init_weights_df_hpin.op1.unique())
+    n_dist_thresholds_hpin = len(init_weights_df_hpin.op2.unique())
+    # pair2idx_hpin = dict()
+    # idx2pair_hpin = dict()
+    # idx2weight_hpin = dict()
     unbound_op_idxs_hpin = list()
     bound_op_idxs_hpin = list()
-    for row_idx, row in weights_df_hpin.iterrows():
+    for row_idx, row in init_weights_df_hpin.iterrows():
         op1 = int(row.op1)
         op2 = int(row.op2)
-        pair2idx_hpin[(op1, op2)] = row_idx
-        idx2pair_hpin[row_idx] = (op1, op2)
-        idx2weight_hpin[row_idx] = row.weight
+        # pair2idx_hpin[(op1, op2)] = row_idx
+        # idx2pair_hpin[row_idx] = (op1, op2)
+        # idx2weight_hpin[row_idx] = row.weight
 
         if op1 == 0:
             unbound_op_idxs_hpin.append(row_idx)
@@ -814,7 +820,14 @@ def run(args):
     seed_check_steps_hpin = 100
 
 
-    def get_hpin_tasks(iter_dir, params, recompile=False):
+    def get_hpin_tasks(i, iter_dir, params, recompile=False):
+
+        if i == 0 or not update_weights:
+            iter_weights_path = wfile_path_hpin
+        else:
+            iter_weights_path = weights_dir / f"weights_i{i-1}.txt"
+
+
         if recompile:
             recompile_start = time.time()
             recompile_oxdna(params, oxdna_path, t_kelvin_hpin, num_threads=n_threads)
@@ -831,7 +844,8 @@ def run(args):
             all_repeat_dirs.append(repeat_dir)
 
             shutil.copy(top_path_hpin, repeat_dir / "sys.top")
-            shutil.copy(wfile_path_hpin, repeat_dir / "wfile.txt")
+            # shutil.copy(wfile_path_hpin, repeat_dir / "wfile.txt")
+            shutil.copy(iter_weights_path, repeat_dir / "wfile.txt")
             shutil.copy(op_path_hpin, repeat_dir / "op.txt")
 
             if r % 2 == 0:
@@ -902,8 +916,28 @@ def run(args):
         hpin_tasks = [run_oxdna_ray.remote(oxdna_exec_path, rdir) for rdir in all_repeat_dirs]
         return hpin_tasks, all_repeat_dirs
 
-    def process_hpin(iter_dir, params):
+    def process_hpin(i, iter_dir, params):
         hpin_dir = iter_dir / "hpin"
+
+
+        if i == 0 or not update_weights:
+            iter_weights_path = wfile_path_hpin
+        else:
+            iter_weights_path = weights_dir / f"weights_i{i-1}.txt"
+
+
+        weights_df_hpin = pd.read_fwf(iter_weights_path, names=["op1", "op2", "weight"])
+        pair2idx_hpin = dict()
+        idx2pair_hpin = dict()
+        idx2weight_hpin = dict()
+        for row_idx, row in weights_df_hpin.iterrows():
+            op1 = int(row.op1)
+            op2 = int(row.op2)
+            pair2idx_hpin[(op1, op2)] = row_idx
+            idx2pair_hpin[row_idx] = (op1, op2)
+            idx2weight_hpin[row_idx] = row.weight
+
+
 
         ## Combine the output files
         combine_cmd = "cat "
@@ -1255,6 +1289,25 @@ def run(args):
             op_weight = idx2weight_hpin[int(op_idx)]
             all_op_weights.append(op_weight)
             all_op_idxs.append(op_idx)
+
+
+        ## Write the new weights file
+        probs = onp.zeros(num_ops_hpin)
+        for op_idx, op_weight in zip(all_op_idxs, all_op_weights):
+            probs[op_idx] += 1/op_weight
+        normed = probs / sum(probs)
+        optimal_weights = 1 / normed
+
+        updated_weights_df = weights_df_hpin.copy(deep=True)
+        updated_weights_df.weight = optimal_weights
+
+        if update_weights:
+            optimal_wfile_path = weights_dir / f"weights_i{i}.txt"
+            with open(optimal_wfile_path, "w") as of:
+                content = tabulate(updated_weights_df.values.tolist(),
+                                   tablefmt="plain", numalign="left")
+                of.write(content + "\n")
+
 
         all_ops = jnp.array(all_ops).astype(jnp.int32)
         all_op_weights = jnp.array(all_op_weights)
@@ -1931,7 +1984,7 @@ def run(args):
             bp60_tasks, all_sim_dirs_60bp = get_60bp_tasks(iter_dir, params, prev_basedir)
 
         if compute_hpin and resample_hpin:
-            hpin_tasks, all_sim_dirs_hpin = get_hpin_tasks(iter_dir, params, recompile=(not compute_60bp))
+            hpin_tasks, all_sim_dirs_hpin = get_hpin_tasks(i, iter_dir, params, recompile=(not compute_60bp))
 
         ## Archive the previous basedir now that we've loaded states from it
         if not no_archive and prev_basedir is not None:
@@ -1973,7 +2026,7 @@ def run(args):
         else:
             stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states = None, None, None
         if compute_hpin and resample_hpin:
-            hpin_ref_info = process_hpin(iter_dir, params)
+            hpin_ref_info = process_hpin(i, iter_dir, params)
         else:
             hpin_ref_info = None
 
@@ -2705,6 +2758,8 @@ def get_parser():
                         help='Checkpointing frequency')
     parser.add_argument('--orbax-ckpt-path', type=str, required=False,
                         help='Optional path to orbax checkpoint directory')
+
+    parser.add_argument('--no-update-weights', action='store_true')
 
     return parser
 
