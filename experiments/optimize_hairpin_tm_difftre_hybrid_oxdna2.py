@@ -742,7 +742,7 @@ def run(args):
         updated_weights_df = weights_df.copy(deep=True)
         updated_weights_df.weight = optimal_weights
 
-        optimal_wfile_path = weights_dir / "weights_i{i}.txt"
+        optimal_wfile_path = weights_dir / f"weights_i{i}.txt"
         with open(optimal_wfile_path, "w") as of:
             content = tabulate(updated_weights_df.values.tolist(),
                                tablefmt="plain", numalign="left")
