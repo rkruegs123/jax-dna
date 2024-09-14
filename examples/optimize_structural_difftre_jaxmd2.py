@@ -33,9 +33,9 @@ def main():
     energy_config = "jax_dna/input/dna1/default_energy.toml"
 
     n_eq_steps = 100
-    n_samples_steps = 15000
+    n_samples_steps = 100000
     sample_every = 100
-    lr  = 0.00005
+    lr  = 0.0005
     min_n_eff_factor = 0.95
     seed = 0
     n_epochs = 1000
@@ -137,8 +137,8 @@ def main():
             seq=seq,
             mass=mass,
             bonded_neighbors=top.bonded_neighbors,
-            n_steps=experiment_config["n_steps"],
-            checkpoint_every=experiment_config["checkpoint_interval"],
+            n_steps=n_samples_steps,
+            checkpoint_every=0,
             dt=dt,
             kT=kT,
             gamma=gamma,
@@ -170,15 +170,18 @@ def main():
         sample_every=sample_every,
     ).initialize(opt_params, split)
 
-    loss_vals = []
-    for _ in tqdm(range(n_epochs)):
-        ge, grads, loss, losses = ge(opt_params, key)
+    loss_vals, resets = [], []
+    for i in tqdm(range(n_epochs)):
+        ge, grads, loss, losses, regenerated = ge(opt_params, key)
         updates, opt_state = optimizer.update(grads, opt_state)
         opt_params = optax.apply_updates(opt_params, updates)
         loss_vals.append(loss)
+        if regenerated:
+            resets.append(i)
 
     import matplotlib.pyplot as plt
     plt.plot(loss_vals)
+    plt.vlines(resets, min(loss_vals), max(loss_vals), color="red")
     plt.show()
 
 

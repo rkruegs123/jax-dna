@@ -201,12 +201,11 @@ class DiffTRe:
             self.losses_reduce_fn,
         )
 
+        new_obj = self
+        regenerate_trajectory = n_eff < self.min_n_eff
         # if n_eff is greater than the threshold we don't need to recompute the
         # reference states and energies.
-        if n_eff >= self.min_n_eff:
-            new_obj = self
-        else:
-            print("n_eff is sufficient, skipping state recomputation", n_eff, self.min_n_eff)
+        if regenerate_trajectory:
             key, split = jax.random.split(key)
             trajectory, ref_states, ref_energies = _compute_states_energies(
                 opt_params,
@@ -238,7 +237,7 @@ class DiffTRe:
                 _trajectory=trajectory,
             )
 
-        return new_obj, grads, loss, losses
+        return new_obj, grads, loss, losses, regenerate_trajectory
 
 
 if __name__=="__main__":
