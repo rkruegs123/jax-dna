@@ -510,7 +510,7 @@ def run(args):
         atol_places = 3
         tol = 10**(-atol_places)
         energy_diffs = list()
-        for i, (calc, gt) in enumerate(zip(ref_energies, gt_energies)):
+        for e_idx, (calc, gt) in enumerate(zip(ref_energies, gt_energies)):
             diff = onp.abs(calc - gt)
             if diff > tol:
                 print(f"WARNING: energy difference of {diff}")
@@ -760,8 +760,8 @@ def run(args):
 
 
         plt.plot(all_op_idxs)
-        for i in range(n_sims):
-            plt.axvline(x=i*n_ref_states_per_sim, linestyle="--", color="red")
+        for s_idx in range(n_sims):
+            plt.axvline(x=s_idx*n_ref_states_per_sim, linestyle="--", color="red")
         plt.savefig(iter_dir / "op_trajectory.png")
         plt.clf()
 
