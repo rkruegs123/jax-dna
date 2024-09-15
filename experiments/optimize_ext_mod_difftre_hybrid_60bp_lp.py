@@ -305,6 +305,7 @@ def run(args):
     top_path_lp = sys_basedir_lp / "sys.top"
     top_info_lp = topology.TopologyInfo(top_path_lp, reverse_direction=False)
     seq_oh_lp = jnp.array(utils.get_one_hot(top_info_lp.seq), dtype=jnp.float64)
+    strand_length_lp = int(seq_oh_lp.shape[0] // 2)
 
     quartets = utils.get_all_quartets(n_nucs_per_strand=seq_oh_lp.shape[0] // 2)
     quartets = quartets[offset:-offset-1]
@@ -328,6 +329,7 @@ def run(args):
     top_path_fe = sys_basedir_fe / "sys.top"
     top_info_fe = topology.TopologyInfo(top_path_fe, reverse_direction=False)
     seq_oh_fe = jnp.array(utils.get_one_hot(top_info_fe.seq), dtype=jnp.float64)
+    strand_length_fe = int(seq_oh_fe.shape[0] // 2)
     assert(seq_oh_fe.shape[0] == 220) # 110 bp duplex
     n_fe = seq_oh_fe.shape[0]
 
@@ -535,7 +537,6 @@ def run(args):
             reverse_direction=False)
         traj_states_lp = traj_info_lp.get_states()
         """
-        strand_length_lp = int(seq_oh_lp.shape[0] // 2)
         traj_ = jdt.from_file(
             lp_dir / "output.dat",
             [strand_length_lp, strand_length_lp],
@@ -729,12 +730,22 @@ def run(args):
             if combine_proc.returncode != 0:
                 raise RuntimeError(f"Combining trajectories for force {force} failed with error code: {combine_proc.returncode}")
 
+            """
             traj_info = trajectory.TrajectoryInfo(
                 top_info_fe, read_from_file=True,
                 traj_path=fe_analyze_dir / f"output_{force}.dat",
                 reverse_direction=False)
                 # reverse_direction=False)
             traj_states = traj_info.get_states()
+            """
+            traj_ = jdt.from_file(
+                fe_analyze_dir / f"output_{force}.dat",
+                [strand_length_fe, strand_length_fe],
+                is_oxdna=False,
+                n_processes=n_threads,
+            )
+            traj_states = [ns.to_rigid_body() for ns in traj_.states]
+
             traj_states = utils.tree_stack(traj_states)
             trajectories_fe[force] = traj_states
 
