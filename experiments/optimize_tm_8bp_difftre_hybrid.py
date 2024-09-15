@@ -473,11 +473,22 @@ def run(args):
         rev_temps = jnp.flip(extrapolate_temps)
         finfs_extrap = jnp.arange(0.1, 1., 0.05)
         temps_extrap = jnp.interp(finfs_extrap, rev_finfs, rev_temps)
-        plt.plot(temps_extrap, finfs_extrap)
+        plt.plot(temps_extrap, finfs_extrap, label="Reference")
+
+        onp.save(iter_dir / f"melting_temps_reference.npy", onp.array(temps_extrap), allow_pickle=False)
+        onp.save(iter_dir / f"melting_finfs.npy", onp.array(finfs_extrap), allow_pickle=False)
+
+        rev_finfs = jnp.flip(discrete_finfs)
+        temps_extrap = jnp.interp(finfs_extrap, rev_finfs, rev_temps)
+        plt.plot(temps_extrap, finfs_extrap, label="Discrete")
+
+        onp.save(iter_dir / f"melting_temps_discrete.npy", onp.array(temps_extrap), allow_pickle=False)
+
         plt.xlabel("T/K")
         plt.ylabel("Duplex Yield")
         plt.title(f"Tm={ref_tm}, width={ref_width}")
-        plt.savefig(iter_dir / "melting_curve.png")
+        plt.legend()
+        plt.savefig(iter_dir / "melting_curves.png")
         plt.clf()
 
 
@@ -492,6 +503,7 @@ def run(args):
         summary_str += f"Calc. Tm: {calc_tm}\n"
         summary_str += f"Calc. width: {calc_width}\n"
         summary_str += f"Simulation finf: {sim_finf}\n"
+        summary_str += f"Mean energy diff: {onp.mean(energy_diffs)}\n"
         with open(iter_dir / "summary.txt", "w+") as f:
             f.write(summary_str)
 
