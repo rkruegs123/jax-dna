@@ -31,6 +31,7 @@ from jax_dna.dna1.oxdna_utils import rewrite_input_file
 from jax_dna.dna2.oxdna_utils import recompile_oxdna
 from jax_dna.dna1 import model as model1
 from jax_dna.dna2 import model as model2
+import jax_dna.input.trajectory as jdt
 
 
 
@@ -168,6 +169,7 @@ def run(args):
     top_path = sys_basedir / "sys.top"
     top_info = topology.TopologyInfo(top_path, reverse_direction=False)
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
+    strand_length = int(seq_oh.shape[0] // 2)
 
     # quartets = utils.get_all_quartets(n_nucs_per_strand=seq_oh.shape[0] // 2)
     # quartets = quartets[offset:-offset-1]
@@ -281,12 +283,21 @@ def run(args):
 
         ## Load states from oxDNA simulation
         load_start = time.time()
+        """
         traj_info = trajectory.TrajectoryInfo(
             top_info, read_from_file=True,
             traj_path=iter_dir / "output.dat",
             # reverse_direction=True)
             reverse_direction=False)
         traj_states = traj_info.get_states()
+        """
+        traj_ = jdt.from_file(
+            iter_dir / "output.dat",
+            [strand_length, strand_length],
+            is_oxdna=False,
+            n_processes=n_threads,
+        )
+        traj_states = [ns.to_rigid_body() for ns in traj_.states]
         n_traj_states = len(traj_states)
         traj_states = utils.tree_stack(traj_states)
         load_end = time.time()
