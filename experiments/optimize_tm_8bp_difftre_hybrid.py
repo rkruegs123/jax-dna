@@ -13,6 +13,8 @@ from copy import deepcopy
 import seaborn as sns
 import functools
 import pprint
+import zipfile
+import os
 
 import jax
 import jax.numpy as jnp
@@ -37,6 +39,11 @@ else:
                              checkpoint_every=checkpoint_every)
 
 
+def zip_file(file_path, zip_name):
+    with zipfile.ZipFile(zip_name, 'w') as zipf:
+        zipf.write(file_path, os.path.basename(file_path))
+
+
 def run(args):
     # Load parameters
     n_threads = args['n_threads']
@@ -58,12 +65,18 @@ def run(args):
     extrapolate_kts = vmap(utils.get_kt)(extrapolate_temps)
     extrapolate_temp_str = ', '.join([f"{tc}K" for tc in extrapolate_temps])
 
+    small_system = args['small_system']
+
     n_iters = args['n_iters']
     lr = args['lr']
     target_tm = args['target_tm']
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
     optimizer_type = args['optimizer_type']
+
+    opt_keys = args['opt_keys']
+    no_delete = args['no_delete']
+    no_archive = args['no_archive']
 
 
     # Setup the logging directory
@@ -99,7 +112,10 @@ def run(args):
         f.write(params_str)
 
     # Load the system
-    sys_basedir = Path("data/templates/tm-8bp")
+    if small_system:
+        sys_basedir = Path("data/templates/tm-8bp")
+    else:
+        sys_basedir = Path("data/templates/tm-6bp")
     input_template_path = sys_basedir / "input"
 
     weight_path = sys_basedir / "wfile.txt"
@@ -108,8 +124,8 @@ def run(args):
 
     top_path = sys_basedir / "sys.top"
     top_info = topology.TopologyInfo(top_path,
-                                     # reverse_direction=False
-                                     reverse_direction=True
+                                     reverse_direction=False
+                                     # reverse_direction=True
     )
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
     assert(seq_oh.shape[0] % 2 == 0)
@@ -119,15 +135,15 @@ def run(args):
     conf_info_bound = trajectory.TrajectoryInfo(
         top_info,
         read_from_file=True, traj_path=conf_path_bound,
-        reverse_direction=True
-        # reverse_direction=False
+        # reverse_direction=True
+        reverse_direction=False
     )
     conf_path_unbound = sys_basedir / "init_unbound.conf"
     conf_info_unbound = trajectory.TrajectoryInfo(
         top_info,
         read_from_file=True, traj_path=conf_path_unbound,
-        reverse_direction=True
-        # reverse_direction=False
+        # reverse_direction=True
+        reverse_direction=False
     )
     box_size = conf_info_bound.box_size
 
@@ -171,15 +187,15 @@ def run(args):
                 prev_lastconf_info = trajectory.TrajectoryInfo(
                     top_info,
                     read_from_file=True, traj_path=prev_lastconf_path,
-                    reverse_direction=True
-                    # reverse_direction=False
+                    # reverse_direction=True
+                    reverse_direction=False
                 )
                 # conf_info_copy = center_configuration.center_conf(top_info, prev_lastconf_info)
             conf_info_copy.traj_df.t = onp.full(seq_oh.shape[0], r*n_steps_per_sim)
 
             conf_info_copy.write(repeat_dir / "init.conf",
-                                 # reverse=False,
-                                 reverse=True,
+                                 reverse=False,
+                                 # reverse=True,
                                  write_topology=False)
 
             check_seed_dir = repeat_dir / "check_seed"
@@ -254,6 +270,15 @@ def run(args):
         if combine_proc.returncode != 0:
             raise RuntimeError(f"Combining trajectories failed with error code: {combine_proc.returncode}")
 
+
+        if not no_delete:
+            files_to_remove = ["output.dat"]
+            for r in range(n_sims):
+                repeat_dir = iter_dir / f"r{r}"
+                for f_stem in files_to_remove:
+                    file_to_rem = repeat_dir / f_stem
+                    file_to_rem.unlink()
+
         # Analyze
 
         ## Compute running avg. from all `traj_hist.dat`
@@ -281,8 +306,8 @@ def run(args):
         traj_info = trajectory.TrajectoryInfo(
             top_info, read_from_file=True,
             traj_path=iter_dir / "output.dat",
-            # reverse_direction=False)
-            reverse_direction=True
+            reverse_direction=False
+            # reverse_direction=True
         )
         ref_states = traj_info.get_states()
         assert(len(ref_states) == n_ref_states)
@@ -507,6 +532,10 @@ def run(args):
         with open(iter_dir / "summary.txt", "w+") as f:
             f.write(summary_str)
 
+        if not no_archive:
+            zip_file(str(iter_dir / "output.dat"), str(iter_dir / "output.dat.zip"))
+            os.remove(str(iter_dir / "output.dat"))
+
         return ref_states, ref_energies, jnp.array(all_ops), jnp.array(all_op_weights), iter_dir
 
 
@@ -573,8 +602,10 @@ def run(args):
 
     # Initialize parameters
     params = deepcopy(model.EMPTY_BASE_PARAMS)
-    params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
-    params["hydrogen_bonding"] = model.DEFAULT_BASE_PARAMS["hydrogen_bonding"]
+    for opt_key in opt_keys:
+        params[opt_key] = deepcopy(model.DEFAULT_BASE_PARAMS[opt_key])
+    # params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
+    # params["hydrogen_bonding"] = model.DEFAULT_BASE_PARAMS["hydrogen_bonding"]
     """
     params["hydrogen_bonding"] = dict()
     for hb_opt_key in ["a_hb", "eps_hb", "a_hb_1", "a_hb_2", "a_hb_3", "a_hb_4", "a_hb_7", "a_hb_8"]:
@@ -728,6 +759,18 @@ def get_parser():
                         help="Factor for determining min Neff")
     parser.add_argument('--optimizer-type', type=str,
                         default="adam", choices=["adam", "sgd", "rmsprop"])
+
+    parser.add_argument(
+        '--opt-keys',
+        nargs='*',  # Accept zero or more arguments
+        default=["stacking", "hydrogen_bonding"],
+        help='Parameter keys to optimize'
+    )
+
+    parser.add_argument('--no-delete', action='store_true')
+    parser.add_argument('--no-archive', action='store_true')
+
+    parser.add_argument('--small-system', action='store_true')
 
 
     return parser
