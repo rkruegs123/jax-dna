@@ -917,15 +917,14 @@ def run(args):
         hpin_tasks = [run_oxdna_ray.remote(oxdna_exec_path, rdir) for rdir in all_repeat_dirs]
         return hpin_tasks, all_repeat_dirs
 
-    def process_hpin(i, iter_dir, params):
+    def process_hpin(i, iter_dir, params, last_hpin_iter=None):
         hpin_dir = iter_dir / "hpin"
-
 
         if i == 0 or not update_weights:
             iter_weights_path = wfile_path_hpin
         else:
-            iter_weights_path = weights_dir / f"weights_i{i-1}.txt"
-
+            # iter_weights_path = weights_dir / f"weights_i{i-1}.txt"
+            iter_weights_path = weights_dir / f"weights_i{last_hpin_iter}.txt"
 
         weights_df_hpin = pd.read_fwf(iter_weights_path, names=["op1", "op2", "weight"])
         pair2idx_hpin = dict()
@@ -2029,7 +2028,7 @@ def run(args):
         else:
             stretch_tors_ref_info, all_force_t0_last_states, all_f2_torque_last_states = None, None, None
         if compute_hpin and resample_hpin:
-            hpin_ref_info = process_hpin(i, iter_dir, params)
+            hpin_ref_info = process_hpin(i, iter_dir, params, last_hpin_iter=last_hpin_iter)
         else:
             hpin_ref_info = None
 
