@@ -122,6 +122,8 @@ def run(args):
     no_delete = args['no_delete']
     no_archive = args['no_archive']
 
+    opt_mean_only = args['opt_mean_only']
+
     # Setup the logging directory
     if run_name is None:
         raise RuntimeError(f"Must set run name")
@@ -437,7 +439,14 @@ def run(args):
         # Compute effective sample size
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
 
-        return curr_kl_divergence, (n_eff, expected_ptwist, expected_ptwist_var)
+        if opt_mean_only:
+            mse = (expected_ptwist - target_mean)**2
+            rmse = jnp.sqrt(mse)
+            loss = rmse
+        else:
+            loss = curr_kl_divergence
+
+        return loss, (n_eff, expected_ptwist, expected_ptwist_var)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -642,6 +651,8 @@ def get_parser():
         default=["fene", "stacking"],
         help='Parameter keys to optimize'
     )
+
+    parser.add_argument('--opt-mean-only', action='store_true')
 
     return parser
 
