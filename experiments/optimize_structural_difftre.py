@@ -140,7 +140,7 @@ def run(args):
         return traj
 
 
-    def get_ref_states(params, init_body, key):
+    def get_ref_states(params, init_body, key, i):
 
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
@@ -239,7 +239,7 @@ def run(args):
 
     init_body = conf_info.get_states()[0]
     print(f"Generating initial reference states and energies...")
-    ref_states, ref_energies, ref_ptwists = get_ref_states(params, init_body, key)
+    ref_states, ref_energies, ref_ptwists = get_ref_states(params, init_body, key, 0)
 
     min_n_eff = int(n_ref_states * min_neff_factor)
     all_losses = list()
@@ -266,7 +266,7 @@ def run(args):
 
             print(f"Resampling reference states...")
             key, split = random.split(key)
-            ref_states, ref_energies, ref_ptwists = get_ref_states(params, ref_states[-1], split)
+            ref_states, ref_energies, ref_ptwists = get_ref_states(params, ref_states[-1], split, i)
             (loss, (n_eff, expected_ptwist)), grads = grad_fn(params, ref_states, ref_energies, ref_ptwists)
 
             all_ref_losses.append(loss)
