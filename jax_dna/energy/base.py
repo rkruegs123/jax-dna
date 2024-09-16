@@ -86,6 +86,19 @@ class ComposedEnergyFunction:
         if self.weights is not None and len(self.weights) != len(self.energy_fns):
             raise ValueError(ERR_COMPOSED_ENERGY_FN_LEN_MISMATCH)
 
+
+    def compute_terms(
+        self,
+        body: jax_md.rigid_body.RigidBody,
+        seq: jnp.ndarray,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors,
+    ) -> tuple[jnp.ndarray, ...]:
+        if self.rigid_body_transform_fn:
+            body = self.rigid_body_transform_fn(body)
+
+        return jnp.array([fn(body, seq, bonded_neighbors, unbonded_neighbors) for fn in self.energy_fns])
+
     def __call__(
         self,
         body: jax_md.rigid_body.RigidBody,
@@ -104,10 +117,7 @@ class ComposedEnergyFunction:
         Returns:
             float: the energy of the system
         """
-        if self.rigid_body_transform_fn:
-            body = self.rigid_body_transform_fn(body)
-
-        energy_vals = jnp.array([fn(body, seq, bonded_neighbors, unbonded_neighbors) for fn in self.energy_fns])
+        energy_vals = self.compute_terms(body, seq, bonded_neighbors, unbonded_neighbors)
         return jnp.sum(energy_vals) if self.weights is None else jnp.dot(self.weights, energy_vals)
 
     def add_energy_fn(self, energy_fn: BaseEnergyFunction, weight: float = 1.0) -> "ComposedEnergyFunction":
