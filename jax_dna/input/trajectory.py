@@ -156,7 +156,7 @@ class NucleotideState:
         """Convert the nucleotide state to jax-md rigid bodies."""
         return jax_md.rigid_body.RigidBody(
             self.com,
-            jax_md.rigid_body.Quaternion(self.quaternions),
+            jax_md.rigid_body.Quaternion(vec=self.quaternions),
         )
 
 
@@ -312,6 +312,8 @@ def _read_file(
                 # the order of the nucleotides in each strand
                 if is_3p_5p:
                     state = list(itertools.chain.from_iterable([state[s:e][::-1] for s, e in strand_bounds]))
+                    state = np.array(state, dtype=np.float64)
+                    state[:, 6:9] = -state[:, 6:9]
                 states.append(np.array(state, dtype=np.float64))
                 state = []
                 current = file_obj.tell()
