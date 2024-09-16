@@ -131,13 +131,18 @@ if __name__=="__main__":
             displacement_fn=displacement_fn,
             params=(e_c | param).init_params(),
         )
-        for param, e_c, e_fn in zip(opt_params, configs, energy_fns, strict=True)
+        for param, e_c, e_fn in list(zip(opt_params, configs, energy_fns, strict=True))[4:5]
     ]
+
+
 
     composed_energy_fn = jdna_energy.ComposedEnergyFunction(
         energy_fns=transformed_fns,
         rigid_body_transform_fn=transform_fn,
     )
+
+    fn = jax.grad(lambda rb: composed_energy_fn(rb, seq=seq, bonded_neighbors=top.bonded_neighbors, unbonded_neighbors=top.unbonded_neighbors))
+    print(fn(init_body))
 
 
     energy_terms_rh = jax.vmap(lambda rbs: composed_energy_fn.compute_terms(
@@ -148,7 +153,7 @@ if __name__=="__main__":
     ))(outs.rigid_body)
 
 
-    pdb.set_trace()
+    # pdb.set_trace()
 
     out_rb = outs.rigid_body
 
@@ -159,7 +164,7 @@ if __name__=="__main__":
     from jax import vmap
     ptwists = vmap(compute_avg_p_twist)(out_rb)
 
-    pdb.set_trace()
+    # pdb.set_trace()
 
     rh_energy_fn = lambda body: composed_energy_fn(body, seq=seq, bonded_neighbors=top.bonded_neighbors, unbonded_neighbors=top.unbonded_neighbors)
     rh_energies = vmap(rh_energy_fn)(out_rb)
@@ -181,6 +186,17 @@ if __name__=="__main__":
     t_kelvin_rk = utils_rk.DEFAULT_TEMP
     kT_rk = utils_rk.get_kt(t_kelvin_rk)
     em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin_rk)
+
+    fn =jax.grad(lambda rb: model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin_rk).energy_fn(
+        body=rb,
+        seq=seq_oh,
+        bonded_nbrs=top_info.bonded_nbrs,
+        unbonded_nbrs=top_info.unbonded_nbrs.T)
+    )
+
+    print(fn(init_body))
+
+
     rk_energy_fn = lambda body: em.compute_subterms(body, seq=seq_oh,
                                              bonded_nbrs=top_info.bonded_nbrs,
                                              unbonded_nbrs=top_info.unbonded_nbrs.T)
