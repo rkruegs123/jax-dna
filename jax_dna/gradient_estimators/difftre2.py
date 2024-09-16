@@ -93,6 +93,18 @@ def _compute_states_energies(
     ref_states = trajectory.rigid_body
     ref_energies = energy_fn_builder(params)(ref_states)
 
+    # import sys
+    # import jax_dna.common.trajectory as old_traj
+    # import jax_dna.common.topology as old_top
+    # old_traj.TrajectoryInfo(
+    #     old_top.TopologyInfo("data/test-data/simple-helix/generated.top", reverse_direction=True),
+    #     box_size=100.0,
+    #     read_from_states=True,
+    #     states=ref_states,
+    # ).write("test_traj.dat", reverse=True)
+    # sys.exit()
+
+
     return trajectory, ref_states, ref_energies
 
 
