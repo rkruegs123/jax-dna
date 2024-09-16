@@ -9,6 +9,7 @@ import jax_dna.input.toml as toml_reader
 import jax_dna.energy.dna1 as dna1_energy
 import jax_dna.energy.base as jdna_energy
 import jax_dna.energy.configuration as jdna_energy_config
+import jax_dna.observables as jd_obs
 import jax_dna.utils.types as jdt
 import jax_dna.simulators.jax_md as jmd
 
@@ -88,6 +89,7 @@ if __name__=="__main__":
     sampler = jmd.JaxMDSimulator(
         energy_configs=configs,
         energy_fns=energy_fns,
+        topology=top,
         simulator_params=jmd.StaticSimulatorParams(
             seq=seq,
             mass=mass,
@@ -121,10 +123,13 @@ if __name__=="__main__":
         rigid_body_transform_fn=transform_fn,
     )
     outs = fn(opt_params)
-    print(outs.center.shape, outs.orientation.vec.shape)
-    ce = jax.vmap(lambda x: composed_energy_fn(x, seq, top.bonded_neighbors, top.unbonded_neighbors.T))(outs)
-    print(ce[:5])
 
+    twists = jd_obs.propeller.PropellerTwist(
+        rigid_body_transform_fn=transform_fn,
+        h_bonded_base_pairs=jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
+    )(outs)
+
+    print(twists)
 
 
     # jax.grad(lambda opts: loss(fn(opts), target))

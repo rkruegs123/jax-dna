@@ -75,7 +75,6 @@ class PropellerTwist(jd_obs.BaseObservable):
         ptwist = jax.vmap(
             lambda bn: 180.0 - (single_propeller_twist_rad(self.h_bonded_base_pairs, bn) * 180.0 / jnp.pi)
         )
-        print("outs", jnp.mean(ptwist(base_normals), axis=1))
         return jnp.mean(ptwist(base_normals), axis=1)
 
 
