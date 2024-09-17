@@ -38,6 +38,40 @@ layout = {
     "custom": {
         "propeller twist": ["Multiline", ["target", "measured"]],
         "optimization": ["Multiline", ["loss"]],
+        "fene": ["Multiline", ["fene/eps_backbone", "fene/delta_backbone", "fene/r0_backbone"]],
+        "stacking_f1(dr_stack)": ["Multiline", [
+            "stacking/eps_stack_base",
+            "stacking/eps_stack_kt_coeff",
+            "stacking/a_stack",
+            "stacking/dr0_stack",
+            "stacking/dr_c_stack",
+            "stacking/dr_low_stack",
+            "stacking/dr_high_stack",
+        ]],
+        "stacking_f4(theta_4)": ["Multiline", [
+            "stacking/a_stack_4",
+            "stacking/theta0_stack_4",
+            "stacking/delta_theta_star_stack_4",
+        ]],
+        "stacking_f4(theta_5p)": ["Multiline", [
+            "stacking/a_stack_5",
+            "stacking/theta0_stack_5",
+            "stacking/delta_theta_star_stack_5",
+        ]],
+        "stacking_f4(theta_6p)": ["Multiline", [
+            "stacking/a_stack_6",
+            "stacking/theta0_stack_6",
+            "stacking/delta_theta_star_stack_6",
+        ]],
+        "stacking_f5(-cos(phi1))": ["Multiline", [
+            "stacking/a_stack_1",
+            "neg_cos_phi1_star_stack",
+        ]],
+        "stacking_f5(-cos(phi2))": ["Multiline", [
+            "stacking/a_stack_2",
+            "neg_cos_phi2_star_stack",
+        ]],
+
     },
 }
 class TensorBoardLogger:
@@ -55,6 +89,10 @@ class TensorBoardLogger:
 
     def add_scalar(self, tag, scalar_value, global_step):
         self.logger.add_scalar(tag, scalar_value, global_step)
+
+    def add_params(self, params, key, global_step):
+        for k, v in params[key].items():
+            self.logger.add_scalar(f"{key}/{k}", v, global_step)
 
     def close(self):
         self.tensorboard_proc.kill()
@@ -82,18 +120,6 @@ def run(args):
     output_dir = Path("output/")
     run_dir = output_dir / run_name
 
-
-    layout = {
-        "custom": {
-            "observable": ["Multiline", ["target", "measured"]],
-            "optimization": ["Multiline", ["loss"]],
-        },
-    }
-
-    # logger = tensorboardX.SummaryWriter(str(run_dir))
-    # logger = tf.summary.create_file_writer(str(run_dir))
-    # logger.add_custom_scalars(layout)
-    # run_dir.mkdir(parents=False, exist_ok=False)
     logger = TensorBoardLogger(run_dir)
 
     ref_traj_dir = run_dir / "ref_traj"
@@ -294,6 +320,8 @@ def run(args):
             logger.add_scalar("loss", loss, global_step=i)
             logger.add_scalar("target", target_ptwist, global_step=i)
             logger.add_scalar("measured", expected_ptwist, global_step=i)
+            logger.add_params(params, "fene", global_step=i)
+            logger.add_params(params, "stacking", global_step=i)
             # all_ref_losses.append(loss)
             # all_ref_times.append(i)
             # all_ref_eptwists.append(expected_ptwist)
@@ -330,6 +358,8 @@ def run(args):
             logger.add_scalar("loss", loss, global_step=i)
             logger.add_scalar("target", target_ptwist, global_step=i)
             logger.add_scalar("measured", expected_ptwist, global_step=i)
+            logger.add_params(params, "fene", global_step=i)
+            logger.add_params(params, "stacking", global_step=i)
 
         #     # Plot the losses
         #     plt.plot(onp.arange(i+1), all_losses, linestyle="--")
