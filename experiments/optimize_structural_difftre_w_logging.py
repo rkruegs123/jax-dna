@@ -65,11 +65,11 @@ layout = {
         ]],
         "stacking_f5(-cos(phi1))": ["Multiline", [
             "stacking/a_stack_1",
-            "neg_cos_phi1_star_stack",
+            "stacking/neg_cos_phi1_star_stack",
         ]],
         "stacking_f5(-cos(phi2))": ["Multiline", [
             "stacking/a_stack_2",
-            "neg_cos_phi2_star_stack",
+            "stacking/neg_cos_phi2_star_stack",
         ]],
 
     },
