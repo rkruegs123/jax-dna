@@ -247,7 +247,7 @@ def run(args):
         mse = (expected_dist - target_dist)**2
         rmse = jnp.sqrt(mse)
 
-        return rmse, (n_eff, expected_dist)
+        return rmse, (n_eff, expected_dist, pseq)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -274,10 +274,12 @@ def run(args):
     loss_path = log_dir / "loss.txt"
     neff_path = log_dir / "neff.txt"
     dist_path = log_dir / "dist.txt"
+    argmax_seq_path = log_dir / "argmax_seq.txt"
+    argmax_seq_scaled_path = log_dir / "argmax_seq_scaled.txt"
 
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
-        (loss, (n_eff, expected_dist)), grads = grad_fn(params, ref_states, ref_energies, ref_dists, gumbel_temps[0])
+        (loss, (n_eff, expected_dist, pseq)), grads = grad_fn(params, ref_states, ref_energies, ref_dists, gumbel_temps[0])
 
 
         if i == 0:
@@ -292,11 +294,20 @@ def run(args):
             key, split = random.split(key)
             # ref_states, ref_energies, ref_dists = get_ref_states(params, ref_states[-1], split, i, temp=gumbel_temps[i])
             ref_states, ref_energies, ref_dists = get_ref_states(params, init_body, split, i, temp=gumbel_temps[i])
-            (loss, (n_eff, expected_dist)), grads = grad_fn(params, ref_states, ref_energies, ref_dists, gumbel_temps[i])
+            (loss, (n_eff, expected_dist, pseq)), grads = grad_fn(params, ref_states, ref_energies, ref_dists, gumbel_temps[i])
 
             all_ref_losses.append(loss)
             all_ref_edists.append(expected_dist)
             all_ref_times.append(i)
+
+
+        max_nts = jnp.argmax(pseq, axis=1)
+        argmax_seq = ''.join([utils.DNA_ALPHA[nt_idx] for nt_idx in max_nts])
+        with open(argmax_seq_path, "a") as f:
+            f.write(f"{argmax_seq}\n")
+        argmax_seq_scaled = ''.join([argmax_seq[nt_idx].lower() if pseq[nt_idx, max_nts[nt_idx]] < 0.5 else argmax_seq[nt_idx] for nt_idx in range(len(argmax_seq))])
+        with open(argmax_seq_scaled_path, "a") as f:
+            f.write(f"{argmax_seq_scaled}\n")
 
         with open(loss_path, "a") as f:
             f.write(f"{loss}\n")
