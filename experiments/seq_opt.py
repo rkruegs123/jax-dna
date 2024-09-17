@@ -326,8 +326,8 @@ def run(args):
 
             print(f"Resampling reference states...")
             key, split = random.split(key)
-            # ref_states, ref_energies, ref_dists = get_ref_states(params, ref_states[-1], split, i, temp=gumbel_temps[i])
-            ref_states, ref_energies, ref_obs = get_ref_states(params, init_body, split, i, temp=gumbel_temps[i])
+            ref_states, ref_energies, ref_dists = get_ref_states(params, ref_states[-1], split, i, temp=gumbel_temps[i])
+            # ref_states, ref_energies, ref_obs = get_ref_states(params, init_body, split, i, temp=gumbel_temps[i])
             (loss, (n_eff, expected_obs, pseq)), grads = grad_fn(params, ref_states, ref_energies, ref_obs, gumbel_temps[i])
 
             all_ref_losses.append(loss)
