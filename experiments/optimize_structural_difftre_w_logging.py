@@ -1,9 +1,11 @@
+import webbrowser
 import datetime
 import pdb
 from pathlib import Path
 from copy import deepcopy
 import functools
 import pprint
+import subprocess
 from tqdm import tqdm
 import time
 import matplotlib.pyplot as plt
@@ -31,6 +33,31 @@ if checkpoint_every is None:
 else:
     scan = functools.partial(checkpoint.checkpoint_scan,
                              checkpoint_every=checkpoint_every)
+
+layout = {
+    "custom": {
+        "propeller twist": ["Multiline", ["target", "measured"]],
+        "optimization": ["Multiline", ["loss"]],
+    },
+}
+class TensorBoardLogger:
+    def __init__(self, log_dir):
+        self.logger = tensorboardX.SummaryWriter(str(log_dir), flush_secs=5)
+        self.logger.add_custom_scalars(layout)
+        self.tensorboard_proc = subprocess.Popen(
+            ["tensorboard", "--logdir", str(log_dir)],
+            # comment the below lines out if you want to see if tensorboard is saying things:
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        webbrowser.open("http://localhost:6006/?darkMode=false#custom_scalars&_smoothingWeight=0")
+
+
+    def add_scalar(self, tag, scalar_value, global_step):
+        self.logger.add_scalar(tag, scalar_value, global_step)
+
+    def close(self):
+        self.tensorboard_proc.kill()
 
 
 def run(args):
@@ -63,10 +90,11 @@ def run(args):
         },
     }
 
-    logger = tensorboardX.SummaryWriter(str(run_dir))
+    # logger = tensorboardX.SummaryWriter(str(run_dir))
     # logger = tf.summary.create_file_writer(str(run_dir))
-    logger.add_custom_scalars(layout)
+    # logger.add_custom_scalars(layout)
     # run_dir.mkdir(parents=False, exist_ok=False)
+    logger = TensorBoardLogger(run_dir)
 
     ref_traj_dir = run_dir / "ref_traj"
     ref_traj_dir.mkdir(parents=False, exist_ok=False)
@@ -323,6 +351,9 @@ def run(args):
         #     plt.title(f"DiffTRE Propeller Twist Optimization, Neff factor={min_neff_factor}")
         #     plt.savefig(img_dir / f"eptwists_iter{i}.png")
         #     plt.clf()
+
+    input("Press Enter to kill tensorboard and exit...")
+    logger.close()
 
 
 if __name__ == "__main__":
