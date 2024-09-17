@@ -124,10 +124,10 @@ def run(args):
                              bonded_nbrs=top_info.bonded_nbrs,
                              unbonded_nbrs=top_info.unbonded_nbrs.T)
         def fori_step_fn(t, state):
-            return state = step_fn(state,
-                                   seq=pseq,
-                                   bonded_nbrs=top_info.bonded_nbrs,
-                                   unbonded_nbrs=top_info.unbonded_nbrs.T)
+            return step_fn(state,
+                           seq=pseq,
+                           bonded_nbrs=top_info.bonded_nbrs,
+                           unbonded_nbrs=top_info.unbonded_nbrs.T)
         fori_step_fn = jit(fori_step_fn)
 
         eq_state = lax.fori_loop(0, n_eq_steps, fori_step_fn, init_state)
