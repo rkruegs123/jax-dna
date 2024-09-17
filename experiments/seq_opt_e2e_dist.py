@@ -8,6 +8,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as onp
 import argparse
+import seaborn as sns
 
 import jax
 import optax
@@ -219,6 +220,10 @@ def run(args):
         plt.plot(running_avg_dists[-int(n_traj_states // 2):])
         plt.savefig(iter_dir / f"running_avg_second_half.png")
         plt.close()
+
+        sns.histplot(ref_dists)
+        plt.savefig(iter_dir / "dist_hist.png")
+        plt.clf()
 
         return ref_states, ref_energies, ref_dists
 
