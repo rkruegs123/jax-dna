@@ -40,14 +40,18 @@ def run(args):
     gumbel_end = args['gumbel_end']
     gumbel_start = args['gumbel_start']
     gumbel_temps = onp.linspace(gumbel_start, gumbel_end, n_iters)
+
+    n_sims = args['n_sims']
+    n_sample_steps = args['n_sample_steps']
     n_eq_steps = args['n_eq_steps']
     sample_every = args['sample_every']
+    assert(n_sample_steps % sample_every == 0)
+    num_points_per_batch = n_sample_steps // sample_every
+    n_ref_states = num_points_per_batch * n_sims
+
     lr = args['lr']
     min_neff_factor = args['min_neff_factor']
-    n_sample_steps = args['n_sample_steps']
-    n_sims = args['n_sims']
-    assert(n_sample_steps % sample_every == 0)
-    n_ref_states = n_sample_steps // sample_every
+
     plot_every = args['plot_every']
     run_name = args['run_name']
     target_dist = args['target_dist']
@@ -138,23 +142,26 @@ def run(args):
                              bonded_nbrs=top_info.bonded_nbrs,
                              unbonded_nbrs=top_info.unbonded_nbrs.T)
 
+        def fori_step_fn(t, state):
+            return step_fn(state,
+                           seq=pseq,
+                           bonded_nbrs=top_info.bonded_nbrs,
+                           unbonded_nbrs=top_info.unbonded_nbrs.T)
+        fori_step_fn = jit(fori_step_fn)
+
         @jit
         def scan_fn(state, step):
-            state = step_fn(state,
-                            seq=pseq,
-                            bonded_nbrs=top_info.bonded_nbrs,
-                            unbonded_nbrs=top_info.unbonded_nbrs.T)
+            state = lax.fori_loop(0, sample_every, fori_step_fn, state)
             return state, state.position
 
         start = time.time()
-        fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_sample_steps))
+        fin_state, traj = scan(scan_fn, init_state, jnp.arange(num_points_per_batch))
         end = time.time()
 
         return traj
 
     def batch_sim(ref_key, R, pseq):
 
-        pdb.set_trace()
         ref_key, eq_key = random.split(ref_key)
         eq_keys = random.split(eq_key, n_sims)
         eq_states = vmap(eq_fn, (0, None, None))(eq_keys, R, pseq)
@@ -162,6 +169,7 @@ def run(args):
         sample_keys = random.split(ref_key, n_sims)
         sample_trajs = vmap(sample_fn, (0, 0, None))(eq_states, sample_keys, pseq)
 
+        pdb.set_trace()
         sample_traj = utils.tree_stack(sample_trajs)
         return sample_traj
 
@@ -178,11 +186,9 @@ def run(args):
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
 
-        pdb.set_trace()
         key, batch_key = random.split(key)
         ref_states = batch_sim(batch_key, init_body, pseq)
 
-        pdb.set_trace()
 
         energy_fn = lambda body: em.energy_fn(body,
                                               seq=pseq,
@@ -267,10 +273,8 @@ def run(args):
 
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
-        pdb.set_trace()
         (loss, (n_eff, expected_dist)), grads = grad_fn(params, ref_states, ref_energies, ref_dists, gumbel_temps[0])
 
-        pdb.set_trace()
 
         if i == 0:
             all_ref_losses.append(loss)
