@@ -36,6 +36,7 @@ def run(args):
 
     # Load parameters
     n_iters = args['n_iters']
+    use_gumbel = args['use_gumbel']
     gumbel_end = args['gumbel_end']
     gumbel_start = args['gumbel_start']
     gumbel_temps = onp.linspace(gumbel_start, gumbel_end, n_iters)
@@ -50,8 +51,6 @@ def run(args):
     run_name = args['run_name']
     target_ptwist = args['target_ptwist']
     max_approx_iters = args['max_approx_iters']
-
-    opt_keys = args['opt_keys']
 
     # Setup the logging directoroy
     if run_name is None:
@@ -338,6 +337,8 @@ def get_parser():
     parser.add_argument('--max-approx-iters', type=int, default=5,
                         help="Maximum number of iterations before resampling")
 
+    parser.add_argument('--use-gumbel', action='store_true',
+                        help="If true, will use gumbel softmax with an annealing temperature")
     parser.add_argument('--gumbel-start', type=float, default=1.0,
                         help="Starting temperature for gumbel softmax")
     parser.add_argument('--gumbel-end', type=float, default=0.01,
