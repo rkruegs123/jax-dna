@@ -14,7 +14,7 @@ import optax
 import jax.numpy as jnp
 from jax import jit, vmap, random, grad, value_and_grad, lax, lax
 from jax_md import space, simulate, rigid_body
-import tensorflow as tf
+import tensorboardX
 
 from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.loss import geometry, pitch, propeller
@@ -55,14 +55,17 @@ def run(args):
     output_dir = Path("output/")
     run_dir = output_dir / run_name
 
+
     layout = {
         "custom": {
-            "loss": ["Multiline", ["loss/train", "loss/validation"]],
-            "accuracy": ["Multiline", ["accuracy/train", "accuracy/validation"]],
+            "observable": ["Multiline", ["target", "measured"]],
+            "optimization": ["Multiline", ["loss"]],
         },
     }
 
-    logger = tf.summary.create_file_writer(str(run_dir))
+    logger = tensorboardX.SummaryWriter(str(run_dir))
+    # logger = tf.summary.create_file_writer(str(run_dir))
+    logger.add_custom_scalars(layout)
     # run_dir.mkdir(parents=False, exist_ok=False)
 
     ref_traj_dir = run_dir / "ref_traj"
@@ -260,10 +263,9 @@ def run(args):
         (loss, (n_eff, expected_ptwist)), grads = grad_fn(params, ref_states, ref_energies, ref_ptwists)
 
         if i == 0:
-            with logger.as_default():
-                tf.summary.scalar("loss", loss, step=i)
-                tf.summary.scalar("effective_sample_size", n_eff, step=i)
-                tf.summary.scalar("expected_propeller_twist", expected_ptwist, step=i)
+            logger.add_scalar("loss", loss, global_step=i)
+            logger.add_scalar("target", target_ptwist, global_step=i)
+            logger.add_scalar("measured", expected_ptwist, global_step=i)
             # all_ref_losses.append(loss)
             # all_ref_times.append(i)
             # all_ref_eptwists.append(expected_ptwist)
@@ -297,10 +299,9 @@ def run(args):
         params = optax.apply_updates(params, updates)
 
         if i % plot_every == 0:
-            with logger.as_default():
-                tf.summary.scalar("loss", loss, step=i)
-                tf.summary.scalar("effective_sample_size", n_eff, step=i)
-                tf.summary.scalar("expected_propeller_twist", expected_ptwist, step=i)
+            logger.add_scalar("loss", loss, global_step=i)
+            logger.add_scalar("target", target_ptwist, global_step=i)
+            logger.add_scalar("measured", expected_ptwist, global_step=i)
 
         #     # Plot the losses
         #     plt.plot(onp.arange(i+1), all_losses, linestyle="--")
