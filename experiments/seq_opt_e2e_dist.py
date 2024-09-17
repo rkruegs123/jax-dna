@@ -73,6 +73,9 @@ def run(args):
     ref_traj_dir = run_dir / "ref_traj"
     ref_traj_dir.mkdir(parents=False, exist_ok=False)
 
+    pseq_dir = run_dir / "pseq"
+    pseq_dir.mkdir(parents=False, exist_ok=False)
+
     params_str = ""
     for k, v in args.items():
         params_str += f"{k}: {v}\n"
@@ -300,6 +303,9 @@ def run(args):
             all_ref_edists.append(expected_dist)
             all_ref_times.append(i)
 
+
+        pseq_fpath = pseq_dir / f"pseq_i{i}.npy"
+        jnp.save(pseq_fpath, pseq, allow_pickle=False)
 
         max_nts = jnp.argmax(pseq, axis=1)
         argmax_seq = ''.join([utils.DNA_ALPHA[nt_idx] for nt_idx in max_nts])
