@@ -117,7 +117,6 @@ def run(args):
 
     em = model.EnergyModel(displacement_fn, empty_params, t_kelvin=t_kelvin, ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
 
-    @jit
     def eq_fn(eq_key, body, pseq):
         init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
         init_state = init_fn(key, body, mass=mass, seq=pseq,
@@ -139,7 +138,6 @@ def run(args):
                              bonded_nbrs=top_info.bonded_nbrs,
                              unbonded_nbrs=top_info.unbonded_nbrs.T)
 
-
         @jit
         def scan_fn(state, step):
             state = step_fn(state,
@@ -151,21 +149,20 @@ def run(args):
         start = time.time()
         fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_sample_steps))
         end = time.time()
-        print(f"Generating reference states took {end - start} seconds")
 
         return traj
 
-    @jit
     def batch_sim(ref_key, R, pseq):
 
+        pdb.set_trace()
         ref_key, eq_key = random.split(ref_key)
         eq_keys = random.split(eq_key, n_sims)
-        eq_states = vmap(eq_fn, (0, None, None, None))(eq_keys, R, pseq, mass)
+        eq_states = vmap(eq_fn, (0, None, None))(eq_keys, R, pseq)
 
         sample_keys = random.split(ref_key, n_sims)
         sample_trajs = vmap(sample_fn, (0, 0, None))(eq_states, sample_keys, pseq)
 
-        sample_traj = utils.tree_stack(sample_traj)
+        sample_traj = utils.tree_stack(sample_trajs)
         return sample_traj
 
 
@@ -181,8 +178,11 @@ def run(args):
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
 
-        iter_key, batch_key = random.split(iter_key)
-        ref_states = batch_sim(batch_key, init_body, pseq):
+        pdb.set_trace()
+        key, batch_key = random.split(key)
+        ref_states = batch_sim(batch_key, init_body, pseq)
+
+        pdb.set_trace()
 
         energy_fn = lambda body: em.energy_fn(body,
                                               seq=pseq,
@@ -267,6 +267,7 @@ def run(args):
 
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
+        pdb.set_trace()
         (loss, (n_eff, expected_dist)), grads = grad_fn(params, ref_states, ref_energies, ref_dists, gumbel_temps[0])
 
         pdb.set_trace()
