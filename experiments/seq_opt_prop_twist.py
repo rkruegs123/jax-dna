@@ -18,6 +18,7 @@ from jax_md import space, simulate, rigid_body
 from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.loss import geometry, pitch, propeller
 from jax_dna.dna1 import model
+from jax_dna.common.read_seq_specific import read_ss_oxdna
 
 # from jax.config import config
 # config.update("jax_enable_x64", True)
