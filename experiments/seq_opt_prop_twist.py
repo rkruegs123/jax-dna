@@ -146,7 +146,7 @@ def run(args):
         iter_dir.mkdir(parents=False, exist_ok=False)
 
 
-        trajectory = sim_fn(empty_params, init_body, n_eq_steps + n_sample_steps, key)
+        trajectory = sim_fn(empty_params, init_body, n_eq_steps + n_sample_steps, key, pseq)
         eq_trajectory = trajectory[n_eq_steps:]
         ref_states = eq_trajectory[::sample_every]
 
