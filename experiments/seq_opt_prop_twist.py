@@ -262,6 +262,8 @@ def run(args):
     for i in tqdm(range(n_iters)):
         (loss, (n_eff, expected_ptwist)), grads = grad_fn(params, ref_states, ref_energies, ref_ptwists, gumbel_temps[0])
 
+        pdb.set_trace()
+
         if i == 0:
             all_ref_losses.append(loss)
             all_ref_times.append(i)
@@ -272,7 +274,8 @@ def run(args):
 
             print(f"Resampling reference states...")
             key, split = random.split(key)
-            ref_states, ref_energies, ref_ptwists = get_ref_states(params, ref_states[-1], split, i, temp=gumbel_temps[i])
+            # ref_states, ref_energies, ref_ptwists = get_ref_states(params, ref_states[-1], split, i, temp=gumbel_temps[i])
+            ref_states, ref_energies, ref_ptwists = get_ref_states(params, init_body, split, i, temp=gumbel_temps[i])
             (loss, (n_eff, expected_ptwist)), grads = grad_fn(params, ref_states, ref_energies, ref_ptwists, gumbel_temps[i])
 
             all_ref_losses.append(loss)
@@ -330,7 +333,7 @@ def get_parser():
                         help="Frequency of sampling reference states.")
     parser.add_argument('--plot-every', type=int, default=10,
                         help="Frequency of plotting data from gradient descent epochs")
-    parser.add_argument('--lr', type=float, default=0.001,
+    parser.add_argument('--lr', type=float, default=0.1,
                         help="Learning rate")
     parser.add_argument('--min-neff-factor', type=float, default=0.95,
                         help="Factor for determining min Neff")
