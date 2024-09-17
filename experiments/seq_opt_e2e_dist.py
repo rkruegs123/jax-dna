@@ -169,8 +169,12 @@ def run(args):
         sample_keys = random.split(ref_key, n_sims)
         sample_trajs = vmap(sample_fn, (0, 0, None))(eq_states, sample_keys, pseq)
 
-        pdb.set_trace()
-        sample_traj = utils.tree_stack(sample_trajs)
+        # sample_traj = utils.tree_stack(sample_trajs)
+        sample_center = sample_trajs.center.reshape(-1, seq_length, 3)
+        sample_qvec = sample_trajs.orientation.vec.reshape(-1, seq_length, 4)
+        sample_traj = rigid_body.RigidBody(
+            center=sample_center,
+            orientation=rigid_body.Quaternion(sample_qvec))
         return sample_traj
 
 
