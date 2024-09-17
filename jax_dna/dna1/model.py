@@ -6,6 +6,7 @@ from tqdm import tqdm
 from copy import deepcopy
 import pandas as pd
 import numpy as onp
+import itertools
 
 import jax
 from jax import jit, random, lax, grad, value_and_grad
@@ -404,6 +405,81 @@ class TestDna1(unittest.TestCase):
                 self.check_energy_subterms(
                     basedir, top_fname, traj_fname, t_kelvin,
                     use_neighbors=use_neighbors, avg_seq=avg_seq, verbose=True)
+
+    def test_brute_force(self):
+        ss_path = "data/seq-specific/seq_oxdna1.txt"
+        ss_hb_weights, ss_stack_weights = read_ss_oxdna(ss_path)
+
+        basedir = self.test_data_basedir / "helix-4bp"
+        t_kelvin = utils.DEFAULT_TEMP
+
+        top_path = basedir / "sys.top"
+        if not top_path.exists():
+            raise RuntimeError(f"No topology file at location: {top_path}")
+        traj_path = basedir / "output.dat"
+        if not traj_path.exists():
+            raise RuntimeError(f"No trajectory file at location: {traj_path}")
+
+        top_info = topology.TopologyInfo(top_path, reverse_direction=False)
+        # seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
+        n = len(top_info.seq)
+        assert(n == 8)
+        traj_info = trajectory.TrajectoryInfo(
+            top_info, read_from_file=True, traj_path=traj_path, reverse_direction=False)
+        traj_states = traj_info.get_states()
+
+        displacement_fn, shift_fn = space.periodic(traj_info.box_size)
+        model = EnergyModel(displacement_fn, t_kelvin=t_kelvin,
+                            ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
+
+        neighbors_idx = top_info.unbonded_nbrs.T
+
+        n_eval_strucs = 1
+
+        energy_fn = jit(model.energy_fn)
+        logits = onp.random.rand(n, 4)
+        pseq = logits / logits.sum(axis=1, keepdims=True)
+
+
+        def sequence_probability(sequence, normalized_matrix):
+            # Initialize probability to 1 (neutral for multiplication)
+            probability = 1.0
+
+            # Loop over each character in the sequence and find its probability
+            for i, char in enumerate(sequence):
+                # Find the index of the character in the DNA alphabet
+                char_index = utils.DNA_ALPHA.index(char)
+
+                # Multiply the probability by the corresponding matrix value
+                probability *= normalized_matrix[i, char_index]
+
+            return probability
+
+
+
+        for struc_idx in range(n_eval_strucs):
+            state = traj_states[struc_idx]
+
+            expected_energy_calc = energy_fn(
+                state, pseq, top_info.bonded_nbrs, neighbors_idx)
+
+            expected_energy_brute = 0.0
+
+            sequences = [''.join(p) for p in itertools.product(utils.DNA_ALPHA, repeat=n)]
+            for seq in tqdm(sequences):
+                seq_oh = jnp.array(utils.get_one_hot(seq), dtype=jnp.float64)
+                seq_energy_calc = energy_fn(
+                    state, seq_oh, top_info.bonded_nbrs, neighbors_idx)
+                seq_prob = sequence_probability(seq, pseq)
+
+                expected_energy_brute += seq_prob*seq_energy_calc
+
+        pdb.set_trace()
+
+
+
+
+
 
 
 if __name__ == "__main__":
