@@ -92,7 +92,8 @@ def run(args):
 
 
     # Load the system
-    sys_basedir = Path("data/templates/ss20")
+    # sys_basedir = Path("data/templates/ss20")
+    sys_basedir = Path("data/templates/ss100")
     top_path = sys_basedir / "sys.top"
     top_info = topology.TopologyInfo(top_path, reverse_direction=True)
     seq_length = len(top_info.seq)
