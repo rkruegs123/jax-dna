@@ -76,6 +76,9 @@ def run(args):
 
     empty_params = deepcopy(model.EMPTY_BASE_PARAMS)
 
+    ss_path = "data/seq-specific/seq_oxdna1.txt"
+    ss_hb_weights, ss_stack_weights = read_ss_oxdna(ss_path)
+
 
     # Load the system
     sys_basedir = Path("data/sys-defs/simple-helix")
@@ -112,7 +115,7 @@ def run(args):
 
 
     def sim_fn(params, body, n_steps, key, pseq):
-        em = model.EnergyModel(displacement_fn, empty_params, t_kelvin=t_kelvin)
+        em = model.EnergyModel(displacement_fn, empty_params, t_kelvin=t_kelvin, ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights))
         init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
         init_state = init_fn(key, body, mass=mass, seq=pseq,
                              bonded_nbrs=top_info.bonded_nbrs,
@@ -150,7 +153,7 @@ def run(args):
         eq_trajectory = trajectory[n_eq_steps:]
         ref_states = eq_trajectory[::sample_every]
 
-        em = model.EnergyModel(displacement_fn, empty_params, t_kelvin=t_kelvin)
+        em = model.EnergyModel(displacement_fn, empty_params, t_kelvin=t_kelvin, ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights))
         energy_fn = lambda body: em.energy_fn(body,
                                               seq=pseq,
                                               bonded_nbrs=top_info.bonded_nbrs,
@@ -203,7 +206,7 @@ def run(args):
         logits = params['logits']
         pseq = normalize(logits, temp)
 
-        em = model.EnergyModel(displacement_fn, empty_params, t_kelvin=t_kelvin)
+        em = model.EnergyModel(displacement_fn, empty_params, t_kelvin=t_kelvin, ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights))
 
         # Compute the weights
         energy_fn = lambda body: em.energy_fn(body,
@@ -231,7 +234,7 @@ def run(args):
     grad_fn = jit(grad_fn)
 
     # Setup the optimization
-    init_logits = onp.full((seq_length, 20), 100.0)
+    init_logits = onp.full((seq_length, 4), 100.0)
     init_logits = jnp.array(init_logits, dtype=jnp.float64)
     params = {"logits": init_logits}
     optimizer = optax.adam(learning_rate=lr)
