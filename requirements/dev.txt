@@ -4,3 +4,4 @@ jax==0.4.27
 jax_md @ git+https://github.com/jax-md/jax-md@c451353f6ddcab031f660befda256d8a4f657855
 numpy==1.26.4
 jaxtyping==0.2.28
+tqdm>=4.66.3

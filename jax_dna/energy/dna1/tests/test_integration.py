@@ -4,30 +4,29 @@ import jax
 import jax.numpy as jnp
 import jax_md
 import numpy as np
-import pandas as pd
 import pytest
 
 import jax_dna.energy.dna1 as jd_energy
 import jax_dna.input.toml as jd_toml
 import jax_dna.input.topology as jd_top
 import jax_dna.input.trajectory as jd_traj
+jax.config.update(name="jax_enable_x64", val=True)
 
 
-def get_energy_terms(base_dir: str) -> pd.DataFrame:
-    return pd.read_csv(
-        base_dir + "/split_energy.dat",
-        names=[
-            "t",
-            "fene",
-            "bonded_excluded_volume",
-            "stacking",
-            "unbonded_excluded_volume",
-            "hydrogen_bonding",
-            "cross_stacking",
-            "coaxial_stacking",
-        ],
-        sep=r"\s+",
-    ).iloc[1:, :]
+COLUMN_NAMES = [
+    "t",
+    "fene",
+    "bonded_excluded_volume",
+    "stacking",
+    "unbonded_excluded_volume",
+    "hydrogen_bonding",
+    "cross_stacking",
+    "coaxial_stacking"
+]
+
+def get_energy_terms(base_dir: str, term:str) -> np.ndarray:
+    energy_terms = np.loadtxt(base_dir + "/split_energy.dat", skiprows=1)
+    return energy_terms[:, COLUMN_NAMES.index(term)]
 
 
 def get_topology(base_dir: str) -> jd_top.Topology:
@@ -75,7 +74,7 @@ def test_bonded_excluded_volume(base_dir: str):
         displacement_fn,
     ) = get_setup_data(base_dir)
 
-    terms = get_energy_terms(base_dir).loc[:, "bonded_excluded_volume"].to_numpy()
+    terms = get_energy_terms(base_dir, "bonded_excluded_volume")
     # compute energy terms
     energy_config = jd_energy.BondedExcludedVolumeConfiguration(**default_params["bonded_excluded_volume"])
     energy_fn = jd_energy.BondedExcludedVolume(displacement_fn=displacement_fn, params=energy_config.init_params())
@@ -105,7 +104,7 @@ def test_coaxial_stacking(base_dir: str):
         displacement_fn,
     ) = get_setup_data(base_dir)
 
-    terms = get_energy_terms(base_dir).loc[:, "coaxial_stacking"].to_numpy()
+    terms = get_energy_terms(base_dir, "coaxial_stacking")
     # compute energy terms
     energy_config = jd_energy.CoaxialStackingConfiguration(**default_params["coaxial_stacking"])
     energy_fn = jd_energy.CoaxialStacking(displacement_fn=displacement_fn, params=energy_config.init_params())
@@ -135,7 +134,7 @@ def test_cross_stacking(base_dir: str):
         displacement_fn,
     ) = get_setup_data(base_dir)
 
-    terms = get_energy_terms(base_dir).loc[:, "cross_stacking"].to_numpy()
+    terms = get_energy_terms(base_dir, "cross_stacking")
 
     default_params = jax.tree_util.tree_map(lambda arr: jnp.array(arr, dtype=jnp.float64), default_params)
     energy_config = jd_energy.CrossStackingConfiguration(**default_params["cross_stacking"])
@@ -168,7 +167,7 @@ def test_fene(base_dir: str):
         displacement_fn,
     ) = get_setup_data(base_dir)
 
-    terms = get_energy_terms(base_dir).loc[:, "fene"].to_numpy()
+    terms = get_energy_terms(base_dir, "fene")
     # compute energy terms
     energy_config = jd_energy.FeneConfiguration(**default_params["fene"])
     energy_fn = jd_energy.Fene(displacement_fn=displacement_fn, params=energy_config.init_params())
@@ -199,7 +198,7 @@ def test_hydrogen_bonding(base_dir: str):
         displacement_fn,
     ) = get_setup_data(base_dir)
 
-    terms = get_energy_terms(base_dir).loc[:, "hydrogen_bonding"].to_numpy()
+    terms = get_energy_terms(base_dir, "hydrogen_bonding")
     # compute energy terms
     energy_config = jd_energy.HydrogenBondingConfiguration(**default_params["hydrogen_bonding"])
     energy_fn = jd_energy.HydrogenBonding(displacement_fn=displacement_fn, params=energy_config.init_params())
@@ -230,7 +229,7 @@ def test_stacking(base_dir: str):
         displacement_fn,
     ) = get_setup_data(base_dir)
 
-    terms = get_energy_terms(base_dir).loc[:, "stacking"].to_numpy()
+    terms = get_energy_terms(base_dir, "stacking")
     # compute energy terms
     energy_config = jd_energy.StackingConfiguration(**(default_params["stacking"] | {"kt": 296.15 * 0.1 / 300.0}))
     energy_fn = jd_energy.Stacking(displacement_fn=displacement_fn, params=(energy_config).init_params())
@@ -261,7 +260,7 @@ def test_unbonded_excluded_volume(base_dir: str):
         displacement_fn,
     ) = get_setup_data(base_dir)
 
-    terms = get_energy_terms(base_dir).loc[:, "unbonded_excluded_volume"].to_numpy()
+    terms = get_energy_terms(base_dir, "unbonded_excluded_volume")
     # compute energy terms
     energy_config = jd_energy.UnbondedExcludedVolumeConfiguration(**default_params["unbonded_excluded_volume"])
     energy_fn = jd_energy.UnbondedExcludedVolume(displacement_fn=displacement_fn, params=energy_config.init_params())
@@ -280,3 +279,7 @@ def test_unbonded_excluded_volume(base_dir: str):
     energy = np.around(energy / topology.n_nucleotides, 6)
 
     np.testing.assert_allclose(energy, terms, atol=1e-6)
+
+
+if __name__=="__main__":
+    pytest.main()
