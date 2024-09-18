@@ -5,7 +5,7 @@ from pathlib import Path
 
 def _parse_numeric(value: str) -> tuple[float | int, bool]:
     is_successful = False
-    parsed = None
+    parsed = 0
     for t in (int, float):
         try:
             parsed = t(value)
@@ -15,17 +15,15 @@ def _parse_numeric(value: str) -> tuple[float | int, bool]:
             is_successful = True
             break
 
-    return parsed or value, is_successful
+    return parsed, is_successful
 
 
 def _parse_boolean(value: str) -> tuple[bool, bool]:
-    is_successful = False
-    parsed = None
-    if value.lower in ("true", "false"):
-        is_successful = True
-        parsed = value.lower() == "true"
-
-    return parsed or value, is_successful
+    lowered = value.lower()
+    return (
+        lowered == "true",
+        lowered in ("true", "false"),
+    )
 
 
 def _parse_value(value: str) -> str | float | int | bool:

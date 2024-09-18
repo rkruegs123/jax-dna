@@ -11,8 +11,8 @@ import jax_dna.input.toml as jd_toml
 import jax_dna.input.topology as jd_top
 import jax_dna.input.trajectory as jd_traj
 
-jax.config.update("jax_enable_x64", True) # noqa: FBT003 - ignore boolean positional value
-                                          # this is a common jax practice
+jax.config.update("jax_enable_x64", True)  # noqa: FBT003 - ignore boolean positional value
+# this is a common jax practice
 
 
 COLUMN_NAMES = [
