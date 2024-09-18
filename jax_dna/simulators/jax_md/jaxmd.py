@@ -7,7 +7,6 @@ import chex
 import jax
 import jax.numpy as jnp
 import jax_md
-from tqdm import tqdm
 
 import jax_dna.energy.base as jd_energy_fn
 import jax_dna.energy.configuration as jd_energy_cnfg
@@ -74,10 +73,6 @@ def build_run_fn(
         else functools.partial(jaxmd_utils.checkpoint_scan, checkpoint_every=simulator_params.checkpoint_every)
     )
 
-    # @functools.partial(
-    #     jax.jit,
-    #     static_argnames=("n_steps",),
-    # )
     def run_fn(
         opt_params: dict[str, float],
         init_state: jax_md.rigid_body.RigidBody,
@@ -105,7 +100,7 @@ def build_run_fn(
         init_state = init_fn(
             key=key,
             R=init_state,
-            unbonded_neighbors=neighbors.idx,
+            unbonded_neighbors=neighbors.idx.T,
             **simulator_params.init_fn,
         )
 
@@ -113,7 +108,7 @@ def build_run_fn(
             state, neighbors = in_state
             state = step_fn(
                 state,
-                unbonded_neighbors=neighbors.idx,
+                unbonded_neighbors=neighbors.idx.T,
                 **simulator_params.step_fn,
             )
 

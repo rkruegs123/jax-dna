@@ -18,8 +18,8 @@ jax.config.update("jax_enable_x64", True)
 
 if __name__=="__main__":
 
-    topology_fname = "data/templates/simple-helix/sys.top"
-    traj_fname = "data/templates/simple-helix/init.conf"
+    topology_fname = "data/sys-defs/simple-helix/sys.top"
+    traj_fname = "data/sys-defs/simple-helix/bound_relaxed.conf"
     simulation_config = "jax_dna/input/dna1/default_simulation.toml"
     energy_config = "jax_dna/input/dna1/default_energy.toml"
 
@@ -42,6 +42,8 @@ if __name__=="__main__":
     kT = experiment_config["kT"]
     diff_coef = experiment_config["diff_coef"]
     rot_diff_coef = experiment_config["rot_diff_coef"]
+
+    print(dt, kT, diff_coef, rot_diff_coef)
 
     gamma = jax_md.rigid_body.RigidBody(
         center=jnp.array([kT/diff_coef], dtype=jnp.float64),
@@ -141,7 +143,7 @@ if __name__=="__main__":
         rigid_body_transform_fn=transform_fn,
     )
 
-    fn = jax.grad(lambda rb: composed_energy_fn(rb, seq=seq, bonded_neighbors=top.bonded_neighbors, unbonded_neighbors=top.unbonded_neighbors))
+    fn = jax.grad(lambda rb: composed_energy_fn(rb, seq=seq, bonded_neighbors=top.bonded_neighbors, unbonded_neighbors=top.unbonded_neighbors.T))
     print(fn(init_body))
 
 
@@ -153,8 +155,7 @@ if __name__=="__main__":
     ))(outs.rigid_body)
 
 
-    # pdb.set_trace()
-
+    breakpoint()
     out_rb = outs.rigid_body
 
     from jax_dna.loss import geometry, pitch, propeller
@@ -180,6 +181,13 @@ if __name__=="__main__":
     sys_basedir = Path("data/sys-defs/simple-helix")
     top_path = sys_basedir / "sys.top"
     top_info = topology_rk.TopologyInfo(top_path, reverse_direction=True)
+    traj_rk = trajectory_rk.TrajectoryInfo(
+        top_info,
+        traj_path=sys_basedir / "bound_relaxed.conf",
+        read_from_file=True,
+        reverse_direction=True,
+    )
+    breakpoint()
     seq_oh = jnp.array(utils_rk.get_one_hot(top_info.seq), dtype=jnp.float64)
     params = deepcopy(model.EMPTY_BASE_PARAMS)
 
@@ -187,25 +195,27 @@ if __name__=="__main__":
     kT_rk = utils_rk.get_kt(t_kelvin_rk)
     em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin_rk)
 
-    fn =jax.grad(lambda rb: model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin_rk).energy_fn(
+    fn =lambda rb: model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin_rk).energy_fn(
         body=rb,
         seq=seq_oh,
         bonded_nbrs=top_info.bonded_nbrs,
-        unbonded_nbrs=top_info.unbonded_nbrs.T)
+        unbonded_nbrs=top_info.unbonded_nbrs.T
     )
 
-    print(fn(init_body))
+
+    # fn(init_body)
+
+    # grad_fn = jax.grad(fn)
+
+    # rk_energy_fn = lambda body: em.compute_subterms(body, seq=seq_oh,
+    #                                          bonded_nbrs=top_info.bonded_nbrs,
+    #                                          unbonded_nbrs=top_info.unbonded_nbrs.T)
+    # rk_energies = vmap(rk_energy_fn)(out_rb)
+
+    # pdb.set_trace()
 
 
-    rk_energy_fn = lambda body: em.compute_subterms(body, seq=seq_oh,
-                                             bonded_nbrs=top_info.bonded_nbrs,
-                                             unbonded_nbrs=top_info.unbonded_nbrs.T)
-    rk_energies = vmap(rk_energy_fn)(out_rb)
-
-    pdb.set_trace()
-
-
-    print("done")
+    # print("done")
 
 
     # jax.grad(lambda opts: loss(fn(opts), target))

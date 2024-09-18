@@ -1,3 +1,5 @@
+"""Common data structures for simulator I/O."""
+
 import chex
 import jax.numpy as jnp
 import jax_md

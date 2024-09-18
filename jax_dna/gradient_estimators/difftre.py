@@ -2,6 +2,7 @@
 
 DiffTRe: https://www.nature.com/articles/s41467-021-27241-4
 """
+
 from collections.abc import Callable
 
 import chex
@@ -118,6 +119,7 @@ _loss_w_grads = jax.value_and_grad(_compute_loss, has_aux=True)
 @chex.dataclass(frozen=True)
 class DiffTRe:
     """DiffTRe optimizer."""
+
     energy_fn_builder: Callable[[list[dict[str, jd_types.ARR_OR_SCALAR]]], Callable]
     beta: jd_types.Scalar
     min_n_eff: jd_types.Scalar
@@ -158,7 +160,6 @@ class DiffTRe:
                 _trajectory=trajectory,
             )
         return new_obj
-
 
     def __call__(
         self,

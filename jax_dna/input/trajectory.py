@@ -67,10 +67,12 @@ class Trajectory:
 
     @property
     def state_rigid_bodies(self) -> list[jax_md.rigid_body.RigidBody]:
+        """Convert the states to a list of rigid bodies."""
         return [state.to_rigid_body() for state in self.states]
 
     @property
     def state_rigid_body(self) -> jax_md.rigid_body.RigidBody:
+        """Convert the states to a single rigid body."""
         return jax_md.rigid_body.RigidBody(
             center=jnp.stack([state.com for state in self.states]),
             orientation=jax_md.rigid_body.Quaternion(jnp.stack([state.quaternions for state in self.states])),
@@ -243,7 +245,7 @@ def from_file(
         strand_lengths=strand_lengths,
         times=np.array(ts, dtype=np.float64),
         energies=np.array(es, dtype=np.float64),
-        states=list(map(lambda s: NucleotideState(array=s), states)),
+        states=[NucleotideState(s) for s in states],
     )
 
 

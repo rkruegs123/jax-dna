@@ -17,8 +17,8 @@ jax.config.update("jax_enable_x64", True)
 
 if __name__=="__main__":
 
-    topology_fname = "data/templates/simple-helix/sys.top"
-    traj_fname = "data/templates/simple-helix/init.conf"
+    topology_fname = "data/sys-defs/simple-helix/sys.top"
+    traj_fname = "data/sys-defs/simple-helix/bound_relaxed.conf"
     simulation_config = "jax_dna/input/dna1/default_simulation.toml"
     energy_config = "jax_dna/input/dna1/default_energy.toml"
 
@@ -94,8 +94,8 @@ if __name__=="__main__":
             seq=seq,
             mass=mass,
             bonded_neighbors=top.bonded_neighbors,
-            n_steps=experiment_config["n_steps"],
-            checkpoint_every=experiment_config["checkpoint_interval"],
+            n_steps=50_000,
+            checkpoint_every=0,
             dt=dt,
             kT=kT,
             gamma=gamma,
@@ -107,7 +107,7 @@ if __name__=="__main__":
     )
 
 
-    fn = jax.jit(lambda opts: sampler.run(opts, init_body, experiment_config["n_steps"], key))
+    fn = jax.jit(lambda opts: sampler.run(opts, init_body, 50_000, key))
     opt_params = [c.opt_params for c in configs]
 
     transformed_fns = [
@@ -122,7 +122,19 @@ if __name__=="__main__":
         energy_fns=transformed_fns,
         rigid_body_transform_fn=transform_fn,
     )
-    outs = fn(opt_params)
+    outs = fn(opt_params).rigid_body[::100]
+    print(type(outs))
+    import sys
+    import jax_dna.common.trajectory as old_traj
+    import jax_dna.common.topology as old_top
+    old_traj.TrajectoryInfo(
+        old_top.TopologyInfo("data/test-data/simple-helix/generated.top", reverse_direction=True),
+        box_size=100.0,
+        read_from_states=True,
+        states=outs,
+    ).write("seems_good_test_traj.dat", reverse=True)
+    sys.exit()
+
 
     twists = jd_obs.propeller.PropellerTwist(
         rigid_body_transform_fn=transform_fn,

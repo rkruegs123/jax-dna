@@ -80,12 +80,10 @@ class ComposedEnergyFunction:
         if not isinstance(self.energy_fns, list) or not all(
             isinstance(fn, BaseEnergyFunction) for fn in self.energy_fns
         ):
-            print([isinstance(fn, BaseEnergyFunction) for fn in self.energy_fns])
             raise TypeError(ERR_COMPOSED_ENERGY_FN_TYPE_ENERGY_FNS)
 
         if self.weights is not None and len(self.weights) != len(self.energy_fns):
             raise ValueError(ERR_COMPOSED_ENERGY_FN_LEN_MISMATCH)
-
 
     def compute_terms(
         self,
@@ -93,7 +91,8 @@ class ComposedEnergyFunction:
         seq: jnp.ndarray,
         bonded_neighbors: typ.Arr_Bonded_Neighbors,
         unbonded_neighbors: typ.Arr_Unbonded_Neighbors,
-    ) -> tuple[jnp.ndarray, ...]:
+    ) -> jnp.ndarray:
+        """Compute each of the energy terms in the energy function."""
         if self.rigid_body_transform_fn:
             body = self.rigid_body_transform_fn(body)
 

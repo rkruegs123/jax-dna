@@ -569,7 +569,6 @@ def hydrogen_bonding(
 ) -> typ.Scalar:
     """Hydrogen bonding energy."""
     r_hb = jnp.linalg.norm(dr_hb, axis=1)
-
     f1_dr_hb = jd_base_functions.f1(
         r_hb,
         r_low=dr_low_hb,

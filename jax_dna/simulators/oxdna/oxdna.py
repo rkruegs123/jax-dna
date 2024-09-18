@@ -8,7 +8,6 @@ import subprocess
 from pathlib import Path
 
 import chex
-import jax
 
 import jax_dna.input.oxdna_input as jd_oxdna
 import jax_dna.input.topology as jd_top
@@ -33,12 +32,13 @@ ERR_BIN_PATH_NOT_SET = "OXDNA_BIN_PATH environment variable not set"
 
 @chex.dataclass(frozen=True)
 class oxDNASimulator:  # noqa: N801 oxDNA is a special word
-    input_dir: str
     """A sampler base on running an oxDNA simulation."""
+
+    input_dir: str
 
     def run(
         self,
-        **kwargs,
+        **kwargs,  # noqa: ARG002 we want to satisfy the interface
     ) -> jd_traj.Trajectory:
         """Run an oxDNA simulation."""
         init_dir = Path(self.input_dir)

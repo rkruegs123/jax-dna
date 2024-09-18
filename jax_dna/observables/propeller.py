@@ -1,3 +1,5 @@
+"""Propeller twist observable."""
+
 import dataclasses as dc
 import functools
 
@@ -20,14 +22,12 @@ TARGETS = {
 }
 
 
-# TODO: this could probably be done using broadcasting rather than vmap
 @functools.partial(jax.vmap, in_axes=(0, None))
 def single_propeller_twist_rad(
     bp: jnp.ndarray,  # this is a array of shape (2,) containing the indices of the h-bonded nucleotides
     base_normals: jnp.ndarray,
 ) -> jnp.ndarray:
     """Computes the propeller twist of a base pair."""
-
     # get the normal vectors of the h-bonded bases
     bp1, bp2 = bp
     nv1 = base_normals[bp1]
@@ -53,7 +53,8 @@ class PropellerTwist(jd_obs.BaseObservable):
         hash=False
     )  # a 2-dimensional array containing the indices of the h-bonded nucleotides
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Validate the input."""
         if self.rigid_body_transform_fn is None:
             raise ValueError(ERR_RIGID_BODY_TRANSFORM_FN_REQUIRED)
 
@@ -67,11 +68,9 @@ class PropellerTwist(jd_obs.BaseObservable):
             jd_types.ARR_OR_SCALAR: the propeller twist in degrees for each state and for each
             base pair, so expect a size of (n_states, n_base_pairs)
         """
-        # TODO(ryanhausen): move this out to be jitted
         nucleotides = jax.vmap(self.rigid_body_transform_fn)(trajectory.rigid_body)
 
         base_normals = nucleotides.base_normals
-        # ptwist_rad = single_propeller_twist_rad(self.h_bonded_base_pairs, base_normals)
         ptwist = jax.vmap(
             lambda bn: 180.0 - (single_propeller_twist_rad(self.h_bonded_base_pairs, bn) * 180.0 / jnp.pi)
         )
@@ -79,6 +78,8 @@ class PropellerTwist(jd_obs.BaseObservable):
 
 
 if __name__ == "__main__":
+    import jax_md
+
     import jax_dna.input.topology as jd_top
 
     test_geometry = jd_toml.parse_toml("jax_dna/input/dna1/default_energy.toml")["geometry"]
@@ -102,12 +103,8 @@ if __name__ == "__main__":
     )
 
     simple_helix_bps = jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
-    print("input rigid body", sim_traj.rigid_body.center.shape, sim_traj.rigid_body.orientation.vec.shape)
     prop_twist = PropellerTwist(rigid_body_transform_fn=tranform_fn, h_bonded_base_pairs=simple_helix_bps)
     output_prop_twist = prop_twist(sim_traj)
-    print("output prop twist shape", output_prop_twist.shape)
-    import jax_md
-    # concate multiple states together to simulate a longer trajectory
 
     sim_traj = jd_sio.SimulatorTrajectory(
         seq_oh=jnp.array(top.seq_one_hot),
@@ -119,7 +116,3 @@ if __name__ == "__main__":
             ),
         ),
     )
-
-    print("input rigid body", sim_traj.rigid_body.center.shape, sim_traj.rigid_body.orientation.vec.shape)
-
-    print(prop_twist(sim_traj))

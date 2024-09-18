@@ -205,7 +205,7 @@ class HydrogenBonding(je_base.BaseEnergyFunction):
     ) -> typ.Scalar:
         op_i = unbonded_neighbors[0]
         op_j = unbonded_neighbors[1]
-        mask = jnp.array(op_i < body.center.shape[0], dtype=jnp.float32)
+        mask = jnp.array(op_i < body.center.shape[0], dtype=jnp.float64)
 
         hb_probs = je_utils.get_pair_probs(
             seq, op_i, op_j
