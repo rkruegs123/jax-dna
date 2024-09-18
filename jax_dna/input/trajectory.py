@@ -245,7 +245,7 @@ def from_file(
         strand_lengths=strand_lengths,
         times=np.array(ts, dtype=np.float64),
         energies=np.array(es, dtype=np.float64),
-        states=[NucleotideState(s) for s in states],
+        states=[NucleotideState(array=s) for s in states],
     )
 
 
