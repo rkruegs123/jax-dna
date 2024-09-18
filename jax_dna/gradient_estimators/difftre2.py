@@ -2,11 +2,7 @@
 
 DiffTRe: https://www.nature.com/articles/s41467-021-27241-4
 """
-
-import functools
-import time
 from collections.abc import Callable
-from typing import Any
 
 import chex
 import jax
@@ -15,8 +11,6 @@ import jax_md
 
 import jax_dna.energy.base as jd_energy_fn
 import jax_dna.energy.configuration as jd_energy_cnfg
-import jax_dna.input.topology as jd_topology
-import jax_dna.input.trajectory as jd_traj
 import jax_dna.simulators.io as jd_sio
 import jax_dna.utils.types as jd_types
 
@@ -31,12 +25,13 @@ def build_energy_function(
     bonded_neighbors: jnp.ndarray,
     unbonded_neighbors: jnp.ndarray,
 ) -> jd_energy_fn.ComposedEnergyFunction:
+    """Builds the energy function for the given parameters."""
     initialized_energy_fns = [
         e_fn(
             displacement_fn=displacement_fn,
             params=(e_c | op).init_params(),
         )
-        for op, e_fn, e_c in zip(opt_params, energy_fns, energy_configs)
+        for op, e_fn, e_c in zip(opt_params, energy_fns, energy_configs, strict=True)
     ]
 
     energy_fn = jd_energy_fn.ComposedEnergyFunction(
@@ -76,7 +71,6 @@ def _compute_states_energies(
     JIT sim_init and run.
 
     """
-    # run sim get states
     trajectory = sim_init_fn(
         energy_configs=energy_configs,
         energy_fns=energy_fns,
@@ -89,33 +83,12 @@ def _compute_states_energies(
     )
     trajectory = trajectory.slice(slice(n_eq_steps, None, sample_every))
 
-    #  calculate
     ref_states = trajectory.rigid_body
     ref_energies = energy_fn_builder(params)(ref_states)
-
-    # import sys
-    # import jax_dna.common.trajectory as old_traj
-    # import jax_dna.common.topology as old_top
-    # old_traj.TrajectoryInfo(
-    #     old_top.TopologyInfo("data/test-data/simple-helix/generated.top", reverse_direction=True),
-    #     box_size=100.0,
-    #     read_from_states=True,
-    #     states=ref_states,
-    # ).write("test_traj.dat", reverse=True)
-    # sys.exit()
-
 
     return trajectory, ref_states, ref_energies
 
 
-# @functools.partial(
-#     jax.jit,
-#     static_argnames=(
-#         "energy_fn_builder",
-#         "loss_fns",
-#         "losses_reduce_fn",
-#     )
-# )
 def _compute_loss(
     opt_params: list[dict[str, float]],
     energy_fn_builder: Callable[[dict[str, float]], Callable],
@@ -132,13 +105,9 @@ def _compute_loss(
     weights = boltz / jnp.sum(boltz)
     n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
     losses = jax.tree_util.tree_map(
-        lambda l: l(trajectory=trajectory, weights=weights),
+        lambda loss_fn: loss_fn(trajectory=trajectory, weights=weights),
         loss_fns,
     )
-    # print("Computed losses", losses)
-    # TODO(ryanhausen): this is simple mean, but could be more sophisticated
-    # so we should consider how to let the user inject this logic
-    # source for atleast_2d on last dim: https://github.com/numpy/numpy/issues/12336#issuecomment-1982970589
     losses = jnp.atleast_2d(jnp.array(losses).T).T
     return losses_reduce_fn(losses[:, 0]), (n_eff, losses)
 
@@ -148,6 +117,7 @@ _loss_w_grads = jax.value_and_grad(_compute_loss, has_aux=True)
 
 @chex.dataclass(frozen=True)
 class DiffTRe:
+    """DiffTRe optimizer."""
     energy_fn_builder: Callable[[list[dict[str, jd_types.ARR_OR_SCALAR]]], Callable]
     beta: jd_types.Scalar
     min_n_eff: jd_types.Scalar
@@ -165,6 +135,8 @@ class DiffTRe:
     _ref_energies: jnp.ndarray | None = None
 
     def initialize(self, opt_params: list[dict[str, float]], key: jax.random.PRNGKey) -> "DiffTRe":
+        """Initialize the reference states and energies."""
+        new_obj = self
         if self._ref_states is None:
             _, split = jax.random.split(key)
             trajectory, ref_states, ref_energies = _compute_states_energies(
@@ -180,19 +152,20 @@ class DiffTRe:
                 self.energy_fn_builder,
             )
 
-            return self.replace(
+            new_obj = self.replace(
                 _ref_states=ref_states,
                 _ref_energies=ref_energies,
                 _trajectory=trajectory,
             )
-        else:
-            return self
+        return new_obj
+
 
     def __call__(
         self,
         opt_params: list[dict[str, float]],
         key: jax.random.PRNGKey,
     ) -> tuple["DiffTRe", list[dict[str, float]], float, tuple[float, ...]]:
+        """Compute the loss and gradients for the given parameters."""
         (loss, (n_eff, losses)), grads = _loss_w_grads(
             opt_params,
             self.energy_fn_builder,
@@ -209,9 +182,6 @@ class DiffTRe:
         # if n_eff is greater than the threshold we don't need to recompute the
         # reference states and energies.
         if regenerate_trajectory:
-            print("Regenerating trajectory")
-            print(f"n_eff: {n_eff}")
-            print(f"min_n_eff: {self.min_n_eff}")
             key, split = jax.random.split(key)
             trajectory, ref_states, ref_energies = _compute_states_energies(
                 opt_params,
