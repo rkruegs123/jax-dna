@@ -4,7 +4,7 @@ import jax_dna.simulators.jax_md.utils as jdna_utils
 import numpy as np
 
 
-def test_NoNeighborList_init(): # noqa: N802 - class name
+def test_NoNeighborList_init():  # noqa: N802 - class name
     """Test the NoNeighborList __init__ method."""
     nn = jdna_utils.NoNeighborList(
         unbonded_nbrs=np.array(
@@ -14,7 +14,7 @@ def test_NoNeighborList_init(): # noqa: N802 - class name
             ]
         )
     )
-    assert np.testing.assert_equal(
+    np.testing.assert_equal(
         nn.idx,
         np.array(
             [
@@ -28,5 +28,5 @@ def test_NoNeighborList_init(): # noqa: N802 - class name
     assert nn.update(None) == nn
 
 
-def test_StaticSimulatorParams_init(): # noqa: N802 - class name
+def test_StaticSimulatorParams_init():  # noqa: N802 - class name
     pass
