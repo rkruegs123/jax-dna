@@ -167,6 +167,14 @@ def run(args):
 
     update_weights = not args['no_update_weights']
 
+    opt_width = args['opt_width']
+    width_coeff = int(opt_width)
+    opt_tm = not args['no_opt_tm']
+    tm_coeff = int(opt_tm)
+    assert(opt_width or opt_tm)
+    target_width = args['target_width']
+
+
     # Load the system
     hairpin_basedir = Path("data/templates/hairpins")
     sys_basedir = hairpin_basedir / f"{stem_bp}bp_stem_{loop_nt}nt_loop"
@@ -830,8 +838,12 @@ def run(args):
 
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
         aux = (curr_tm, curr_width, n_eff)
-        rmse = jnp.sqrt((target_tm - curr_tm)**2)
-        return rmse, aux
+
+        rmse_tm = jnp.sqrt((target_tm - curr_tm)**2)
+        rmse_width = jnp.sqrt((target_width - curr_width)**2)
+        loss = tm_coeff*rmse_tm + width_coeff*rmse_width
+
+        return loss, aux
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -1040,6 +1052,11 @@ def get_parser():
                         help="Frequency of plotting data from gradient descent epochs")
 
     parser.add_argument('--no-update-weights', action='store_true')
+
+    parser.add_argument('--opt-width', action='store_true')
+    parser.add_argument('--target-width', type=float, default=8.0,
+                        help="Target width of melting temperature curve in Kelvin")
+    parser.add_argument('--no-opt-tm', action='store_true')
 
     return parser
 
