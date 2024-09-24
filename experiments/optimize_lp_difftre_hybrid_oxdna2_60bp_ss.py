@@ -173,7 +173,7 @@ def run(args):
 
         hb_mult = params["hb"]
         stack_mult = params["stack"]
-        hb_mult, stack_mult = read_seq_specific.constrain(hb_mult, stack_mult)
+        hb_mult, stack_mult = read_seq_specific.constrain(hb_mult, stack_mult, coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2)
 
         # Note: no recompilation!
         """
@@ -213,7 +213,7 @@ def run(args):
             init_conf_info.write(repeat_dir / "init.conf", reverse=False, write_topology=False)
 
             seq_dep_path = repeat_dir / "seq_dep_oxdna2.txt"
-            read_seq_specific.write_ss_oxdna(seq_dep_path, hb_mult, stack_mult)
+            read_seq_specific.write_ss_oxdna(seq_dep_path, hb_mult, stack_mult, coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2)
 
             rewrite_input_file(
                 input_template_path, repeat_dir,
@@ -226,7 +226,7 @@ def run(args):
                 log_file=str(repeat_dir / "sim.log"),
                 interaction_type="DNA2_nomesh",
                 salt_concentration=salt_concentration,
-                seq_dep_path=seq_dep_path
+                seq_dep_file=seq_dep_path
             )
 
             if device == "cpu":
@@ -450,7 +450,7 @@ def run(args):
     def loss_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs, unweighted_rises):
         hb_mult = params["hb"]
         stack_mult = params["stack"]
-        hb_mult, stack_mult = read_seq_specific.constrain(hb_mult, stack_mult)
+        hb_mult, stack_mult = read_seq_specific.constrain(hb_mult, stack_mult, coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2)
 
         em = model2.EnergyModel(displacement_fn, empty_model_params, t_kelvin=t_kelvin, salt_conc=salt_concentration,
                                 ss_hb_weights=hb_mult, ss_stack_weights=stack_mult)
