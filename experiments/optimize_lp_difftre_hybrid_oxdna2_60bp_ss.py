@@ -303,7 +303,7 @@ def run(args):
 
         ## Generate an energy function
         em = model2.EnergyModel(displacement_fn, empty_model_params, t_kelvin=t_kelvin, salt_conc=salt_concentration,
-                                ss_hb_weights=hb_mult, ss_stack_weights=hb_mult, stack_mult)
+                                ss_hb_weights=hb_mult, ss_stack_weights=stack_mult)
         energy_fn = lambda body: em.energy_fn(
             body,
             seq=seq_oh,
@@ -456,7 +456,7 @@ def run(args):
         hb_mult, stack_mult = read_seq_specific.constrain(hb_mult, stack_mult)
 
         em = model2.EnergyModel(displacement_fn, empty_model_params, t_kelvin=t_kelvin, salt_conc=salt_concentration,
-                                ss_hb_weights=hb_mult, ss_stack_weights=hb_mult, stack_mult)
+                                ss_hb_weights=hb_mult, ss_stack_weights=stack_mult)
 
         # Compute the weights
         energy_fn = lambda body: em.energy_fn(body,
