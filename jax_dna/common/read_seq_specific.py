@@ -2,8 +2,34 @@ import pdb
 from pathlib import Path
 import numpy as onp
 
+import jax.numpy as jnp
+
 from jax_dna.common.utils import DNA_ALPHA, get_kt, DEFAULT_TEMP
 
+
+STCK_UNCOUPLED_PAIRS = ["GC", "CG", "AT", "TA"]
+STCK_COUPLED_PAIRS = [("GG", "CC"), ("GA", "TC"), ("AG", "CT"),
+                      ("TG", "CA"), ("GT", "AC"), ("AA", "TT")]
+stck_coupled_pairs_pair1_idxs = jnp.array([(DNA_ALPHA.index(nt1), DNA_ALPHA.index(nt2)) for (nt1, nt2), _ in STCK_COUPLED_PAIRS])
+stck_coupled_pairs_pair2_idxs = jnp.array([(DNA_ALPHA.index(nt1), DNA_ALPHA.index(nt2)) for _, (nt1, nt2) in STCK_COUPLED_PAIRS])
+
+def constrain(hb_mult, stack_mult):
+
+    # Constrain hydrogen bonding
+    hb_ta_mult = hb_mult[DNA_ALPHA.index("T"), DNA_ALPHA.index("A")]
+    hb_gc_mult = hb_mult[DNA_ALPHA.index("G"), DNA_ALPHA.index("C")]
+
+    hb_mult = jnp.zeros((4, 4))
+    hb_mult = hb_mult.at[DNA_ALPHA.index("A"), DNA_ALPHA.index("T")].set(hb_ta_mult)
+    hb_mult = hb_mult.at[DNA_ALPHA.index("T"), DNA_ALPHA.index("A")].set(hb_ta_mult)
+    hb_mult = hb_mult.at[DNA_ALPHA.index("C"), DNA_ALPHA.index("G")].set(hb_gc_mult)
+    hb_mult = hb_mult.at[DNA_ALPHA.index("G"), DNA_ALPHA.index("C")].set(hb_gc_mult)
+
+    # Constrain stacking
+    pair1_vals = stack_mult[stck_coupled_pairs_pair1_idxs[:, 0], stck_coupled_pairs_pair1_idxs[:, 1]]
+    stack_mult = stack_mult.at[stck_coupled_pairs_pair2_idxs[:, 0], stck_coupled_pairs_pair2_idxs[:, 1]].set(pair1_vals)
+
+    return hb_mult, stack_mult
 
 def read_ss_oxdna(
         ss_path,
@@ -81,8 +107,7 @@ def read_ss_oxdna(
     kt = get_kt(t_kelvin) # Note: could be any value for kT within reason
     sa_f1_eps = default_f1_eps_base_stack + kt * default_f1_eps_kt_coeff_stack
 
-    uncoupled_vals = ["GC", "CG", "AT", "TA"]
-    for nt1, nt2 in uncoupled_vals:
+    for nt1, nt2 in STCK_UNCOUPLED_PAIRS:
         key_name = f"STCK_{nt1}_{nt2}"
         val = vals[key_name]
         calc_f1_eps = val * (1.0 - stck_fact_eps + (kt * 9.0 * stck_fact_eps))
@@ -90,9 +115,7 @@ def read_ss_oxdna(
 
         stack_mult[DNA_ALPHA.index(nt1), DNA_ALPHA.index(nt2)] = mult
 
-    coupled_vals = [("GG", "CC"), ("GA", "TC"), ("AG", "CT"),
-                    ("TG", "CA"), ("GT", "AC"), ("AA", "TT")]
-    for pair1, pair2 in coupled_vals:
+    for pair1, pair2 in STCK_COUPLED_PAIRS:
         nt11, nt12 = pair1
         nt21, nt22 = pair2
 
@@ -116,8 +139,68 @@ def read_ss_oxdna(
     return hb_mult, stack_mult
 
 
+def write_ss_oxdna(out_fpath, hb_mult, stack_mult,
+                   f1_eps_hb=1.077,
+                   f1_eps_base_stack=1.3448,
+                   f1_eps_kt_coeff_stack=2.6568,
+                   enforce_symmetry=True, t_kelvin=DEFAULT_TEMP,
+                   round_places=6):
+
+    # Hydrogen bonding
+    hb_lines = list()
+
+    if enforce_symmetry:
+        assert(hb_mult[DNA_ALPHA.index("A")][DNA_ALPHA.index("T")] == hb_mult[DNA_ALPHA.index("T")][DNA_ALPHA.index("A")])
+        assert(hb_mult[DNA_ALPHA.index("G")][DNA_ALPHA.index("C")] == hb_mult[DNA_ALPHA.index("C")][DNA_ALPHA.index("G")])
+
+    for nt1, nt2 in ["AT", "TA", "GC", "CG"]:
+        mult = hb_mult[DNA_ALPHA.index(nt1)][DNA_ALPHA.index(nt2)]
+        val = mult * f1_eps_hb
+        hb_lines.append(f"HYDR_{nt1}_{nt2} = {onp.round(val, round_places)}")
+
+    # Stacking
+    stack_lines = list()
+    kt = get_kt(t_kelvin) # Note: could be any value for kT within reason
+    stck_fact_eps = f1_eps_kt_coeff_stack / (9*f1_eps_base_stack + f1_eps_kt_coeff_stack)
+
+    sa_f1_eps = f1_eps_base_stack + kt * f1_eps_kt_coeff_stack
+
+
+    for nt1, nt2 in STCK_UNCOUPLED_PAIRS:
+        ss_f1_eps = stack_mult[DNA_ALPHA.index(nt1)][DNA_ALPHA.index(nt2)] * sa_f1_eps
+        val = ss_f1_eps / (1.0 - stck_fact_eps + (kt * 9.0 * stck_fact_eps))
+        stack_lines.append(f"STCK_{nt1}_{nt2} = {onp.round(val, round_places)}")
+
+    for pair1, pair2 in STCK_COUPLED_PAIRS:
+        nt11, nt12 = pair1
+        nt21, nt22 = pair2
+
+        ss_f1_eps_p1 = stack_mult[DNA_ALPHA.index(nt11)][DNA_ALPHA.index(nt12)] * sa_f1_eps
+        val_p1 = ss_f1_eps_p1 / (1.0 - stck_fact_eps + (kt * 9.0 * stck_fact_eps))
+
+        ss_f1_eps_p2 = stack_mult[DNA_ALPHA.index(nt21)][DNA_ALPHA.index(nt22)] * sa_f1_eps
+        val_p2 = ss_f1_eps_p2 / (1.0 - stck_fact_eps + (kt * 9.0 * stck_fact_eps))
+
+        if enforce_symmetry:
+            assert(val_p1 == val_p2)
+
+        stack_lines.append(f"STCK_{nt11}_{nt12} = {onp.round(val_p1, round_places)}")
+        stack_lines.append(f"STCK_{nt21}_{nt22} = {onp.round(val_p2, round_places)}")
+
+
+    all_lines = [f"STCK_FACT_EPS = {onp.round(stck_fact_eps, round_places)}f"] + stack_lines + hb_lines
+
+    with open(out_fpath, 'w') as f:
+        f.write('\n'.join(all_lines) + "\n")
+
+
 if __name__ == "__main__":
     fpath = "data/seq-specific/seq_oxdna1.txt"
     hb_mult, stack_mult = read_ss_oxdna(fpath)
 
-    pdb.set_trace()
+    # write_ss_oxdna("test.txt", hb_mult, stack_mult)
+    write_ss_oxdna("test.txt", hb_mult, stack_mult, t_kelvin=350)
+
+    hb_mult = onp.random.rand(4, 4)
+    stack_mult = onp.random.rand(4, 4)
+    hb_mult, stack_mult = constrain(jnp.array(hb_mult), jnp.array(stack_mult))
