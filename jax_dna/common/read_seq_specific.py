@@ -7,9 +7,10 @@ import jax.numpy as jnp
 from jax_dna.common.utils import DNA_ALPHA, get_kt, DEFAULT_TEMP
 
 
-STCK_UNCOUPLED_PAIRS = ["GC", "CG", "AT", "TA"]
+STCK_UNCOUPLED_PAIRS_OXDNA1 = ["GC", "CG", "AT", "TA"]
 STCK_COUPLED_PAIRS_OXDNA1 = [("GG", "CC"), ("GA", "TC"), ("AG", "CT"),
                              ("TG", "CA"), ("GT", "AC"), ("AA", "TT")]
+STCK_UNCOUPLED_PAIRS_OXDNA2 = ["GC", "CG", "AT", "TA", "AA", "TT"]
 STCK_COUPLED_PAIRS_OXDNA2 = [("GG", "CC"), ("GA", "TC"), ("AG", "CT"),
                              ("TG", "CA"), ("GT", "AC")]
 
@@ -41,7 +42,8 @@ def read_ss_oxdna(
         default_f1_eps_kt_coeff_stack=2.6568,
         enforce_symmetry=True,
         t_kelvin=DEFAULT_TEMP,
-        coupled_pairs=STCK_COUPLED_PAIRS_OXDNA1
+        coupled_pairs=STCK_COUPLED_PAIRS_OXDNA1,
+        uncoupled_pairs=STCK_UNCOUPLED_PAIRS_OXDNA1,
 ):
 
     ss_path = Path(ss_path)
@@ -111,7 +113,7 @@ def read_ss_oxdna(
     kt = get_kt(t_kelvin) # Note: could be any value for kT within reason
     sa_f1_eps = default_f1_eps_base_stack + kt * default_f1_eps_kt_coeff_stack
 
-    for nt1, nt2 in STCK_UNCOUPLED_PAIRS:
+    for nt1, nt2 in uncoupled_pairs:
         key_name = f"STCK_{nt1}_{nt2}"
         val = vals[key_name]
         calc_f1_eps = val * (1.0 - stck_fact_eps + (kt * 9.0 * stck_fact_eps))
@@ -149,7 +151,8 @@ def write_ss_oxdna(out_fpath, hb_mult, stack_mult,
                    f1_eps_kt_coeff_stack=2.6568,
                    enforce_symmetry=True, t_kelvin=DEFAULT_TEMP,
                    round_places=6,
-                   coupled_pairs=STCK_COUPLED_PAIRS_OXDNA1):
+                   coupled_pairs=STCK_COUPLED_PAIRS_OXDNA1,
+                   uncoupled_pairs=STCK_UNCOUPLED_PAIRS_OXDNA1):
 
     # Hydrogen bonding
     hb_lines = list()
@@ -171,7 +174,7 @@ def write_ss_oxdna(out_fpath, hb_mult, stack_mult,
     sa_f1_eps = f1_eps_base_stack + kt * f1_eps_kt_coeff_stack
 
 
-    for nt1, nt2 in STCK_UNCOUPLED_PAIRS:
+    for nt1, nt2 in uncoupled_pairs:
         ss_f1_eps = stack_mult[DNA_ALPHA.index(nt1)][DNA_ALPHA.index(nt2)] * sa_f1_eps
         val = ss_f1_eps / (1.0 - stck_fact_eps + (kt * 9.0 * stck_fact_eps))
         stack_lines.append(f"STCK_{nt1}_{nt2} = {onp.round(val, round_places)}")

@@ -213,7 +213,7 @@ def run(args):
             init_conf_info.write(repeat_dir / "init.conf", reverse=False, write_topology=False)
 
             seq_dep_path = repeat_dir / "seq_dep_oxdna2.txt"
-            read_seq_specific.write_ss_oxdna(seq_dep_path, hb_mult, stack_mult, coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2)
+            read_seq_specific.write_ss_oxdna(seq_dep_path, hb_mult, stack_mult, coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2, uncoupled_pairs=read_seq_specific.STCK_UNCOUPLED_PAIRS_OXDNA2)
 
             rewrite_input_file(
                 input_template_path, repeat_dir,
@@ -502,7 +502,8 @@ def run(args):
     # Initialize parameters
     init_ss_params_fpath = "data/seq-specific/seq_oxdna2.txt"
     hb_mult, stack_mult = read_seq_specific.read_ss_oxdna(init_ss_params_fpath,
-                                                          coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2)
+                                                          coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2,
+                                                          uncoupled_pairs=read_seq_specific.STCK_UNCOUPLED_PAIRS_OXDNA2)
     params = {
         "hb": jnp.array(hb_mult),
         "stack": jnp.array(stack_mult)
