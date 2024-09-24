@@ -226,7 +226,7 @@ def run(args):
                 log_file=str(repeat_dir / "sim.log"),
                 interaction_type="DNA2_nomesh",
                 salt_concentration=salt_concentration,
-                seq_dep_file=seq_dep_path
+                seq_dep_file=str(seq_dep_path)
             )
 
             if device == "cpu":
