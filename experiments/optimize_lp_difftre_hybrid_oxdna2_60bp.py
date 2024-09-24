@@ -1,6 +1,3 @@
-from jax.config import config
-config.update('jax_platform_name', 'cpu')
-
 import pdb
 from pathlib import Path
 from copy import deepcopy
