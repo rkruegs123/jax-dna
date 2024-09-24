@@ -288,7 +288,7 @@ def run(args):
     seed_check_sample_freq = 10
     seed_check_steps = 100
 
-    def get_ref_states(params, i, seed, prev_basedir):
+    def get_ref_states(params, i, seed, prev_basedir, last_ref_iter=None):
         random.seed(seed)
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
@@ -296,7 +296,7 @@ def run(args):
         if i == 0 or not update_weights:
             iter_weights_path = wfile_path
         else:
-            iter_weights_path = weights_dir / f"weights_i{i-1}.txt"
+            iter_weights_path = weights_dir / f"weights_i{last_ref_iter}.txt"
 
 
         weights_df = pd.read_fwf(wfile_path, names=["op1", "op2", "weight"])
@@ -877,8 +877,10 @@ def run(args):
         f.write(f"Generating initial reference states and energies...\n")
     start = time.time()
     prev_ref_basedir = None
-    ref_states, ref_energies, ref_ops, ref_op_weights, ref_op_idxs, ref_iter_dir = get_ref_states(params, i=0, seed=key, prev_basedir=prev_ref_basedir)
+    last_ref_iter = None
+    ref_states, ref_energies, ref_ops, ref_op_weights, ref_op_idxs, ref_iter_dir = get_ref_states(params, i=0, seed=key, prev_basedir=prev_ref_basedir, last_ref_iter=last_ref_iter)
     prev_ref_basedir = deepcopy(ref_iter_dir)
+    last_ref_iter = 0
     end = time.time()
     with open(resample_log_path, "a") as f:
         f.write(f"Finished generating initial reference states. Took {end - start} seconds.\n\n")
@@ -903,8 +905,9 @@ def run(args):
                 f.write(f"- n_eff was {n_eff}. Resampling...\n")
 
             start = time.time()
-            ref_states, ref_energies, ref_ops, ref_op_weights, ref_op_idxs, ref_iter_dir = get_ref_states(params, i=i, seed=key+1+i, prev_basedir=prev_ref_basedir)
+            ref_states, ref_energies, ref_ops, ref_op_weights, ref_op_idxs, ref_iter_dir = get_ref_states(params, i=i, seed=key+1+i, prev_basedir=prev_ref_basedir, last_ref_iter=last_ref_iter)
             end = time.time()
+            last_ref_iter = i
             prev_ref_basedir = deepcopy(ref_iter_dir)
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
