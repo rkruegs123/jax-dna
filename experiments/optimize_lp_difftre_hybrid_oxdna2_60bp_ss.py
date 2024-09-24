@@ -501,7 +501,8 @@ def run(args):
 
     # Initialize parameters
     init_ss_params_fpath = "data/seq-specific/seq_oxdna2.txt"
-    hb_mult, stack_mult = read_seq_specific.read_ss_oxdna(init_ss_params_fpath)
+    hb_mult, stack_mult = read_seq_specific.read_ss_oxdna(init_ss_params_fpath,
+                                                          coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2)
     params = {
         "hb": jnp.array(hb_mult),
         "stack": jnp.array(stack_mult)

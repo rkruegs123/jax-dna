@@ -8,12 +8,15 @@ from jax_dna.common.utils import DNA_ALPHA, get_kt, DEFAULT_TEMP
 
 
 STCK_UNCOUPLED_PAIRS = ["GC", "CG", "AT", "TA"]
-STCK_COUPLED_PAIRS = [("GG", "CC"), ("GA", "TC"), ("AG", "CT"),
-                      ("TG", "CA"), ("GT", "AC"), ("AA", "TT")]
-stck_coupled_pairs_pair1_idxs = jnp.array([(DNA_ALPHA.index(nt1), DNA_ALPHA.index(nt2)) for (nt1, nt2), _ in STCK_COUPLED_PAIRS])
-stck_coupled_pairs_pair2_idxs = jnp.array([(DNA_ALPHA.index(nt1), DNA_ALPHA.index(nt2)) for _, (nt1, nt2) in STCK_COUPLED_PAIRS])
+STCK_COUPLED_PAIRS_OXDNA1 = [("GG", "CC"), ("GA", "TC"), ("AG", "CT"),
+                             ("TG", "CA"), ("GT", "AC"), ("AA", "TT")]
+STCK_COUPLED_PAIRS_OXDNA2 = [("GG", "CC"), ("GA", "TC"), ("AG", "CT"),
+                             ("TG", "CA"), ("GT", "AC")]
 
-def constrain(hb_mult, stack_mult):
+def constrain(hb_mult, stack_mult, coupled_pairs=STCK_COUPLED_PAIRS_OXDNA1):
+
+    stck_coupled_pairs_pair1_idxs = jnp.array([(DNA_ALPHA.index(nt1), DNA_ALPHA.index(nt2)) for (nt1, nt2), _ in coupled_pairs])
+    stck_coupled_pairs_pair2_idxs = jnp.array([(DNA_ALPHA.index(nt1), DNA_ALPHA.index(nt2)) for _, (nt1, nt2) in coupled_pairs])
 
     # Constrain hydrogen bonding
     hb_ta_mult = hb_mult[DNA_ALPHA.index("T"), DNA_ALPHA.index("A")]
@@ -37,7 +40,8 @@ def read_ss_oxdna(
         default_f1_eps_base_stack=1.3448,
         default_f1_eps_kt_coeff_stack=2.6568,
         enforce_symmetry=True,
-        t_kelvin=DEFAULT_TEMP
+        t_kelvin=DEFAULT_TEMP,
+        coupled_pairs=STCK_COUPLED_PAIRS_OXDNA1
 ):
 
     ss_path = Path(ss_path)
@@ -115,7 +119,7 @@ def read_ss_oxdna(
 
         stack_mult[DNA_ALPHA.index(nt1), DNA_ALPHA.index(nt2)] = mult
 
-    for pair1, pair2 in STCK_COUPLED_PAIRS:
+    for pair1, pair2 in coupled_pairs:
         nt11, nt12 = pair1
         nt21, nt22 = pair2
 
@@ -144,7 +148,8 @@ def write_ss_oxdna(out_fpath, hb_mult, stack_mult,
                    f1_eps_base_stack=1.3448,
                    f1_eps_kt_coeff_stack=2.6568,
                    enforce_symmetry=True, t_kelvin=DEFAULT_TEMP,
-                   round_places=6):
+                   round_places=6,
+                   coupled_pairs=STCK_COUPLED_PAIRS_OXDNA1):
 
     # Hydrogen bonding
     hb_lines = list()
@@ -171,7 +176,7 @@ def write_ss_oxdna(out_fpath, hb_mult, stack_mult,
         val = ss_f1_eps / (1.0 - stck_fact_eps + (kt * 9.0 * stck_fact_eps))
         stack_lines.append(f"STCK_{nt1}_{nt2} = {onp.round(val, round_places)}")
 
-    for pair1, pair2 in STCK_COUPLED_PAIRS:
+    for pair1, pair2 in coupled_pairs:
         nt11, nt12 = pair1
         nt21, nt22 = pair2
 
@@ -196,6 +201,7 @@ def write_ss_oxdna(out_fpath, hb_mult, stack_mult,
 
 if __name__ == "__main__":
     fpath = "data/seq-specific/seq_oxdna1.txt"
+    # fpath = "data/seq-specific/seq_oxdna2.txt"
     hb_mult, stack_mult = read_ss_oxdna(fpath)
 
     # write_ss_oxdna("test.txt", hb_mult, stack_mult)
@@ -204,3 +210,8 @@ if __name__ == "__main__":
     hb_mult = onp.random.rand(4, 4)
     stack_mult = onp.random.rand(4, 4)
     hb_mult, stack_mult = constrain(jnp.array(hb_mult), jnp.array(stack_mult))
+
+
+
+    fpath = "data/seq-specific/seq_oxdna2.txt"
+    hb_mult, stack_mult = read_ss_oxdna(fpath, coupled_pairs=STCK_COUPLED_PAIRS_OXDNA2)
