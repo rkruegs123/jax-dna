@@ -510,10 +510,10 @@ def run(args):
     # Initialize parameters
     init_ss_params_fpath = "data/seq-specific/seq_oxdna2.txt"
     hb_mult, stack_mult = read_seq_specific.read_ss_oxdna(
+        init_ss_params_fpath,
         model2.default_base_params_seq_dep['hydrogen_bonding']['eps_hb'],
         model2.default_base_params_seq_dep['stacking']['eps_stack_base'],
         model2.default_base_params_seq_dep['stacking']['eps_stack_kt_coeff'],
-        init_ss_params_fpath,
         coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2,
         uncoupled_pairs=read_seq_specific.STCK_UNCOUPLED_PAIRS_OXDNA2)
     params = {
