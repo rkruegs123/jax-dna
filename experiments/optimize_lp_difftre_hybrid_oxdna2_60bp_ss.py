@@ -173,7 +173,9 @@ def run(args):
 
         hb_mult = params["hb"]
         stack_mult = params["stack"]
-        hb_mult, stack_mult = read_seq_specific.constrain(hb_mult, stack_mult, coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2)
+        hb_mult, stack_mult = read_seq_specific.constrain(
+            hb_mult, stack_mult,
+            coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2)
 
         # Note: no recompilation!
         """
@@ -213,7 +215,13 @@ def run(args):
             init_conf_info.write(repeat_dir / "init.conf", reverse=False, write_topology=False)
 
             seq_dep_path = repeat_dir / "seq_dep_oxdna2.txt"
-            read_seq_specific.write_ss_oxdna(seq_dep_path, hb_mult, stack_mult, coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2, uncoupled_pairs=read_seq_specific.STCK_UNCOUPLED_PAIRS_OXDNA2)
+            read_seq_specific.write_ss_oxdna(
+                seq_dep_path, hb_mult, stack_mult,
+                model2.default_base_params_seq_dep['hydrogen_bonding']['eps_hb'],
+                model2.default_base_params_seq_dep['stacking']['eps_stack_base'],
+                model2.default_base_params_seq_dep['stacking']['eps_stack_kt_coeff'],
+                coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2,
+                uncoupled_pairs=read_seq_specific.STCK_UNCOUPLED_PAIRS_OXDNA2)
 
             rewrite_input_file(
                 input_template_path, repeat_dir,
@@ -300,7 +308,7 @@ def run(args):
 
         ## Generate an energy function
         em = model2.EnergyModel(displacement_fn, empty_model_params, t_kelvin=t_kelvin, salt_conc=salt_concentration,
-                                ss_hb_weights=hb_mult, ss_stack_weights=stack_mult)
+                                ss_hb_weights=hb_mult, ss_stack_weights=stack_mult, seq_avg=False)
         energy_fn = lambda body: em.energy_fn(
             body,
             seq=seq_oh,
@@ -453,7 +461,7 @@ def run(args):
         hb_mult, stack_mult = read_seq_specific.constrain(hb_mult, stack_mult, coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2)
 
         em = model2.EnergyModel(displacement_fn, empty_model_params, t_kelvin=t_kelvin, salt_conc=salt_concentration,
-                                ss_hb_weights=hb_mult, ss_stack_weights=stack_mult)
+                                ss_hb_weights=hb_mult, ss_stack_weights=stack_mult, seq_avg=False)
 
         # Compute the weights
         energy_fn = lambda body: em.energy_fn(body,
@@ -501,9 +509,13 @@ def run(args):
 
     # Initialize parameters
     init_ss_params_fpath = "data/seq-specific/seq_oxdna2.txt"
-    hb_mult, stack_mult = read_seq_specific.read_ss_oxdna(init_ss_params_fpath,
-                                                          coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2,
-                                                          uncoupled_pairs=read_seq_specific.STCK_UNCOUPLED_PAIRS_OXDNA2)
+    hb_mult, stack_mult = read_seq_specific.read_ss_oxdna(
+        model2.default_base_params_seq_dep['hydrogen_bonding']['eps_hb'],
+        model2.default_base_params_seq_dep['stacking']['eps_stack_base'],
+        model2.default_base_params_seq_dep['stacking']['eps_stack_kt_coeff'],
+        init_ss_params_fpath,
+        coupled_pairs=read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2,
+        uncoupled_pairs=read_seq_specific.STCK_UNCOUPLED_PAIRS_OXDNA2)
     params = {
         "hb": jnp.array(hb_mult),
         "stack": jnp.array(stack_mult)
