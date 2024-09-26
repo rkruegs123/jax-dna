@@ -1,0 +1,802 @@
+Generating initial reference states and energies...
+- Recompiling took 54.11209726333618 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 35,
+         '10.31.144.231': 29,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 943.6584196090698
+Max. Lp time: 1231.1608214378357
+Min. force ext. time: 10203.451039791107
+Max. force ext. time: 13857.200172662735
+- Simulation took 13893.751578330994 seconds
+- Loading Lp took 58.09364342689514 seconds
+- Calculating Lp energies took 49.44512939453125 seconds
+- Remaining Lp analysis took 90.95223999023438 seconds
+- Remaining force ext. analysis took 882.317093372345 seconds
+Finished generating initial reference states. Took 15092.8775806427 seconds.
+
+Iteration 2
+- n_eff was 2.856370928921486e+32. Resampling...
+- Recompiling took 54.70561337471008 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 36,
+         '10.31.144.231': 28,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 957.063779592514
+Max. Lp time: 1272.920531988144
+Min. force ext. time: 10342.9404566288
+Max. force ext. time: 15379.41755771637
+- Simulation took 15380.872272968292 seconds
+- Loading Lp took 51.6901969909668 seconds
+- Calculating Lp energies took 48.43685603141785 seconds
+- Remaining Lp analysis took 6.63871955871582 seconds
+- Remaining force ext. analysis took 901.1389195919037 seconds
+- time to resample: 16532.509648561478 seconds
+
+Iteration 5
+- n_eff was 6.071876913442698e+31. Resampling...
+- Recompiling took 53.35907602310181 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 36,
+         '10.31.144.231': 28,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 947.6744332313538
+Max. Lp time: 1229.4789748191833
+Min. force ext. time: 10318.891253948212
+Max. force ext. time: 14025.781044244766
+- Simulation took 14027.241537094116 seconds
+- Loading Lp took 72.0850248336792 seconds
+- Calculating Lp energies took 51.26561641693115 seconds
+- Remaining Lp analysis took 6.049441337585449 seconds
+- Remaining force ext. analysis took 850.9525377750397 seconds
+- time to resample: 15154.903207063675 seconds
+
+Iteration 8
+- n_eff was 8.701017122702019e+31. Resampling...
+- Recompiling took 52.650789976119995 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.144.231': 32,
+         '10.31.147.31': 32,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 947.8603813648224
+Max. Lp time: 1229.5293807983398
+Min. force ext. time: 10275.401436805725
+Max. force ext. time: 14079.711468458176
+- Simulation took 14081.191198348999 seconds
+- Loading Lp took 59.12101173400879 seconds
+- Calculating Lp energies took 53.513267278671265 seconds
+- Remaining Lp analysis took 6.547094345092773 seconds
+- Remaining force ext. analysis took 939.6863143444061 seconds
+- time to resample: 15283.061494588852 seconds
+
+Iteration 11
+- n_eff was 8.744230706355595e+31. Resampling...
+- Recompiling took 52.11952781677246 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 34,
+         '10.31.144.231': 30,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 957.2973973751068
+Max. Lp time: 1233.8367717266083
+Min. force ext. time: 10799.937821865082
+Max. force ext. time: 14005.214957475662
+- Simulation took 14006.697376728058 seconds
+- Loading Lp took 56.96808099746704 seconds
+- Calculating Lp energies took 53.494816064834595 seconds
+- Remaining Lp analysis took 6.358578205108643 seconds
+- Remaining force ext. analysis took 912.4153661727905 seconds
+- time to resample: 15181.771629333496 seconds
+
+Iteration 14
+- n_eff was 1.4318101556409067e+32. Resampling...
+- Recompiling took 52.54208302497864 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.144.231': 35,
+         '10.31.144.229': 29,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.147.31': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 963.3523790836334
+Max. Lp time: 1231.1197369098663
+Min. force ext. time: 10854.961176872253
+Max. force ext. time: 14026.132930517197
+- Simulation took 14027.587752103806 seconds
+- Loading Lp took 54.817917585372925 seconds
+- Calculating Lp energies took 48.115803241729736 seconds
+- Remaining Lp analysis took 5.773911714553833 seconds
+- Remaining force ext. analysis took 859.3838701248169 seconds
+- time to resample: 15136.512507915497 seconds
+
+Iteration 17
+- n_eff was 4.1156390268588915e+32. Resampling...
+- Recompiling took 52.944209575653076 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.144.231': 33,
+         '10.31.144.229': 31,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.147.31': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 964.3933353424072
+Max. Lp time: 1237.1343033313751
+Min. force ext. time: 10889.234704494476
+Max. force ext. time: 14247.815826654434
+- Simulation took 14249.29208946228 seconds
+- Loading Lp took 57.547351360321045 seconds
+- Calculating Lp energies took 50.55025625228882 seconds
+- Remaining Lp analysis took 6.296775579452515 seconds
+- Remaining force ext. analysis took 900.7827513217926 seconds
+- time to resample: 15407.393515348434 seconds
+
+Iteration 20
+- n_eff was 4.5592817858449586e+32. Resampling...
+- Recompiling took 53.73971676826477 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.144.229': 32,
+         '10.31.144.231': 32,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.147.31': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 966.634693145752
+Max. Lp time: 1262.476054430008
+Min. force ext. time: 10900.974993467331
+Max. force ext. time: 14486.130997657776
+- Simulation took 14487.635320425034 seconds
+- Loading Lp took 56.39240026473999 seconds
+- Calculating Lp energies took 50.479533672332764 seconds
+- Remaining Lp analysis took 6.124538421630859 seconds
+- Remaining force ext. analysis took 892.5760087966919 seconds
+- time to resample: 15635.608301401138 seconds
+
+Iteration 23
+- n_eff was 5.878097938450312e+32. Resampling...
+- Recompiling took 54.390822410583496 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.144.231': 34,
+         '10.31.144.229': 30,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.147.31': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 970.7448110580444
+Max. Lp time: 1235.941222190857
+Min. force ext. time: 10931.618616342545
+Max. force ext. time: 14790.697360277176
+- Simulation took 14792.173192501068 seconds
+- Loading Lp took 58.30284833908081 seconds
+- Calculating Lp energies took 51.11706280708313 seconds
+- Remaining Lp analysis took 6.373057842254639 seconds
+- Remaining force ext. analysis took 913.8194513320923 seconds
+- time to resample: 15965.842301368713 seconds
+
+Iteration 26
+- n_eff was 7.169071716706017e+32. Resampling...
+- Recompiling took 54.35759496688843 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.144.229': 33,
+         '10.31.144.231': 31,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.147.31': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 972.8491117954254
+Max. Lp time: 1241.340494632721
+Min. force ext. time: 10935.521206378937
+Max. force ext. time: 14788.078803777695
+- Simulation took 14789.613367080688 seconds
+- Loading Lp took 55.067835330963135 seconds
+- Calculating Lp energies took 48.73129487037659 seconds
+- Remaining Lp analysis took 5.967053174972534 seconds
+- Remaining force ext. analysis took 895.6097688674927 seconds
+- time to resample: 15942.170584917068 seconds
+
+Iteration 29
+- n_eff was 8.772294440482487e+32. Resampling...
+- Recompiling took 51.466150522232056 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.144.229': 36,
+         '10.31.144.231': 28,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.147.31': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 969.7995851039886
+Max. Lp time: 1233.028392791748
+Min. force ext. time: 10966.403080940247
+Max. force ext. time: 14414.355765104294
+- Simulation took 14415.864454746246 seconds
+- Loading Lp took 57.33928561210632 seconds
+- Calculating Lp energies took 50.21914553642273 seconds
+- Remaining Lp analysis took 6.348153352737427 seconds
+- Remaining force ext. analysis took 915.7968764305115 seconds
+- time to resample: 15587.50331735611 seconds
+
+Iteration 32
+- n_eff was 7.025016002241256e+32. Resampling...
+- Recompiling took 56.36016392707825 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.144.231': 36,
+         '10.31.144.229': 26,
+         '10.31.147.31': 25,
+         '10.31.143.32': 25,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 1040.5630707740784
+Max. Lp time: 1243.3238937854767
+Min. force ext. time: 10725.789990901947
+Max. force ext. time: 14298.202241420746
+- Simulation took 14299.679173707962 seconds
+- Loading Lp took 56.77392911911011 seconds
+- Calculating Lp energies took 49.21527934074402 seconds
+- Remaining Lp analysis took 6.189388275146484 seconds
+- Remaining force ext. analysis took 887.5009553432465 seconds
+- time to resample: 15445.9386343956 seconds
+
+Iteration 35
+- n_eff was 5.3095340526275806e+32. Resampling...
+- Recompiling took 51.6974618434906 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.144.231': 36,
+         '10.31.144.229': 28,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.147.31': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 1002.1731128692627
+Max. Lp time: 1244.7078132629395
+Min. force ext. time: 10999.27845788002
+Max. force ext. time: 14242.770889282227
+- Simulation took 14244.286886692047 seconds
+- Loading Lp took 59.00108742713928 seconds
+- Calculating Lp energies took 48.76913833618164 seconds
+- Remaining Lp analysis took 6.613353967666626 seconds
+- Remaining force ext. analysis took 923.5801031589508 seconds
+- time to resample: 15424.278349876404 seconds
+
+Iteration 38
+- n_eff was 3.954366175586369e+32. Resampling...
+- Recompiling took 55.32396578788757 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 36,
+         '10.31.144.231': 28,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 963.0186817646027
+Max. Lp time: 1240.9085576534271
+Min. force ext. time: 10627.248708486557
+Max. force ext. time: 14333.261528730392
+- Simulation took 14334.727375507355 seconds
+- Loading Lp took 55.00731348991394 seconds
+- Calculating Lp energies took 50.31463003158569 seconds
+- Remaining Lp analysis took 6.342648506164551 seconds
+- Remaining force ext. analysis took 911.3253335952759 seconds
+- time to resample: 15505.90695476532 seconds
+
+Iteration 41
+- n_eff was 4.637415451979938e+32. Resampling...
+- Recompiling took 53.636337757110596 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 36,
+         '10.31.144.231': 28,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 962.9737100601196
+Max. Lp time: 1246.01806974411
+Min. force ext. time: 10651.058874130249
+Max. force ext. time: 14469.281826496124
+- Simulation took 14470.785343885422 seconds
+- Loading Lp took 57.703919887542725 seconds
+- Calculating Lp energies took 51.988250732421875 seconds
+- Remaining Lp analysis took 6.726850986480713 seconds
+- Remaining force ext. analysis took 913.8677825927734 seconds
+- time to resample: 15644.604325771332 seconds
+
+Iteration 44
+- n_eff was 4.9007724587194614e+32. Resampling...
+- Recompiling took 54.59667706489563 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 36,
+         '10.31.144.231': 28,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 964.7478375434875
+Max. Lp time: 1248.7243211269379
+Min. force ext. time: 10640.481565952301
+Max. force ext. time: 17805.50888490677
+- Simulation took 17807.047511339188 seconds
+- Loading Lp took 56.730454444885254 seconds
+- Calculating Lp energies took 50.082972049713135 seconds
+- Remaining Lp analysis took 5.9686079025268555 seconds
+- Remaining force ext. analysis took 889.7261881828308 seconds
+- time to resample: 18954.05099129677 seconds
+
+Iteration 47
+- n_eff was 6.961076796649327e+32. Resampling...
+- Recompiling took 54.65071129798889 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 36,
+         '10.31.144.229': 28,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.144.231': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 965.0187082290649
+Max. Lp time: 1249.0263810157776
+Min. force ext. time: 10656.954513549805
+Max. force ext. time: 14582.38709616661
+- Simulation took 14583.87071442604 seconds
+- Loading Lp took 53.49241518974304 seconds
+- Calculating Lp energies took 51.74109673500061 seconds
+- Remaining Lp analysis took 5.811561107635498 seconds
+- Remaining force ext. analysis took 901.4583995342255 seconds
+- time to resample: 15746.65099978447 seconds
+
+Iteration 50
+- n_eff was 1.415294190021976e+33. Resampling...
+- Recompiling took 56.9293007850647 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 35,
+         '10.31.144.229': 29,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.144.231': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 963.1823029518127
+Max. Lp time: 1249.5129027366638
+Min. force ext. time: 11103.229815483093
+Max. force ext. time: 14663.155682086945
+- Simulation took 14664.604388237 seconds
+- Loading Lp took 55.55884766578674 seconds
+- Calculating Lp energies took 50.26399111747742 seconds
+- Remaining Lp analysis took 5.869767665863037 seconds
+- Remaining force ext. analysis took 864.3785946369171 seconds
+- time to resample: 15795.205095767975 seconds
+
+Iteration 53
+- n_eff was 1.5901055779218518e+33. Resampling...
+- Recompiling took 52.99227833747864 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 36,
+         '10.31.144.231': 28,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 961.0840191841125
+Max. Lp time: 1253.4489395618439
+Min. force ext. time: 10793.553917169571
+Max. force ext. time: 14529.644450902939
+- Simulation took 14531.14615893364 seconds
+- Loading Lp took 56.13360333442688 seconds
+- Calculating Lp energies took 50.90654516220093 seconds
+- Remaining Lp analysis took 6.2560436725616455 seconds
+- Remaining force ext. analysis took 924.6694831848145 seconds
+- time to resample: 15711.173860788345 seconds
+
+Iteration 56
+- n_eff was 1.6373546662095403e+33. Resampling...
+- Recompiling took 52.267444372177124 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 36,
+         '10.31.144.231': 27,
+         '10.31.143.32': 25,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 977.8680639266968
+Max. Lp time: 1259.788495540619
+Min. force ext. time: 10754.699373722076
+Max. force ext. time: 14660.006793022156
+- Simulation took 14661.44116783142 seconds
+- Loading Lp took 56.39437198638916 seconds
+- Calculating Lp energies took 51.07817053794861 seconds
+- Remaining Lp analysis took 6.348582029342651 seconds
+- Remaining force ext. analysis took 891.0913739204407 seconds
+- time to resample: 15808.64184331894 seconds
+
+Iteration 59
+- n_eff was 1.3676056808516562e+33. Resampling...
+- Recompiling took 54.635592460632324 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 36,
+         '10.31.144.231': 28,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 968.9396543502808
+Max. Lp time: 1247.2044069766998
+Min. force ext. time: 10695.559059143066
+Max. force ext. time: 16751.588300466537
+- Simulation took 16753.105900287628 seconds
+- Loading Lp took 59.35258412361145 seconds
+- Calculating Lp energies took 52.84159255027771 seconds
+- Remaining Lp analysis took 7.574084758758545 seconds
+- Remaining force ext. analysis took 944.3297729492188 seconds
+- time to resample: 17961.76753926277 seconds
+
+Iteration 62
+- n_eff was 1.1042025625741358e+33. Resampling...
+- Recompiling took 53.597609519958496 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 36,
+         '10.31.144.231': 28,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 966.1903066635132
+Max. Lp time: 1247.8797550201416
+Min. force ext. time: 10659.830798625946
+Max. force ext. time: 14508.761328458786
+- Simulation took 14510.279113292694 seconds
+- Loading Lp took 58.829575300216675 seconds
+- Calculating Lp energies took 54.953383922576904 seconds
+- Remaining Lp analysis took 7.890583753585815 seconds
+- Remaining force ext. analysis took 935.2347359657288 seconds
+- time to resample: 15710.680596113205 seconds
+
+Iteration 65
+- n_eff was 9.583796233813984e+32. Resampling...
+- Recompiling took 56.39553427696228 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 35,
+         '10.31.144.231': 29,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 962.1072897911072
+Max. Lp time: 1252.2693672180176
+Min. force ext. time: 10699.776474237442
+Max. force ext. time: 14495.220104455948
+- Simulation took 14496.706161499023 seconds
+- Loading Lp took 57.531822204589844 seconds
+- Calculating Lp energies took 54.57102632522583 seconds
+- Remaining Lp analysis took 7.514372110366821 seconds
+- Remaining force ext. analysis took 924.9717223644257 seconds
+- time to resample: 15687.423003911972 seconds
+
+Iteration 68
+- n_eff was 1.3381222532023896e+33. Resampling...
+- Recompiling took 50.151875734329224 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 35,
+         '10.31.144.229': 29,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.144.231': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 966.3328518867493
+Max. Lp time: 1258.136708021164
+Min. force ext. time: 10718.47718667984
+Max. force ext. time: 14507.10996222496
+- Simulation took 14508.576726675034 seconds
+- Loading Lp took 61.89724254608154 seconds
+- Calculating Lp energies took 51.234840631484985 seconds
+- Remaining Lp analysis took 6.687679052352905 seconds
+- Remaining force ext. analysis took 932.8992030620575 seconds
+- time to resample: 15699.542396068573 seconds
+
+Iteration 71
+- n_eff was 1.6709765798019936e+33. Resampling...
+- Recompiling took 56.41737413406372 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.144.229': 36,
+         '10.31.144.231': 28,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.147.31': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 1008.5895822048187
+Max. Lp time: 1244.6964347362518
+Min. force ext. time: 10669.971907138824
+Max. force ext. time: 14412.873554229736
+- Simulation took 14414.330020666122 seconds
+- Loading Lp took 53.285863637924194 seconds
+- Calculating Lp energies took 51.81459665298462 seconds
+- Remaining Lp analysis took 6.3719565868377686 seconds
+- Remaining force ext. analysis took 898.1645576953888 seconds
+- time to resample: 15570.584170818329 seconds
+
+Iteration 74
+- n_eff was 1.5524507095156637e+33. Resampling...
+- Recompiling took 56.23065114021301 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 34,
+         '10.31.144.231': 30,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 966.6912941932678
+Max. Lp time: 1243.5809454917908
+Min. force ext. time: 10586.060616970062
+Max. force ext. time: 14457.45366191864
+- Simulation took 14458.927295207977 seconds
+- Loading Lp took 55.24101734161377 seconds
+- Calculating Lp energies took 51.32379937171936 seconds
+- Remaining Lp analysis took 5.99192214012146 seconds
+- Remaining force ext. analysis took 870.418760061264 seconds
+- time to resample: 15589.157071828842 seconds
+
+Iteration 77
+- n_eff was 1.2761888928640702e+33. Resampling...
+- Recompiling took 51.691951274871826 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 36,
+         '10.31.144.229': 26,
+         '10.31.144.231': 26,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 949.0926785469055
+Max. Lp time: 1249.9333443641663
+Min. force ext. time: 10570.823652744293
+Max. force ext. time: 16194.938767194748
+- Simulation took 16196.382576942444 seconds
+- Loading Lp took 55.20239591598511 seconds
+- Calculating Lp energies took 49.54532480239868 seconds
+- Remaining Lp analysis took 6.073930978775024 seconds
+- Remaining force ext. analysis took 878.0072867870331 seconds
+- time to resample: 17323.4009847641 seconds
+
+Iteration 80
+- n_eff was 9.632792184052982e+32. Resampling...
+- Recompiling took 49.67934250831604 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 35,
+         '10.31.144.229': 27,
+         '10.31.144.231': 26,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 962.1830625534058
+Max. Lp time: 1260.3454759120941
+Min. force ext. time: 10637.980474710464
+Max. force ext. time: 20069.08444070816
+- Simulation took 20070.52840781212 seconds
+- Loading Lp took 58.74854397773743 seconds
+- Calculating Lp energies took 52.33829927444458 seconds
+- Remaining Lp analysis took 6.426698207855225 seconds
+- Remaining force ext. analysis took 931.2813668251038 seconds
+- time to resample: 21256.310526371002 seconds
+
+Iteration 83
+- n_eff was 1.4261806980313128e+33. Resampling...
+- Recompiling took 51.016295194625854 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.144.229': 32,
+         '10.31.147.31': 32,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.144.231': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 971.8086769580841
+Max. Lp time: 1261.702718257904
+Min. force ext. time: 10753.974898576736
+Max. force ext. time: 14422.819920778275
+- Simulation took 14424.256039857864 seconds
+- Loading Lp took 58.316046953201294 seconds
+- Calculating Lp energies took 52.48195004463196 seconds
+- Remaining Lp analysis took 6.5081212520599365 seconds
+- Remaining force ext. analysis took 882.7531018257141 seconds
+- time to resample: 15562.813796520233 seconds
+
+Iteration 86
+- n_eff was 1.676584183379352e+33. Resampling...
+- Recompiling took 49.83358883857727 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 36,
+         '10.31.144.229': 28,
+         '10.31.140.57': 24,
+         '10.31.144.248': 24,
+         '10.31.144.231': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 974.0775368213654
+Max. Lp time: 1247.8764243125916
+Min. force ext. time: 10800.352935791016
+Max. force ext. time: 14583.259155273438
+- Simulation took 14584.738649606705 seconds
+- Loading Lp took 57.340051889419556 seconds
+- Calculating Lp energies took 51.327168226242065 seconds
+- Remaining Lp analysis took 6.4145448207855225 seconds
+- Remaining force ext. analysis took 940.2526540756226 seconds
+- time to resample: 15777.977719306946 seconds
+
+Iteration 89
+- n_eff was 1.451620011458099e+33. Resampling...
+- Recompiling took 49.85438323020935 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 33,
+         '10.31.144.231': 31,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 968.9826245307922
+Max. Lp time: 1274.180279493332
+Min. force ext. time: 10512.34363937378
+Max. force ext. time: 15576.658046722412
+- Simulation took 15578.114028453827 seconds
+- Loading Lp took 58.902294635772705 seconds
+- Calculating Lp energies took 51.22453045845032 seconds
+- Remaining Lp analysis took 6.4354963302612305 seconds
+- Remaining force ext. analysis took 943.7458200454712 seconds
+- time to resample: 16775.51510334015 seconds
+
+Iteration 92
+- n_eff was 1.4307178172381435e+33. Resampling...
+- Recompiling took 54.45114850997925 seconds
+Performed 232 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.147.31': 36,
+         '10.31.144.231': 28,
+         '10.31.140.57': 24,
+         '10.31.144.229': 24,
+         '10.31.144.248': 24,
+         '10.31.143.32': 24,
+         '10.31.144.230': 24,
+         '10.31.147.29': 24,
+         '10.31.142.247': 24})
+Min. Lp time: 953.833509683609
+Max. Lp time: 1243.4776892662048
+Min. force ext. time: 10578.759369134903
+Max. force ext. time: 14388.79994893074
+- Simulation took 14390.265507221222 seconds
+- Loading Lp took 57.32640838623047 seconds
+- Calculating Lp energies took 52.18607211112976 seconds
+- Remaining Lp analysis took 6.15023946762085 seconds
+- Remaining force ext. analysis took 886.1867489814758 seconds
+- time to resample: 15539.779151678085 seconds
+
+Iteration 95
+- n_eff was 1.2726746089639848e+33. Resampling...
+- Recompiling took 51.08610701560974 seconds
