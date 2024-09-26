@@ -21,8 +21,8 @@ output_dir = Path("figures/fig4/output")
 
 max_iter = 100
 
-for width, height in [(20, 14), (24, 14), (28, 14)]:
-# for width, height in [(20, 14)]:
+# for width, height in [(20, 14), (24, 14), (28, 14)]:
+for width, height in [(20, 14)]:
 
     # fig, ax = plt.subplots(figsize=(width, height))
     fig, (ax1, ax2) = plt.subplots(2, 1, height_ratios=[1, 1], figsize=(width, height))
@@ -114,3 +114,32 @@ for width, height in [(20, 14), (24, 14), (28, 14)]:
     # plt.show()
     plt.savefig(output_dir / f"wlc_{width}x{height}.pdf")
     plt.savefig(output_dir / f"wlc_{width}x{height}.svg")
+    plt.close()
+
+
+# Plot change in WLC
+iter0_extensions = onp.array([34.68624333, 36.5369262, 37.79959167, 38.34516158, 38.7016258, 38.9616109, 39.1611338, 39.42964732]) * nm_per_oxdna_length # nm
+iter92_extensions = onp.array([32.27539561, 34.13732982, 35.5014128, 36.11890343, 36.59914181, 36.82990479, 37.14445323, 37.46313616]) * nm_per_oxdna_length # nm
+
+PER_NUC_FORCES = [0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.375]
+TOTAL_FORCES = onp.array(PER_NUC_FORCES) * 2.0
+TOTAL_FORCES_SI = TOTAL_FORCES * oxdna_force_to_pn # pN
+
+for width, height in [(14, 12)]:
+    fig, ax = plt.subplots(figsize=(width, height))
+
+    ax.plot(iter0_extensions, TOTAL_FORCES_SI, linewidth=4, color="black", label="Initial")
+    ax.scatter(iter0_extensions, TOTAL_FORCES_SI, s=200, color="black")
+
+    ax.plot(iter92_extensions, TOTAL_FORCES_SI, linewidth=4, color="green", label="Optimized")
+    ax.scatter(iter92_extensions, TOTAL_FORCES_SI, s=200, color="green")
+
+
+    ax.set_xlabel("Extension (nm)")
+    ax.set_ylabel("Tension / pN")
+    leg = ax.legend(prop={'size': 48})
+    plt.tight_layout()
+
+    # plt.show()
+    plt.savefig(output_dir / f"wlc_force_ext_change_{width}x{height}.pdf")
+    plt.close()
