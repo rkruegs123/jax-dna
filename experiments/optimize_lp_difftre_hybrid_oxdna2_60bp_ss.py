@@ -442,6 +442,9 @@ def run(args):
         with open(iter_dir / "params.txt", "w+") as f:
             f.write(f"{pprint.pformat(params)}\n")
 
+        onp.save(iter_dir / f"hb_weights.npy", onp.array(params["hb"]), allow_pickle=False)
+        onp.save(iter_dir / f"stack_weights.npy", onp.array(params["stack"]), allow_pickle=False)
+
         analyze_end = time.time()
         with open(resample_log_path, "a") as f:
             f.write(f"- Remaining analysis took {analyze_end - analyze_start} seconds\n")
