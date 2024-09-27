@@ -78,8 +78,17 @@ def run(args):
     no_delete = args['no_delete']
     no_archive = args['no_archive']
 
+
     save_obj_every = args['save_obj_every']
     plot_every = args['plot_every']
+
+
+    opt_width = args['opt_width']
+    width_coeff = int(opt_width)
+    opt_tm = not args['no_opt_tm']
+    tm_coeff = int(opt_tm)
+    assert(opt_width or opt_tm)
+    target_width = args['target_width']
 
 
     # Setup the logging directory
@@ -116,9 +125,9 @@ def run(args):
 
     # Load the system
     if small_system:
-        sys_basedir = Path("data/templates/tm-8bp")
-    else:
         sys_basedir = Path("data/templates/tm-6bp")
+    else:
+        sys_basedir = Path("data/templates/tm-8bp")
     input_template_path = sys_basedir / "input"
 
     weight_path = sys_basedir / "wfile.txt"
@@ -598,7 +607,11 @@ def run(args):
 
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
         aux = (curr_tm, curr_width, n_eff)
-        rmse = jnp.sqrt((target_tm - curr_tm)**2)
+        
+        # rmse = jnp.sqrt((target_tm - curr_tm)**2)
+        rmse_tm = jnp.sqrt((target_tm - curr_tm)**2)
+        rmse_width = jnp.sqrt((target_width - curr_width)**2)
+        rmse = tm_coeff*rmse_tm + width_coeff*rmse_width
         return rmse, aux
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
@@ -790,10 +803,17 @@ def get_parser():
 
     parser.add_argument('--small-system', action='store_true')
 
+
     parser.add_argument('--save-obj-every', type=int, default=5,
                         help="Frequency of saving numpy files")
     parser.add_argument('--plot-every', type=int, default=1,
                         help="Frequency of plotting data from gradient descent epochs")
+
+    parser.add_argument('--opt-width', action='store_true')
+    parser.add_argument('--target-width', type=float, default=14.0,
+                        help="Target width of melting temperature curve in Kelvin")
+    parser.add_argument('--no-opt-tm', action='store_true')
+
 
 
     return parser
