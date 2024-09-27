@@ -78,6 +78,9 @@ def run(args):
     no_delete = args['no_delete']
     no_archive = args['no_archive']
 
+    save_obj_every = args['save_obj_every']
+    plot_every = args['plot_every']
+
 
     # Setup the logging directory
     if run_name is None:
@@ -700,23 +703,38 @@ def run(args):
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
 
-        plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
-        plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
-        plt.legend()
-        plt.ylabel("Loss")
-        plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"losses_iter{i}.png")
-        plt.clf()
+        if i % plot_every == 0 and i:
+            plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
+            plt.legend()
+            plt.ylabel("Loss")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"losses_iter{i}.png")
+            plt.clf()
 
-        plt.plot(onp.arange(i+1), all_tms, linestyle="--", color="blue")
-        plt.scatter(all_ref_times, all_ref_tms, marker='o', label="Resample points", color="blue")
-        plt.axhline(y=target_tm, linestyle='--', label="Target Tm", color='red')
-        plt.legend()
-        plt.ylabel("Expected Tm")
-        plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"tms_iter{i}.png")
-        plt.clf()
+            plt.plot(onp.arange(i+1), all_tms, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_tms, marker='o', label="Resample points", color="blue")
+            plt.axhline(y=target_tm, linestyle='--', label="Target Tm", color='red')
+            plt.legend()
+            plt.ylabel("Expected Tm")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"tms_iter{i}.png")
+            plt.clf()
 
+        if i % save_obj_every == 0 and i:
+            onp.save(obj_dir / f"ref_iters_i{i}.npy", onp.array(all_ref_times), allow_pickle=False)
+            onp.save(obj_dir / f"ref_losses_i{i}.npy", onp.array(all_ref_losses), allow_pickle=False)
+            onp.save(obj_dir / f"ref_tms_i{i}.npy", onp.array(all_ref_tms), allow_pickle=False)
+            onp.save(obj_dir / f"ref_widths_i{i}.npy", onp.array(all_ref_widths), allow_pickle=False)
+            onp.save(obj_dir / f"tms_i{i}.npy", onp.array(all_tms), allow_pickle=False)
+            onp.save(obj_dir / f"widths_i{i}.npy", onp.array(all_widths), allow_pickle=False)
+
+    onp.save(obj_dir / f"fin_ref_iters.npy", onp.array(all_ref_times), allow_pickle=False)
+    onp.save(obj_dir / f"fin_ref_losses.npy", onp.array(all_ref_losses), allow_pickle=False)
+    onp.save(obj_dir / f"fin_ref_tms.npy", onp.array(all_ref_tms), allow_pickle=False)
+    onp.save(obj_dir / f"fin_ref_widths.npy", onp.array(all_ref_widths), allow_pickle=False)
+    onp.save(obj_dir / f"fin_tms.npy", onp.array(all_tms), allow_pickle=False)
+    onp.save(obj_dir / f"fin_widths.npy", onp.array(all_widths), allow_pickle=False)
 
 
 def get_parser():
@@ -771,6 +789,11 @@ def get_parser():
     parser.add_argument('--no-archive', action='store_true')
 
     parser.add_argument('--small-system', action='store_true')
+
+    parser.add_argument('--save-obj-every', type=int, default=5,
+                        help="Frequency of saving numpy files")
+    parser.add_argument('--plot-every', type=int, default=1,
+                        help="Frequency of plotting data from gradient descent epochs")
 
 
     return parser
