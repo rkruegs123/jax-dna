@@ -15,7 +15,8 @@ rc('text', usetex=True)
 
 
 data_dir = Path("figures/fig5/data")
-tm_dir = data_dir / "duplex/opt-tm-hb-adam-oxdna2-fixed"
+target = 317
+tm_dir = data_dir / f"duplex/t{target}"
 output_dir = Path("figures/fig5/output")
 
 max_iter = 300
@@ -40,7 +41,7 @@ for width, height in [(20, 14), (24, 14), (28, 14)]:
     ax.plot(fin_tms, color="black", linewidth=3, label="Simulation")
     ax.scatter(fin_ref_iters, fin_ref_tms, color="black", s=100)
 
-    ax.axhline(y=317, linewidth=3, linestyle="--", color="red", label="Target")
+    ax.axhline(y=target, linewidth=3, linestyle="--", color="red", label="Target")
 
     # ax.fill_between(onp.arange(len(fin_gs)), -100, -80, color='green', alpha=0.3, label="Experimental Uncertainty", transform=ax.get_yaxis_transform())
 
