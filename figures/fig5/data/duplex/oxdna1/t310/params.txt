@@ -1,0 +1,21 @@
+n_ref_states: 6800
+n_threads: 24
+key: 0
+n_sims: 34
+n_steps_per_sim: 50000000
+n_eq_steps: 0
+sample_every: 250000
+run_name: opt-tm-hb-adam-oxdna-6bp-b20
+oxdna_path: /n/brenner_lab/User/rkrueger/oxdna-bin-cpu10/oxDNA
+temp: 307.15
+extrapolate_temps: ['289', '293', '295', '298', '301', '304', '307', '310', '313', '316', '319', '322', '325']
+max_approx_iters: 3
+n_iters: 100
+lr: 0.001
+target_tm: 310.0
+min_neff_factor: 0.95
+optimizer_type: adam
+opt_keys: ['stacking', 'hydrogen_bonding']
+no_delete: False
+no_archive: False
+small_system: True

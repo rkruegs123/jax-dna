@@ -15,9 +15,14 @@ rc('text', usetex=True)
 
 
 data_dir = Path("figures/fig5/data")
+oxdna_version = 2
 target = 317
-tm_dir = data_dir / f"duplex/t{target}"
+load_iter = 85
+tm_dir = data_dir / "duplex" / f"oxdna{oxdna_version}" / f"t{target}"
+assert(tm_dir.exists())
 output_dir = Path("figures/fig5/output")
+
+
 
 max_iter = 300
 
@@ -25,13 +30,13 @@ for width, height in [(20, 14), (24, 14), (28, 14)]:
 
     fig, ax = plt.subplots(figsize=(width, height))
 
-    fin_tms_path = tm_dir / "obj/tms_i85.npy"
+    fin_tms_path = tm_dir / f"obj/tms_i{load_iter}.npy"
     fin_tms = onp.load(fin_tms_path)[:max_iter]
 
-    fin_ref_iters_path = tm_dir / "obj/ref_iters_i85.npy"
+    fin_ref_iters_path = tm_dir / f"obj/ref_iters_i{load_iter}.npy"
     fin_ref_iters = onp.load(fin_ref_iters_path)
 
-    fin_ref_tms_path = tm_dir / "obj/ref_tms_i85.npy"
+    fin_ref_tms_path = tm_dir / f"obj/ref_tms_i{load_iter}.npy"
     fin_ref_tms = onp.load(fin_ref_tms_path)
 
     keep_ref_iters = fin_ref_iters < max_iter
@@ -62,4 +67,4 @@ for width, height in [(20, 14), (24, 14), (28, 14)]:
         line.set_linewidth(5.0)
 
     # plt.show()
-    plt.savefig(output_dir / f"tm_duplex_{width}x{height}.pdf")
+    plt.savefig(output_dir / f"tm_duplex_v{oxdna_version}_t{target}_{width}x{height}.pdf")
