@@ -15,9 +15,11 @@ rc('text', usetex=True)
 
 
 data_dir = Path("figures/fig5/data")
+
 oxdna_version = 2
 target = 317
 load_iter = 85
+
 tm_dir = data_dir / "duplex" / f"oxdna{oxdna_version}" / f"t{target}"
 assert(tm_dir.exists())
 output_dir = Path("figures/fig5/output")
@@ -68,3 +70,4 @@ for width, height in [(20, 14), (24, 14), (28, 14)]:
 
     # plt.show()
     plt.savefig(output_dir / f"tm_duplex_v{oxdna_version}_t{target}_{width}x{height}.pdf")
+    plt.close()
