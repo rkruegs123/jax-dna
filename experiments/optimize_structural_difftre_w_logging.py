@@ -81,8 +81,8 @@ class TensorBoardLogger:
         self.tensorboard_proc = subprocess.Popen(
             ["tensorboard", "--logdir", str(log_dir)],
             # comment the below lines out if you want to see if tensorboard is saying things:
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            # stdout=subprocess.DEVNULL,
+            # stderr=subprocess.DEVNULL,
         )
         webbrowser.open("http://localhost:6006/?darkMode=false#custom_scalars&_smoothingWeight=0")
 
