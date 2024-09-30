@@ -78,10 +78,10 @@ def run(args):
     no_delete = args['no_delete']
     no_archive = args['no_archive']
 
-
     save_obj_every = args['save_obj_every']
     plot_every = args['plot_every']
 
+    update_weights = not args['no_update_weights']
 
     opt_width = args['opt_width']
     width_coeff = int(opt_width)
@@ -106,6 +106,9 @@ def run(args):
 
     log_dir = run_dir / "log"
     log_dir.mkdir(parents=False, exist_ok=False)
+
+    weights_dir = run_dir / "weights"
+    weights_dir.mkdir(parents=False, exist_ok=False)
 
     ref_traj_dir = run_dir / "ref_traj"
     ref_traj_dir.mkdir(parents=False, exist_ok=False)
@@ -133,9 +136,6 @@ def run(args):
         sys_basedir = Path("data/templates/tm-8bp")
     input_template_path = sys_basedir / "input"
 
-    weight_path = sys_basedir / "wfile.txt"
-    weight_df = pd.read_csv(weight_path, delim_whitespace=True, names=["op", "weight"])
-    weight_mapper = dict(zip(weight_df.op, weight_df.weight))
 
     top_path = sys_basedir / "sys.top"
     top_info = topology.TopologyInfo(top_path,
@@ -163,6 +163,9 @@ def run(args):
     box_size = conf_info_bound.box_size
 
     weights_path = sys_basedir / "wfile.txt"
+    init_weights_df = pd.read_csv(weights_path, delim_whitespace=True, names=["op", "weight"])
+    num_ops = len(init_weights_df)
+
     op_path = sys_basedir / "op.txt"
 
     displacement_fn, shift_fn = space.periodic(box_size)
@@ -173,10 +176,25 @@ def run(args):
     seed_check_sample_freq = 10
     seed_check_steps = 100
 
-    def get_ref_states(params, i, seed, prev_basedir):
+    def get_ref_states(params, i, seed, prev_basedir, last_ref_iter=None):
         random.seed(seed)
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
+
+        if i == 0 or not update_weights:
+            iter_weights_path = weights_path
+        else:
+            iter_weights_path = weights_dir / f"weights_i{last_ref_iter}.txt"
+
+        iter_weights_df = pd.read_csv(iter_weights_path, delim_whitespace=True, names=["op", "weight"])
+        weight_mapper = dict(zip(iter_weights_df.op, iter_weights_df.weight))
+        op2idx = dict()
+        idx2op = dict()
+        for row_idx, row in iter_weights_df.iterrows():
+            op = int(row.op)
+            op2idx[op] = row_idx
+            idx2op[row_idx] = op
+
 
         oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
 
@@ -247,7 +265,6 @@ def run(args):
             if valid_seed is None:
                 raise RuntimeError(f"Could not find valid seed.")
 
-
             oxdna_utils.rewrite_input_file(
                 input_template_path, repeat_dir,
                 temp=f"{t_kelvin}K", steps=n_steps_per_sim,
@@ -259,7 +276,6 @@ def run(args):
                 weights_file=str(repeat_dir / "wfile.txt"), op_file=str(repeat_dir / "op.txt"),
                 log_file=str(repeat_dir / "sim.log"),
             )
-
 
             procs.append(subprocess.Popen([oxdna_exec_path, repeat_dir / "input"]))
 
@@ -284,7 +300,6 @@ def run(args):
         combine_proc = subprocess.run(combine_cmd, shell=True)
         if combine_proc.returncode != 0:
             raise RuntimeError(f"Combining trajectories failed with error code: {combine_proc.returncode}")
-
 
         if not no_delete:
             files_to_remove = ["output.dat"]
@@ -416,6 +431,7 @@ def run(args):
         ref_unbiased_counts = onp.zeros(n_bp+1)
         all_ops = energy_df.op.to_numpy()
         all_op_weights = onp.array([weight_mapper[op] for op in all_ops])
+        all_op_idxs = onp.array([op2idx[op] for op in all_ops])
         for rs_idx in tqdm(range(n_ref_states)):
             op = all_ops[rs_idx]
             op_weight = all_op_weights[rs_idx]
@@ -547,11 +563,38 @@ def run(args):
         with open(iter_dir / "summary.txt", "w+") as f:
             f.write(summary_str)
 
+        # Compute the optimal weights
+        probs = onp.zeros(num_ops)
+        for op_idx, op_weight in zip(all_op_idxs, all_op_weights):
+            probs[op_idx] += 1/op_weight
+
+        normed = probs / sum(probs)
+        optimal_weights = 1 / normed
+
+        updated_weights_df = iter_weights_df.copy(deep=True)
+        updated_weights_df.weight = optimal_weights
+
+        if update_weights:
+            optimal_wfile_path = weights_dir / f"weights_i{i}.txt"
+            with open(optimal_wfile_path, "w") as of:
+                content = tabulate(updated_weights_df.values.tolist(),
+                                   tablefmt="plain", numalign="left")
+                of.write(content + "\n")
+
+        all_ops = jnp.array(all_ops)
+        all_op_weights = jnp.array(all_op_weights)
+
+        plt.plot(all_op_idxs)
+        for s_idx in range(n_sims):
+            plt.axvline(x=s_idx*n_ref_states_per_sim, linestyle="--", color="red")
+        plt.savefig(iter_dir / "op_trajectory.png")
+        plt.clf()
+
         if not no_archive:
             zip_file(str(iter_dir / "output.dat"), str(iter_dir / "output.dat.zip"))
             os.remove(str(iter_dir / "output.dat"))
 
-        return ref_states, ref_energies, jnp.array(all_ops), jnp.array(all_op_weights), iter_dir
+        return ref_states, ref_energies, all_ops, all_op_weights, iter_dir
 
 
     def loss_fn(params, ref_states, ref_energies, all_ops, all_op_weights):
@@ -610,7 +653,7 @@ def run(args):
 
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
         aux = (curr_tm, curr_width, n_eff)
-        
+
         # rmse = jnp.sqrt((target_tm - curr_tm)**2)
         rmse_tm = jnp.sqrt((target_tm - curr_tm)**2)
         rmse_width = jnp.sqrt((target_width - curr_width)**2)
@@ -655,7 +698,9 @@ def run(args):
         f.write(f"Generating initial reference states and energies...\n")
     start = time.time()
     prev_ref_basedir = None
+    last_ref_iter = None
     ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(params, i=0, seed=key, prev_basedir=prev_ref_basedir)
+    last_ref_iter = 0
     prev_ref_basedir = deepcopy(ref_iter_dir)
     end = time.time()
     with open(resample_log_path, "a") as f:
@@ -681,8 +726,9 @@ def run(args):
                 f.write(f"- n_eff was {n_eff}. Resampling...\n")
 
             start = time.time()
-            ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(params, i=i, seed=key+1+i, prev_basedir=prev_ref_basedir)
+            ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(params, i=i, seed=key+1+i, prev_basedir=prev_ref_basedir, last_ref_iter=last_ref_iter)
             end = time.time()
+            last_ref_iter = i
             prev_ref_basedir = deepcopy(ref_iter_dir)
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
@@ -830,6 +876,8 @@ def get_parser():
     parser.add_argument('--target-width', type=float, default=14.0,
                         help="Target width of melting temperature curve in Kelvin")
     parser.add_argument('--no-opt-tm', action='store_true')
+
+    parser.add_argument('--no-update-weights', action='store_true')
 
 
 

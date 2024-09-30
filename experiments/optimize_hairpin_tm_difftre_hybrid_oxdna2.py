@@ -299,7 +299,7 @@ def run(args):
             iter_weights_path = weights_dir / f"weights_i{last_ref_iter}.txt"
 
 
-        weights_df = pd.read_fwf(wfile_path, names=["op1", "op2", "weight"])
+        weights_df = pd.read_fwf(iter_weights_path, names=["op1", "op2", "weight"])
         pair2idx = dict()
         idx2pair = dict()
         idx2weight = dict()
