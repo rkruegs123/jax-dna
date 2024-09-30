@@ -101,6 +101,9 @@ def run(args):
     img_dir = run_dir / "img"
     img_dir.mkdir(parents=False, exist_ok=False)
 
+    obj_dir = run_dir / "obj"
+    obj_dir.mkdir(parents=False, exist_ok=False)
+
     log_dir = run_dir / "log"
     log_dir.mkdir(parents=False, exist_ok=False)
 
@@ -695,8 +698,15 @@ def run(args):
 
         with open(loss_path, "a") as f:
             f.write(f"{loss}\n")
+        # with open(grads_path, "a") as f:
+        #     f.write(f"{pprint.pformat(grads)}\n")
+        grads_str = f"\nIteration {i}:"
+        for k, v in grads.items():
+            grads_str += f"\n- {k}"
+            for vk, vv in v.items():
+                grads_str += f"\n\t- {vk}: {vv}"
         with open(grads_path, "a") as f:
-            f.write(f"{pprint.pformat(grads)}\n")
+            f.write(grads_str)
         with open(neff_path, "a") as f:
             f.write(f"{n_eff}\n")
         with open(tm_path, "a") as f:
@@ -705,8 +715,15 @@ def run(args):
             f.write(f"{curr_width}\n")
         with open(times_path, "a") as f:
             f.write(f"{iter_end - iter_start}\n")
+        # with open(iter_params_path, "a") as f:
+        #     f.write(f"{pprint.pformat(params)}\n")
+        iter_params_str = f"\nIteration {i}:"
+        for k, v in params.items():
+            iter_params_str += f"\n- {k}"
+            for vk, vv in v.items():
+                iter_params_str += f"\n\t- {vk}: {vv}"
         with open(iter_params_path, "a") as f:
-            f.write(f"{pprint.pformat(params)}\n")
+            f.write(iter_params_str)
 
         all_losses.append(loss)
         all_n_effs.append(n_eff)
