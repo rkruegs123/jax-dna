@@ -82,7 +82,9 @@ def run(args):
     save_obj_every = args['save_obj_every']
     plot_every = args['plot_every']
 
-    update_weights = not args['no_update_weights']
+    update_weights = args['update_weights']
+    if update_weights:
+        raise RuntimeError(f"This isn't working at the moment")
 
     opt_width = args['opt_width']
     width_coeff = int(opt_width)
@@ -878,7 +880,7 @@ def get_parser():
                         help="Target width of melting temperature curve in Kelvin")
     parser.add_argument('--no-opt-tm', action='store_true')
 
-    parser.add_argument('--no-update-weights', action='store_true')
+    parser.add_argument('--update-weights', action='store_true')
 
 
 
