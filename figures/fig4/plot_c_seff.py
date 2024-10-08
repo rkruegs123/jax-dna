@@ -101,5 +101,5 @@ for width, height in [(20, 14), (24, 14), (28, 14)]:
     leg = ax1.legend(prop={'size': 48})
 
     # plt.show()
-    # plt.savefig(output_dir / f"joint_{width}x{height}.pdf")
-    plt.savefig(output_dir / f"joint_{width}x{height}.svg")
+    # plt.savefig(output_dir / f"c_seff_{width}x{height}.pdf")
+    plt.savefig(output_dir / f"c_seff_{width}x{height}.svg")
