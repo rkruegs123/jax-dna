@@ -1,0 +1,111 @@
+Generating initial reference states and energies...
+Finished generating initial reference states. Took 8960.241035461426 seconds.
+
+Iteration 1
+- n_eff was 5878.762955414367. Resampling...
+- time to resample: 8267.998967885971 seconds
+
+Iteration 2
+- n_eff was 6049.250281225748. Resampling...
+- time to resample: 7701.474679708481 seconds
+
+Iteration 4
+- n_eff was 5917.776635246058. Resampling...
+- time to resample: 5509.394695043564 seconds
+
+Iteration 6
+- n_eff was 6222.597316619543. Resampling...
+- time to resample: 5052.4436156749725 seconds
+
+Iteration 8
+- n_eff was 6420.0189234000145. Resampling...
+- time to resample: 4048.650372982025 seconds
+
+Iteration 12
+- n_eff was 6517.097487501223. Resampling...
+- time to resample: 4815.515667676926 seconds
+
+Iteration 16
+- n_eff was 6598.014182809304. Resampling...
+- time to resample: 4468.614615440369 seconds
+
+Iteration 20
+- n_eff was 6696.827109690003. Resampling...
+- time to resample: 5009.608521938324 seconds
+
+Iteration 24
+- n_eff was 6673.374880535417. Resampling...
+- time to resample: 4779.024943828583 seconds
+
+Iteration 28
+- n_eff was 6771.322880562357. Resampling...
+- time to resample: 4719.310503721237 seconds
+
+Iteration 32
+- n_eff was 6707.833902962336. Resampling...
+- time to resample: 4916.552177906036 seconds
+
+Iteration 36
+- n_eff was 6696.22699561704. Resampling...
+- time to resample: 5152.973554849625 seconds
+
+Iteration 40
+- n_eff was 6788.371925261245. Resampling...
+- time to resample: 5527.9257345199585 seconds
+
+Iteration 44
+- n_eff was 6773.4661516595115. Resampling...
+- time to resample: 4853.898205757141 seconds
+
+Iteration 48
+- n_eff was 6784.518369434187. Resampling...
+- time to resample: 4626.7185587883 seconds
+
+Iteration 52
+- n_eff was 6755.622089884207. Resampling...
+- time to resample: 4927.342866897583 seconds
+
+Iteration 56
+- n_eff was 6754.850286015691. Resampling...
+- time to resample: 4781.648954629898 seconds
+
+Iteration 60
+- n_eff was 6787.482504896978. Resampling...
+- time to resample: 5115.2813465595245 seconds
+
+Iteration 64
+- n_eff was 6741.158307230601. Resampling...
+- time to resample: 5309.556810617447 seconds
+
+Iteration 68
+- n_eff was 6777.8019497023615. Resampling...
+- time to resample: 5262.2071986198425 seconds
+
+Iteration 72
+- n_eff was 6488.159190273297. Resampling...
+- time to resample: 6340.101655244827 seconds
+
+Iteration 76
+- n_eff was 6791.000834568943. Resampling...
+- time to resample: 6441.846527338028 seconds
+
+Iteration 80
+- n_eff was 6796.726001228807. Resampling...
+- time to resample: 6541.204518318176 seconds
+
+Iteration 84
+- n_eff was 6782.555658036534. Resampling...
+- time to resample: 6117.192030668259 seconds
+
+Iteration 88
+- n_eff was 6755.013698367554. Resampling...
+- time to resample: 5957.254606962204 seconds
+
+Iteration 92
+- n_eff was 6791.772820940504. Resampling...
+- time to resample: 5757.079981088638 seconds
+
+Iteration 96
+- n_eff was 6760.270656523717. Resampling...
+- time to resample: 5578.739969491959 seconds
+
