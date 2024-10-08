@@ -18,8 +18,10 @@ class LossFn:
 
     def __call__(self, actual: loss_input, target: loss_input, weights: jnp.ndarray) -> float:
         """Calculate the loss."""
+        raise NotImplementedError("Subclasses must implement this method.")
 
 
+@chex.dataclass
 class SquaredError(LossFn):
     """Calculate the squared error between the actual and target values."""
 
@@ -42,6 +44,6 @@ class ObservableLossFn:
         vals = [self.loss_fn(observable, target)]
 
         if self.return_observable:
-            return vals.append(observable)
+            vals.append(observable)
 
         return tuple(vals)
