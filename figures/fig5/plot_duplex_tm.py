@@ -16,34 +16,49 @@ rc('text', usetex=True)
 
 data_dir = Path("figures/fig5/data")
 
+"""
 oxdna_version = 2
 target = 317
 load_iter = 85
-
+max_iter = 300
 tm_dir = data_dir / "duplex" / f"oxdna{oxdna_version}" / f"t{target}"
+"""
+
+oxdna_version = 1
+target = 310
+tm_dir = data_dir / "duplex" / f"oxdna{oxdna_version}" / f"t{target}" / "hb-stk"
+max_iter = 100
+load_iter = "fin"
+
+
 assert(tm_dir.exists())
 output_dir = Path("figures/fig5/output")
 
+if load_iter == "fin":
+    prefix = "fin_"
+    suffix = ""
+else:
+    prefix = ""
+    suffix = f"_{load_iter}"
 
+fin_tms_path = tm_dir / f"obj/{prefix}tms{suffix}.npy"
+fin_tms = onp.load(fin_tms_path)[:max_iter]
 
-max_iter = 300
+fin_ref_iters_path = tm_dir / f"obj/{prefix}ref_iters{suffix}.npy"
+fin_ref_iters = onp.load(fin_ref_iters_path)
+
+fin_ref_tms_path = tm_dir / f"obj/{prefix}ref_tms{suffix}.npy"
+fin_ref_tms = onp.load(fin_ref_tms_path)
+
+keep_ref_iters = fin_ref_iters < max_iter
+fin_ref_iters = fin_ref_iters[keep_ref_iters]
+fin_ref_tms = fin_ref_tms[keep_ref_iters]
+
 
 for width, height in [(20, 14), (24, 14), (28, 14)]:
+# for width, height in [(28, 14)]:
 
     fig, ax = plt.subplots(figsize=(width, height))
-
-    fin_tms_path = tm_dir / f"obj/tms_i{load_iter}.npy"
-    fin_tms = onp.load(fin_tms_path)[:max_iter]
-
-    fin_ref_iters_path = tm_dir / f"obj/ref_iters_i{load_iter}.npy"
-    fin_ref_iters = onp.load(fin_ref_iters_path)
-
-    fin_ref_tms_path = tm_dir / f"obj/ref_tms_i{load_iter}.npy"
-    fin_ref_tms = onp.load(fin_ref_tms_path)
-
-    keep_ref_iters = fin_ref_iters < max_iter
-    fin_ref_iters = fin_ref_iters[keep_ref_iters]
-    fin_ref_tms = fin_ref_tms[keep_ref_iters]
 
     ax.plot(fin_tms, color="black", linewidth=3, label="Simulation")
     ax.scatter(fin_ref_iters, fin_ref_tms, color="black", s=100)
@@ -70,4 +85,5 @@ for width, height in [(20, 14), (24, 14), (28, 14)]:
 
     # plt.show()
     plt.savefig(output_dir / f"tm_duplex_v{oxdna_version}_t{target}_{width}x{height}.pdf")
+
     plt.close()
