@@ -72,9 +72,8 @@ class oxDNASimulator:  # noqa: N801 oxDNA is a special word
         # return the trajectory
         trajectory = jd_traj.from_file(output_file, topology.strand_counts, is_oxdna=True)
 
-        return jd_sio.Trajectory(
-            sequence=topology.seq,
+        return jd_sio.SimulatorTrajectory(
             seq_oh=topology.seq_one_hot,
-            strand_lengths=topology.strand_lengths,
+            strand_lengths=topology.strand_counts,
             rigid_body=trajectory.state_rigid_body,
         )
