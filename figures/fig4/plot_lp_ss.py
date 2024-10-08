@@ -18,7 +18,8 @@ rc('text', usetex=True)
 data_dir = Path("figures/fig4/data")
 lp_ss_dir = data_dir / "lp-ss/"
 output_dir = Path("figures/fig4/output")
-target = 40
+# target = 40
+target = 37
 
 max_iter = 90
 

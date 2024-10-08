@@ -103,7 +103,7 @@ for m_name, m_dir in [("seff", seff_dir), ("c", c_dir), ("g", g_dir)]:
         plt.tight_layout()
 
         # plt.show()
-        plt.savefig(output_dir / f"{m_name}_top{m}_grads_{width}x{height}.pdf")
-        # plt.savefig(output_dir / f"{m_name}_top{m}_grads_{width}x{height}.svg")
+        # plt.savefig(output_dir / f"{m_name}_top{m}_grads_{width}x{height}.pdf")
+        plt.savefig(output_dir / f"{m_name}_top{m}_grads_{width}x{height}.svg")
 
         plt.close()

@@ -21,8 +21,8 @@ output_dir = Path("figures/fig4/output")
 
 max_iter = 100
 
-# for width, height in [(20, 14), (24, 14), (28, 14)]:
-for width, height in [(20, 14)]:
+for width, height in [(20, 14), (24, 14), (28, 14)]:
+# for width, height in [(20, 14)]:
 
     # fig, ax = plt.subplots(figsize=(width, height))
     fig, (ax1, ax2) = plt.subplots(2, 1, height_ratios=[1, 1], figsize=(width, height))
@@ -125,7 +125,7 @@ PER_NUC_FORCES = [0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.375]
 TOTAL_FORCES = onp.array(PER_NUC_FORCES) * 2.0
 TOTAL_FORCES_SI = TOTAL_FORCES * oxdna_force_to_pn # pN
 
-for width, height in [(14, 12)]:
+for width, height in [(12, 12), (14, 12), (16, 12)]:
     fig, ax = plt.subplots(figsize=(width, height))
 
     ax.plot(iter0_extensions, TOTAL_FORCES_SI, linewidth=4, color="black", label="Initial")
@@ -142,4 +142,5 @@ for width, height in [(14, 12)]:
 
     # plt.show()
     plt.savefig(output_dir / f"wlc_force_ext_change_{width}x{height}.pdf")
+    plt.savefig(output_dir / f"wlc_force_ext_change_{width}x{height}.svg")
     plt.close()
