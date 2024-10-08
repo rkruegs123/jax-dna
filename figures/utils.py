@@ -51,5 +51,8 @@ label_dict = {
     "hydrogen_bonding": {
         "dr0_hb": r'$\delta r^0_{hb}$',
         "theta0_hb_7": r'$\theta^0_{hb,7}$'
+    },
+    "coaxial_stacking": {
+        "dr_c_coax": r'$\delta r^c_{coax}$',
     }
 }
