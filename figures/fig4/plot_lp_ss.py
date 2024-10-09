@@ -1,13 +1,15 @@
 import numpy as onp
 from pathlib import Path
 import pdb
-
 from matplotlib import rc
 from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
+import jax.numpy as jnp
+
 from figures.utils import colors, labels
+from jax_dna.common import read_seq_specific
 
 
 font = {'size': 48}
@@ -21,7 +23,7 @@ output_dir = Path("figures/fig4/output")
 # target = 40
 target = 37
 
-max_iter = 90
+max_iter = 300
 
 
 target_dir = lp_ss_dir / f"t{target}"
@@ -102,17 +104,28 @@ def plot_changes(changes, width=12, height=10, title=None):
     plt.close()
 
 
-# HB weights
+# Load iter 0 weights
 iter0_hb_weights = onp.load(target_dir / "ref_traj" / "iter0" / "hb_weights.npy")
-iter89_hb_weights = onp.load(target_dir / "ref_traj" / "iter89" / "hb_weights.npy")
-delta_hb_weights = iter89_hb_weights - iter0_hb_weights
+iter0_stack_weights = onp.load(target_dir / "ref_traj" / "iter0" / "stack_weights.npy")
 
+iter0_hb_weights, iter0_stack_weights = read_seq_specific.constrain(
+    jnp.array(iter0_hb_weights), jnp.array(iter0_stack_weights), read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2)
+
+# Load iter weights for last ref iter
+last_ref_iter = fin_ref_iters[-1]
+last_ref_iter_hb_weights = onp.load(target_dir / "ref_traj" / f"iter{last_ref_iter}" / "hb_weights.npy")
+last_ref_iter_stack_weights = onp.load(target_dir / "ref_traj" / f"iter{last_ref_iter}" / "stack_weights.npy")
+
+last_ref_iter_hb_weights, last_ref_iter_stack_weights = read_seq_specific.constrain(
+    jnp.array(last_ref_iter_hb_weights), jnp.array(last_ref_iter_stack_weights), read_seq_specific.STCK_COUPLED_PAIRS_OXDNA2)
+
+
+# HB weights
+delta_hb_weights = last_ref_iter_hb_weights - iter0_hb_weights
 plot_changes(delta_hb_weights, title="Change in HB Weights")
 
 
 # Stack weights
-iter0_stack_weights = onp.load(target_dir / "ref_traj" / "iter0" / "stack_weights.npy")
-iter89_stack_weights = onp.load(target_dir / "ref_traj" / "iter89" / "stack_weights.npy")
-delta_stack_weights = iter89_stack_weights - iter0_stack_weights
+delta_stack_weights = last_ref_iter_stack_weights - iter0_stack_weights
 
 plot_changes(delta_stack_weights, title="Change in Stack Weights")
