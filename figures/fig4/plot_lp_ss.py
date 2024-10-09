@@ -42,9 +42,7 @@ fin_ref_iters = fin_ref_iters[keep_ref_iters]
 fin_ref_lps = fin_ref_lps[keep_ref_iters]
 
 # for width, height in [(20, 14), (24, 14), (28, 14)]:
-for width, height in [(16, 14)]:
-# for width, height in []:
-
+for width, height in [(14, 14), (16, 14), (18, 14)]:
 
     fig, ax = plt.subplots(figsize=(width, height))
 
@@ -59,9 +57,9 @@ for width, height in [(16, 14)]:
     # ax.set_yticks(y_vals)
     # ax.set_yticklabels([r'$10.5$', r'$11$', r'$11.5$', r'$12$'])
 
-    x_vals = [0, 30, 60, 90]
-    ax.set_xticks(x_vals)
-    ax.set_xticklabels([r'$0$', r'$30$', r'$60$', r'$90$'])
+    # x_vals = [0, 30, 60, 90]
+    # ax.set_xticks(x_vals)
+    # ax.set_xticklabels([r'$0$', r'$30$', r'$60$', r'$90$'])
     # ax.set_ylim(top=45)
 
     leg = ax.legend(prop={'size': 35})
@@ -69,13 +67,16 @@ for width, height in [(16, 14)]:
     for line in leg.get_lines():
         line.set_linewidth(5.0)
 
-    plt.show()
-    # plt.savefig(output_dir / f"lps_ss_{width}x{height}.pdf")
+    # plt.show()
+    plt.savefig(output_dir / f"lps_ss_{width}x{height}.pdf")
     plt.close()
 
 
 
-def plot_changes(changes, width=12, height=10, title=None):
+def plot_changes(changes, width=12, height=10, title=None, fpath=None, save=False):
+    if save:
+        assert(fpath is not None)
+
     cmap = plt.get_cmap('RdYlGn')  # Red to green continuous colormap
 
     max_delta = onp.abs(changes).max()
@@ -100,7 +101,10 @@ def plot_changes(changes, width=12, height=10, title=None):
 
     plt.tight_layout()
 
-    plt.show()
+    if save:
+        plt.savefig(fpath)
+    else:
+        plt.show()
     plt.close()
 
 
@@ -122,10 +126,10 @@ last_ref_iter_hb_weights, last_ref_iter_stack_weights = read_seq_specific.constr
 
 # HB weights
 delta_hb_weights = last_ref_iter_hb_weights - iter0_hb_weights
-plot_changes(delta_hb_weights, title="Change in HB Weights")
+plot_changes(delta_hb_weights, title="Change in HB Weights", fpath=str(output_dir / f"lp_ss_hb_deltas.svg"), save=True)
 
 
 # Stack weights
 delta_stack_weights = last_ref_iter_stack_weights - iter0_stack_weights
 
-plot_changes(delta_stack_weights, title="Change in Stack Weights")
+plot_changes(delta_stack_weights, title="Change in Stack Weights", fpath=str(output_dir / f"lp_ss_stack_deltas.svg"), save=True)
