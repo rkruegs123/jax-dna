@@ -1,12 +1,13 @@
 """Trajectory information for RNA/DNA strands."""
 
 import concurrent.futures as cf
-import dataclasses as dc
 import functools
 import itertools
 import multiprocessing as mp
 from pathlib import Path
 
+import chex
+import jax.numpy as jnp
 import jax_md
 import numpy as np
 
@@ -31,7 +32,7 @@ ERR_NUCLEOTIDE_STATE_SHAPE = "Invalid shape for nucleotide states:"
 ERR_FIXED_BOX_SIZE = "Only trajecories in a fixed box size are supported"
 
 
-@dc.dataclass(frozen=True)
+@chex.dataclass(frozen=True)
 class Trajectory:
     """Trajectory information for a RNA/DNA strand."""
 
@@ -64,8 +65,44 @@ class Trajectory:
         ):
             raise ValueError(ERR_TRAJECTORY_ENERGIES_SHAPE)
 
+    @property
+    def state_rigid_bodies(self) -> list[jax_md.rigid_body.RigidBody]:
+        """Convert the states to a list of rigid bodies."""
+        return [state.to_rigid_body() for state in self.states]
 
-@dc.dataclass(frozen=True)
+    @property
+    def state_rigid_body(self) -> jax_md.rigid_body.RigidBody:
+        """Convert the states to a single rigid body."""
+        return jax_md.rigid_body.RigidBody(
+            center=jnp.stack([state.com for state in self.states]),
+            orientation=jax_md.rigid_body.Quaternion(jnp.stack([state.quaternions for state in self.states])),
+        )
+
+    def slice(self, key: int | slice) -> "Trajectory":
+        """Get a subset of the trajectory."""
+        return Trajectory(
+            n_nucleotides=self.n_nucleotides,
+            strand_lengths=self.strand_lengths,
+            times=self.times[key],
+            energies=self.energies[key],
+            states=self.states[key],
+        )
+
+    def __repr__(self) -> str:
+        """Return a string representation of the trajectory."""
+        return "\n".join(
+            [
+                "Trajectory:",
+                f"n_nucleotides: {self.n_nucleotides}",
+                f"strand_lengths: {self.strand_lengths}",
+                f"# times: {len(self.times)}",
+                f"# energies: {len(self.energies)}",
+                f"# states: {len(self.states)}",
+            ]
+        )
+
+
+@chex.dataclass(frozen=True)
 class NucleotideState:
     """State information for the nucleotides in a single state."""
 
@@ -121,7 +158,7 @@ class NucleotideState:
         """Convert the nucleotide state to jax-md rigid bodies."""
         return jax_md.rigid_body.RigidBody(
             self.com,
-            jax_md.rigid_body.Quaternion(self.quaternions),
+            jax_md.rigid_body.Quaternion(vec=self.quaternions),
         )
 
 
@@ -136,7 +173,7 @@ def from_file(
     path: typ.PathOrStr,
     strand_lengths: list[int],
     *,
-    is_oxdna: bool = False,
+    is_oxdna: bool = True,
     n_processes: int = 1,
 ) -> Trajectory:
     """Parse a trajectory file.
@@ -208,7 +245,7 @@ def from_file(
         strand_lengths=strand_lengths,
         times=np.array(ts, dtype=np.float64),
         energies=np.array(es, dtype=np.float64),
-        states=list(map(NucleotideState, states)),
+        states=[NucleotideState(array=s) for s in states],
     )
 
 
@@ -277,6 +314,8 @@ def _read_file(
                 # the order of the nucleotides in each strand
                 if is_3p_5p:
                     state = list(itertools.chain.from_iterable([state[s:e][::-1] for s, e in strand_bounds]))
+                    state = np.array(state, dtype=np.float64)
+                    state[:, 6:9] = -state[:, 6:9]
                 states.append(np.array(state, dtype=np.float64))
                 state = []
                 current = file_obj.tell()
