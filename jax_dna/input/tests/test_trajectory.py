@@ -26,8 +26,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([0.0, 1.0]),  # ok
             np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),  # ok
             [
-                jdt.NucleotideState(np.zeros((10, 15))),
-                jdt.NucleotideState(np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
             ],  # ok
             re.escape(jdt.ERR_TRAJECTORY_N_NUCLEOTIDE_STRAND_LEGNTHS),
         ),
@@ -38,8 +38,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([0.0, 1.0]),  # ok
             np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),  # ok
             [
-                jdt.NucleotideState(np.zeros((10, 15))),
-                jdt.NucleotideState(np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
             ],  # ok
             re.escape(jdt.ERR_TRAJECTORY_N_NUCLEOTIDE_STRAND_LEGNTHS),
         ),
@@ -50,8 +50,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([0.0, 1.0, 2.0]),  # too long, len=3
             np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),  # ok, len=2
             [
-                jdt.NucleotideState(np.zeros((10, 15))),
-                jdt.NucleotideState(np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
             ],  # ok, len=2
             re.escape(jdt.ERR_TRAJECTORY_T_E_S_LENGTHS),
         ),
@@ -62,7 +62,7 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([0.0, 1.0]),  # ok, len=2
             np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),  # ok, len=2
             [
-                jdt.NucleotideState(np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
             ],  # not ok, len=1
             re.escape(jdt.ERR_TRAJECTORY_T_E_S_LENGTHS),
         ),
@@ -73,8 +73,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([0.0, 1.0]).reshape([-1, 1]),  # not ok
             np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),  # ok
             [
-                jdt.NucleotideState(np.zeros((10, 15))),
-                jdt.NucleotideState(np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
             ],  # ok
             re.escape(jdt.ERR_TRAJECTORY_TIMES_DIMS),
         ),
@@ -85,8 +85,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([0.0, 1.0]),  # ok
             np.array([[0.0, 1.0]]).flatten(),  # not ok
             [
-                jdt.NucleotideState(np.zeros((10, 15))),
-                jdt.NucleotideState(np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
             ],  # ok
             re.escape(jdt.ERR_TRAJECTORY_ENERGIES_SHAPE),
         ),
@@ -97,9 +97,9 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([0.0, 1.0, 0.0]),  # ok
             np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]).reshape([3, 2]),  # not ok
             [
-                jdt.NucleotideState(np.zeros((10, 15))),
-                jdt.NucleotideState(np.zeros((10, 15))),
-                jdt.NucleotideState(np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
             ],  # ok
             re.escape(jdt.ERR_TRAJECTORY_ENERGIES_SHAPE),
         ),
@@ -114,7 +114,13 @@ def test_trajectory_class_validation_raises_value_error(
     expected_msg: str,
 ):
     with pytest.raises(ValueError, match=expected_msg):
-        jdt.Trajectory(n_nucleotides, strand_lengths, times, energies, states)
+        jdt.Trajectory(
+            n_nucleotides=n_nucleotides,
+            strand_lengths=strand_lengths,
+            times=times,
+            energies=energies,
+            states=states,
+        )
 
 
 @pytest.mark.parametrize(
@@ -134,8 +140,8 @@ def test_trajectory_class_validation_raises_value_error(
             [0.0, 1.0],  # not the right type
             np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),  # ok
             [
-                jdt.NucleotideState(np.zeros((10, 15))),
-                jdt.NucleotideState(np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
             ],  # ok
             re.escape(jdt.ERR_TRAJECTORY_TIMES_TYPE),
         ),
@@ -146,8 +152,8 @@ def test_trajectory_class_validation_raises_value_error(
             np.array([0.0, 1.0]),  # ok
             [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]],  # not the right type
             [
-                jdt.NucleotideState(np.zeros((10, 15))),
-                jdt.NucleotideState(np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
             ],  # ok
             re.escape(jdt.ERR_TRAJECTORY_ENERGIES_TYPE),
         ),
@@ -162,7 +168,9 @@ def test_trajectory_class_validation_raises_type_error(
     expected_msg: str,
 ):
     with pytest.raises(TypeError, match=expected_msg):
-        jdt.Trajectory(n_nucleotides, strand_lengths, times, energies, states)
+        jdt.Trajectory(
+            n_nucleotides=n_nucleotides, strand_lengths=strand_lengths, times=times, energies=energies, states=states
+        )
 
 
 @pytest.mark.parametrize(
@@ -174,8 +182,8 @@ def test_trajectory_class_validation_raises_type_error(
             np.array([0.0, 1.0]),  # ok
             np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),  # ok
             [
-                jdt.NucleotideState(np.zeros((10, 15))),
-                jdt.NucleotideState(np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
+                jdt.NucleotideState(array=np.zeros((10, 15))),
             ],  # ok
         ),
     ],
@@ -187,12 +195,18 @@ def test_trajectory_class_validation(
     energies: np.ndarray,
     states: list[jdt.NucleotideState],
 ):
-    jdt.Trajectory(n_nucleotides, strand_lengths, times, energies, states)
+    jdt.Trajectory(
+        n_nucleotides=n_nucleotides,
+        strand_lengths=strand_lengths,
+        times=times,
+        energies=energies,
+        states=states,
+    )
 
 
 def test_nucleotide_basic_properties():
     arr = np.arange(150).reshape((10, 15))
-    ns = jdt.NucleotideState(arr)
+    ns = jdt.NucleotideState(array=arr)
 
     slices = [
         slice(0, 3),
@@ -221,7 +235,7 @@ def test_nucleotide_basic_properties():
 )
 def test_nucleotide_state_class_validation_raises_value_error(array: np.ndarray, expected_msg: str):
     with pytest.raises(ValueError, match=expected_msg):
-        jdt.NucleotideState(array)
+        jdt.NucleotideState(array=array)
 
 
 @pytest.mark.parametrize(
@@ -232,7 +246,7 @@ def test_nucleotide_state_class_validation_raises_value_error(array: np.ndarray,
 )
 def test_nucleotide_state_class_validation_raises_type_error(array: np.ndarray, expected_msg: str):
     with pytest.raises(TypeError, match=expected_msg):
-        jdt.NucleotideState(array)
+        jdt.NucleotideState(array=array)
 
 
 @pytest.mark.parametrize(
@@ -242,7 +256,7 @@ def test_nucleotide_state_class_validation_raises_type_error(array: np.ndarray, 
     ],
 )
 def test_nucleotide_state_euler_angle_shape(array: np.ndarray):
-    ns = jdt.NucleotideState(array)
+    ns = jdt.NucleotideState(array=array)
     n_nucleotides = array.shape[0]
     expected_shape = (n_nucleotides,)
     assert ns.euler_angles[0].shape == expected_shape
@@ -257,7 +271,7 @@ def test_nucleotide_state_euler_angle_shape(array: np.ndarray):
     ],
 )
 def test_nucleotide_state_quaternion_shape(array: np.ndarray):
-    ns = jdt.NucleotideState(array)
+    ns = jdt.NucleotideState(array=array)
     n_nucleotides = array.shape[0]
     expected_shape = (n_nucleotides, 4)
     assert ns.quaternions.shape == expected_shape
@@ -270,7 +284,7 @@ def test_nucleotide_state_quaternion_shape(array: np.ndarray):
     ],
 )
 def test_nucleotide_state_to_rigid_body(array: np.ndarray):
-    ns = jdt.NucleotideState(array)
+    ns = jdt.NucleotideState(array=array)
     n_nucleotides = array.shape[0]
     rb = ns.to_rigid_body()
     assert rb.center.shape == (n_nucleotides, 3)

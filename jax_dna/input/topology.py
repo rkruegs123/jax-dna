@@ -11,8 +11,8 @@ import jax_dna.utils.types as typ
 
 NUCLEOTIDES_ONEHOT: dict[str, typ.Vector4D] = {
     "A": np.array([1, 0, 0, 0], dtype=np.float64),
-    "G": np.array([0, 1, 0, 0], dtype=np.float64),
-    "C": np.array([0, 0, 1, 0], dtype=np.float64),
+    "C": np.array([0, 1, 0, 0], dtype=np.float64),
+    "G": np.array([0, 0, 1, 0], dtype=np.float64),
     "T": np.array([0, 0, 0, 1], dtype=np.float64),
     "U": np.array([0, 0, 0, 1], dtype=np.float64),
 }
@@ -162,7 +162,7 @@ def _from_file_oxdna_classic(lines: list[str]) -> Topology:
     # after the first line the topology files are space delimited with the
     # following columns:
     # - strand id (1 indexed)
-    # - nucleotide base (A=0, G=1, C=2, T=3, U=3), use char for now
+    # - nucleotide base (A=0, C=1, G=2, T=3, U=3), use char for now
     # - 3' neighbor (0-indexed), -1 if none, -1 indicates the stand isn't circular
     # - 5' neighbor (0-indexed), -1 if none
     #

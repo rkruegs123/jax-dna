@@ -1,0 +1,4 @@
+testing = "test"
+number = 42
+arr = [1, 2, 3]
+math = "pi * 3"
