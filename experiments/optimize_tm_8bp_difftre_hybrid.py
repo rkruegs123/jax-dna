@@ -13,7 +13,11 @@ from copy import deepcopy
 import seaborn as sns
 import functools
 import pprint
+import zipfile
+import os
+from tabulate import tabulate
 
+import jax
 import jax.numpy as jnp
 from jax_md import space
 from jax import vmap, jit, lax, grad, value_and_grad
@@ -23,8 +27,9 @@ from jax_dna.common import utils, topology, trajectory, checkpoint, center_confi
 from jax_dna.dna1 import model, oxdna_utils
 from jax_dna.loss import tm
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 checkpoint_every = 25
@@ -33,6 +38,11 @@ if checkpoint_every is None:
 else:
     scan = functools.partial(checkpoint.checkpoint_scan,
                              checkpoint_every=checkpoint_every)
+
+
+def zip_file(file_path, zip_name):
+    with zipfile.ZipFile(zip_name, 'w') as zipf:
+        zipf.write(file_path, os.path.basename(file_path))
 
 
 def run(args):
@@ -56,12 +66,32 @@ def run(args):
     extrapolate_kts = vmap(utils.get_kt)(extrapolate_temps)
     extrapolate_temp_str = ', '.join([f"{tc}K" for tc in extrapolate_temps])
 
+    small_system = args['small_system']
+
     n_iters = args['n_iters']
     lr = args['lr']
     target_tm = args['target_tm']
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
     optimizer_type = args['optimizer_type']
+
+    opt_keys = args['opt_keys']
+    no_delete = args['no_delete']
+    no_archive = args['no_archive']
+
+    save_obj_every = args['save_obj_every']
+    plot_every = args['plot_every']
+
+    update_weights = args['update_weights']
+    if update_weights:
+        raise RuntimeError(f"This isn't working at the moment")
+
+    opt_width = args['opt_width']
+    width_coeff = int(opt_width)
+    opt_tm = not args['no_opt_tm']
+    tm_coeff = int(opt_tm)
+    assert(opt_width or opt_tm)
+    target_width = args['target_width']
 
 
     # Setup the logging directory
@@ -74,8 +104,14 @@ def run(args):
     img_dir = run_dir / "img"
     img_dir.mkdir(parents=False, exist_ok=False)
 
+    obj_dir = run_dir / "obj"
+    obj_dir.mkdir(parents=False, exist_ok=False)
+
     log_dir = run_dir / "log"
     log_dir.mkdir(parents=False, exist_ok=False)
+
+    weights_dir = run_dir / "weights"
+    weights_dir.mkdir(parents=False, exist_ok=False)
 
     ref_traj_dir = run_dir / "ref_traj"
     ref_traj_dir.mkdir(parents=False, exist_ok=False)
@@ -97,17 +133,17 @@ def run(args):
         f.write(params_str)
 
     # Load the system
-    sys_basedir = Path("data/templates/tm-8bp")
+    if small_system:
+        sys_basedir = Path("data/templates/tm-6bp")
+    else:
+        sys_basedir = Path("data/templates/tm-8bp")
     input_template_path = sys_basedir / "input"
 
-    weight_path = sys_basedir / "wfile.txt"
-    weight_df = pd.read_csv(weight_path, delim_whitespace=True, names=["op", "weight"])
-    weight_mapper = dict(zip(weight_df.op, weight_df.weight))
 
     top_path = sys_basedir / "sys.top"
     top_info = topology.TopologyInfo(top_path,
-                                     # reverse_direction=False
-                                     reverse_direction=True
+                                     reverse_direction=False
+                                     # reverse_direction=True
     )
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
     assert(seq_oh.shape[0] % 2 == 0)
@@ -117,19 +153,22 @@ def run(args):
     conf_info_bound = trajectory.TrajectoryInfo(
         top_info,
         read_from_file=True, traj_path=conf_path_bound,
-        reverse_direction=True
-        # reverse_direction=False
+        # reverse_direction=True
+        reverse_direction=False
     )
     conf_path_unbound = sys_basedir / "init_unbound.conf"
     conf_info_unbound = trajectory.TrajectoryInfo(
         top_info,
         read_from_file=True, traj_path=conf_path_unbound,
-        reverse_direction=True
-        # reverse_direction=False
+        # reverse_direction=True
+        reverse_direction=False
     )
     box_size = conf_info_bound.box_size
 
     weights_path = sys_basedir / "wfile.txt"
+    init_weights_df = pd.read_csv(weights_path, delim_whitespace=True, names=["op", "weight"])
+    num_ops = len(init_weights_df)
+
     op_path = sys_basedir / "op.txt"
 
     displacement_fn, shift_fn = space.periodic(box_size)
@@ -140,10 +179,25 @@ def run(args):
     seed_check_sample_freq = 10
     seed_check_steps = 100
 
-    def get_ref_states(params, i, seed, prev_basedir):
+    def get_ref_states(params, i, seed, prev_basedir, last_ref_iter=None):
         random.seed(seed)
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
+
+        if i == 0 or not update_weights:
+            iter_weights_path = weights_path
+        else:
+            iter_weights_path = weights_dir / f"weights_i{last_ref_iter}.txt"
+
+        iter_weights_df = pd.read_csv(iter_weights_path, delim_whitespace=True, names=["op", "weight"])
+        weight_mapper = dict(zip(iter_weights_df.op, iter_weights_df.weight))
+        op2idx = dict()
+        idx2op = dict()
+        for row_idx, row in iter_weights_df.iterrows():
+            op = int(row.op)
+            op2idx[op] = row_idx
+            idx2op[row_idx] = op
+
 
         oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
 
@@ -169,15 +223,15 @@ def run(args):
                 prev_lastconf_info = trajectory.TrajectoryInfo(
                     top_info,
                     read_from_file=True, traj_path=prev_lastconf_path,
-                    reverse_direction=True
-                    # reverse_direction=False
+                    # reverse_direction=True
+                    reverse_direction=False
                 )
                 # conf_info_copy = center_configuration.center_conf(top_info, prev_lastconf_info)
             conf_info_copy.traj_df.t = onp.full(seq_oh.shape[0], r*n_steps_per_sim)
 
             conf_info_copy.write(repeat_dir / "init.conf",
-                                 # reverse=False,
-                                 reverse=True,
+                                 reverse=False,
+                                 # reverse=True,
                                  write_topology=False)
 
             check_seed_dir = repeat_dir / "check_seed"
@@ -213,8 +267,7 @@ def run(args):
 
             if valid_seed is None:
                 raise RuntimeError(f"Could not find valid seed.")
-                
-            
+
             oxdna_utils.rewrite_input_file(
                 input_template_path, repeat_dir,
                 temp=f"{t_kelvin}K", steps=n_steps_per_sim,
@@ -226,7 +279,6 @@ def run(args):
                 weights_file=str(repeat_dir / "wfile.txt"), op_file=str(repeat_dir / "op.txt"),
                 log_file=str(repeat_dir / "sim.log"),
             )
-
 
             procs.append(subprocess.Popen([oxdna_exec_path, repeat_dir / "input"]))
 
@@ -251,6 +303,14 @@ def run(args):
         combine_proc = subprocess.run(combine_cmd, shell=True)
         if combine_proc.returncode != 0:
             raise RuntimeError(f"Combining trajectories failed with error code: {combine_proc.returncode}")
+
+        if not no_delete:
+            files_to_remove = ["output.dat"]
+            for r in range(n_sims):
+                repeat_dir = iter_dir / f"r{r}"
+                for f_stem in files_to_remove:
+                    file_to_rem = repeat_dir / f_stem
+                    file_to_rem.unlink()
 
         # Analyze
 
@@ -279,17 +339,23 @@ def run(args):
         traj_info = trajectory.TrajectoryInfo(
             top_info, read_from_file=True,
             traj_path=iter_dir / "output.dat",
-            # reverse_direction=False)
-            reverse_direction=True
+            reverse_direction=False
+            # reverse_direction=True
         )
         ref_states = traj_info.get_states()
         assert(len(ref_states) == n_ref_states)
         ref_states = utils.tree_stack(ref_states)
 
         ## Load the oxDNA energies
+        """
         energy_df_columns = [
             "time", "potential_energy", "kinetic_energy", "total_energy",
             "op_idx", "op", "op_weight"
+        ]
+        """
+        energy_df_columns = [
+            "time", "potential_energy", "acc_ratio_trans", "acc_ratio_rot",
+            "acc_ratio_vol", "op", "op_weight"
         ]
         energy_dfs = [pd.read_csv(iter_dir / f"r{r}" / "energy.dat", names=energy_df_columns,
                                   delim_whitespace=True)[1:] for r in range(n_sims)]
@@ -331,7 +397,7 @@ def run(args):
         atol_places = 3
         tol = 10**(-atol_places)
         energy_diffs = list()
-        for i, (calc, gt) in enumerate(zip(ref_energies, gt_energies)):
+        for e_idx, (calc, gt) in enumerate(zip(ref_energies, gt_energies)):
             diff = onp.abs(calc - gt)
             if diff > tol:
                 print(f"WARNING: energy difference of {diff}")
@@ -368,6 +434,7 @@ def run(args):
         ref_unbiased_counts = onp.zeros(n_bp+1)
         all_ops = energy_df.op.to_numpy()
         all_op_weights = onp.array([weight_mapper[op] for op in all_ops])
+        all_op_idxs = onp.array([op2idx[op] for op in all_ops])
         for rs_idx in tqdm(range(n_ref_states)):
             op = all_ops[rs_idx]
             op_weight = all_op_weights[rs_idx]
@@ -412,7 +479,7 @@ def run(args):
                 boltz_diff = jnp.exp(calc_energy/kT - calc_energy_temp/extrap_kt)
                 temp_unbiased_counts[op] += 1/op_weight * boltz_diff
 
-                
+
                 if rs_idx >= running_avg_min and rs_idx % running_avg_freq == 0:
                     if rs_idx not in running_avg_mapper:
                         running_avg_mapper[rs_idx] = [deepcopy(temp_unbiased_counts)]
@@ -465,13 +532,24 @@ def run(args):
         rev_temps = jnp.flip(extrapolate_temps)
         finfs_extrap = jnp.arange(0.1, 1., 0.05)
         temps_extrap = jnp.interp(finfs_extrap, rev_finfs, rev_temps)
-        plt.plot(temps_extrap, finfs_extrap)
+        plt.plot(temps_extrap, finfs_extrap, label="Reference")
+
+        onp.save(iter_dir / f"melting_temps_reference.npy", onp.array(temps_extrap), allow_pickle=False)
+        onp.save(iter_dir / f"melting_finfs.npy", onp.array(finfs_extrap), allow_pickle=False)
+
+        rev_finfs = jnp.flip(discrete_finfs)
+        temps_extrap = jnp.interp(finfs_extrap, rev_finfs, rev_temps)
+        plt.plot(temps_extrap, finfs_extrap, label="Discrete")
+
+        onp.save(iter_dir / f"melting_temps_discrete.npy", onp.array(temps_extrap), allow_pickle=False)
+
         plt.xlabel("T/K")
         plt.ylabel("Duplex Yield")
         plt.title(f"Tm={ref_tm}, width={ref_width}")
-        plt.savefig(iter_dir / "melting_curve.png")
+        plt.legend()
+        plt.savefig(iter_dir / "melting_curves.png")
         plt.clf()
-        
+
 
         end = time.time()
         analyze_time = end - start
@@ -484,10 +562,42 @@ def run(args):
         summary_str += f"Calc. Tm: {calc_tm}\n"
         summary_str += f"Calc. width: {calc_width}\n"
         summary_str += f"Simulation finf: {sim_finf}\n"
+        summary_str += f"Mean energy diff: {onp.mean(energy_diffs)}\n"
         with open(iter_dir / "summary.txt", "w+") as f:
             f.write(summary_str)
 
-        return ref_states, ref_energies, jnp.array(all_ops), jnp.array(all_op_weights), iter_dir
+        # Compute the optimal weights
+        probs = onp.zeros(num_ops)
+        for op_idx, op_weight in zip(all_op_idxs, all_op_weights):
+            probs[op_idx] += 1/op_weight
+
+        normed = probs / sum(probs)
+        optimal_weights = 1 / normed
+
+        updated_weights_df = iter_weights_df.copy(deep=True)
+        updated_weights_df.weight = optimal_weights
+
+        if update_weights:
+            optimal_wfile_path = weights_dir / f"weights_i{i}.txt"
+            with open(optimal_wfile_path, "w") as of:
+                content = tabulate(updated_weights_df.values.tolist(),
+                                   tablefmt="plain", numalign="left")
+                of.write(content + "\n")
+
+        all_ops = jnp.array(all_ops)
+        all_op_weights = jnp.array(all_op_weights)
+
+        plt.plot(all_op_idxs)
+        for s_idx in range(n_sims):
+            plt.axvline(x=s_idx*n_ref_states_per_sim, linestyle="--", color="red")
+        plt.savefig(iter_dir / "op_trajectory.png")
+        plt.clf()
+
+        if not no_archive:
+            zip_file(str(iter_dir / "output.dat"), str(iter_dir / "output.dat.zip"))
+            os.remove(str(iter_dir / "output.dat"))
+
+        return ref_states, ref_energies, all_ops, all_op_weights, iter_dir
 
 
     def loss_fn(params, ref_states, ref_energies, all_ops, all_op_weights):
@@ -546,15 +656,21 @@ def run(args):
 
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
         aux = (curr_tm, curr_width, n_eff)
-        rmse = jnp.sqrt((target_tm - curr_tm)**2)
+
+        # rmse = jnp.sqrt((target_tm - curr_tm)**2)
+        rmse_tm = jnp.sqrt((target_tm - curr_tm)**2)
+        rmse_width = jnp.sqrt((target_width - curr_width)**2)
+        rmse = tm_coeff*rmse_tm + width_coeff*rmse_width
         return rmse, aux
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
     # Initialize parameters
     params = deepcopy(model.EMPTY_BASE_PARAMS)
-    params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
-    params["hydrogen_bonding"] = model.DEFAULT_BASE_PARAMS["hydrogen_bonding"]
+    for opt_key in opt_keys:
+        params[opt_key] = deepcopy(model.DEFAULT_BASE_PARAMS[opt_key])
+    # params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
+    # params["hydrogen_bonding"] = model.DEFAULT_BASE_PARAMS["hydrogen_bonding"]
     """
     params["hydrogen_bonding"] = dict()
     for hb_opt_key in ["a_hb", "eps_hb", "a_hb_1", "a_hb_2", "a_hb_3", "a_hb_4", "a_hb_7", "a_hb_8"]:
@@ -585,7 +701,9 @@ def run(args):
         f.write(f"Generating initial reference states and energies...\n")
     start = time.time()
     prev_ref_basedir = None
+    last_ref_iter = None
     ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(params, i=0, seed=key, prev_basedir=prev_ref_basedir)
+    last_ref_iter = 0
     prev_ref_basedir = deepcopy(ref_iter_dir)
     end = time.time()
     with open(resample_log_path, "a") as f:
@@ -611,8 +729,9 @@ def run(args):
                 f.write(f"- n_eff was {n_eff}. Resampling...\n")
 
             start = time.time()
-            ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(params, i=i, seed=key+1+i, prev_basedir=prev_ref_basedir)
+            ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(params, i=i, seed=key+1+i, prev_basedir=prev_ref_basedir, last_ref_iter=last_ref_iter)
             end = time.time()
+            last_ref_iter = i
             prev_ref_basedir = deepcopy(ref_iter_dir)
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
@@ -628,8 +747,15 @@ def run(args):
 
         with open(loss_path, "a") as f:
             f.write(f"{loss}\n")
+        # with open(grads_path, "a") as f:
+        #     f.write(f"{pprint.pformat(grads)}\n")
+        grads_str = f"\nIteration {i}:"
+        for k, v in grads.items():
+            grads_str += f"\n- {k}"
+            for vk, vv in v.items():
+                grads_str += f"\n\t- {vk}: {vv}"
         with open(grads_path, "a") as f:
-            f.write(f"{pprint.pformat(grads)}\n")
+            f.write(grads_str)
         with open(neff_path, "a") as f:
             f.write(f"{n_eff}\n")
         with open(tm_path, "a") as f:
@@ -638,8 +764,15 @@ def run(args):
             f.write(f"{curr_width}\n")
         with open(times_path, "a") as f:
             f.write(f"{iter_end - iter_start}\n")
+        # with open(iter_params_path, "a") as f:
+        #     f.write(f"{pprint.pformat(params)}\n")
+        iter_params_str = f"\nIteration {i}:"
+        for k, v in params.items():
+            iter_params_str += f"\n- {k}"
+            for vk, vv in v.items():
+                iter_params_str += f"\n\t- {vk}: {vv}"
         with open(iter_params_path, "a") as f:
-            f.write(f"{pprint.pformat(params)}\n")
+            f.write(iter_params_str)
 
         all_losses.append(loss)
         all_n_effs.append(n_eff)
@@ -649,23 +782,38 @@ def run(args):
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
 
-        plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
-        plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
-        plt.legend()
-        plt.ylabel("Loss")
-        plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"losses_iter{i}.png")
-        plt.clf()
+        if i % plot_every == 0 and i:
+            plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
+            plt.legend()
+            plt.ylabel("Loss")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"losses_iter{i}.png")
+            plt.clf()
 
-        plt.plot(onp.arange(i+1), all_tms, linestyle="--", color="blue")
-        plt.scatter(all_ref_times, all_ref_tms, marker='o', label="Resample points", color="blue")
-        plt.axhline(y=target_tm, linestyle='--', label="Target Tm", color='red')
-        plt.legend()
-        plt.ylabel("Expected Tm")
-        plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"tms_iter{i}.png")
-        plt.clf()
+            plt.plot(onp.arange(i+1), all_tms, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_tms, marker='o', label="Resample points", color="blue")
+            plt.axhline(y=target_tm, linestyle='--', label="Target Tm", color='red')
+            plt.legend()
+            plt.ylabel("Expected Tm")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"tms_iter{i}.png")
+            plt.clf()
 
+        if i % save_obj_every == 0 and i:
+            onp.save(obj_dir / f"ref_iters_i{i}.npy", onp.array(all_ref_times), allow_pickle=False)
+            onp.save(obj_dir / f"ref_losses_i{i}.npy", onp.array(all_ref_losses), allow_pickle=False)
+            onp.save(obj_dir / f"ref_tms_i{i}.npy", onp.array(all_ref_tms), allow_pickle=False)
+            onp.save(obj_dir / f"ref_widths_i{i}.npy", onp.array(all_ref_widths), allow_pickle=False)
+            onp.save(obj_dir / f"tms_i{i}.npy", onp.array(all_tms), allow_pickle=False)
+            onp.save(obj_dir / f"widths_i{i}.npy", onp.array(all_widths), allow_pickle=False)
+
+    onp.save(obj_dir / f"fin_ref_iters.npy", onp.array(all_ref_times), allow_pickle=False)
+    onp.save(obj_dir / f"fin_ref_losses.npy", onp.array(all_ref_losses), allow_pickle=False)
+    onp.save(obj_dir / f"fin_ref_tms.npy", onp.array(all_ref_tms), allow_pickle=False)
+    onp.save(obj_dir / f"fin_ref_widths.npy", onp.array(all_ref_widths), allow_pickle=False)
+    onp.save(obj_dir / f"fin_tms.npy", onp.array(all_tms), allow_pickle=False)
+    onp.save(obj_dir / f"fin_widths.npy", onp.array(all_widths), allow_pickle=False)
 
 
 def get_parser():
@@ -708,6 +856,32 @@ def get_parser():
                         help="Factor for determining min Neff")
     parser.add_argument('--optimizer-type', type=str,
                         default="adam", choices=["adam", "sgd", "rmsprop"])
+
+    parser.add_argument(
+        '--opt-keys',
+        nargs='*',  # Accept zero or more arguments
+        default=["stacking", "hydrogen_bonding"],
+        help='Parameter keys to optimize'
+    )
+
+    parser.add_argument('--no-delete', action='store_true')
+    parser.add_argument('--no-archive', action='store_true')
+
+    parser.add_argument('--small-system', action='store_true')
+
+
+    parser.add_argument('--save-obj-every', type=int, default=5,
+                        help="Frequency of saving numpy files")
+    parser.add_argument('--plot-every', type=int, default=1,
+                        help="Frequency of plotting data from gradient descent epochs")
+
+    parser.add_argument('--opt-width', action='store_true')
+    parser.add_argument('--target-width', type=float, default=14.0,
+                        help="Target width of melting temperature curve in Kelvin")
+    parser.add_argument('--no-opt-tm', action='store_true')
+
+    parser.add_argument('--update-weights', action='store_true')
+
 
 
     return parser

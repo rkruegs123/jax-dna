@@ -14,6 +14,7 @@ import argparse
 import pandas as pd
 import random
 
+import jax
 import jax.numpy as jnp
 from jax_md import space
 from jax import vmap, jit, lax
@@ -22,8 +23,9 @@ from jax_dna.common import utils, topology, trajectory, center_configuration, ch
 from jax_dna.loss import persistence_length
 from jax_dna.dna1 import model, oxdna_utils
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 checkpoint_every = 5

@@ -1,0 +1,7 @@
+many10_1mis.wctxt.duplexes ALL_THE_FIT_FILES/10MERS.FIT
+many10_2mis.wctxt.duplexes ALL_THE_FIT_FILES/10MERS.FIT
+many10_3mis.wctxt.duplexes ALL_THE_FIT_FILES/10MERS.FIT 
+many_bulge_1.txt.duplexes ALL_THE_FIT_FILES/10MERS.FIT 
+many_bulge_2.txt.duplexes ALL_THE_FIT_FILES/10MERS.FIT 
+many_bulge_3.txt.duplexes ALL_THE_FIT_FILES/10MERS.FIT 
+many_bulge_6.txt.duplexes ALL_THE_FIT_FILES/10MERS.FIT

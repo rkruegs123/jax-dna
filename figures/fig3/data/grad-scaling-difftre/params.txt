@@ -1,0 +1,14 @@
+run_name: grad-scaling-difftre-full-big
+n_threads: 4
+sample_every: 1000
+n_sims: 10
+target_pitch: 10.5
+offset: 4
+interval: 100000
+lo: 100000
+hi: 1000000
+n_trials: 5
+oxdna_path: /n/brenner_lab/User/rkrueger/oxdna-bin-cpu10/oxDNA
+no_delete: False
+no_archive: False
+opt_keys: ['stacking']

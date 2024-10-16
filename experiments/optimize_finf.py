@@ -14,6 +14,7 @@ import seaborn as sns
 import functools
 import pprint
 
+import jax
 import jax.numpy as jnp
 from jax_md import space
 from jax import vmap, jit, lax, grad, value_and_grad
@@ -23,8 +24,9 @@ from jax_dna.common import utils, topology, trajectory, checkpoint, center_confi
 from jax_dna.dna1 import model, oxdna_utils
 from jax_dna.loss import tm
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 checkpoint_every = 25
@@ -209,8 +211,8 @@ def run(args):
 
             if valid_seed is None:
                 raise RuntimeError(f"Could not find valid seed.")
-                
-            
+
+
             oxdna_utils.rewrite_input_file(
                 input_template_path, repeat_dir,
                 temp=f"{t_kelvin}K", steps=n_steps_per_sim,
@@ -443,7 +445,7 @@ def run(args):
             return unb_counts.at[op].add(weighted_add_term), None
         curr_unbiased_counts, _ = scan(unbias_scan_fn, jnp.zeros(n_bp+1), jnp.arange(n_ref_states))
         curr_finf = tm.compute_finf(curr_unbiased_counts)
-        
+
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
         aux = (curr_finf, n_eff)
         return (target_finf - curr_finf)**2, aux

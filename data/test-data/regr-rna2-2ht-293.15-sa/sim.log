@@ -1,0 +1,38 @@
+INFO: seeding the RNG with 83
+INFO: Initializing backend 
+INFO: Simulation type: MD
+INFO: Running oxRNA version DEC2013
+INFO: Running modification of oxRNA with additional Debye-Huckel potential
+INFO: The generator will try to take into account bonded interactions by choosing distances between bonded neighbours no larger than 2.000000
+INFO: Converting temperature from Kelvin (293.150000 K) to simulation units (0.097717)
+INFO: Running Debye-Huckel at salt_concentration =  1
+INFO: Temperature change detected (new temperature: 20.00 C, 293.15 K), re-initialising the RNA interaction
+INFO: DEBUGGING: rhigh is 1.08754, Cutoff is 2.52574, RC huckel is 1.63132, B huckel is 0.0132838, V is 0, lambda is 0.362515 
+INFO: DEBUGGING: dh_half_charged_ends = false
+INFO: pid: 107946
+INFO: DEBUGGING: rhigh is 1.08754, Cutoff is 2.52574, RC huckel is 1.63132, B huckel is 0.0132838, V is 0, lambda is 0.362515 
+INFO: DEBUGGING: dh_half_charged_ends = false
+INFO: N: 210, N molecules: 1
+INFO: Using randomly distributed velocities
+INFO: Initial kinetic energy: 62.274251
+INFO: RELEASE: v3.6.1
+INFO: GIT COMMIT: 2f179add
+INFO: COMPILED ON: 25/06/24
+
+INFO: Total Running Time: 3.48823 s, per step: 0.348823 ms
+INFO: Timings, in seconds, by Timer (total, own, spent in children)
+> SimBackend                          3.488 (100.0%)        0.007 (  0.2%)        3.482 ( 99.8%)
+***> Lists                            0.001 (  0.0%)        0.001 (  0.0%)        0.000 (  0.0%)
+***> Thermostat                       0.001 (  0.0%)        0.001 (  0.0%)        0.000 (  0.0%)
+***> Forces                           2.814 ( 80.7%)        2.814 ( 80.7%)        0.000 (  0.0%)
+***> First Step                       0.066 (  1.9%)        0.066 (  1.9%)        0.000 (  0.0%)
+***> Observables                      0.600 ( 17.2%)        0.600 ( 17.2%)        0.000 (  0.0%)
+
+INFO: END OF THE SIMULATION, everything went OK!
+INFO: Aggregated I/O statistics (set debug=1 for file-wise information)
+	  3.157 MB written to files
+	  1.271 KB written to stdout/stderr
+	For a total of    0.905 MB/s
+
+Please cite at least the following publication for any work that uses the oxDNA simulation package
+  * E. Poppleton et al., J. Open Source Softw. 8, 4693 (2023), DOI: 10.21105/joss.04693

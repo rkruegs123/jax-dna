@@ -1,0 +1,9 @@
+run_name: time-scaling-a100-80gb-ckpt50-60bp-no-nbrs
+sample_every: 1000
+n_skip_quartets: 5
+interval: 5
+hi: 50
+checkpoint_every: 50
+small_system: False
+use_neighbors: False
+include_no_ckpt: False

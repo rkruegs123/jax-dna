@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as onp
 from io import StringIO
 
+import jax
 from jax import jit, random, lax, grad, value_and_grad, vmap
 import jax.numpy as jnp
 from jax_md import space, simulate, rigid_body
@@ -24,8 +25,9 @@ from jax_dna.common import utils, topology, trajectory
 from jax_dna.dna2.load_params import load, _process
 from jax_dna.dna2 import lammps_utils
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 default_base_params_seq_avg = load(seq_avg=True, process=False)
@@ -61,6 +63,20 @@ def add_coupling(base_params):
     base_params["hydrogen_bonding"]["a_hb_8"] = base_params["hydrogen_bonding"]["a_hb_7"]
     base_params["hydrogen_bonding"]["theta0_hb_8"] = base_params["hydrogen_bonding"]["theta0_hb_7"]
     base_params["hydrogen_bonding"]["delta_theta_star_hb_8"] = base_params["hydrogen_bonding"]["delta_theta_star_hb_7"]
+
+    # Coaxial Stacking
+    base_params["coaxial_stacking"]["a_coax_6"] = base_params["coaxial_stacking"]["a_coax_5"]
+    base_params["coaxial_stacking"]["theta0_coax_6"] = base_params["coaxial_stacking"]["theta0_coax_5"]
+    base_params["coaxial_stacking"]["delta_theta_star_coax_6"] = base_params["coaxial_stacking"]["delta_theta_star_coax_5"]
+
+    # Cross stacking
+    base_params["cross_stacking"]["a_cross_3"] = base_params["cross_stacking"]["a_cross_2"]
+    base_params["cross_stacking"]["theta0_cross_3"] = base_params["cross_stacking"]["theta0_cross_2"]
+    base_params["cross_stacking"]["delta_theta_star_cross_3"] = base_params["cross_stacking"]["delta_theta_star_cross_2"]
+
+    base_params["cross_stacking"]["a_cross_8"] = base_params["cross_stacking"]["a_cross_7"]
+    base_params["cross_stacking"]["theta0_cross_8"] = base_params["cross_stacking"]["theta0_cross_7"]
+    base_params["cross_stacking"]["delta_theta_star_cross_8"] = base_params["cross_stacking"]["delta_theta_star_cross_7"]
 
 
 def get_full_base_params(override_base_params, seq_avg=True):
@@ -117,13 +133,20 @@ class EnergyModel:
         self.base_params = get_full_base_params(override_base_params, seq_avg)
         self.params = _process(self.base_params, self.t_kelvin, self.salt_conc)
 
-    def compute_subterms(self, body, seq, bonded_nbrs, unbonded_nbrs):
+    def compute_subterms(self, body, seq, bonded_nbrs, unbonded_nbrs, is_end=None):
         nn_i = bonded_nbrs[:, 0]
         nn_j = bonded_nbrs[:, 1]
 
         op_i = unbonded_nbrs[0]
         op_j = unbonded_nbrs[1]
         mask = jnp.array(op_i < body.center.shape[0], dtype=jnp.int32)
+
+        if is_end is None:
+            dh_mults = jnp.ones(op_i.shape[0])
+        else:
+            dh_mults_op_i = jnp.where(is_end[op_i], 0.5, 1.0)
+            dh_mults_op_j = jnp.where(is_end[op_j], 0.5, 1.0)
+            dh_mults = jnp.multiply(dh_mults_op_i, dh_mults_op_j)
 
         # Compute relevant variables for our potential
         Q = body.orientation
@@ -173,7 +196,8 @@ class EnergyModel:
         theta4_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], base_normals[op_j])))
         # note: are these swapped in Lorenzo's code?
         theta7_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -base_normals[op_j], dr_base_op) / r_base_op))
-        theta8_op = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], dr_base_op) / r_base_op))
+        # theta8_op = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], dr_base_op) / r_base_op))
+        theta8_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], dr_base_op) / r_base_op))
 
         ## Coaxial stacking
         dr_stack_op = self.displacement_mapped(stack_sites[op_j], stack_sites[op_i]) # note: reversed
@@ -223,7 +247,7 @@ class EnergyModel:
 
 
         # Compute debye_dg
-        r_base_op = jnp.linalg.norm(dr_backbone_op, axis=1)
+        r_back_op = jnp.linalg.norm(dr_backbone_op, axis=1)
         def db_term(r):
             energy_full = jnp.exp(r * self.params['debye']['minus_kappa']) \
                           * (self.params['debye']['prefactor'] / r)
@@ -232,13 +256,15 @@ class EnergyModel:
             cond = r < self.params['debye']['r_high']
             energy = jnp.where(cond, energy_full, energy_smooth)
             return jnp.where(r < self.params['debye']['rcut'], energy, 0.0)
-        db_dg = vmap(db_term)(r_base_op).sum()
+        db_dgs = vmap(db_term)(r_back_op)
+        db_dg = jnp.dot(db_dgs, dh_mults)
+        # db_dg = vmap(db_term)(r_back_op).sum()
 
         return fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg
 
 
-    def energy_fn(self, body, seq, bonded_nbrs, unbonded_nbrs):
-        dgs = self.compute_subterms(body, seq, bonded_nbrs, unbonded_nbrs)
+    def energy_fn(self, body, seq, bonded_nbrs, unbonded_nbrs, is_end=None):
+        dgs = self.compute_subterms(body, seq, bonded_nbrs, unbonded_nbrs, is_end)
         fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg = dgs
         val = fene_dg + stack_dg + exc_vol_unbonded_dg + hb_dg + cr_stack_dg + cx_stack_dg + db_dg
         if not self.ignore_exc_vol_bonded:
@@ -378,7 +404,8 @@ class TestDna2(unittest.TestCase):
     def check_energy_subterms(self, basedir, top_fname, traj_fname,
                               t_kelvin, salt_conc,
                               r_cutoff=10.0, dr_threshold=0.2,
-                              tol_places=4, verbose=True, avg_seq=True):
+                              tol_places=4, verbose=True, avg_seq=True,
+                              half_charged_ends=False):
 
 
         if avg_seq:
@@ -424,10 +451,15 @@ class TestDna2(unittest.TestCase):
 
         ## note: we don't reverse direction to keep ordering the same
         top_info = topology.TopologyInfo(top_path, reverse_direction=False)
+        if half_charged_ends:
+            is_end = top_info.is_end
+        else:
+            is_end = None
         seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
         traj_info = trajectory.TrajectoryInfo(
             top_info, read_from_file=True, traj_path=traj_path, reverse_direction=False)
         traj_states = traj_info.get_states()
+
 
         displacement_fn, shift_fn = space.periodic(traj_info.box_size)
         params = deepcopy(EMPTY_BASE_PARAMS)
@@ -444,7 +476,7 @@ class TestDna2(unittest.TestCase):
         for state in tqdm(traj_states):
 
             dgs = compute_subterms_fn(
-                state, seq_oh, top_info.bonded_nbrs, neighbors_idx)
+                state, seq_oh, top_info.bonded_nbrs, neighbors_idx, is_end)
             avg_subterms = onp.array(dgs) / top_info.n # average per nucleotide
             computed_subterms.append(avg_subterms)
 
@@ -475,15 +507,16 @@ class TestDna2(unittest.TestCase):
         print(utils.bcolors.WARNING + "\nWARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file\n" + utils.bcolors.ENDC)
 
         subterm_tests = [
-            (self.test_data_basedir / "simple-helix-oxdna2", "generated.top", "output.dat", 296.15, 0.5, True),
-            (self.test_data_basedir / "simple-helix-oxdna2-ss", "generated.top", "output.dat", 296.15, 0.5, False),
-            (self.test_data_basedir / "simple-coax-oxdna2", "generated.top", "output.dat", 296.15, 0.5, True),
-            (self.test_data_basedir / "simple-coax-oxdna2-rev", "generated.top", "output.dat", 296.15, 0.5, True)
+            (self.test_data_basedir / "simple-helix-oxdna2", "generated.top", "output.dat", 296.15, 0.5, True, False),
+            (self.test_data_basedir / "simple-helix-oxdna2-ss", "generated.top", "output.dat", 296.15, 0.5, False, False),
+            (self.test_data_basedir / "simple-coax-oxdna2", "generated.top", "output.dat", 296.15, 0.5, True, False),
+            (self.test_data_basedir / "simple-coax-oxdna2-rev", "generated.top", "output.dat", 296.15, 0.5, True, False),
+            (self.test_data_basedir / "simple-helix-oxdna2-half-charged-ends", "generated.top", "output.dat", 296.15, 0.5, True, True),
         ]
 
-        for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq in subterm_tests:
+        for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq, half_charged_ends in subterm_tests:
             self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin, salt_conc,
-                                       avg_seq=avg_seq)
+                                       avg_seq=avg_seq, half_charged_ends=half_charged_ends)
 
 
 if __name__ == "__main__":

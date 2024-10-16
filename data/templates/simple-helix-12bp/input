@@ -1,5 +1,6 @@
 # Core options
 T = 296.15K
+equilibration_steps = 0
 steps = 10000
 conf_file = init.conf
 topology = sys.top
@@ -16,7 +17,6 @@ lastconf_file = last_conf.dat
 list_type = no
 restart_step_counter = 0
 energy_file = energy.dat
-equilibration_steps = 0
 dh_half_charged_ends = False # Note: set to *True* for full testing!
 
 # Molecular dynamics options

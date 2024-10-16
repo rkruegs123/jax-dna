@@ -1,0 +1,101 @@
+Checkpoint every: 50
+- # steps: 5000
+	- 1st grad time (mean): 95.20810357729594
+	- 1st grad time (var): 21.77143819741644
+	- Mean grad abs. (mean): 31.52432288904672
+	- Mean grad abs. (var): 345.2506677148245
+- # steps: 10000
+	- 1st grad time (mean): 108.96770056088765
+	- 1st grad time (var): 0.10966635998213153
+	- Mean grad abs. (mean): 3781286.8030063245
+	- Mean grad abs. (var): 15128845944252.297
+- # steps: 15000
+	- 1st grad time (mean): 124.69524232546489
+	- 1st grad time (var): 0.09678527678542853
+	- Mean grad abs. (mean): 3840800375.3118234
+	- Mean grad abs. (var): 2.0273002553425072e+19
+- # steps: 20000
+	- 1st grad time (mean): 141.75801531473795
+	- 1st grad time (var): 0.06613927114837123
+	- Mean grad abs. (mean): 1.2617091763728838e+17
+	- Mean grad abs. (var): 3.17996314430922e+34
+- # steps: 25000
+	- 1st grad time (mean): 157.39900493621826
+	- 1st grad time (var): 0.37858257631330616
+	- Mean grad abs. (mean): 6.99370597112556e+18
+	- Mean grad abs. (var): 6.104641471746652e+37
+- # steps: 30000
+	- 1st grad time (mean): 174.64836645126343
+	- 1st grad time (var): 1.557545625647246
+	- Mean grad abs. (mean): 1.0774503673872233e+23
+	- Mean grad abs. (var): 2.2912297969678484e+46
+- # steps: 35000
+	- 1st grad time (mean): 191.39638344446817
+	- 1st grad time (var): 0.3132839556235214
+	- Mean grad abs. (mean): 4.212341881604039e+32
+	- Mean grad abs. (var): 3.5487140325456235e+65
+- # steps: 40000
+	- 1st grad time (mean): 206.78338058789572
+	- 1st grad time (var): 0.17080908336281986
+	- Mean grad abs. (mean): 5.119732824120921e+37
+	- Mean grad abs. (var): 2.1750934780372413e+75
+- # steps: 45000
+	- 1st grad time (mean): 223.7055508295695
+	- 1st grad time (var): 0.46871667071007367
+	- Mean grad abs. (mean): 3.8168139844687216e+38
+	- Mean grad abs. (var): 2.8968422216500344e+77
+- # steps: 50000
+	- 1st grad time (mean): 240.39079316457114
+	- 1st grad time (var): 0.25370809688419943
+	- Mean grad abs. (mean): 1.3164179863857775e+43
+	- Mean grad abs. (var): 3.465891305560368e+86
+- # steps: 55000
+	- 1st grad time (mean): 256.05041368802387
+	- 1st grad time (var): 2.016532004125654
+	- Mean grad abs. (mean): 1.433026639215287e+47
+	- Mean grad abs. (var): 4.044436722503905e+94
+- # steps: 60000
+	- 1st grad time (mean): 273.39356390635174
+	- 1st grad time (var): 0.1227928684114785
+	- Mean grad abs. (mean): 9.693491197222453e+50
+	- Mean grad abs. (var): 1.879014933905117e+102
+- # steps: 65000
+	- 1st grad time (mean): 289.6209176381429
+	- 1st grad time (var): 4.9113955046245925
+	- Mean grad abs. (mean): 6.461715929368578e+55
+	- Mean grad abs. (var): 2.6654837209269494e+111
+- # steps: 70000
+	- 1st grad time (mean): 307.30402024586994
+	- 1st grad time (var): 4.790022173799659
+	- Mean grad abs. (mean): 1.5648677273723807e+64
+	- Mean grad abs. (var): 4.8975227012348175e+128
+- # steps: 75000
+	- 1st grad time (mean): 321.075967947642
+	- 1st grad time (var): 2.587239342711895
+	- Mean grad abs. (mean): 5.438121556849108e+67
+	- Mean grad abs. (var): 5.914591245991862e+135
+- # steps: 80000
+	- 1st grad time (mean): 336.7052944501241
+	- 1st grad time (var): 2.6541093735206056
+	- Mean grad abs. (mean): 2.7780069624701187e+73
+	- Mean grad abs. (var): 1.5426516858484125e+147
+- # steps: 85000
+	- 1st grad time (mean): 351.935968319575
+	- 1st grad time (var): 6.554871289754235
+	- Mean grad abs. (mean): 3.675481438495766e+89
+	- Mean grad abs. (var): 2.701832760945381e+179
+- # steps: 90000
+	- 1st grad time (mean): 367.49443729718524
+	- 1st grad time (var): 7.362243092344607
+	- Mean grad abs. (mean): 1.6134309913105167e+84
+	- Mean grad abs. (var): 2.5151811658904364e+168
+- # steps: 95000
+	- 1st grad time (mean): 380.39675347010296
+	- 1st grad time (var): 6.326369347199388
+	- Mean grad abs. (mean): 1.686528891656796e+81
+	- Mean grad abs. (var): 5.671044053859844e+162
+- # steps: 100000
+	- 1st grad time (mean): 400.3052438100179
+	- 1st grad time (var): 4.0534140349996175
+	- Mean grad abs. (mean): 1.108523737178072e+88
+	- Mean grad abs. (var): 2.4344200321032195e+176

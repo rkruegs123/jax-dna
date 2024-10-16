@@ -8,7 +8,9 @@ from tqdm import tqdm
 from copy import deepcopy
 import pandas as pd
 import numpy as onp
+import itertools
 
+import jax
 from jax import jit, random, lax, grad, value_and_grad
 import jax.numpy as jnp
 from jax_md import space, simulate, rigid_body
@@ -21,8 +23,9 @@ from jax_dna.common.interactions import v_fene_smooth, stacking, exc_vol_bonded,
 from jax_dna.common import utils, topology, trajectory
 from jax_dna.dna1.load_params import load, _process
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 DEFAULT_BASE_PARAMS = load(process=False) # Note: only processing depends on temperature
@@ -52,6 +55,11 @@ def add_coupling(base_params):
     base_params["hydrogen_bonding"]["a_hb_8"] = base_params["hydrogen_bonding"]["a_hb_7"]
     base_params["hydrogen_bonding"]["theta0_hb_8"] = base_params["hydrogen_bonding"]["theta0_hb_7"]
     base_params["hydrogen_bonding"]["delta_theta_star_hb_8"] = base_params["hydrogen_bonding"]["delta_theta_star_hb_7"]
+
+    # Cross stacking
+    base_params["cross_stacking"]["a_cross_3"] = base_params["cross_stacking"]["a_cross_2"]
+    base_params["cross_stacking"]["theta0_cross_3"] = base_params["cross_stacking"]["theta0_cross_2"]
+    base_params["cross_stacking"]["delta_theta_star_cross_3"] = base_params["cross_stacking"]["delta_theta_star_cross_2"]
 
 def get_full_base_params(override_base_params):
     fene_params = DEFAULT_BASE_PARAMS["fene"] | override_base_params["fene"]
@@ -144,7 +152,8 @@ class EnergyModel:
         theta4_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], base_normals[op_j])))
         # note: are these swapped in Lorenzo's code?
         theta7_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', -base_normals[op_j], dr_base_op) / r_base_op))
-        theta8_op = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], dr_base_op) / r_base_op))
+        # theta8_op = jnp.pi - jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], dr_base_op) / r_base_op))
+        theta8_op = jnp.arccos(clamp(jnp.einsum('ij, ij->i', base_normals[op_i], dr_base_op) / r_base_op))
 
         ## Cross stacking variables -- all already computed
 
@@ -296,11 +305,12 @@ class TestDna1(unittest.TestCase):
                               tol_places=4, verbose=False, avg_seq=True):
 
         if avg_seq:
-            ss_hb_weights = utils.HB_WEIGHTS_SA,
+            ss_hb_weights = utils.HB_WEIGHTS_SA
             ss_stack_weights = utils.STACK_WEIGHTS_SA
         else:
             ss_path = "data/seq-specific/seq_oxdna1.txt"
             ss_hb_weights, ss_stack_weights = read_ss_oxdna(ss_path)
+
 
         print(f"\n---- Checking energy breakdown agreement for base directory: {basedir} ----")
 
@@ -388,14 +398,90 @@ class TestDna1(unittest.TestCase):
 
         subterm_tests = [
             (self.test_data_basedir / "simple-helix", "generated.top", "output.dat", 296.15, True),
-            (self.test_data_basedir / "simple-coax", "generated.top", "output.dat", 296.15, True)
+            (self.test_data_basedir / "simple-coax", "generated.top", "output.dat", 296.15, True),
             (self.test_data_basedir / "simple-helix-ss", "generated.top", "output.dat", 296.15, False),
         ]
 
         for basedir, top_fname, traj_fname, t_kelvin, avg_seq in subterm_tests:
             for use_neighbors in [False, True]:
-                self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin,
-                                           use_neighbors=use_neighbors, avg_seq=avg_seq)
+                self.check_energy_subterms(
+                    basedir, top_fname, traj_fname, t_kelvin,
+                    use_neighbors=use_neighbors, avg_seq=avg_seq, verbose=True)
+
+    def test_brute_force(self):
+        ss_path = "data/seq-specific/seq_oxdna1.txt"
+        ss_hb_weights, ss_stack_weights = read_ss_oxdna(ss_path)
+
+        basedir = self.test_data_basedir / "helix-4bp"
+        t_kelvin = utils.DEFAULT_TEMP
+
+        top_path = basedir / "sys.top"
+        if not top_path.exists():
+            raise RuntimeError(f"No topology file at location: {top_path}")
+        traj_path = basedir / "output.dat"
+        if not traj_path.exists():
+            raise RuntimeError(f"No trajectory file at location: {traj_path}")
+
+        top_info = topology.TopologyInfo(top_path, reverse_direction=False)
+        # seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
+        n = len(top_info.seq)
+        assert(n == 8)
+        traj_info = trajectory.TrajectoryInfo(
+            top_info, read_from_file=True, traj_path=traj_path, reverse_direction=False)
+        traj_states = traj_info.get_states()
+
+        displacement_fn, shift_fn = space.periodic(traj_info.box_size)
+        model = EnergyModel(displacement_fn, t_kelvin=t_kelvin,
+                            ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
+
+        neighbors_idx = top_info.unbonded_nbrs.T
+
+        n_eval_strucs = 1
+
+        energy_fn = jit(model.energy_fn)
+        logits = onp.random.rand(n, 4)
+        pseq = logits / logits.sum(axis=1, keepdims=True)
+
+
+        def sequence_probability(sequence, normalized_matrix):
+            # Initialize probability to 1 (neutral for multiplication)
+            probability = 1.0
+
+            # Loop over each character in the sequence and find its probability
+            for i, char in enumerate(sequence):
+                # Find the index of the character in the DNA alphabet
+                char_index = utils.DNA_ALPHA.index(char)
+
+                # Multiply the probability by the corresponding matrix value
+                probability *= normalized_matrix[i, char_index]
+
+            return probability
+
+
+
+        for struc_idx in range(n_eval_strucs):
+            state = traj_states[struc_idx]
+
+            expected_energy_calc = energy_fn(
+                state, pseq, top_info.bonded_nbrs, neighbors_idx)
+
+            expected_energy_brute = 0.0
+
+            sequences = [''.join(p) for p in itertools.product(utils.DNA_ALPHA, repeat=n)]
+            for seq in tqdm(sequences):
+                seq_oh = jnp.array(utils.get_one_hot(seq), dtype=jnp.float64)
+                seq_energy_calc = energy_fn(
+                    state, seq_oh, top_info.bonded_nbrs, neighbors_idx)
+                seq_prob = sequence_probability(seq, pseq)
+
+                expected_energy_brute += seq_prob*seq_energy_calc
+
+        pdb.set_trace()
+
+
+
+
+
 
 
 if __name__ == "__main__":

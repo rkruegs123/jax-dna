@@ -8,14 +8,15 @@ import pdb
 import unittest
 from itertools import combinations
 
+import jax
 import jax.numpy as jnp
-import jax.debug
 from jax_md.partition import NeighborListFormat, neighbor_list
 
-from jax_dna.common.utils import bcolors, DNA_ALPHA
+from jax_dna.common.utils import bcolors, DNA_ALPHA, RNA_ALPHA
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 
@@ -90,7 +91,7 @@ def get_rev_top_df(top_df, rev_orientation_mapper):
     return rev_top_df
 
 
-def check_valid_top_df(top_df, n_strands, n, verbose=False):
+def check_valid_top_df(top_df, n_strands, n, alphabet=DNA_ALPHA, verbose=False):
     """
     Checks that the given topology DataFrame is valid, irrespective
     of the direction (i.e. 3'->5' or 5'->3')
@@ -98,7 +99,7 @@ def check_valid_top_df(top_df, n_strands, n, verbose=False):
 
     # Check for valid bases
     for i, nuc_row in top_df.iterrows():
-        if nuc_row.base not in set(DNA_ALPHA):
+        if nuc_row.base not in set(alphabet):
             raise RuntimeError(f"Invalid base at position {i}: {nuc_row.base}")
 
     # Check that top_df strands are 1-indexed and increase by 1
@@ -130,9 +131,14 @@ class TopologyInfo:
     Specify the direction with the `reverse_direction` flag:
     True if input file is 3'->5', False otherwise (5'->3').
     """
-    def __init__(self, top_path, reverse_direction):
+    def __init__(self, top_path, reverse_direction, is_rna=False):
         self.top_path = Path(top_path)
         self.reverse_direction = reverse_direction
+        self.is_rna = is_rna
+        if self.is_rna:
+            self.alphabet = RNA_ALPHA
+        else:
+            self.alphabet = DNA_ALPHA
 
         self.load()
 
@@ -168,7 +174,7 @@ class TopologyInfo:
             names=input_col_names,
             delim_whitespace=True)
 
-        check_valid_top_df(top_df, self.n_strands, self.n)
+        check_valid_top_df(top_df, self.n_strands, self.n, self.alphabet)
 
         # Construct a dictionary to reverse the orientation
         rev_orientation_mapper = get_rev_orientation_idx_mapper(top_df, self.n, self.n_strands)
@@ -196,6 +202,18 @@ class TopologyInfo:
         self.seq = ''.join(self.top_df.base.tolist())
         self.unbonded_nbrs = get_unbonded_neighbors(self.n, bonded_nbrs)
         self.unbonded_nbrs = onp.array(self.unbonded_nbrs)
+
+        # Store which nucleotides are on the ends
+        is_end = list()
+        for i, nuc_row in self.top_df.iterrows():
+            nbr_5p = int(nuc_row['5p_nbr'])
+            nbr_3p = int(nuc_row['3p_nbr'])
+            if nbr_5p == -1 or nbr_3p == -1:
+                is_end.append(True)
+            else:
+                is_end.append(False)
+        self.is_end = jnp.array(onp.array(is_end).astype(onp.int32))
+
 
     def write(self, opath, reverse):
         """
@@ -241,7 +259,8 @@ class TopologyInfo:
             r_cutoff=r_cutoff,
             dr_threshold=dr_threshold,
             custom_mask_function=bonded_nbrs_mask_fn,
-            format=NeighborListFormat.OrderedSparse
+            format=NeighborListFormat.OrderedSparse,
+            disable_cell_list=True
         )
 
         return neighbor_list_fn

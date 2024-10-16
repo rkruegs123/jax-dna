@@ -3,6 +3,7 @@
 import pdb
 import numpy as onp
 
+import jax
 import jax.numpy as jnp
 from jax import vmap
 from jax_md import rigid_body, util
@@ -10,8 +11,9 @@ from jax_md.rigid_body import RigidBody, Quaternion
 
 from jax_dna.common import utils
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 Array = util.Array

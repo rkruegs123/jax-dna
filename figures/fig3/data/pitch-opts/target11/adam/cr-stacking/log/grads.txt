@@ -1,0 +1,7751 @@
+
+Iteration 0:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.08510408540213464
+	- a_cross_2: 0.0011908321453503704
+	- a_cross_3: 0.0
+	- a_cross_4: -0.07480558844029518
+	- a_cross_7: 0.011603824315757516
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.009316932313136975
+	- delta_theta_star_cross_2: 3.67134931813882e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.004924762611364389
+	- delta_theta_star_cross_7: 0.0003154880068548674
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 3.4076661312697607
+	- dr_high_cross: 0.09078725908445744
+	- dr_low_cross: 0.3096853003997525
+	- k_cross: 0.0015038263100439146
+	- r0_cross: -10.51797868879332
+	- theta0_cross_1: 0.8809671696721525
+	- theta0_cross_2: -0.0889084772626021
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.45180515092257073
+	- theta0_cross_7: 0.33732010754919195
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 1:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.07588311524095483
+	- a_cross_2: 0.0022014897683422558
+	- a_cross_3: 0.0
+	- a_cross_4: -0.0377076303878652
+	- a_cross_7: 0.004798106339876263
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.00798342797739143
+	- delta_theta_star_cross_2: 4.617931175167182e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.005488541296782456
+	- delta_theta_star_cross_7: 0.00022543970575553823
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 4.151360558948478
+	- dr_high_cross: 0.05860208983981841
+	- dr_low_cross: 0.2835019941352982
+	- k_cross: 0.002286078935870225
+	- r0_cross: -11.219567467323081
+	- theta0_cross_1: 0.7779344071150396
+	- theta0_cross_2: -0.08278230592335103
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.27975907843571074
+	- theta0_cross_7: 0.18420137167573333
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 2:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.07256911791907154
+	- a_cross_2: 0.0026385071016491054
+	- a_cross_3: 0.0
+	- a_cross_4: -0.0352211348911948
+	- a_cross_7: 0.005132906653334884
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.008040173737201096
+	- delta_theta_star_cross_2: 1.0657515816063436e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.005189668964639953
+	- delta_theta_star_cross_7: 0.000392223923160177
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 3.6304536725711154
+	- dr_high_cross: 0.06066727201356274
+	- dr_low_cross: 0.21597448003039224
+	- k_cross: 0.001765406689486583
+	- r0_cross: -10.421554290718511
+	- theta0_cross_1: 0.7500344102025795
+	- theta0_cross_2: -0.06713195422506264
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.25527729743663685
+	- theta0_cross_7: 0.18843532066559332
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 3:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.06749728960112894
+	- a_cross_2: -0.0007734576685841424
+	- a_cross_3: 0.0
+	- a_cross_4: -0.015620039762687847
+	- a_cross_7: 0.005111926562661582
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.010175524655588263
+	- delta_theta_star_cross_2: -0.00010876259284144954
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.020004757623635502
+	- delta_theta_star_cross_7: -0.0005509279235963309
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 4.082342215144359
+	- dr_high_cross: 0.09106379251397045
+	- dr_low_cross: 0.1590826340608057
+	- k_cross: 0.0018729258652752556
+	- r0_cross: -10.64205136104634
+	- theta0_cross_1: 0.6812507425050859
+	- theta0_cross_2: -0.10109387043186696
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.19099681634614435
+	- theta0_cross_7: 0.21490430089031068
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 4:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.06421701473230104
+	- a_cross_2: -0.0004097170252467692
+	- a_cross_3: 0.0
+	- a_cross_4: -0.012761312705280603
+	- a_cross_7: 0.004665114705887413
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.009969874019348159
+	- delta_theta_star_cross_2: -9.677465188382474e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.02139005033343816
+	- delta_theta_star_cross_7: -0.0005164512194249555
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 3.919111100066256
+	- dr_high_cross: 0.10629202568957309
+	- dr_low_cross: 0.08733395576591634
+	- k_cross: 0.0017983815357347937
+	- r0_cross: -10.24334554950099
+	- theta0_cross_1: 0.6420924234452118
+	- theta0_cross_2: -0.0940286909533369
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.17570345285191363
+	- theta0_cross_7: 0.19736035216535308
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 5:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.060176775124863406
+	- a_cross_2: -0.0024179326482257186
+	- a_cross_3: 0.0
+	- a_cross_4: -0.00692637816454643
+	- a_cross_7: 0.004461922852646017
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.008527181934057118
+	- delta_theta_star_cross_2: 1.7906604444548003e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.014502762740449843
+	- delta_theta_star_cross_7: 0.0002083615963631416
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 3.13122694075289
+	- dr_high_cross: 0.09220066641102291
+	- dr_low_cross: 0.0012164902790437182
+	- k_cross: 0.0013038283079236969
+	- r0_cross: -8.668195712539086
+	- theta0_cross_1: 0.6153658919153394
+	- theta0_cross_2: -0.11385372727224011
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.11860082632424303
+	- theta0_cross_7: 0.1880955906512539
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 6:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.05749101655875836
+	- a_cross_2: -0.0028257355522145733
+	- a_cross_3: 0.0
+	- a_cross_4: -0.00046024032869145155
+	- a_cross_7: 0.0041274056644684575
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.008364542749532335
+	- delta_theta_star_cross_2: 1.4709841292616935e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.014487593934068003
+	- delta_theta_star_cross_7: 0.0002479914018113443
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 2.6788058143021476
+	- dr_high_cross: 0.1017144367892579
+	- dr_low_cross: 0.0
+	- k_cross: 0.0009911088491636444
+	- r0_cross: -8.002107306296567
+	- theta0_cross_1: 0.5885239564410226
+	- theta0_cross_2: -0.10142350195231066
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.07893098519917202
+	- theta0_cross_7: 0.18109671254885853
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 7:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.05431634336324429
+	- a_cross_2: 0.004375724855816666
+	- a_cross_3: 0.0
+	- a_cross_4: -0.012013013341454609
+	- a_cross_7: 0.0027423298113901855
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.010443976359328075
+	- delta_theta_star_cross_2: 0.00010038487467550839
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.009801748832121891
+	- delta_theta_star_cross_7: -0.00025635033763244416
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 1.4836629053685875
+	- dr_high_cross: 0.07144950142595269
+	- dr_low_cross: 0.0
+	- k_cross: 0.00024207454092360682
+	- r0_cross: -6.222000715049567
+	- theta0_cross_1: 0.5729810299201539
+	- theta0_cross_2: -0.00784165362679112
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.10029204453040347
+	- theta0_cross_7: 0.1610007378876035
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 8:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.053249711947146706
+	- a_cross_2: 0.0049188460807952595
+	- a_cross_3: 0.0
+	- a_cross_4: -0.012619271299166186
+	- a_cross_7: 0.005690098984071241
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.011719660950216426
+	- delta_theta_star_cross_2: 6.587817294052524e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.003965062473304938
+	- delta_theta_star_cross_7: 0.00020325266297735656
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.5987924626043846
+	- dr_high_cross: 0.1031927151124377
+	- dr_low_cross: 0.0
+	- k_cross: -0.00038102070236144204
+	- r0_cross: -5.062463256599929
+	- theta0_cross_1: 0.5365424182682725
+	- theta0_cross_2: 0.0006204598468470197
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.07655504334126614
+	- theta0_cross_7: 0.16646197667441498
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 9:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.055648248425182435
+	- a_cross_2: 0.0065858245056053056
+	- a_cross_3: 0.0
+	- a_cross_4: -0.007252991500094542
+	- a_cross_7: 0.0052694279860731556
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.010715796719243005
+	- delta_theta_star_cross_2: -3.56376904012173e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.01475344482448273
+	- delta_theta_star_cross_7: -5.586281999888883e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.45695944403740774
+	- dr_high_cross: 0.10698118744148238
+	- dr_low_cross: 0.0
+	- k_cross: -0.00029350524776597137
+	- r0_cross: -4.561498176118186
+	- theta0_cross_1: 0.5609238543186937
+	- theta0_cross_2: 0.024025715845295226
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.07460489480271285
+	- theta0_cross_7: 0.17208943826468778
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 10:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.04555311777925533
+	- a_cross_2: 0.007803435201233772
+	- a_cross_3: 0.0
+	- a_cross_4: -0.017582075708387428
+	- a_cross_7: 0.004971603394795289
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.009829284168784834
+	- delta_theta_star_cross_2: 0.00018159923191585838
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.007308213348818746
+	- delta_theta_star_cross_7: -3.897276443569819e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -0.648067986960108
+	- dr_high_cross: 0.06856243377189598
+	- dr_low_cross: 0.0
+	- k_cross: -0.0011258502825289831
+	- r0_cross: -2.6217769894425738
+	- theta0_cross_1: 0.49688615419791493
+	- theta0_cross_2: 0.05467469000727689
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.08668497815739681
+	- theta0_cross_7: 0.18112173510348661
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 11:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.04763660182135673
+	- a_cross_2: 0.008480669071443679
+	- a_cross_3: 0.0
+	- a_cross_4: -0.012125897665690324
+	- a_cross_7: 0.004177604482212769
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.009681551456633568
+	- delta_theta_star_cross_2: 0.00014371974963472024
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0007627962974756765
+	- delta_theta_star_cross_7: 9.971876809204146e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -1.4164253526212343
+	- dr_high_cross: 0.13040454191343592
+	- dr_low_cross: 0.0
+	- k_cross: -0.0014824672949526586
+	- r0_cross: -1.7033423215632715
+	- theta0_cross_1: 0.5192400051154977
+	- theta0_cross_2: 0.0667710339318647
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.03849841013782063
+	- theta0_cross_7: 0.16864588487186086
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 12:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.05061298622864876
+	- a_cross_2: 0.0057604472002186925
+	- a_cross_3: 0.0
+	- a_cross_4: -0.004566989763386921
+	- a_cross_7: 0.005552354758262136
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.010362881821264047
+	- delta_theta_star_cross_2: -0.00015093439181825257
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.009166412319576298
+	- delta_theta_star_cross_7: -0.00025278633853954033
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -2.3721764752368326
+	- dr_high_cross: 0.17031701721208045
+	- dr_low_cross: 0.0
+	- k_cross: -0.001773844773310975
+	- r0_cross: -0.9225885265096018
+	- theta0_cross_1: 0.5502944238401258
+	- theta0_cross_2: 0.04988709973786891
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.006696700364657771
+	- theta0_cross_7: 0.22156713944986905
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 13:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.040704798387212485
+	- a_cross_2: 0.00529549188654494
+	- a_cross_3: 0.0
+	- a_cross_4: 0.001936683214629519
+	- a_cross_7: 0.0042686448450261335
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.007615413143123681
+	- delta_theta_star_cross_2: 9.252286751267031e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.008042515035507927
+	- delta_theta_star_cross_7: 8.539669532650032e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -1.926340788847783
+	- dr_high_cross: 0.11663968848746989
+	- dr_low_cross: 0.0
+	- k_cross: -0.00142594352359554
+	- r0_cross: -0.4625560929029682
+	- theta0_cross_1: 0.4583327023361228
+	- theta0_cross_2: 0.040887393169231484
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.012851789374843664
+	- theta0_cross_7: 0.1736624958515174
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 14:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.043002996436665275
+	- a_cross_2: 0.008551429079183307
+	- a_cross_3: 0.0
+	- a_cross_4: 0.007096540888113885
+	- a_cross_7: 0.00491746424677049
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.009448328197531046
+	- delta_theta_star_cross_2: -0.00018902037400648
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.009181082802145912
+	- delta_theta_star_cross_7: 0.0001457520373041063
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -2.5692703623023165
+	- dr_high_cross: 0.16480124203013893
+	- dr_low_cross: 0.0
+	- k_cross: -0.001958961373801652
+	- r0_cross: -0.19123627544762514
+	- theta0_cross_1: 0.458108543948462
+	- theta0_cross_2: 0.06932672223133791
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.05596146925779022
+	- theta0_cross_7: 0.16595656046203755
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 15:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.03791767233534184
+	- a_cross_2: 0.005438461328113205
+	- a_cross_3: 0.0
+	- a_cross_4: 0.006365988896915252
+	- a_cross_7: 0.0040212689517477515
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.00964979840292754
+	- delta_theta_star_cross_2: 0.00013988991554971729
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.013428615592950874
+	- delta_theta_star_cross_7: 8.220021161102795e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -1.7735687455070364
+	- dr_high_cross: 0.16791652427923162
+	- dr_low_cross: 0.0
+	- k_cross: -0.001262486364077556
+	- r0_cross: -0.3316633329576405
+	- theta0_cross_1: 0.40604309149075735
+	- theta0_cross_2: 0.038018224868582084
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.029999158354181474
+	- theta0_cross_7: 0.14141217322181743
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 16:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.03846072561161876
+	- a_cross_2: 0.006253667697491062
+	- a_cross_3: 0.0
+	- a_cross_4: 0.01943204519566473
+	- a_cross_7: 0.00415228443706787
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.00771885110489038
+	- delta_theta_star_cross_2: -1.4261086535072027e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.011142150501773904
+	- delta_theta_star_cross_7: 0.00021589447678468444
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -2.1187785068331806
+	- dr_high_cross: 0.2024516918321618
+	- dr_low_cross: 0.0
+	- k_cross: -0.0014632959306426392
+	- r0_cross: -0.03285728724964619
+	- theta0_cross_1: 0.4182722498793017
+	- theta0_cross_2: 0.06096987347180229
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.09966233836288792
+	- theta0_cross_7: 0.12337663657639716
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 17:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.04163533707859911
+	- a_cross_2: 0.012331598629382006
+	- a_cross_3: 0.0
+	- a_cross_4: 0.007296765653745297
+	- a_cross_7: 0.005959824891081265
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.008469661470838927
+	- delta_theta_star_cross_2: 6.091694123641896e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.012297464940467165
+	- delta_theta_star_cross_7: -3.420226217606357e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -3.920086538006859
+	- dr_high_cross: 0.20309979423498
+	- dr_low_cross: 0.0
+	- k_cross: -0.0027811055408359106
+	- r0_cross: 1.773012687014365
+	- theta0_cross_1: 0.470173635259191
+	- theta0_cross_2: 0.12155630573782623
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.07334952274429746
+	- theta0_cross_7: 0.17437761915222275
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 18:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.04105763823744059
+	- a_cross_2: 0.01270059357778472
+	- a_cross_3: 0.0
+	- a_cross_4: 0.00957752105472129
+	- a_cross_7: 0.00588754378629369
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.008796178937665565
+	- delta_theta_star_cross_2: 8.173085632456369e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0112182858364029
+	- delta_theta_star_cross_7: -6.299812508186997e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -4.085971050519846
+	- dr_high_cross: 0.22849133111818673
+	- dr_low_cross: 0.0
+	- k_cross: -0.002838826838570564
+	- r0_cross: 2.0591967066621186
+	- theta0_cross_1: 0.4615497303818864
+	- theta0_cross_2: 0.12335322857873388
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.08757446532989144
+	- theta0_cross_7: 0.16820468301166308
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 19:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.041577179103686086
+	- a_cross_2: 0.009159529320916444
+	- a_cross_3: 0.0
+	- a_cross_4: 0.010074379415019392
+	- a_cross_7: 0.006190861824844063
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.00923488481695732
+	- delta_theta_star_cross_2: 0.00011476789809878018
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.011801850150832172
+	- delta_theta_star_cross_7: -4.376696293682868e-06
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -3.678973173534232
+	- dr_high_cross: 0.3304266874755166
+	- dr_low_cross: 0.0
+	- k_cross: -0.0023781981085668927
+	- r0_cross: 1.3711131538763859
+	- theta0_cross_1: 0.4693414644326556
+	- theta0_cross_2: 0.08600755484897497
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.08148023442563818
+	- theta0_cross_7: 0.17566408678980402
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 20:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.04204012876330812
+	- a_cross_2: 0.009263124768287069
+	- a_cross_3: 0.0
+	- a_cross_4: 0.009432757807873633
+	- a_cross_7: 0.006091923253288913
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.009366927021706196
+	- delta_theta_star_cross_2: 6.401245014540623e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.011948010479029492
+	- delta_theta_star_cross_7: 6.366584040747215e-06
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -3.706265211080008
+	- dr_high_cross: 0.3582638679520699
+	- dr_low_cross: 0.0
+	- k_cross: -0.0024066885272701786
+	- r0_cross: 1.4157298657767623
+	- theta0_cross_1: 0.4732944393453845
+	- theta0_cross_2: 0.08596359239979708
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.07867277292443517
+	- theta0_cross_7: 0.1778331901587509
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 21:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.042360059538191115
+	- a_cross_2: 0.009444809023216153
+	- a_cross_3: 0.0
+	- a_cross_4: 0.00972635353502009
+	- a_cross_7: 0.0060948735511004715
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.009407712144662912
+	- delta_theta_star_cross_2: 8.921007509036457e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.012353562630306757
+	- delta_theta_star_cross_7: -8.584417564844692e-06
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -3.7450853129337007
+	- dr_high_cross: 0.39119204551385744
+	- dr_low_cross: 0.0
+	- k_cross: -0.002437592930654334
+	- r0_cross: 1.442955138871492
+	- theta0_cross_1: 0.47857813146378503
+	- theta0_cross_2: 0.08622048958409523
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.08006641971710138
+	- theta0_cross_7: 0.17988436585021159
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 22:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.04273267130748007
+	- a_cross_2: 0.00967027157744641
+	- a_cross_3: 0.0
+	- a_cross_4: 0.00920819798241983
+	- a_cross_7: 0.006354664391855037
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.009689477219112522
+	- delta_theta_star_cross_2: 8.695858143225167e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.01150461622075817
+	- delta_theta_star_cross_7: -4.289925310813612e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -3.818376605675769
+	- dr_high_cross: 0.42684792752570677
+	- dr_low_cross: 0.0
+	- k_cross: -0.0025052321890720345
+	- r0_cross: 1.518936485868032
+	- theta0_cross_1: 0.48619066006174205
+	- theta0_cross_2: 0.08860508241896274
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.08083881595753471
+	- theta0_cross_7: 0.18398714438087393
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 23:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.03947906712853028
+	- a_cross_2: 0.010445368709678412
+	- a_cross_3: 0.0
+	- a_cross_4: 0.01740837429755523
+	- a_cross_7: 0.003663920483359003
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.00840162786179164
+	- delta_theta_star_cross_2: -7.099990614069907e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.004951349221234192
+	- delta_theta_star_cross_7: 0.0001342870097597525
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -3.316837062838858
+	- dr_high_cross: 0.3217638843561273
+	- dr_low_cross: 0.0
+	- k_cross: -0.002431772059368928
+	- r0_cross: 1.3341906226970006
+	- theta0_cross_1: 0.4461268084008988
+	- theta0_cross_2: 0.10213462881712931
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.12449906590635734
+	- theta0_cross_7: 0.1301302609805965
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 24:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.037549964594147896
+	- a_cross_2: 0.006906119280938769
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0050757330845816635
+	- a_cross_7: 0.0037438891090500557
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.011497173672842531
+	- delta_theta_star_cross_2: -4.488752056591223e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.00206031322578786
+	- delta_theta_star_cross_7: 0.000157928045119344
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -2.681991323537872
+	- dr_high_cross: 0.4033869438833763
+	- dr_low_cross: 0.0
+	- k_cross: -0.0019096260035379791
+	- r0_cross: 0.40313690306430355
+	- theta0_cross_1: 0.4060914590427579
+	- theta0_cross_2: 0.06265876671444585
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.057810063704157366
+	- theta0_cross_7: 0.15325694528784006
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 25:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.04339091192359525
+	- a_cross_2: 0.010450779104940433
+	- a_cross_3: 0.0
+	- a_cross_4: 0.021301692969695894
+	- a_cross_7: 0.003457840265008282
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.009654008205744677
+	- delta_theta_star_cross_2: -4.03006814008098e-06
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.011377877535874568
+	- delta_theta_star_cross_7: -0.000268159928947222
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -3.4250080155890656
+	- dr_high_cross: 0.46574332424249065
+	- dr_low_cross: 0.0
+	- k_cross: -0.002298725551068261
+	- r0_cross: 0.9820258348206892
+	- theta0_cross_1: 0.5079181208501773
+	- theta0_cross_2: 0.09906360559851778
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.12794981641650524
+	- theta0_cross_7: 0.15853322539594278
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 26:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.049053729997914075
+	- a_cross_2: 0.013524101233406806
+	- a_cross_3: 0.0
+	- a_cross_4: -0.0026659169488383073
+	- a_cross_7: 0.004864216779880907
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.009420684587575126
+	- delta_theta_star_cross_2: -9.353088294662969e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.004023873222843474
+	- delta_theta_star_cross_7: 6.432829748773768e-07
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -4.807143399956935
+	- dr_high_cross: 0.46692430753303016
+	- dr_low_cross: 0.0
+	- k_cross: -0.0034641608225294235
+	- r0_cross: 2.530589302567694
+	- theta0_cross_1: 0.5696681060386044
+	- theta0_cross_2: 0.14684845332655272
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.04996474898028237
+	- theta0_cross_7: 0.20286467332919564
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 27:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.04642296052521975
+	- a_cross_2: 0.00809774568326713
+	- a_cross_3: 0.0
+	- a_cross_4: 0.017934849270973982
+	- a_cross_7: 0.003960153841742003
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.013461599081166814
+	- delta_theta_star_cross_2: -3.816318370482053e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.011326609265674213
+	- delta_theta_star_cross_7: 0.00013697937865354257
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -2.9515625851240372
+	- dr_high_cross: 0.4590364528609258
+	- dr_low_cross: 0.0
+	- k_cross: -0.002214835300313972
+	- r0_cross: 0.49969076128205364
+	- theta0_cross_1: 0.5405487207857191
+	- theta0_cross_2: 0.08708452245825118
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.11212188944612198
+	- theta0_cross_7: 0.16190325822724058
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 28:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.04382738480946968
+	- a_cross_2: 0.0072494253708856255
+	- a_cross_3: 0.0
+	- a_cross_4: -0.00042449318364127056
+	- a_cross_7: 0.003635960480775082
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.010188627516378945
+	- delta_theta_star_cross_2: 0.00010173078447080935
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.01034114642760358
+	- delta_theta_star_cross_7: 5.5305836654451e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -2.243516195330993
+	- dr_high_cross: 0.6441403837318548
+	- dr_low_cross: 0.0
+	- k_cross: -0.001741897336350811
+	- r0_cross: -1.4125903517273255
+	- theta0_cross_1: 0.4773389718966967
+	- theta0_cross_2: 0.030726260388548483
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.010902724041802175
+	- theta0_cross_7: 0.18950292582394743
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 29:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.049182341687589025
+	- a_cross_2: 0.010048458174558895
+	- a_cross_3: 0.0
+	- a_cross_4: 0.011467712446360774
+	- a_cross_7: 0.0037827507892294054
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.012010496003888996
+	- delta_theta_star_cross_2: 0.00043687024292989485
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.014128240547903986
+	- delta_theta_star_cross_7: 0.00042569442832322515
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -2.472646250838401
+	- dr_high_cross: 0.45457527345713317
+	- dr_low_cross: 0.0
+	- k_cross: -0.0022262987467248133
+	- r0_cross: -0.4954309045172996
+	- theta0_cross_1: 0.5328855495910277
+	- theta0_cross_2: 0.07155318648446446
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.07024085316843343
+	- theta0_cross_7: 0.16950611073041688
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 30:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.051655619580997764
+	- a_cross_2: 0.008549190297685213
+	- a_cross_3: 0.0
+	- a_cross_4: 0.011321693096859367
+	- a_cross_7: 0.0046357724252839
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.010518819870568637
+	- delta_theta_star_cross_2: 5.6632038087102194e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.016569660465890985
+	- delta_theta_star_cross_7: 7.496135229817416e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -2.486410051961915
+	- dr_high_cross: 0.33957091306190557
+	- dr_low_cross: 0.0
+	- k_cross: -0.0023680047314949366
+	- r0_cross: -0.41283663574795626
+	- theta0_cross_1: 0.6094888806900217
+	- theta0_cross_2: 0.07864872786738723
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.0667880109276621
+	- theta0_cross_7: 0.20183985625320916
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 31:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.05003217594752002
+	- a_cross_2: 0.004751672231952163
+	- a_cross_3: 0.0
+	- a_cross_4: 0.038203592662759835
+	- a_cross_7: 0.001300769345156372
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.012233628804393853
+	- delta_theta_star_cross_2: 4.5729943313111484e-05
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.026545723332120047
+	- delta_theta_star_cross_7: -0.0005740857682199684
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -1.1668019423926639
+	- dr_high_cross: 0.08151226875696016
+	- dr_low_cross: 0.0
+	- k_cross: -0.0014335841053548196
+	- r0_cross: -1.3201505302869951
+	- theta0_cross_1: 0.563329634108839
+	- theta0_cross_2: 0.04289183259621214
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.15733341362664882
+	- theta0_cross_7: 0.15464521694632377
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 32:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.047835033535546204
+	- a_cross_2: 0.009181715804004358
+	- a_cross_3: 0.0
+	- a_cross_4: 0.012785748408974234
+	- a_cross_7: 0.0038790721954201574
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.008444058030245678
+	- delta_theta_star_cross_2: 0.00013740691557086963
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.013477572133093557
+	- delta_theta_star_cross_7: -6.444141325056475e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -1.8486851637337662
+	- dr_high_cross: 0.118477750077732
+	- dr_low_cross: 0.0
+	- k_cross: -0.002101259895514843
+	- r0_cross: -0.6954331095856753
+	- theta0_cross_1: 0.5910243849850201
+	- theta0_cross_2: 0.07640308730078432
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.07255670883884757
+	- theta0_cross_7: 0.1903618735710491
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 33:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.046550118518905476
+	- a_cross_2: 0.008800156790486175
+	- a_cross_3: 0.0
+	- a_cross_4: 0.030637066374166636
+	- a_cross_7: 0.0019386497432642405
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.011034294233518656
+	- delta_theta_star_cross_2: 0.0005677051508694066
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.030129888321673154
+	- delta_theta_star_cross_7: 8.286623317609771e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -1.2271939397584584
+	- dr_high_cross: -0.29057654747939543
+	- dr_low_cross: 0.0
+	- k_cross: -0.0018664476837287045
+	- r0_cross: -0.9701471288056166
+	- theta0_cross_1: 0.5621510511002028
+	- theta0_cross_2: 0.07514164065635737
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.1299978514230356
+	- theta0_cross_7: 0.14801373496056539
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 34:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.049494848371344075
+	- a_cross_2: 0.008195448173664152
+	- a_cross_3: 0.0
+	- a_cross_4: -0.008225447059950982
+	- a_cross_7: 0.0034070663269412434
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.006302704997362851
+	- delta_theta_star_cross_2: -0.00035931513875710257
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.004275696661614443
+	- delta_theta_star_cross_7: 0.00023901547767445666
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -1.9052615122833132
+	- dr_high_cross: -0.14000032125519762
+	- dr_low_cross: 0.0
+	- k_cross: -0.0023310809121927464
+	- r0_cross: -0.369427102360628
+	- theta0_cross_1: 0.6478854984762484
+	- theta0_cross_2: 0.09990533653260897
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.009079181803770393
+	- theta0_cross_7: 0.20023125393898483
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 35:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.048291780140556656
+	- a_cross_2: 0.008964078165346024
+	- a_cross_3: 0.0
+	- a_cross_4: 0.011955917300635322
+	- a_cross_7: 0.0021773565488536436
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.005724010805197487
+	- delta_theta_star_cross_2: 0.00025812793170848183
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.020302328028443006
+	- delta_theta_star_cross_7: -9.05628663546421e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -0.9748365387191746
+	- dr_high_cross: -0.20040749218639314
+	- dr_low_cross: 0.0
+	- k_cross: -0.0018506269240258209
+	- r0_cross: -1.718047249618353
+	- theta0_cross_1: 0.6447163920919189
+	- theta0_cross_2: 0.09250232643364882
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.048599516368109594
+	- theta0_cross_7: 0.16128117493033553
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 36:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.047337941300092924
+	- a_cross_2: 0.008293831559144402
+	- a_cross_3: 0.0
+	- a_cross_4: 0.012543692526645518
+	- a_cross_7: 0.0017258010313833594
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.004050076888526884
+	- delta_theta_star_cross_2: 0.000261792183578517
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.023672026907523985
+	- delta_theta_star_cross_7: -7.201887161025462e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -0.9255345061347375
+	- dr_high_cross: -0.28700690212298413
+	- dr_low_cross: 0.0
+	- k_cross: -0.0018521721349257145
+	- r0_cross: -1.675900516702292
+	- theta0_cross_1: 0.6740839303418125
+	- theta0_cross_2: 0.09666122410687918
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.044274971717561
+	- theta0_cross_7: 0.1656376636036793
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 37:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.04689234240810071
+	- a_cross_2: 0.009189467106229515
+	- a_cross_3: 0.0
+	- a_cross_4: -0.0032884083287394064
+	- a_cross_7: 0.003215273853978673
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.00449623797010254
+	- delta_theta_star_cross_2: -0.00015048717497894825
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.013499514954628164
+	- delta_theta_star_cross_7: 9.95186052111331e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -1.744812747118806
+	- dr_high_cross: -0.2904976335104016
+	- dr_low_cross: 0.0
+	- k_cross: -0.0025046863272146025
+	- r0_cross: -0.385856963840281
+	- theta0_cross_1: 0.6923477411924743
+	- theta0_cross_2: 0.10922794161072788
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0006635595617263401
+	- theta0_cross_7: 0.22033155489091716
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 38:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.04672616451192389
+	- a_cross_2: 0.008138843776724974
+	- a_cross_3: 0.0
+	- a_cross_4: -0.0040755591940729325
+	- a_cross_7: 0.0030765613918121337
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.002890493970605354
+	- delta_theta_star_cross_2: -0.0001820194072460592
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.013676596048368331
+	- delta_theta_star_cross_7: 0.00015375244112571154
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -1.6694616502454838
+	- dr_high_cross: -0.2242875239931179
+	- dr_low_cross: 0.0
+	- k_cross: -0.0024946200092613264
+	- r0_cross: -0.5975549724183631
+	- theta0_cross_1: 0.714248029824427
+	- theta0_cross_2: 0.10016823643013505
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.006306977188866502
+	- theta0_cross_7: 0.2278712804558896
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 39:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0442828286732145
+	- a_cross_2: 0.008949006016051872
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0027018680207010638
+	- a_cross_7: 0.00237305335474532
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: -0.0035204901094321637
+	- delta_theta_star_cross_2: 0.00037047817548939595
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.02352652066886958
+	- delta_theta_star_cross_7: 0.0001224323522955939
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -1.3942688699253554
+	- dr_high_cross: -0.13290163610811284
+	- dr_low_cross: 0.0
+	- k_cross: -0.0021002026875719376
+	- r0_cross: -1.2254961665799349
+	- theta0_cross_1: 0.7074550109947456
+	- theta0_cross_2: 0.10799240998849025
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 2.3880194140762923e-05
+	- theta0_cross_7: 0.18481984452491843
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 40:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.04393917979871512
+	- a_cross_2: 0.00931564736887564
+	- a_cross_3: 0.0
+	- a_cross_4: 0.002887752663087785
+	- a_cross_7: 0.0024375829691491422
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: -0.0057212636434573845
+	- delta_theta_star_cross_2: 0.00028993308074275713
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.023371746165047336
+	- delta_theta_star_cross_7: 0.00015336215216308984
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -1.400235023234322
+	- dr_high_cross: 0.06709440365132006
+	- dr_low_cross: 0.0
+	- k_cross: -0.0021046758222914
+	- r0_cross: -1.5454641713407191
+	- theta0_cross_1: 0.7342028568385502
+	- theta0_cross_2: 0.11361395178542336
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0010917694961820462
+	- theta0_cross_7: 0.18618822409202282
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 41:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.04005760290713159
+	- a_cross_2: 0.009028957482165997
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0010567879158753847
+	- a_cross_7: 0.002095099340948655
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: -0.004782328164509235
+	- delta_theta_star_cross_2: -0.00014740534899361263
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.011653486719019633
+	- delta_theta_star_cross_7: -1.6866232527286255e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -1.9282499625428118
+	- dr_high_cross: 0.4297936073446836
+	- dr_low_cross: 0.0
+	- k_cross: -0.0024071452054789245
+	- r0_cross: -1.1611822219420582
+	- theta0_cross_1: 0.744831322885108
+	- theta0_cross_2: 0.1223568391628451
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.019076544073237924
+	- theta0_cross_7: 0.19524254541472522
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 42:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.03790157912133142
+	- a_cross_2: 0.009151834012728555
+	- a_cross_3: 0.0
+	- a_cross_4: 0.002199545002496401
+	- a_cross_7: 0.0021891550674865597
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: -0.007701364566137455
+	- delta_theta_star_cross_2: -0.00014000322421998924
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.011369972622261495
+	- delta_theta_star_cross_7: -5.580673859780839e-05
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -2.046947793142767
+	- dr_high_cross: 0.9023431809296292
+	- dr_low_cross: 0.0
+	- k_cross: -0.002386443682779958
+	- r0_cross: -1.5877822215743707
+	- theta0_cross_1: 0.7632870192866857
+	- theta0_cross_2: 0.12226970402964248
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.02451949610210989
+	- theta0_cross_7: 0.19764862879541945
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 43:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.034765241890925745
+	- a_cross_2: 0.013000713764301085
+	- a_cross_3: 0.0
+	- a_cross_4: 0.01826889311053459
+	- a_cross_7: 0.0027799146019165484
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: -0.01381859469690258
+	- delta_theta_star_cross_2: 0.0006463432148048843
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.027380802465793594
+	- delta_theta_star_cross_7: 0.0001951798495274054
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -1.6396808294999254
+	- dr_high_cross: 2.0417519141396077
+	- dr_low_cross: 0.0
+	- k_cross: -0.001884475998696315
+	- r0_cross: -4.059058466599942
+	- theta0_cross_1: 0.7913078655912946
+	- theta0_cross_2: 0.13924301102172837
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.07010312683258732
+	- theta0_cross_7: 0.1422901248683924
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 44:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.031099348906822165
+	- a_cross_2: 0.013086427684842528
+	- a_cross_3: 0.0
+	- a_cross_4: 0.02303446519253583
+	- a_cross_7: 0.0034893837474312475
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: -0.01946889959364969
+	- delta_theta_star_cross_2: 0.0006122263048340177
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.029944257447944878
+	- delta_theta_star_cross_7: 0.00017794629368951206
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -2.3675263499896557
+	- dr_high_cross: 3.368647977259092
+	- dr_low_cross: 0.0
+	- k_cross: -0.00204121168722856
+	- r0_cross: -4.624959057175454
+	- theta0_cross_1: 0.8235578570126321
+	- theta0_cross_2: 0.13855914774140593
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.09207482379197668
+	- theta0_cross_7: 0.15162623797204186
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 45:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.02631199666018658
+	- a_cross_2: 0.013321944705408007
+	- a_cross_3: 0.0
+	- a_cross_4: 0.02597759352434629
+	- a_cross_7: 0.0048311790145132705
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: -0.02711519771101846
+	- delta_theta_star_cross_2: 0.0005451039076442826
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.03156371588036144
+	- delta_theta_star_cross_7: 0.00015962380762810964
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -3.1940018307218123
+	- dr_high_cross: 5.321931036802926
+	- dr_low_cross: 0.0
+	- k_cross: -0.0021781215561772664
+	- r0_cross: -5.787310144397651
+	- theta0_cross_1: 0.8608339135191745
+	- theta0_cross_2: 0.13714243741363022
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.10610526560591801
+	- theta0_cross_7: 0.16442106450196856
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 46:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.023597219398725038
+	- a_cross_2: 0.01569454102030071
+	- a_cross_3: 0.0
+	- a_cross_4: 0.032577039183241875
+	- a_cross_7: 0.009610570032955524
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: -0.036033536277511796
+	- delta_theta_star_cross_2: 0.0012332955648453447
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.040615049292978794
+	- delta_theta_star_cross_7: 0.00036457722133095925
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -4.1469737354118585
+	- dr_high_cross: 7.190750173191775
+	- dr_low_cross: 0.0
+	- k_cross: -0.0028132494128608933
+	- r0_cross: -7.078620576340745
+	- theta0_cross_1: 0.9744582455055347
+	- theta0_cross_2: 0.033712537253999045
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.12897729543334796
+	- theta0_cross_7: 0.26600629195573955
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 47:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.016194839729452418
+	- a_cross_2: 0.01642017350302614
+	- a_cross_3: 0.0
+	- a_cross_4: 0.03986491504265512
+	- a_cross_7: 0.01344530261453207
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: -0.047523308605862014
+	- delta_theta_star_cross_2: 0.0010245398348789217
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.04428665246152161
+	- delta_theta_star_cross_7: 0.00025573161643598725
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -5.279412498848314
+	- dr_high_cross: 9.97896950883971
+	- dr_low_cross: 0.0
+	- k_cross: -0.0031665291089702017
+	- r0_cross: -8.631504953685548
+	- theta0_cross_1: 1.0386985861135702
+	- theta0_cross_2: 0.023687669961363948
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.16651550270150148
+	- theta0_cross_7: 0.3040258428757594
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 48:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0044301318773724415
+	- a_cross_2: 0.02220567720319863
+	- a_cross_3: 0.0
+	- a_cross_4: 0.03111399198796078
+	- a_cross_7: 0.019625988332655553
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: -0.06399152555245316
+	- delta_theta_star_cross_2: 0.0015605433604107025
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.026497197081053317
+	- delta_theta_star_cross_7: 0.0006469837778373186
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -6.420792598964346
+	- dr_high_cross: 12.490556062887386
+	- dr_low_cross: 0.0
+	- k_cross: -0.0038243249583447994
+	- r0_cross: -9.823114136200388
+	- theta0_cross_1: 1.0128974343512538
+	- theta0_cross_2: 0.04360572205849271
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.16446618948731268
+	- theta0_cross_7: 0.3125231101767792
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 49:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: -0.005714777398765934
+	- a_cross_2: 0.02228097529371819
+	- a_cross_3: 0.0
+	- a_cross_4: 0.04095818509421767
+	- a_cross_7: 0.025638395281021544
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: -0.07841341777163593
+	- delta_theta_star_cross_2: 0.001529229555470597
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.046777814366734505
+	- delta_theta_star_cross_7: 0.00047881274602009483
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -7.0426998647744234
+	- dr_high_cross: 16.143364177743695
+	- dr_low_cross: 0.0
+	- k_cross: -0.004000592899765778
+	- r0_cross: -12.702526211807646
+	- theta0_cross_1: 1.1331906470305197
+	- theta0_cross_2: 0.047740658244490614
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.18035926615595305
+	- theta0_cross_7: 0.3667034465900789
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 50:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: -0.01709213923031725
+	- a_cross_2: 0.025357509169749583
+	- a_cross_3: 0.0
+	- a_cross_4: 0.047107432541717446
+	- a_cross_7: 0.027043816486785895
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: -0.0843985975243765
+	- delta_theta_star_cross_2: 0.0011124597807063564
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.04502423204638756
+	- delta_theta_star_cross_7: -0.0006022753725916296
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -7.632122898149212
+	- dr_high_cross: 17.4283330799389
+	- dr_low_cross: 0.0
+	- k_cross: -0.00524351649931334
+	- r0_cross: -13.274840379947069
+	- theta0_cross_1: 1.182692608785615
+	- theta0_cross_2: 0.039893565124699694
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.22820420142240266
+	- theta0_cross_7: 0.41155654271453135
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 51:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: -0.02658236155807105
+	- a_cross_2: 0.021984260085166504
+	- a_cross_3: 0.0
+	- a_cross_4: 0.06936128039886157
+	- a_cross_7: 0.025596207928373017
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: -0.09819585476426712
+	- delta_theta_star_cross_2: -0.0003591459157816373
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.05330188271771363
+	- delta_theta_star_cross_7: -0.005331672615421577
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -7.911118806280184
+	- dr_high_cross: 17.06798339636831
+	- dr_low_cross: 0.0
+	- k_cross: -0.00620859823611801
+	- r0_cross: -12.022935659930912
+	- theta0_cross_1: 1.2916263059480344
+	- theta0_cross_2: -0.006652296081153181
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.34500786519945564
+	- theta0_cross_7: 0.4821161466993739
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 52:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: -0.038014490338992145
+	- a_cross_2: 0.02354761232075922
+	- a_cross_3: 0.0
+	- a_cross_4: 0.09242428975106741
+	- a_cross_7: -0.006909203122270286
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: -0.11105745978388853
+	- delta_theta_star_cross_2: 0.001239153892345841
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.06287723830003772
+	- delta_theta_star_cross_7: -0.012938465774349053
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -8.79196229609822
+	- dr_high_cross: 15.879106332089517
+	- dr_low_cross: 0.0
+	- k_cross: -0.008546664668730882
+	- r0_cross: -10.433811471651946
+	- theta0_cross_1: 1.5331259538749542
+	- theta0_cross_2: 0.04042709073888702
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.4977420586255265
+	- theta0_cross_7: 0.41041892506787864
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 53:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: -0.07580245870791762
+	- a_cross_2: 0.048027071260833644
+	- a_cross_3: 0.0
+	- a_cross_4: 0.10178306807237207
+	- a_cross_7: -0.1002449787405029
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: -0.13415347355301466
+	- delta_theta_star_cross_2: 0.04082894952826491
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.06814979554457268
+	- delta_theta_star_cross_7: -0.026407644128826534
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: -9.154669369800308
+	- dr_high_cross: 9.96614478349644
+	- dr_low_cross: 0.0
+	- k_cross: -0.009889593674180065
+	- r0_cross: -3.4582473986275986
+	- theta0_cross_1: 1.4199010973202695
+	- theta0_cross_2: 0.05266803865544353
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: -0.5517157413451937
+	- theta0_cross_7: 0.00880012594736286
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 54:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 55:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 56:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 57:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 58:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 59:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 60:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 61:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 62:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 63:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 64:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 65:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 66:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 67:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 68:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 69:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 70:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 71:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 72:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 73:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 74:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 75:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 76:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 77:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 78:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 79:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 80:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 81:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 82:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 83:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 84:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 85:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 86:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 87:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 88:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 89:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 90:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 91:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 92:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 93:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 94:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 95:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 96:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 97:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 98:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 99:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 100:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 101:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 102:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 103:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 104:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 105:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 106:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 107:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 108:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 109:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 110:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 111:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 112:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 113:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 114:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 115:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 116:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 117:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 118:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 119:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 120:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 121:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 122:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 123:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 124:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 125:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 126:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 127:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 128:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 129:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 130:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 131:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 132:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 133:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 134:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 135:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 136:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 137:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 138:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 139:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 140:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 141:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 142:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 143:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 144:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 145:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 146:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 147:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 148:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 149:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 150:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 151:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 152:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 153:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 154:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 155:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 156:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 157:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 158:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 159:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 160:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 161:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 162:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 163:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 164:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 165:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 166:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 167:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 168:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 169:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 170:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 171:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 172:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 173:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 174:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 175:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 176:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 177:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 178:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 179:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 180:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 181:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 182:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 183:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 184:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 185:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 186:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 187:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 188:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 189:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 190:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 191:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 192:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 193:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 194:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 195:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 196:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 197:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 198:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 199:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 200:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 201:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 202:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 203:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 204:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 205:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 206:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 207:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 208:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 209:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 210:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 211:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 212:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 213:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 214:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 215:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 216:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 217:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 218:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 219:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 220:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 221:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 222:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 223:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 224:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 225:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 226:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 227:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 228:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 229:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 230:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 231:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 232:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 233:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 234:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 235:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 236:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 237:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 238:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 239:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 240:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 241:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 242:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 243:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 244:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 245:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 246:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 247:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 248:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking
+Iteration 249:
+- coaxial_stacking
+- cross_stacking
+	- a_cross_1: 0.0
+	- a_cross_2: 0.0
+	- a_cross_3: 0.0
+	- a_cross_4: 0.0
+	- a_cross_7: 0.0
+	- a_cross_8: 0.0
+	- delta_theta_star_cross_1: 0.0
+	- delta_theta_star_cross_2: 0.0
+	- delta_theta_star_cross_3: 0.0
+	- delta_theta_star_cross_4: 0.0
+	- delta_theta_star_cross_7: 0.0
+	- delta_theta_star_cross_8: 0.0
+	- dr_c_cross: 0.0
+	- dr_high_cross: 0.0
+	- dr_low_cross: 0.0
+	- k_cross: 0.0
+	- r0_cross: 0.0
+	- theta0_cross_1: 0.0
+	- theta0_cross_2: 0.0
+	- theta0_cross_3: 0.0
+	- theta0_cross_4: 0.0
+	- theta0_cross_7: 0.0
+	- theta0_cross_8: 0.0
+- debye
+- excluded_volume
+- fene
+- hydrogen_bonding
+- stacking

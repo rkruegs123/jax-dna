@@ -7,6 +7,7 @@ from tqdm import tqdm
 import time
 import argparse
 
+import jax
 import optax
 import jax.numpy as jnp
 from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util
@@ -18,8 +19,9 @@ from jax_dna.dna1 import model
 from jax_dna import dna1, loss
 from jax_dna.loss import geometry, pitch, propeller
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 
@@ -108,7 +110,7 @@ def run(args):
         scan = functools.partial(checkpoint.checkpoint_scan,
                                  checkpoint_every=checkpoint_every)
 
-    
+
     sample_every = 1000
     def body_metadata_fn(body):
         helical_diams = compute_helical_diameters(body)
@@ -154,9 +156,9 @@ def run(args):
         fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_steps))
         return fin_state.position, traj
 
-    
+
     def check_oom(n_steps, checkpoint_every):
-        
+
         if checkpoint_every is None:
             scan = lax.scan
         else:
@@ -170,7 +172,7 @@ def run(args):
             return loss, metadata
         grad_fn = value_and_grad(loss_fn, has_aux=True)
         grad_fn = jit(grad_fn)
-            
+
         params = deepcopy(model.EMPTY_BASE_PARAMS)
         params["fene"] = model.DEFAULT_BASE_PARAMS["fene"]
         params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
@@ -185,7 +187,7 @@ def run(args):
             grad_vals = [v for v in grads['stacking'].values()]
 
             pdb.set_trace()
-            
+
             traj_info = trajectory.TrajectoryInfo(
                 top_info, read_from_states=True, states=traj, box_size=conf_info.box_size)
             traj_info.write(trajs_dir / f"traj_c{checkpoint_every}_n{n_steps}.dat", reverse=True)
@@ -194,9 +196,9 @@ def run(args):
             (loss, traj), grads = grad_fn(params, init_body, key)
             end = time.time()
             second_eval_time = end - start
-            
+
             print("success")
-            
+
             failed = False
         except Exception as e:
             print(e)
@@ -207,7 +209,7 @@ def run(args):
 
             failed = True
         return failed, first_eval_time, second_eval_time
-            
+
 
     with open(log_path, "a") as f:
         f.write(f"Checkpoint every: {checkpoint_every}\n")
@@ -242,7 +244,7 @@ def run(args):
 
     return curr
 
-        
+
 
 
 def get_parser():
@@ -261,5 +263,5 @@ def get_parser():
 if __name__ == "__main__":
     parser = get_parser()
     args = vars(parser.parse_args())
-    
+
     run(args)

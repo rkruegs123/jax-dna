@@ -92,7 +92,8 @@ def lammpsify_params(base_params):
     tmp7 = base_params['hydrogen_bonding']['theta0_hb_7']
     tmp8 = base_params['hydrogen_bonding']['theta0_hb_8']
     base_params['hydrogen_bonding']['theta0_hb_8'] = tmp7
-    base_params['hydrogen_bonding']['theta0_hb_7'] = onp.pi - tmp8
+    # base_params['hydrogen_bonding']['theta0_hb_7'] = onp.pi - tmp8
+    base_params['hydrogen_bonding']['theta0_hb_7'] = tmp8
 
     tmp7 = base_params['hydrogen_bonding']['delta_theta_star_hb_7']
     tmp8 = base_params['hydrogen_bonding']['delta_theta_star_hb_8']

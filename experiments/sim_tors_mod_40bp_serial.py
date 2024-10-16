@@ -19,8 +19,9 @@ from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.dna1 import model
 from jax_dna.dna2 import model as model2
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 checkpoint_every = 50

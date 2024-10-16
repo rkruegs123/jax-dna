@@ -18,6 +18,7 @@ import pandas as pd
 import random
 import seaborn as sns
 
+import jax
 import optax
 import jax.numpy as jnp
 from jax_md import space
@@ -27,9 +28,11 @@ from jax_dna.common import utils, topology, trajectory, center_configuration, ch
 from jax_dna.loss import persistence_length
 from jax_dna.dna1 import model, oxdna_utils
 
-from jax.config import config
-config.update("jax_enable_x64", True)
-config.update('jax_platform_name', 'cpu')
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+# config.update('jax_platform_name', 'cpu')
+jax.config.update("jax_enable_x64", True)
+jax.config.update("jax_platform_name", 'cpu')
 
 
 checkpoint_every = 50

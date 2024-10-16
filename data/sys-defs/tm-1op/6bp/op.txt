@@ -1,0 +1,10 @@
+{
+	order_parameter = bond
+	name = all_native_bonds
+	pair1 = 0, 11
+	pair2 = 1, 10
+	pair3 = 2, 9
+	pair4 = 3, 8
+	pair5 = 4, 7
+	pair6 = 5, 6
+}

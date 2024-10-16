@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -5,6 +6,11 @@ __pycache__/
 
 # C extensions
 *.so
+=======
+**/*~
+
+**/__pycache__/
+>>>>>>> upstream/master
 
 # Distribution / packaging
 .Python
@@ -28,6 +34,9 @@ MANIFEST
 _version.py
 *.pyc
 **/*.pyc
+
+*.pyidx
+**/*.pyidx
 
 v2/data/output
 bak/v2/data/output

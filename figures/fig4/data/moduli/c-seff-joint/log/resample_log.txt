@@ -1,0 +1,408 @@
+Generating initial reference states and energies...
+Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 867.9839787483215
+Max. time: 1156.5571401119232
+Finished generating initial reference states. Took 1639.243150472641 seconds.
+
+Iteration 1
+- min n_eff was 2803.0772847232383...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 869.1458554267883
+Max. time: 1165.9255537986755
+- time to resample: 1635.804030418396 seconds
+
+Iteration 3
+- min n_eff was 2484.158745650262...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.144.248': 13, '10.31.142.232': 10, '10.31.144.219': 10})
+Min. time: 868.905371427536
+Max. time: 1120.6411035060883
+- time to resample: 1585.5242574214935 seconds
+
+Iteration 5
+- min n_eff was 2456.0359802963885...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 872.7107014656067
+Max. time: 1139.4863193035126
+- time to resample: 1603.0980126857758 seconds
+
+Iteration 6
+- min n_eff was 2826.8363084996117...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 872.3521211147308
+Max. time: 1130.3962662220001
+- time to resample: 1595.8479804992676 seconds
+
+Iteration 7
+- min n_eff was 2828.643209186265...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 869.8822016716003
+Max. time: 1148.0865805149078
+- time to resample: 1612.709890127182 seconds
+
+Iteration 8
+- min n_eff was 2798.4578017726894...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 878.5468435287476
+Max. time: 1221.5710909366608
+- time to resample: 1686.5411503314972 seconds
+
+Iteration 9
+- min n_eff was 2792.915369010168...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 872.9524691104889
+Max. time: 1188.3734905719757
+- time to resample: 1657.2365553379059 seconds
+
+Iteration 10
+- min n_eff was 2812.015149667735...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 871.2542026042938
+Max. time: 1200.1006436347961
+- time to resample: 1666.730041027069 seconds
+
+Iteration 11
+- min n_eff was 2846.5574486339583...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 872.6183023452759
+Max. time: 1143.79181432724
+- time to resample: 1611.1881122589111 seconds
+
+Iteration 13
+- min n_eff was 2603.5152655525494...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 876.0586113929749
+Max. time: 1205.5696787834167
+- time to resample: 1675.2429931163788 seconds
+
+Iteration 15
+- min n_eff was 2747.1924943028002...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 873.756532907486
+Max. time: 1142.168744802475
+- time to resample: 1616.3728759288788 seconds
+
+Iteration 17
+- min n_eff was 2839.278178433957...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 876.5651850700378
+Max. time: 1146.3446662425995
+- time to resample: 1619.5207059383392 seconds
+
+Iteration 20
+- min n_eff was 2820.8116205050237...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.144.219': 12, '10.31.142.232': 11, '10.31.144.248': 10})
+Min. time: 873.7871136665344
+Max. time: 1186.5230150222778
+- time to resample: 1660.0989348888397 seconds
+
+Iteration 24
+- min n_eff was 2761.2024662470653...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 875.2848334312439
+Max. time: 1152.4658737182617
+- time to resample: 1624.9494154453278 seconds
+
+Iteration 27
+- min n_eff was 2819.50464719492...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 874.484142780304
+Max. time: 1168.235038280487
+- time to resample: 1637.5800380706787 seconds
+
+Iteration 30
+- min n_eff was 2820.387119988773...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 878.8065605163574
+Max. time: 1138.0465097427368
+- time to resample: 1603.8754060268402 seconds
+
+Iteration 33
+- min n_eff was 2789.9830645443926...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 877.9751760959625
+Max. time: 1148.2355155944824
+- time to resample: 1611.0119388103485 seconds
+
+Iteration 37
+- min n_eff was 2760.9629591471535...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 882.0769126415253
+Max. time: 1157.212548494339
+- time to resample: 1621.4074630737305 seconds
+
+Iteration 42
+- min n_eff was 2832.5630126453293...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 878.8569173812866
+Max. time: 1153.8477504253387
+- time to resample: 1617.9773426055908 seconds
+
+Iteration 47
+- min n_eff was 2932.7836419044793...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 878.3548853397369
+Max. time: 1173.5702021121979
+- time to resample: 1640.6255731582642 seconds
+
+Iteration 52
+- min n_eff was 2917.9017290830616...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 884.3248867988586
+Max. time: 1165.8429491519928
+- time to resample: 1632.2898242473602 seconds
+
+Iteration 57
+- min n_eff was 2935.1984505845107...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 880.9552111625671
+Max. time: 1159.4185936450958
+- time to resample: 1626.176275253296 seconds
+
+Iteration 62
+- min n_eff was 2975.3407625466016...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 878.8519876003265
+Max. time: 1199.2917189598083
+- time to resample: 1662.4981610774994 seconds
+
+Iteration 67
+- min n_eff was 2990.2541341244983...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 879.6584453582764
+Max. time: 1143.6680483818054
+- time to resample: 1610.2804272174835 seconds
+
+Iteration 72
+- min n_eff was 2996.352277240616...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 879.1126546859741
+Max. time: 1228.1167171001434
+- time to resample: 1707.3363361358643 seconds
+
+Iteration 77
+- min n_eff was 2998.6277301377595...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 881.8989760875702
+Max. time: 1165.585191488266
+- time to resample: 1647.7035171985626 seconds
+
+Iteration 82
+- min n_eff was 2999.499247303577...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 877.5303537845612
+Max. time: 1208.456814289093
+- time to resample: 1689.3913609981537 seconds
+
+Iteration 87
+- min n_eff was 2999.8190273234572...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 879.8986332416534
+Max. time: 1240.4833850860596
+- time to resample: 1715.0568480491638 seconds
+
+Iteration 92
+- min n_eff was 2999.930842504012...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 879.3478584289551
+Max. time: 1226.4132883548737
+- time to resample: 1708.629249572754 seconds
+
+Iteration 97
+- min n_eff was 2999.974439669415...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 880.1744186878204
+Max. time: 1195.8624336719513
+- time to resample: 1677.8928899765015 seconds
+
+Iteration 102
+- min n_eff was 2999.9906057545363...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 880.1633176803589
+Max. time: 1207.4623970985413
+- time to resample: 1688.9285843372345 seconds
+
+Iteration 107
+- min n_eff was 2999.9965584358833...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 888.0584933757782
+Max. time: 1226.9319586753845
+- time to resample: 1708.9052031040192 seconds
+
+Iteration 112
+- min n_eff was 2999.9987102044793...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 881.2726578712463
+Max. time: 1224.320392370224
+- time to resample: 1705.386204957962 seconds
+
+Iteration 117
+- min n_eff was 2999.9995367099177...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 881.0395710468292
+Max. time: 1216.89542222023
+- time to resample: 1696.0299146175385 seconds
+
+Iteration 122
+- min n_eff was 2999.9998325538227...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 879.2397382259369
+Max. time: 1155.6483600139618
+- time to resample: 1621.3142788410187 seconds
+
+Iteration 127
+- min n_eff was 2999.9999377819063...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 882.3887581825256
+Max. time: 1152.7926156520844
+- time to resample: 1617.085432767868 seconds
+
+Iteration 132
+- min n_eff was 2999.999977901701...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 878.7776236534119
+Max. time: 1161.349487066269
+- time to resample: 1627.282886505127 seconds
+
+Iteration 137
+- min n_eff was 2999.999991690639...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 880.058123588562
+Max. time: 1141.1880931854248
+- time to resample: 1605.486879825592 seconds
+
+Iteration 142
+- min n_eff was 2999.9999969720784...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 880.8706433773041
+Max. time: 1142.5593843460083
+- time to resample: 1608.905835390091 seconds
+
+Iteration 147
+- min n_eff was 2999.9999989400403...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 881.6088807582855
+Max. time: 1152.0233223438263
+- time to resample: 1617.9133987426758 seconds
+
+Iteration 152
+- min n_eff was 2999.9999996090305...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 887.444905757904
+Max. time: 1145.0564374923706
+- time to resample: 1612.2229344844818 seconds
+
+Iteration 157
+- min n_eff was 2999.9999998625717...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.144.219': 12, '10.31.144.248': 11, '10.31.142.232': 10})
+Min. time: 881.8464176654816
+Max. time: 1158.3835253715515
+- time to resample: 1622.5189502239227 seconds
+
+Iteration 162
+- min n_eff was 2999.9999999512524...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 883.6263411045074
+Max. time: 1171.480610370636
+- time to resample: 1646.925457239151 seconds
+
+Iteration 167
+- min n_eff was 2999.9999999821453...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.144.248': 14, '10.31.144.219': 10, '10.31.142.232': 9})
+Min. time: 887.7209358215332
+Max. time: 1172.404862165451
+- time to resample: 1639.0465722084045 seconds
+
+Iteration 172
+- min n_eff was 2999.9999999933098...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 880.1986677646637
+Max. time: 1144.9770333766937
+- time to resample: 1609.4805932044983 seconds
+
+Iteration 177
+- min n_eff was 2999.9999999976794...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 884.5912582874298
+Max. time: 1158.5732591152191
+- time to resample: 1620.8063206672668 seconds
+
+Iteration 182
+- min n_eff was 2999.999999999177...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 880.4056415557861
+Max. time: 1140.9552900791168
+- time to resample: 1606.4522671699524 seconds
+
+Iteration 187
+- min n_eff was 2999.999999999694...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 884.166579246521
+Max. time: 1138.1041195392609
+- time to resample: 1605.8593978881836 seconds
+
+Iteration 192
+- min n_eff was 2999.999999999891...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 883.6901149749756
+Max. time: 1201.425950050354
+- time to resample: 1666.995829820633 seconds
+
+Iteration 197
+- min n_eff was 2999.9999999999604...Performed 33 simulations with Ray...
+Hostname distribution:
+Counter({'10.31.142.232': 11, '10.31.144.248': 11, '10.31.144.219': 11})
+Min. time: 882.8299775123596
+Max. time: 1151.4891963005066
+- time to resample: 1614.6734371185303 seconds
+

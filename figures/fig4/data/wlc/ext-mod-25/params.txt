@@ -1,0 +1,27 @@
+n_ref_states_lp: 16000
+n_sims_total: 232
+key: 0
+device: cpu-ray
+n_threads: 128
+run_name: test-joint-ext-mod-wlc-lp-t25
+oxdna_path: /n/brenner_lab/User/rkrueger/oxdna-bin-cpu11/oxDNA/
+n_iters: 250
+lr: 0.001
+target_ext_mod: 25.0
+min_neff_factor: 0.95
+max_approx_iters: 3
+offset: 4
+corr_curve_truncation: 40
+n_sims_lp: 64
+n_steps_per_sim_lp: 2500000
+sample_every_lp: 10000
+n_sims_per_force: 12
+n_steps_per_sim_fe: 25000000
+sample_every_fe: 100000
+low_forces: [0.025, 0.05]
+low_force_multiplier: 4
+opt_keys: ['stacking']
+no_delete: False
+no_archive: False
+plot_every: 10
+save_obj_every: 5

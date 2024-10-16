@@ -18,6 +18,7 @@ import socket
 import ray
 from collections import Counter
 
+import jax
 import jax.numpy as jnp
 from jax_md import space
 from jax import vmap, jit, lax, grad, value_and_grad
@@ -28,8 +29,9 @@ from jax_dna.common import utils, topology, trajectory, checkpoint, center_confi
 from jax_dna.dna1 import model, oxdna_utils
 from jax_dna.loss import persistence_length
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 if "ip_head" in os.environ:

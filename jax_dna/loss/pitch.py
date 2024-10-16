@@ -4,17 +4,21 @@ import pdb
 import unittest
 import pandas as pd
 from pathlib import Path
+import numpy as onp
+import matplotlib.pyplot as plt
 
+import jax
 from jax import vmap
 import jax.numpy as jnp
 from jax_md import rigid_body, util, space
 
 from jax_dna.common import utils, topology, trajectory
-from jax_dna.loss import pitch
-from jax_dna.dna1 import model
+from jax_dna.dna1 import model as model1
+from jax_dna.dna2 import model as model2
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 # DNA Structure and Function, R. Sinden, 1st ed
@@ -123,7 +127,7 @@ class TestPitch(unittest.TestCase):
         traj_states = traj_info.get_states()
         computed_pitches = [
             # note: we assume DNA1
-            pitch.get_all_pitches(body, quartets, displacement_fn, model.com_to_hb)
+            get_all_pitches(body, quartets, displacement_fn, model1.com_to_hb)
             for body in traj_states
         ]
 
@@ -142,9 +146,103 @@ class TestPitch(unittest.TestCase):
         simple_helix_test = (self.test_data_basedir / "simple-helix",
                              "generated.top", "output.dat", "pitch.dat",
                              simple_helix_quartets)
-        pitch_tests = [simple_helix_test]
+        simple_helix_test_oxdna2 = (self.test_data_basedir / "simple-helix-oxdna2",
+                                    "generated.top", "output.dat", "pitch.dat",
+                                    simple_helix_quartets)
+        pitch_tests = [simple_helix_test, simple_helix_test_oxdna2]
         for basedir, top_fname, traj_fname, pitches_fname, quartets in pitch_tests:
             self.check_pitches(basedir, top_fname, traj_fname, pitches_fname, quartets)
+
+    def test_long_duplex(self):
+        # for n_bp in [30, 60, 80]:
+        # for n_bp in [60, 80]:
+        for n_bp in [60]:
+            basedir = self.test_data_basedir / f"simple-helix-{n_bp}bp"
+            # basedir = self.test_data_basedir / f"simple-helix-{n_bp}bp-oxdna2"
+            top_path = basedir / "sys.top"
+            top_info = topology.TopologyInfo(top_path, reverse_direction=False)
+            n = len(top_info.seq)
+
+            traj_path = basedir / "output.dat"
+            traj_info = trajectory.TrajectoryInfo(
+                top_info, read_from_file=True, traj_path=traj_path, reverse_direction=False)
+            displacement_fn, _ = space.periodic(traj_info.box_size)
+            traj_states = traj_info.get_states()
+
+            print(f"----- Number of base pairs: {n_bp} -----")
+
+            for n_skip_quartets in [3, 5, 10]:
+
+                quartets = utils.get_all_quartets(n_nucs_per_strand=n // 2)
+                quartets = quartets[n_skip_quartets:-n_skip_quartets]
+                n_quartets = quartets.shape[0]
+
+                computed_pitches = [
+                    get_all_pitches(body, quartets, displacement_fn, model1.com_to_hb)
+                    for body in traj_states
+                ]
+
+                state_avg_pitches = list()
+                for pitches in computed_pitches:
+                    num_turns = jnp.sum(pitches) / (2*jnp.pi)
+                    state_avg_pitch = (n_quartets+1) / num_turns
+                    state_avg_pitches.append(state_avg_pitch)
+
+                avg_pitch = onp.mean(state_avg_pitches)
+                print(f"- Average pitch (skipping {n_skip_quartets} quartets): {avg_pitch}")
+
+                running_avg = onp.cumsum(state_avg_pitches) / onp.arange(1, len(computed_pitches) + 1)
+                plt.plot(running_avg)
+                plt.title(f"{n_bp} base pairs, {n_skip_quartets} skipped quartets")
+                plt.xlabel("num state")
+                plt.ylabel("avg. pitch")
+                plt.show()
+                plt.close()
+
+        return
+
+    def test_oxdna2(self):
+        basedir = self.test_data_basedir / f"simple-helix-60bp-oxdna2"
+        top_path = basedir / "sys.top"
+        top_info = topology.TopologyInfo(top_path, reverse_direction=False)
+        n = len(top_info.seq)
+
+        traj_path = basedir / "output.dat"
+        traj_info = trajectory.TrajectoryInfo(
+            top_info, read_from_file=True, traj_path=traj_path, reverse_direction=False)
+        displacement_fn, _ = space.periodic(traj_info.box_size)
+        traj_states = traj_info.get_states()
+
+
+        for n_skip_quartets in [3, 5, 10]:
+
+            quartets = utils.get_all_quartets(n_nucs_per_strand=n // 2)
+            quartets = quartets[n_skip_quartets:-n_skip_quartets]
+            n_quartets = quartets.shape[0]
+
+            computed_pitches = [
+                get_all_pitches(body, quartets, displacement_fn, model1.com_to_hb)
+                for body in traj_states
+            ]
+
+            state_avg_pitches = list()
+            for pitches in computed_pitches:
+                num_turns = jnp.sum(pitches) / (2*jnp.pi)
+                state_avg_pitch = (n_quartets+1) / num_turns
+                state_avg_pitches.append(state_avg_pitch)
+
+            avg_pitch = onp.mean(state_avg_pitches)
+            print(f"- Average pitch (skipping {n_skip_quartets} quartets): {avg_pitch}")
+
+            running_avg = onp.cumsum(state_avg_pitches) / onp.arange(1, len(computed_pitches) + 1)
+            plt.plot(running_avg)
+            plt.title(f"{n_skip_quartets} skipped quartets")
+            plt.xlabel("num state")
+            plt.ylabel("avg. pitch")
+            plt.show()
+            plt.close()
+
+        return
 
 if __name__ == "__main__":
     unittest.main()

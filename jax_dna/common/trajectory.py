@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as onp
 from tqdm import tqdm
 
+import jax
 import jax.numpy as jnp
 from jax import jit
 from jax_md.rigid_body import RigidBody, Quaternion
@@ -14,8 +15,9 @@ from jax_md.rigid_body import RigidBody, Quaternion
 from jax_dna.common.utils import Q_to_back_base, Q_to_base_normal, tree_stack
 from jax_dna.common.topology import TopologyInfo
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 

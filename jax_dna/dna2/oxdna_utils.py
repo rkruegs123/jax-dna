@@ -20,8 +20,26 @@ from jax_dna.common import utils, topology, trajectory
 def recompile_oxdna(override_base_params, oxdna_path, t_kelvin, num_threads=4, seq_avg=True):
     variable_mapper = deepcopy(dna1_utils.DEFAULT_VARIABLE_MAPPER)
     override_base_params_copy = deepcopy(override_base_params)
-    if seq_avg:
 
+    variable_mapper["fene"]["r0_backbone"] = "FENE_R0_OXDNA2"
+    if "r0_backbone" not in override_base_params_copy["fene"]:
+        override_base_params_copy["fene"]["r0_backbone"] =  0.7564
+
+    variable_mapper["coaxial_stacking"]["k_coax"] = "CXST_K_OXDNA2"
+    if "k_coax" not in override_base_params_copy["coaxial_stacking"]:
+        override_base_params_copy["coaxial_stacking"]["k_coax"] =  58.5
+
+    variable_mapper["coaxial_stacking"]["theta0_coax_1"] = "CXST_THETA1_T0_OXDNA2"
+    if "theta0_coax_1" not in override_base_params_copy["coaxial_stacking"]:
+        override_base_params_copy["coaxial_stacking"]["theta0_coax_1"] =  onp.pi - 0.25
+
+    variable_mapper["coaxial_stacking"]["A_coax_1_f6"] = "CXST_THETA1_SA"
+    variable_mapper["coaxial_stacking"]["B_coax_1_f6"] = "CXST_THETA1_SB"
+    if "coaxial_stacking" in override_base_params_copy:
+        if "A_coax_1_f6" in override_base_params_copy["coaxial_stacking"]:
+            override_base_params_copy["coaxial_stacking"]["A_coax_1_f6"] /= 2
+
+    if seq_avg:
         # The variable mapper should always be correct
         variable_mapper['stacking']["eps_stack_base"] = "STCK_BASE_EPS_OXDNA2"
         variable_mapper['stacking']["eps_stack_kt_coeff"] = "STCK_FACT_EPS_OXDNA2"

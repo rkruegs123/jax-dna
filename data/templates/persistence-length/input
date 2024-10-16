@@ -11,7 +11,11 @@ max_density_multiplier = 10
 
 interaction_type = DNA_nomesh
 
-# Simulatin parameters
+major_minor_grooving = 1
+salt_concentration = 0.5
+dh_half_charged_ends = 1
+
+# Simulation parameters
 steps = 10000000000
 newtonian_steps = 103
 diff_coeff = 2.50

@@ -8,6 +8,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as onp
 
+import jax
 import optax
 import jax.numpy as jnp
 from jax import jit, vmap, random, grad, value_and_grad, lax, lax
@@ -17,8 +18,9 @@ from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.loss import geometry, pitch, propeller
 from jax_dna.dna1 import model
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 checkpoint_every = None
@@ -43,6 +45,9 @@ def run(args):
     plot_every = args['plot_every']
     run_name = args['run_name']
     target_ptwist = args['target_ptwist']
+    max_approx_iters = args['max_approx_iters']
+
+    opt_keys = args['opt_keys']
 
     # Setup the logging directoroy
     if run_name is None:
@@ -50,8 +55,15 @@ def run(args):
     output_dir = Path("output/")
     run_dir = output_dir / run_name
     run_dir.mkdir(parents=False, exist_ok=False)
+
     img_dir = run_dir / "img"
     img_dir.mkdir(parents=False, exist_ok=False)
+
+    log_dir = run_dir / "log"
+    log_dir.mkdir(parents=False, exist_ok=False)
+
+    ref_traj_dir = run_dir / "ref_traj"
+    ref_traj_dir.mkdir(parents=False, exist_ok=False)
 
     params_str = ""
     for k, v in args.items():
@@ -128,7 +140,12 @@ def run(args):
         return traj
 
 
-    def get_ref_states(params, init_body, key):
+    def get_ref_states(params, init_body, key, i):
+
+        iter_dir = ref_traj_dir / f"iter{i}"
+        iter_dir.mkdir(parents=False, exist_ok=False)
+
+
         trajectory = sim_fn(params, init_body, n_eq_steps + n_sample_steps, key)
         eq_trajectory = trajectory[n_eq_steps:]
         ref_states = eq_trajectory[::sample_every]
@@ -144,7 +161,20 @@ def run(args):
         # return ref_states, jnp.array(ref_energies)
 
         ref_energies = vmap(energy_fn)(ref_states)
-        return ref_states, ref_energies
+
+        ref_ptwists = vmap(compute_avg_ptwist)(ref_states) # FIXME: this doesn't depend on params...
+
+        n_traj_states = len(ref_ptwists)
+        running_avg_ptwists = onp.cumsum(ref_ptwists) / onp.arange(1, n_traj_states + 1)
+        plt.plot(running_avg_ptwists)
+        plt.savefig(iter_dir / f"running_avg.png")
+        plt.close()
+
+        plt.plot(running_avg_ptwists[-int(n_traj_states // 2):])
+        plt.savefig(iter_dir / f"running_avg_second_half.png")
+        plt.close()
+
+        return ref_states, ref_energies, ref_ptwists
 
 
     # Construct the loss function terms
@@ -169,7 +199,7 @@ def run(args):
 
 
     @jit
-    def loss_fn(params, ref_states: rigid_body.RigidBody, ref_energies):
+    def loss_fn(params, ref_states: rigid_body.RigidBody, ref_energies, ref_ptwists):
 
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
 
@@ -186,23 +216,22 @@ def run(args):
         weights = boltzs / denom
 
         # Compute the observable
-        # FIXME: only considering ptwist for now. Have to extend to multiple observables
-        # FIXME: since none of the observables actually depend on theta (maybe they will for melting temperature), we could just precompute them and map over them...
-        unweighted_ptwists = vmap(compute_avg_ptwist)(ref_states) # FIXME: this doesn't depend on params...
-        weighted_ptwists = weights * unweighted_ptwists # element-wise multiplication
-        expected_ptwist = jnp.sum(weighted_ptwists)
+        expected_ptwist = jnp.dot(weights, ref_ptwists)
 
         # Compute effective sample size
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
 
-        return (expected_ptwist - target_ptwist)**2, (n_eff, expected_ptwist)
+        mse = (expected_ptwist - target_ptwist)**2
+        rmse = jnp.sqrt(mse)
+
+        return rmse, (n_eff, expected_ptwist)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
     # Setup the optimization
     params = deepcopy(model.EMPTY_BASE_PARAMS)
-    params["fene"] = model.DEFAULT_BASE_PARAMS["fene"]
-    params["stacking"] = model.DEFAULT_BASE_PARAMS["stacking"]
+    for opt_key in opt_keys:
+        params[opt_key] = deepcopy(model.DEFAULT_BASE_PARAMS[opt_key])
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
 
@@ -210,7 +239,7 @@ def run(args):
 
     init_body = conf_info.get_states()[0]
     print(f"Generating initial reference states and energies...")
-    ref_states, ref_energies = get_ref_states(params, init_body, key)
+    ref_states, ref_energies, ref_ptwists = get_ref_states(params, init_body, key, 0)
 
     min_n_eff = int(n_ref_states * min_neff_factor)
     all_losses = list()
@@ -219,23 +248,26 @@ def run(args):
     all_ref_eptwists = list()
     all_ref_times = list()
 
-    loss_path = run_dir / "loss.txt"
-    neff_path = run_dir / "neff.txt"
-    eptwist_path = run_dir / "eptwist.txt"
+    loss_path = log_dir / "loss.txt"
+    neff_path = log_dir / "neff.txt"
+    ptwist_path = log_dir / "ptwist.txt"
 
+    num_resample_iters = 0
     for i in tqdm(range(n_iters)):
-        (loss, (n_eff, expected_ptwist)), grads = grad_fn(params, ref_states, ref_energies)
+        (loss, (n_eff, expected_ptwist)), grads = grad_fn(params, ref_states, ref_energies, ref_ptwists)
 
         if i == 0:
             all_ref_losses.append(loss)
             all_ref_times.append(i)
             all_ref_eptwists.append(expected_ptwist)
 
-        if n_eff < min_n_eff:
+        if n_eff < min_n_eff or num_resample_iters >= max_approx_iters:
+            num_resample_iters
+
             print(f"Resampling reference states...")
             key, split = random.split(key)
-            ref_states, ref_energies = get_ref_states(params, ref_states[-1], split)
-            (loss, (n_eff, expected_ptwist)), grads = grad_fn(params, ref_states, ref_energies)
+            ref_states, ref_energies, ref_ptwists = get_ref_states(params, ref_states[-1], split, i)
+            (loss, (n_eff, expected_ptwist)), grads = grad_fn(params, ref_states, ref_energies, ref_ptwists)
 
             all_ref_losses.append(loss)
             all_ref_eptwists.append(expected_ptwist)
@@ -243,7 +275,7 @@ def run(args):
 
         with open(loss_path, "a") as f:
             f.write(f"{loss}\n")
-        with open(eptwist_path, "a") as f:
+        with open(ptwist_path, "a") as f:
             f.write(f"{expected_ptwist}\n")
         with open(neff_path, "a") as f:
             f.write(f"{n_eff}\n")
@@ -303,6 +335,14 @@ if __name__ == "__main__":
                         help="Target persistence length in degrees")
     parser.add_argument('--run-name', type=str,
                         help='Run name')
+    parser.add_argument('--max-approx-iters', type=int, default=5,
+                        help="Maximum number of iterations before resampling")
+    parser.add_argument(
+        '--opt-keys',
+        nargs='*',  # Accept zero or more arguments
+        default=["fene", "stacking"],
+        help='Parameter keys to optimize'
+    )
 
     args = vars(parser.parse_args())
 

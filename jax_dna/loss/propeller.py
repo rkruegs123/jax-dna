@@ -5,14 +5,16 @@ import unittest
 from pathlib import Path
 import numpy as onp
 
+import jax
 import jax.numpy as jnp
 from jax import vmap
 from jax_md import util, rigid_body
 
 from jax_dna.common import utils, trajectory, topology
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 # Tom's these, botrtom page 57. Potentially averaged from ref 162.

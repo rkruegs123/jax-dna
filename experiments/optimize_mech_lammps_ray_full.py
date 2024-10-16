@@ -26,7 +26,7 @@ import optax
 from jax_dna.common.read_seq_specific import read_ss_oxdna
 from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.dna2 import model, lammps_utils
-
+import jax_dna.input.trajectory as jdt
 
 
 if "ip_head" in os.environ:
@@ -127,33 +127,63 @@ def run(args):
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
     seq_avg = not args['seq_dep']
-    assert(seq_avg)
+    # assert(seq_avg)
+
+    opt_keys = args['opt_keys']
+    n_threads = args['n_threads']
 
     s_eff_coeff = args['s_eff_coeff']
     c_coeff = args['c_coeff']
     g_coeff = args['g_coeff']
+
     target_s_eff = args['target_s_eff']
     target_c = args['target_c']
     target_g = args['target_g']
 
+    s_eff_uncertainty = args['s_eff_uncertainty']
+    s_eff_hi = target_s_eff + s_eff_uncertainty
+    s_eff_lo = target_s_eff - s_eff_uncertainty
+
+    c_uncertainty = args['c_uncertainty']
+    c_hi = target_c + c_uncertainty
+    c_lo = target_c - c_uncertainty
+
+    g_uncertainty = args['g_uncertainty']
+    g_hi = target_g + g_uncertainty
+    g_lo = target_g - g_uncertainty
+
+
+    def rmse_uncertainty(val, lo_val, hi_val):
+        mse = jnp.where(val < lo_val, (val - lo_val)**2,
+                        jnp.where(val > hi_val, (val - hi_val)**2,
+                                  0.0))
+        return jnp.sqrt(mse)
+
+
     no_archive = args['no_archive']
     no_delete = args['no_delete']
+    save_obj_every = args['save_obj_every']
+    plot_every = args['plot_every']
 
-    opt_stk = args['opt_stk']
-    opt_hb = args['opt_hb']
-    opt_xstk = args['opt_xstk']
-    assert(int(opt_stk) + int(opt_hb) + int(opt_xstk))
+    # opt_stk = args['opt_stk']
+    # opt_hb = args['opt_hb']
+    # opt_xstk = args['opt_xstk']
+    # assert(int(opt_stk) + int(opt_hb) + int(opt_xstk))
 
     timestep = args['timestep']
     ignore_warnings = args['ignore_warnings']
+
+    custom_params = args['custom_params']
 
 
 
     # forces_pn = jnp.array([0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0])
     # torques_pnnm = jnp.array([0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0])
 
-    forces_pn = jnp.array([0.0, 2.0, 6.0, 10.0, 15.0, 20.0, 25.0, 30.0])
-    torques_pnnm = jnp.array([0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0])
+    forces_pn = jnp.array(args['forces_pn'], dtype=jnp.float64)
+    # forces_pn = jnp.array([0.0, 2.0, 6.0, 10.0, 15.0, 20.0, 25.0, 30.0])
+    # torques_pnnm = jnp.array([0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0])
+    torques_pnnm = jnp.array(args['torques_pnnm'], dtype=jnp.float64)
 
 
 
@@ -169,6 +199,9 @@ def run(args):
 
     log_dir = run_dir / "log"
     log_dir.mkdir(parents=False, exist_ok=False)
+
+    obj_dir = run_dir / "obj"
+    obj_dir.mkdir(parents=False, exist_ok=False)
 
     ref_traj_dir = run_dir / "ref_traj"
     ref_traj_dir.mkdir(parents=False, exist_ok=False)
@@ -221,6 +254,7 @@ def run(args):
     n = seq_oh.shape[0]
     assert(n % 2 == 0)
     n_bp = n // 2
+    strand_length = int(seq_oh.shape[0] // 2)
 
     strand1_start = 0
     strand1_end = n_bp-1
@@ -409,16 +443,28 @@ def run(args):
         all_force_t0_distances = list()
         all_force_t0_thetas = list()
         all_force_t0_last_states = list()
+        running_avgs_force_dists = list()
         for force_pn in forces_pn:
             sim_dir = iter_dir / f"sim-f{force_pn}"
 
             ## Load states from oxDNA simulation
+
+            """
             traj_info = trajectory.TrajectoryInfo(
                 top_info, read_from_file=True, reindex=True,
                 traj_path=sim_dir / "output.dat",
                 # reverse_direction=True)
                 reverse_direction=False)
             full_traj_states = traj_info.get_states()
+            """
+            traj_ = jdt.from_file(
+                sim_dir / "output.dat",
+                [strand_length, strand_length],
+                is_oxdna=False,
+                n_processes=n_threads,
+            )
+            full_traj_states = [ns.to_rigid_body() for ns in traj_.states]
+
             assert(len(full_traj_states) == (1+n_total_states)*n_sims)
             sim_freq = 1+n_total_states
             traj_states = list()
@@ -518,6 +564,7 @@ def run(args):
             plt.plot(running_avg)
             plt.savefig(sim_dir / "running_avg_dist.png")
             plt.clf()
+            running_avgs_force_dists.append(running_avg)
 
             last_half = int((n_sample_states * n_sims) // 2)
             plt.plot(running_avg[-last_half:])
@@ -567,6 +614,47 @@ def run(args):
         all_force_t0_distances = utils.tree_stack(all_force_t0_distances)
         all_force_t0_thetas = utils.tree_stack(all_force_t0_thetas)
 
+        # Compute running avg of a1, l0, and s_eff
+        running_avgs_force_dists = onp.array(running_avgs_force_dists) # (n_forces, n_sample_states*n_sims)
+        running_avg_idxs = onp.arange(n_sample_states*n_sims)
+        n_running_avg_points = 100
+        check_every = (n_sample_states*n_sims) // n_running_avg_points
+        check_idxs = onp.arange(n_running_avg_points) * check_every
+        a1_running_avgs = list()
+        l0_fit_running_avgs = list()
+        s_eff_running_avgs = list()
+        for check_idx in check_idxs:
+            curr_force_dists = running_avgs_force_dists[:, check_idx]
+            curr_force_dists_nm = curr_force_dists * utils.nm_per_oxdna_length
+
+            # Compute a1 and l0
+            xs_to_fit = jnp.stack([jnp.ones_like(forces_pn), forces_pn], axis=1)
+            fit_ = jnp.linalg.lstsq(xs_to_fit, curr_force_dists_nm)
+
+            curr_a1 = fit_[0][1]
+            a1_running_avgs.append(curr_a1)
+
+            curr_l0_fit = fit_[0][0]
+            l0_fit_running_avgs.append(curr_l0_fit)
+
+            curr_s_eff = curr_l0_fit / curr_a1
+            s_eff_running_avgs.append(curr_s_eff)
+
+        plt.plot(check_idxs, a1_running_avgs)
+        plt.scatter(check_idxs, a1_running_avgs)
+        plt.savefig(iter_dir / "a1_running_avg.png")
+        plt.close()
+
+        plt.plot(check_idxs, l0_fit_running_avgs)
+        plt.scatter(check_idxs, l0_fit_running_avgs)
+        plt.savefig(iter_dir / "l0_fit_running_avg.png")
+        plt.close()
+
+        plt.plot(check_idxs, s_eff_running_avgs)
+        plt.scatter(check_idxs, s_eff_running_avgs)
+        plt.savefig(iter_dir / "s_eff_running_avg.png")
+        plt.close()
+
 
         all_f2_torque_traj_states = list()
         all_f2_torque_calc_energies = list()
@@ -577,12 +665,24 @@ def run(args):
             sim_dir = iter_dir / f"sim-t{torque_pnnm}"
 
             ## Load states from oxDNA simulation
+            """
             traj_info = trajectory.TrajectoryInfo(
                 top_info, read_from_file=True, reindex=True,
                 traj_path=sim_dir / "output.dat",
                 # reverse_direction=True)
                 reverse_direction=False)
             full_traj_states = traj_info.get_states()
+            """
+
+            traj_ = jdt.from_file(
+                sim_dir / "output.dat",
+                [strand_length, strand_length],
+                is_oxdna=False,
+                n_processes=n_threads,
+            )
+            full_traj_states = [ns.to_rigid_body() for ns in traj_.states]
+
+
             assert(len(full_traj_states) == (1+n_total_states)*n_sims)
             sim_freq = 1+n_total_states
             traj_states = list()
@@ -734,66 +834,72 @@ def run(args):
         # Compute constants
         mean_force_t0_distances = onp.array([all_force_t0_distances[f_idx].mean() for f_idx in range(len(forces_pn))])
         mean_force_t0_distances_nm = mean_force_t0_distances * utils.nm_per_oxdna_length
-        l0 = mean_force_t0_distances_nm[0]
-        theta0 = all_force_t0_thetas[0].mean()
-        force_t0_delta_ls = mean_force_t0_distances_nm - l0 # in nm
+        # l0 = mean_force_t0_distances_nm[0]
+        # theta0 = all_force_t0_thetas[0].mean()
 
-        ## For A1, we assume an offset of 0
-        xs_to_fit = jnp.stack([jnp.zeros_like(forces_pn), forces_pn], axis=1)
-        fit_ = jnp.linalg.lstsq(xs_to_fit, force_t0_delta_ls)
+        ## For A1, we do not assume and offset of 0 and *fit* l0 (rather than take distance under 0 force)
+        xs_to_fit = jnp.stack([jnp.ones_like(forces_pn), forces_pn], axis=1)
+        fit_ = jnp.linalg.lstsq(xs_to_fit, mean_force_t0_distances_nm)
         a1 = fit_[0][1]
+        l0_fit = fit_[0][0]
+        a1_fit_residual = fit_[1][0]
 
         test_forces = onp.linspace(0, forces_pn.max(), 100)
-        fit_fn = lambda val: a1*val
+        fit_fn = lambda val: a1*val + l0_fit
         plt.plot(test_forces, fit_fn(test_forces))
-        plt.scatter(forces_pn, force_t0_delta_ls)
+        plt.scatter(forces_pn, mean_force_t0_distances_nm)
         plt.xlabel("Force (pN)")
-        plt.ylabel("deltaL (nm)")
-        plt.title(f"A1={a1}")
+        plt.ylabel("L (nm)")
+        plt.title(f"A1={a1}, L0={l0_fit}")
         plt.savefig(iter_dir / "a1_fit.png")
         plt.clf()
 
         ## Compute A3 -- fit with an unrestricted offset
         mean_f2_torque_distances = onp.array([all_f2_torque_distances[t_idx].mean() for t_idx in range(len(torques_pnnm))])
         mean_f2_torque_distances_nm = mean_f2_torque_distances * utils.nm_per_oxdna_length
-        f2_torque_delta_ls = mean_f2_torque_distances_nm - l0 # in nm
+        # f2_torque_delta_ls = mean_f2_torque_distances_nm - l0 # in nm
 
         xs_to_fit = jnp.stack([jnp.ones_like(torques_pnnm), torques_pnnm], axis=1)
-        fit_ = jnp.linalg.lstsq(xs_to_fit, f2_torque_delta_ls)
+        # fit_ = jnp.linalg.lstsq(xs_to_fit, f2_torque_delta_ls)
+        fit_ = jnp.linalg.lstsq(xs_to_fit, mean_f2_torque_distances_nm)
         a3 = fit_[0][1]
         a3_offset = fit_[0][0]
+        a3_fit_residual = fit_[1][0]
 
         test_torques = onp.linspace(0, torques_pnnm.max(), 100)
         fit_fn = lambda val: a3*val + a3_offset
         plt.plot(test_torques, fit_fn(test_torques))
-        plt.scatter(torques_pnnm, f2_torque_delta_ls)
+        plt.scatter(torques_pnnm, mean_f2_torque_distances_nm)
         plt.xlabel("Torques (pN*nm)")
-        plt.ylabel("deltaL (nm)")
+        plt.ylabel("L (nm)")
         plt.title(f"A3={a3}")
         plt.savefig(iter_dir / "a3_fit.png")
         plt.clf()
 
         ## Compute A4 -- fit with an unrestricted offset
         mean_f2_torque_thetas = onp.array([all_f2_torque_thetas[t_idx].mean() for t_idx in range(len(torques_pnnm))])
-        f2_torque_delta_thetas = mean_f2_torque_thetas - theta0
+        # f2_torque_delta_thetas = mean_f2_torque_thetas - theta0
 
         xs_to_fit = jnp.stack([jnp.ones_like(torques_pnnm), torques_pnnm], axis=1)
-        fit_ = jnp.linalg.lstsq(xs_to_fit, f2_torque_delta_thetas)
+        # fit_ = jnp.linalg.lstsq(xs_to_fit, f2_torque_delta_thetas)
+        fit_ = jnp.linalg.lstsq(xs_to_fit, mean_f2_torque_thetas)
         a4 = fit_[0][1]
         a4_offset = fit_[0][0]
+        a4_fit_residual = fit_[1][0]
 
         fit_fn = lambda val: a4*val + a4_offset
         plt.plot(test_torques, fit_fn(test_torques))
-        plt.scatter(torques_pnnm, f2_torque_delta_thetas)
+        # plt.scatter(torques_pnnm, f2_torque_delta_thetas)
+        plt.scatter(torques_pnnm, mean_f2_torque_thetas)
         plt.xlabel("Torques (pN*nm)")
-        plt.ylabel("deltaTheta (rad)")
+        plt.ylabel("Theta (rad)")
         plt.title(f"A4={a4}")
         plt.savefig(iter_dir / "a4_fit.png")
         plt.clf()
 
-        s_eff = l0 / a1
-        c = a1 * l0 / (a4*a1 - a3**2)
-        g = -(a3 * l0) / (a4 * a1 - a3**2)
+        s_eff = l0_fit / a1
+        c = a1 * l0_fit / (a4*a1 - a3**2)
+        g = -(a3 * l0_fit) / (a4 * a1 - a3**2)
 
         with open(iter_dir / "summary.txt", "w+") as f:
             f.write(f"A1: {a1}\n")
@@ -802,6 +908,9 @@ def run(args):
             f.write(f"S_eff: {s_eff}\n")
             f.write(f"C: {c}\n")
             f.write(f"g: {g}\n")
+            f.write(f"A1 residual: {a1_fit_residual}\n")
+            f.write(f"A3 residual: {a3_fit_residual}\n")
+            f.write(f"A4 residual: {a4_fit_residual}\n")
 
         # Archive the iteration directory and delete the unzipped version
         if not no_archive:
@@ -845,36 +954,44 @@ def run(args):
 
         expected_dists_f, expected_thetas_f, n_effs_f = vmap(get_expected_vals, (0, 0, 0, 0))(all_ref_states_f, all_ref_energies_f, all_ref_dists_f, all_ref_thetas_f)
         expected_dists_f_nm = expected_dists_f * utils.nm_per_oxdna_length
-        l0 = expected_dists_f_nm[0]
-        theta0 = expected_thetas_f[0]
-        delta_ls_f = expected_dists_f_nm - l0
+        # l0 = expected_dists_f_nm[0]
+        # theta0 = expected_thetas_f[0]
 
-        xs_to_fit = jnp.stack([jnp.zeros_like(forces_pn), forces_pn], axis=1)
-        fit_ = jnp.linalg.lstsq(xs_to_fit, delta_ls_f)
+        xs_to_fit = jnp.stack([jnp.ones_like(forces_pn), forces_pn], axis=1)
+        fit_ = jnp.linalg.lstsq(xs_to_fit, expected_dists_f_nm)
         a1 = fit_[0][1]
+        l0_fit = fit_[0][0]
+
 
         expected_dists_t, expected_thetas_t, n_effs_t = vmap(get_expected_vals, (0, 0, 0, 0))(all_ref_states_t, all_ref_energies_t, all_ref_dists_t, all_ref_thetas_t)
         expected_dists_t_nm = expected_dists_t * utils.nm_per_oxdna_length
-        delta_ls_t = expected_dists_t_nm - l0
+        # delta_ls_t = expected_dists_t_nm - l0
 
         xs_to_fit = jnp.stack([jnp.ones_like(torques_pnnm), torques_pnnm], axis=1)
-        fit_ = jnp.linalg.lstsq(xs_to_fit, delta_ls_t)
+        # fit_ = jnp.linalg.lstsq(xs_to_fit, delta_ls_t)
+        fit_ = jnp.linalg.lstsq(xs_to_fit, expected_dists_t_nm)
         a3 = fit_[0][1]
 
-        delta_thetas_t = expected_thetas_t - theta0
-        fit_ = jnp.linalg.lstsq(xs_to_fit, delta_thetas_t)
+        # delta_thetas_t = expected_thetas_t - theta0
+        # fit_ = jnp.linalg.lstsq(xs_to_fit, delta_thetas_t)
+        fit_ = jnp.linalg.lstsq(xs_to_fit, expected_thetas_t)
         a4 = fit_[0][1]
 
-        s_eff = l0 / a1
-        c = a1 * l0 / (a4*a1 - a3**2)
-        g = -(a3 * l0) / (a4 * a1 - a3**2)
+        s_eff = l0_fit / a1
+        c = a1 * l0_fit / (a4*a1 - a3**2)
+        g = -(a3 * l0_fit) / (a4 * a1 - a3**2)
 
-        mse_s_eff = (s_eff - target_s_eff)**2
-        rmse_s_eff = jnp.sqrt(mse_s_eff)
-        mse_c = (c - target_c)**2
-        rmse_c = jnp.sqrt(mse_c)
-        mse_g = (g - target_g)**2
-        rmse_g = jnp.sqrt(mse_g)
+        # mse_s_eff = (s_eff - target_s_eff)**2
+        # rmse_s_eff = jnp.sqrt(mse_s_eff)
+        rmse_s_eff = rmse_uncertainty(s_eff, s_eff_lo, s_eff_hi)
+
+        # mse_c = (c - target_c)**2
+        # rmse_c = jnp.sqrt(mse_c)
+        rmse_c = rmse_uncertainty(c, c_lo, c_hi)
+
+        # mse_g = (g - target_g)**2
+        # rmse_g = jnp.sqrt(mse_g)
+        rmse_g = rmse_uncertainty(g, g_lo, g_hi)
 
         rmse = s_eff_coeff*rmse_s_eff + c_coeff*rmse_c + g_coeff*rmse_g
 
@@ -883,39 +1000,63 @@ def run(args):
     grad_fn = jit(grad_fn)
 
 
-    params = deepcopy(model.EMPTY_BASE_PARAMS)
+    if custom_params:
 
-    if seq_avg:
-        default_base_params = deepcopy(model.default_base_params_seq_avg)
+        params = {
+            'coaxial_stacking': {},
+            'cross_stacking': {},
+            'debye': {},
+            'excluded_volume': {},
+            'fene': {},
+            'hydrogen_bonding': {},
+            'stacking': {
+                'a_stack': 6.03336862,
+                'a_stack_1': 1.99264362,
+                'a_stack_2': 1.95327108,
+                'a_stack_4': 1.24171132,
+                'a_stack_5': 0.92120935,
+                'a_stack_6': 0.9,
+                'delta_theta_star_stack_4': 0.78325887,
+                'delta_theta_star_stack_5': 0.98753504,
+                'delta_theta_star_stack_6': 0.95,
+                'dr0_stack': 0.37524012,
+                'dr_c_stack': 0.85673047,
+                'dr_high_stack': 0.75849608,
+                'dr_low_stack': 0.33419155,
+                'eps_stack_base': 1.3264173,
+                'eps_stack_kt_coeff': 2.6458173,
+                'neg_cos_phi1_star_stack': -0.64092228,
+                'neg_cos_phi2_star_stack': -0.63824552,
+                'theta0_stack_4': 0.05730139,
+                'theta0_stack_5': -0.01296192,
+                'theta0_stack_6': 0.}
+        }
+
     else:
-        default_base_params = deepcopy(model.default_base_params_seq_dep)
+        params = deepcopy(model.EMPTY_BASE_PARAMS)
+        for opt_key in opt_keys:
+            if seq_avg:
+                params[opt_key] = deepcopy(model.default_base_params_seq_avg[opt_key])
+            else:
+                params[opt_key] = deepcopy(model.default_base_params_seq_dep[opt_key])
 
-    if opt_stk:
-        params["stacking"] = deepcopy(default_base_params["stacking"])
-    if opt_hb:
-        params["hydrogen_bonding"] = deepcopy(default_base_params["hydrogen_bonding"])
-    if opt_xstk:
-        params["cross_stacking"] = deepcopy(default_base_params["cross_stacking"])
-        del params["cross_stacking"]["dr_c_cross"]
-        del params["cross_stacking"]["dr_low_cross"]
-        del params["cross_stacking"]["dr_high_cross"]
 
-    """
-    if seq_avg:
-        params["stacking"] = deepcopy(model.default_base_params_seq_avg["stacking"])
-        params["hydrogen_bonding"] = deepcopy(model.default_base_params_seq_avg["hydrogen_bonding"])
-        # params["cross_stacking"] = deepcopy(model.default_base_params_seq_avg["cross_stacking"])
-        # del params["cross_stacking"]["dr_c_cross"]
-        # del params["cross_stacking"]["dr_low_cross"]
-        # del params["cross_stacking"]["dr_high_cross"]
-    else:
-        params["stacking"] = deepcopy(model.default_base_params_seq_dep["stacking"])
-        params["hydrogen_bonding"] = deepcopy(model.default_base_params_seq_dep["hydrogen_bonding"])
-        # params["cross_stacking"] = deepcopy(model.default_base_params_seq_dep["cross_stacking"])
-        # del params["cross_stacking"]["dr_c_cross"]
-        # del params["cross_stacking"]["dr_low_cross"]
-        # del params["cross_stacking"]["dr_high_cross"]
-    """
+        """
+        if seq_avg:
+            default_base_params = deepcopy(model.default_base_params_seq_avg)
+        else:
+            default_base_params = deepcopy(model.default_base_params_seq_dep)
+
+        if opt_stk:
+            params["stacking"] = deepcopy(default_base_params["stacking"])
+        if opt_hb:
+            params["hydrogen_bonding"] = deepcopy(default_base_params["hydrogen_bonding"])
+        if opt_xstk:
+            params["cross_stacking"] = deepcopy(default_base_params["cross_stacking"])
+            del params["cross_stacking"]["dr_c_cross"]
+            del params["cross_stacking"]["dr_low_cross"]
+            del params["cross_stacking"]["dr_high_cross"]
+        """
 
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
@@ -1004,8 +1145,22 @@ def run(args):
             f.write(f"{n_effs}\n")
         with open(times_path, "a") as f:
             f.write(f"{iter_end - iter_start}\n")
+
+        iter_params_str = f"\nIteration {i}:"
+        for k, v in params.items():
+            iter_params_str += f"\n- {k}"
+            for vk, vv in v.items():
+                iter_params_str += f"\n\t- {vk}: {vv}"
         with open(iter_params_path, "a") as f:
-            f.write(f"{pprint.pformat(params)}\n")
+            f.write(iter_params_str)
+
+        grads_str = f"\nIteration {i}:"
+        for k, v in grads.items():
+            grads_str += f"\n- {k}"
+            for vk, vv in v.items():
+                grads_str += f"\n\t- {vk}: {vv}"
+        with open(grads_path, "a") as f:
+            f.write(grads_str)
 
         all_losses.append(loss)
         all_seffs.append(s_eff)
@@ -1013,46 +1168,74 @@ def run(args):
         all_gs.append(g)
         all_n_effs.append(n_effs)
 
+        if i % plot_every == 0 and i:
+            plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
+            plt.legend()
+            plt.ylabel("Loss")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"losses_iter{i}.png")
+            plt.clf()
+
+            plt.plot(onp.arange(i+1), all_cs, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_cs, marker='o', label="Resample points", color="blue")
+            plt.axhline(y=target_c, linestyle='--', label="Target C", color='red')
+            plt.axhline(y=c_lo, linestyle='--', color='green')
+            plt.axhline(y=c_hi, linestyle='--', color='green')
+            plt.legend()
+            plt.ylabel("C (pn*nm^2)")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"c_iter{i}.png")
+            plt.clf()
+
+            plt.plot(onp.arange(i+1), all_gs, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_gs, marker='o', label="Resample points", color="blue")
+            plt.axhline(y=target_g, linestyle='--', label="Target g", color='red')
+            plt.axhline(y=g_lo, linestyle='--', color='green')
+            plt.axhline(y=g_hi, linestyle='--', color='green')
+            plt.legend()
+            plt.ylabel("g (pn*nm)")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"g_iter{i}.png")
+            plt.clf()
+
+            plt.plot(onp.arange(i+1), all_seffs, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_seffs, marker='o', label="Resample points", color="blue")
+            plt.axhline(y=target_s_eff, linestyle='--', label="Target S_eff", color='red')
+            plt.axhline(y=s_eff_lo, linestyle='--', color='green')
+            plt.axhline(y=s_eff_hi, linestyle='--', color='green')
+            plt.legend()
+            plt.ylabel("S_eff pN")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"seff_iter{i}.png")
+            plt.clf()
+
+
+        if i % save_obj_every == 0 and i:
+            onp.save(obj_dir / f"ref_iters_i{i}.npy", onp.array(all_ref_times), allow_pickle=False)
+
+            onp.save(obj_dir / f"ref_seffs_i{i}.npy", onp.array(all_ref_seffs), allow_pickle=False)
+            onp.save(obj_dir / f"seffs_i{i}.npy", onp.array(all_seffs), allow_pickle=False)
+
+            onp.save(obj_dir / f"ref_gs_i{i}.npy", onp.array(all_ref_gs), allow_pickle=False)
+            onp.save(obj_dir / f"gs_i{i}.npy", onp.array(all_gs), allow_pickle=False)
+
+            onp.save(obj_dir / f"ref_cs_i{i}.npy", onp.array(all_ref_cs), allow_pickle=False)
+            onp.save(obj_dir / f"cs_i{i}.npy", onp.array(all_cs), allow_pickle=False)
+
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
 
+    onp.save(obj_dir / f"fin_ref_iters.npy", onp.array(all_ref_times), allow_pickle=False)
 
-        plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
-        plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
-        plt.legend()
-        plt.ylabel("Loss")
-        plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"losses_iter{i}.png")
-        plt.clf()
+    onp.save(obj_dir / f"fin_ref_seffs.npy", onp.array(all_ref_seffs), allow_pickle=False)
+    onp.save(obj_dir / f"fin_seffs.npy", onp.array(all_seffs), allow_pickle=False)
 
-        plt.plot(onp.arange(i+1), all_cs, linestyle="--", color="blue")
-        plt.scatter(all_ref_times, all_ref_cs, marker='o', label="Resample points", color="blue")
-        plt.axhline(y=target_c, linestyle='--', label="Target C", color='red')
-        plt.legend()
-        plt.ylabel("C (pn*nm^2)")
-        plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"c_iter{i}.png")
-        plt.clf()
+    onp.save(obj_dir / f"fin_ref_gs.npy", onp.array(all_ref_gs), allow_pickle=False)
+    onp.save(obj_dir / f"fin_gs.npy", onp.array(all_gs), allow_pickle=False)
 
-        plt.plot(onp.arange(i+1), all_gs, linestyle="--", color="blue")
-        plt.scatter(all_ref_times, all_ref_gs, marker='o', label="Resample points", color="blue")
-        plt.axhline(y=target_g, linestyle='--', label="Target g", color='red')
-        plt.legend()
-        plt.ylabel("g (pn*nm)")
-        plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"g_iter{i}.png")
-        plt.clf()
-
-        plt.plot(onp.arange(i+1), all_seffs, linestyle="--", color="blue")
-        plt.scatter(all_ref_times, all_ref_seffs, marker='o', label="Resample points", color="blue")
-        plt.axhline(y=target_s_eff, linestyle='--', label="Target S_eff", color='red')
-        plt.legend()
-        plt.ylabel("S_eff pN")
-        plt.xlabel("Iteration")
-        plt.savefig(img_dir / f"seff_iter{i}.png")
-        plt.clf()
-
-
+    onp.save(obj_dir / f"fin_ref_cs.npy", onp.array(all_ref_cs), allow_pickle=False)
+    onp.save(obj_dir / f"fin_cs.npy", onp.array(all_cs), allow_pickle=False)
 
 
 
@@ -1094,24 +1277,68 @@ def get_parser():
     parser.add_argument('--g-coeff', type=float, default=0.0,
                         help="Coefficient for g component")
 
-    parser.add_argument('--target-s-eff', type=float, default=1000,
-                        help="Target S_eff")
-    parser.add_argument('--target-c', type=float, default=400,
-                        help="Target C")
-    parser.add_argument('--target-g', type=float, default=-100.0,
-                        help="Target g")
+    # Experimental values and uncertainties -- Table 2 in https://pubs.acs.org/doi/full/10.1021/acs.jctc.2c00138
+
+    parser.add_argument('--target-s-eff', type=float, default=1045,
+                        help="Target S_eff in pN")
+    parser.add_argument('--s-eff-uncertainty', type=float, default=92,
+                        help="Experimental uncertainty for S_eff in pN")
+
+    parser.add_argument('--target-c', type=float, default=436,
+                        help="Target C in pn*nm^2")
+    parser.add_argument('--c-uncertainty', type=float, default=16,
+                        help="Experimental uncertainty for C in pn*nm^2")
+
+    parser.add_argument('--target-g', type=float, default=-90.0,
+                        help="Target g in (pn*nm)")
+    parser.add_argument('--g-uncertainty', type=float, default=10,
+                        help="Experimental uncertainty for g in (pn*nm)")
+
 
     parser.add_argument('--no-archive', action='store_true')
     parser.add_argument('--no-delete', action='store_true')
     parser.add_argument('--ignore-warnings', action='store_true')
 
-    parser.add_argument('--opt-stk', action='store_true')
-    parser.add_argument('--opt-hb', action='store_true')
-    parser.add_argument('--opt-xstk', action='store_true')
+    # parser.add_argument('--opt-stk', action='store_true')
+    # parser.add_argument('--opt-hb', action='store_true')
+    # parser.add_argument('--opt-xstk', action='store_true')
+
+    parser.add_argument('--custom-params', action='store_true')
 
     parser.add_argument('--timestep', type=float, default=0.01,
                         help="Timestep for nve/dotc/langevin integrator")
 
+    parser.add_argument('--save-obj-every', type=int, default=10,
+                        help="Frequency of saving numpy files")
+    parser.add_argument('--plot-every', type=int, default=1,
+                        help="Frequency of plotting data from gradient descent epochs")
+
+    parser.add_argument(
+        '--opt-keys',
+        nargs='*',  # Accept zero or more arguments
+        default=["fene", "stacking"],
+        help='Parameter keys to optimize'
+    )
+
+    parser.add_argument('--n-threads', type=int, default=4,
+                        help="Number of threads for reading trajectories")
+
+
+    parser.add_argument(
+        '--forces-pn',
+        type=float,
+        nargs='+',
+        default=[0.0, 2.0, 6.0, 10.0, 15.0, 20.0, 25.0, 30.0],
+        help="List of forces in pn"
+    )
+
+    parser.add_argument(
+        '--torques-pnnm',
+        type=float,
+        nargs='+',
+        default=[0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0],
+        help="List of torques in pnnm"
+    )
 
     return parser
 

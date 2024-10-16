@@ -14,6 +14,7 @@ import seaborn as sns
 import functools
 import pprint
 
+import jax
 import jax.numpy as jnp
 from jax_md import space
 from jax import vmap, jit, lax, grad, value_and_grad
@@ -23,8 +24,9 @@ from jax_dna.common import utils, topology, trajectory, checkpoint, center_confi
 from jax_dna.dna1 import model, oxdna_utils
 from jax_dna.loss import tm
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 checkpoint_every = 25
@@ -209,8 +211,8 @@ def run(args):
 
             if valid_seed is None:
                 raise RuntimeError(f"Could not find valid seed.")
-                
-            
+
+
             oxdna_utils.rewrite_input_file(
                 input_template_path, repeat_dir,
                 temp=f"{t_kelvin}K", steps=n_steps_per_sim,
@@ -430,7 +432,7 @@ def run(args):
             return unb_counts.at[op].add(weighted_add_term), None
         curr_biased_counts, _ = scan(bias_scan_fn, jnp.zeros(n_bp+1), jnp.arange(n_ref_states))
         curr_finf = tm.compute_finf(curr_biased_counts)
-        
+
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
         aux = (curr_finf, n_eff)
         return (target_finf - curr_finf)**2, aux
@@ -445,8 +447,8 @@ def run(args):
     for stack_opt_key in ["eps_stack_base", "a_stack", "a_stack_4", "a_stack_5", "a_stack_6", "a_stack_1", "a_stack_2"]:
         params["stacking"][stack_opt_key] = model.DEFAULT_BASE_PARAMS["stacking"][stack_opt_key]
     """
-    
-    
+
+
     # params["hydrogen_bonding"] = model.DEFAULT_BASE_PARAMS["hydrogen_bonding"]
     params["hydrogen_bonding"] = dict()
     for hb_opt_key in ["a_hb", "eps_hb", "a_hb_1", "a_hb_2", "a_hb_3", "a_hb_4", "a_hb_7", "a_hb_8"]:

@@ -1,0 +1,27 @@
+n_ref_states: 6800
+n_threads: 24
+key: 0
+n_sims: 34
+n_steps_per_sim: 50000000
+n_eq_steps: 0
+sample_every: 250000
+run_name: opt-tm-hb-adam-oxdna-8bp-b20-w16-no-tm-all-v2
+oxdna_path: /n/brenner_lab/User/rkrueger/oxdna-bin-cpu4/oxDNA
+temp: 307.15
+extrapolate_temps: ['283', '286', '289', '293', '295', '298', '301', '304', '307', '310', '313', '316', '319', '322', '325', '328', '331', '334', '337']
+max_approx_iters: 3
+n_iters: 100
+lr: 0.001
+target_tm: 310.0
+min_neff_factor: 0.95
+optimizer_type: adam
+opt_keys: ['fene', 'stacking', 'hydrogen_bonding', 'cross_stacking', 'coaxial_stacking']
+no_delete: False
+no_archive: False
+small_system: False
+save_obj_every: 5
+plot_every: 1
+opt_width: True
+target_width: 16.0
+no_opt_tm: True
+no_update_weights: True

@@ -11,7 +11,11 @@ from tabulate import tabulate
 import subprocess
 
 from jax_dna.common import utils
-from jax_dna.dna1 import model, oxdna_utils
+# from jax_dna.dna1 import model, oxdna_utils
+from jax_dna.dna1 import model as model1
+from jax_dna.dna2 import model as model2
+from jax_dna.dna1.oxdna_utils import rewrite_input_file
+from jax_dna.dna2.oxdna_utils import recompile_oxdna
 
 
 
@@ -35,7 +39,8 @@ def run(args):
     t_kelvin = args['temp']
     kT = utils.get_kt(t_kelvin)
     beta = 1 / kT
-    dt = 5e-3
+
+    salt_concentration = args['salt_concentration']
 
     stem_bp = args['stem_bp']
     loop_nt = args['loop_nt']
@@ -71,9 +76,17 @@ def run(args):
     run_dir = output_dir / run_name
     run_dir.mkdir(parents=False, exist_ok=False)
 
+
+    params_str = ""
+    for k, v in args.items():
+        params_str += f"{k}: {v}\n"
+    with open(run_dir / "params.txt", "w+") as f:
+        f.write(params_str)
+
     # Recompile once at the beginning with default parameters
-    params = deepcopy(model.EMPTY_BASE_PARAMS)
-    oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+    params = deepcopy(model2.EMPTY_BASE_PARAMS)
+    # oxdna_utils.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+    recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
 
     # Setup a run with bad weights
     initial_weights_dir = run_dir / "initial_weights"
@@ -93,7 +106,7 @@ def run(args):
         else:
             shutil.copy(conf_path_unbound, repeat_dir / "init.conf")
 
-        oxdna_utils.rewrite_input_file(
+        rewrite_input_file(
             input_template_path, repeat_dir,
             temp=f"{t_kelvin}K", steps=n_steps_per_sim,
             init_conf_path=str(repeat_dir / "init.conf"),
@@ -103,7 +116,9 @@ def run(args):
             no_stdout_energy=0, weights_file=str(repeat_dir / "wfile.txt"),
             op_file=str(repeat_dir / "op.txt"),
             log_file=str(repeat_dir / "sim.log"),
-            restart_step_counter=1 # Because we will not be concatenating the outputs, so we can equilibrate
+            restart_step_counter=1, # Because we will not be concatenating the outputs, so we can equilibrate
+            interaction_type="DNA2_nomesh",
+            salt_concentration=salt_concentration
         )
 
         procs.append(subprocess.Popen([oxdna_exec_path, repeat_dir / "input"]))
@@ -138,6 +153,8 @@ def run(args):
 
     # Plot trajectory of order parameters
     plt.plot(all_op_idxs)
+    for i in range(n_sims):
+        plt.axvline(x=i*n_ref_states_per_sim, linestyle="--", color="red")
     plt.savefig(initial_weights_dir / "op_trajectory.png")
     plt.clf()
 
@@ -207,7 +224,7 @@ def run(args):
             shutil.copy(conf_path_unbound, repeat_dir / "init.conf")
 
 
-        oxdna_utils.rewrite_input_file(
+        rewrite_input_file(
             input_template_path, repeat_dir,
             temp=f"{t_kelvin}K", steps=n_steps_per_sim,
             init_conf_path=str(repeat_dir / "init.conf"),
@@ -217,7 +234,9 @@ def run(args):
             no_stdout_energy=0, weights_file=str(repeat_dir / "wfile.txt"),
             op_file=str(repeat_dir / "op.txt"),
             log_file=str(repeat_dir / "sim.log"),
-            restart_step_counter=1 # Because we will not be concatenating the outputs, so we can equilibrate
+            restart_step_counter=1, # Because we will not be concatenating the outputs, so we can equilibrate
+            interaction_type="DNA2_nomesh",
+            salt_concentration=salt_concentration
         )
 
         procs.append(subprocess.Popen([oxdna_exec_path, repeat_dir / "input"]))
@@ -251,6 +270,8 @@ def run(args):
 
     # Plot trajectory of order parameters
     plt.plot(all_op_idxs)
+    for i in range(n_sims):
+        plt.axvline(x=i*n_ref_states_per_sim, linestyle="--", color="red")
     plt.savefig(check_weights_dir / "op_trajectory.png")
     plt.clf()
 
@@ -292,13 +313,16 @@ def get_parser():
     parser.add_argument('--oxdna-path', type=str,
                         default="/home/ryan/Documents/Harvard/research/brenner/oxdna-bin/oxDNA/",
                         help='oxDNA base directory')
-    parser.add_argument('--temp', type=float, default=330.0,
+    parser.add_argument('--temp', type=float, default=330.15,
                         help="Temperature in kelvin")
 
     parser.add_argument('--stem-bp', type=int, default=4,
                         help="Number of base pairs comprising the stem")
     parser.add_argument('--loop-nt', type=int, default=8,
                         help="Number of nucleotides comprising the loop")
+
+    parser.add_argument('--salt-concentration', type=float, default=0.25,
+                        help="Salt concentration in molar (M)")
 
     return parser
 

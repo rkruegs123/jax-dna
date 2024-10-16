@@ -1,0 +1,50 @@
+- # steps: 100000
+	- 1st grad time (mean): 12.611086511611939
+	- 1st grad time (var): 3.4063005069460957
+	- Mean grad abs. (mean): 1.608732063949089
+	- Mean grad abs. (var): 0.06341886494134502
+- # steps: 200000
+	- 1st grad time (mean): 21.906982231140137
+	- 1st grad time (var): 1.6639489965235363
+	- Mean grad abs. (mean): 0.7998390983419675
+	- Mean grad abs. (var): 0.029174862722965832
+- # steps: 300000
+	- 1st grad time (mean): 32.01442937850952
+	- 1st grad time (var): 2.7334956560125967
+	- Mean grad abs. (mean): 0.617334191828774
+	- Mean grad abs. (var): 0.009268797158050247
+- # steps: 400000
+	- 1st grad time (mean): 41.16144433021545
+	- 1st grad time (var): 1.3475241346682105
+	- Mean grad abs. (mean): 0.4650419113047575
+	- Mean grad abs. (var): 0.003528556584398873
+- # steps: 500000
+	- 1st grad time (mean): 50.7832350730896
+	- 1st grad time (var): 1.2524963526521333
+	- Mean grad abs. (mean): 0.4230508850819355
+	- Mean grad abs. (var): 0.005265957990933409
+- # steps: 600000
+	- 1st grad time (mean): 60.402704048156735
+	- 1st grad time (var): 1.3324362976978912
+	- Mean grad abs. (mean): 0.3904266706806189
+	- Mean grad abs. (var): 0.006742027169899252
+- # steps: 700000
+	- 1st grad time (mean): 70.31652002334594
+	- 1st grad time (var): 0.8250842364263782
+	- Mean grad abs. (mean): 0.3771730826002613
+	- Mean grad abs. (var): 0.004643644208124799
+- # steps: 800000
+	- 1st grad time (mean): 79.79831705093383
+	- 1st grad time (var): 1.0681818964476997
+	- Mean grad abs. (mean): 0.3845350456132686
+	- Mean grad abs. (var): 0.005484744034068992
+- # steps: 900000
+	- 1st grad time (mean): 89.20450973510742
+	- 1st grad time (var): 1.6999158500656448
+	- Mean grad abs. (mean): 0.3904399753645162
+	- Mean grad abs. (var): 0.004487904320715332
+- # steps: 1000000
+	- 1st grad time (mean): 97.97525997161866
+	- 1st grad time (var): 2.818073776962033
+	- Mean grad abs. (mean): 0.383038133259716
+	- Mean grad abs. (var): 0.004041558676199061

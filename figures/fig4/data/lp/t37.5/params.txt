@@ -1,0 +1,22 @@
+n_ref_states: 16000
+device: cpu
+n_threads: 32
+offset: 4
+truncation: 40
+n_sims: 64
+n_steps_per_sim: 2500000
+n_eq_steps: 0
+sample_every: 10000
+run_name: oxdna2-lp-opt-60bp-test-full-t37.5-s64
+oxdna_path: /n/brenner_lab/User/rkrueger/oxdna-bin-cpu11/oxDNA/
+max_approx_iters: 3
+n_iters: 100
+lr: 0.001
+target_lp: 37.5
+min_neff_factor: 0.95
+salt_concentration: 0.5
+opt_keys: ['stacking', 'fene', 'hydrogen_bonding', 'cross_stacking', 'coaxial_stacking']
+no_delete: False
+no_archive: False
+plot_every: 10
+save_obj_every: 50

@@ -70,8 +70,6 @@ def load(seq_avg, dna1_params_path="data/thermo-params/dna1.toml",
     params['fene']['r0_backbone'] = 0.7564
     params['coaxial_stacking']['k_coax'] = 58.5
     params['coaxial_stacking']['theta0_coax_1'] = onp.pi - 0.25
-    params['coaxial_stacking']['A_coax_1_f6'] = 40.0
-    params['coaxial_stacking']['B_coax_1_f6'] = onp.pi - 0.025
 
     if seq_avg:
         params['stacking']['eps_stack_base'] = 1.3523

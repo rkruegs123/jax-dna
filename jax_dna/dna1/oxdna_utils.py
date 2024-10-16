@@ -184,7 +184,7 @@ DEFAULT_VARIABLE_MAPPER = {
         "a_cross_1": "CRST_THETA1_A",
         "theta0_cross_1": "CRST_THETA1_T0", # FIXME: pi - 2.35
         "delta_theta_star_cross_1": "CRST_THETA1_TS",
-        "b_cross_1": "THETA1_B",
+        "b_cross_1": "CRST_THETA1_B",
         "delta_theta_cross_1_c": "CRST_THETA1_TC",
 
         # f4(theta_2)
@@ -192,7 +192,7 @@ DEFAULT_VARIABLE_MAPPER = {
         "a_cross_2": "CRST_THETA2_A",
         "theta0_cross_2": "CRST_THETA2_T0", # FIXME: pi - 2.35
         "delta_theta_star_cross_2": "CRST_THETA2_TS",
-        "b_cross_2": "THETA2_B",
+        "b_cross_2": "CRST_THETA2_B",
         "delta_theta_cross_2_c": "CRST_THETA2_TC",
 
         # f4(theta_3)
@@ -200,7 +200,7 @@ DEFAULT_VARIABLE_MAPPER = {
         "a_cross_3": "CRST_THETA3_A",
         "theta0_cross_3": "CRST_THETA3_T0", # FIXME: pi - 2.35
         "delta_theta_star_cross_3": "CRST_THETA3_TS",
-        "b_cross_3": "THETA3_B",
+        "b_cross_3": "CRST_THETA3_B",
         "delta_theta_cross_3_c": "CRST_THETA3_TC",
 
         # f4(theta_4) + f4(pi - theta_4)
@@ -208,7 +208,7 @@ DEFAULT_VARIABLE_MAPPER = {
         "a_cross_4": "CRST_THETA4_A",
         "theta0_cross_4": "CRST_THETA4_T0", # FIXME: pi - 2.35
         "delta_theta_star_cross_4": "CRST_THETA4_TS",
-        "b_cross_4": "THETA4_B",
+        "b_cross_4": "CRST_THETA4_B",
         "delta_theta_cross_4_c": "CRST_THETA4_TC",
 
         # f4(theta_7) + f4(pi - theta_7)
@@ -216,7 +216,7 @@ DEFAULT_VARIABLE_MAPPER = {
         "a_cross_7": "CRST_THETA7_A",
         "theta0_cross_7": "CRST_THETA7_T0", # FIXME: pi - 2.35
         "delta_theta_star_cross_7": "CRST_THETA7_TS",
-        "b_cross_7": "THETA7_B",
+        "b_cross_7": "CRST_THETA7_B",
         "delta_theta_cross_7_c": "CRST_THETA7_TC",
 
         # f4(theta_8) + f4(pi - theta_8)
@@ -224,7 +224,7 @@ DEFAULT_VARIABLE_MAPPER = {
         "a_cross_8": "CRST_THETA8_A",
         "theta0_cross_8": "CRST_THETA8_T0", # FIXME: pi - 2.35
         "delta_theta_star_cross_8": "CRST_THETA8_TS",
-        "b_cross_8": "THETA8_B",
+        "b_cross_8": "CRST_THETA8_B",
         "delta_theta_cross_8_c": "CRST_THETA8_TC"
     },
     "coaxial_stacking": {
@@ -384,7 +384,13 @@ def rewrite_input_file(template_path, output_dir,
                        weights_file=None, op_file=None,
                        external_forces_file=None,
                        restart_step_counter=None,
-                       interaction_type=None
+                       interaction_type=None,
+                       external_model=None,
+                       seq_dep_file=None,
+                       seq_dep_file_RNA=None,
+                       observables_str=None,
+                       salt_concentration=None,
+                       list_type=None
 ):
     with open(template_path, "r") as f:
         input_template_lines = f.readlines()
@@ -489,11 +495,30 @@ def rewrite_input_file(template_path, output_dir,
         elif tokens[0] == "interaction_type" and interaction_type is not None:
             new_line = gen_new_line(tokens, interaction_type, str)
             input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "external_model" and external_model is not None:
+            new_line = gen_new_line(tokens, external_model, str)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "seq_dep_file" and seq_dep_file is not None:
+            new_line = gen_new_line(tokens, seq_dep_file, str)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "seq_dep_file_RNA" and seq_dep_file_RNA is not None:
+            new_line = gen_new_line(tokens, seq_dep_file_RNA, str)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "salt_concentration" and salt_concentration is not None:
+            new_line = gen_new_line(tokens, salt_concentration, float)
+            input_lines.append(f"{new_line}\n")
+        elif tokens[0] == "list_type" and list_type is not None:
+            new_line = gen_new_line(tokens, list_type, str)
+            input_lines.append(f"{new_line}\n")
         else:
             input_lines.append(it_line)
 
     with open(output_path, "w") as of:
         of.writelines(input_lines)
+
+    if observables_str is not None:
+        with open(output_path, "a") as of:
+            of.writelines(observables_str)
 
     return
 

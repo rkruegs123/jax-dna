@@ -14,6 +14,7 @@ import seaborn as sns
 import pprint
 import functools
 
+import jax
 import jax.numpy as jnp
 from jax_md import space
 from jax import vmap, jit, lax, grad, value_and_grad
@@ -23,8 +24,9 @@ from jax_dna.common import utils, topology, trajectory, checkpoint
 from jax_dna.dna1 import model, oxdna_utils
 from jax_dna.loss import tm
 
-from jax.config import config
-config.update("jax_enable_x64", True)
+# from jax.config import config
+# config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", True)
 
 
 checkpoint_every = 25
@@ -89,7 +91,8 @@ def hairpin_tm_running_avg(traj_hist_files, n_stem_bp, n_dist_thresholds):
                 unbiased_counts[:, op_idx] += op_unbiased_temp_counts
 
 
-        unbound_op_idxs_extended = onp.array([n_stem_bp*d_idx for d_idx in range(n_dist_thresholds)])
+        unbound_op_idxs_extended = onp.array([(1+n_stem_bp)*d_idx for d_idx in range(n_dist_thresholds)])
+        # bound_op_idxs_extended = onp.array(list(range(1, 1+n_stem_bp)))
         bound_op_idxs_extended = onp.array(list(range(1, 1+n_stem_bp)))
 
         unbound_unbiased_counts = unbiased_counts[:, unbound_op_idxs_extended]
@@ -607,6 +610,18 @@ def run(args):
         calc_width = tm.compute_width(extrapolate_temps, ratios)
 
 
+        rev_ratios = jnp.flip(ratios)
+        rev_temps = jnp.flip(extrapolate_temps)
+        ratios_extrap = jnp.arange(0.1, 1., 0.05)
+        temps_extrap = jnp.interp(ratios_extrap, rev_ratios, rev_temps)
+        plt.plot(temps_extrap, ratios_extrap)
+        plt.xlabel("T/K")
+        plt.ylabel("Hairpin Yield")
+        plt.title(f"Tm={onp.round(calc_tm, 2)}, width={onp.round(calc_width, 2)}")
+        plt.savefig(iter_dir / "melting_curve_calc.png")
+        plt.clf()
+
+
 
         unbound_unbiased_counts_ref = all_unbiased_counts_ref[:, unbound_op_idxs]
         bound_unbiased_counts_ref = all_unbiased_counts_ref[:, bound_op_idxs]
@@ -621,6 +636,19 @@ def run(args):
 
         calc_tm_ref = tm.compute_tm(extrapolate_temps, ratios_ref)
         calc_width_ref = tm.compute_width(extrapolate_temps, ratios_ref)
+
+
+        rev_ratios = jnp.flip(ratios_ref)
+        rev_temps = jnp.flip(extrapolate_temps)
+        ratios_extrap = jnp.arange(0.1, 1., 0.05)
+        temps_extrap = jnp.interp(ratios_extrap, rev_ratios, rev_temps)
+        plt.plot(temps_extrap, ratios_extrap)
+        plt.xlabel("T/K")
+        plt.ylabel("Hairpin Yield")
+        plt.title(f"Tm={onp.round(calc_tm_ref, 2)}, width={onp.round(calc_width_ref, 2)}")
+        plt.savefig(iter_dir / "melting_curve_ref.png")
+        plt.clf()
+
 
         end = time.time()
         analyze_time = end - start
