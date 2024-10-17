@@ -32,3 +32,6 @@ Arr_States = jaxtyp.Int[jaxtyp.Array, "#n_states"]
 Arr_States_3 = jaxtyp.Int[jaxtyp.Array, "#n_states 3"]
 
 ARR_OR_SCALAR = Arr_N | Scalar
+
+Grads = jaxtyp.PyTree
+Params = jaxtyp.PyTree | dict[str, jaxtyp.PyTree]
