@@ -125,11 +125,17 @@ if __name__=="__main__":
         loss_fn=jdna_losses.SquaredError(),
     )
 
-    print(loss(
-        sim_out,
-        20.0,
-        jnp.ones(sim_out.rigid_body.center.shape[0]) / sim_out.rigid_body.center.shape[0])
-    )
+    weights = jnp.ones(sim_out.rigid_body.center.shape[0]) / sim_out.rigid_body.center.shape[0]
+    dsim_dloss = jax.grad(lambda sim_traj: loss(sim_traj, 20.0, weights))(sim_out)
+    print(dsim_dloss)
+
+    # print(loss(
+    #     sim_out,
+    #     20.0,
+    #     jnp.ones(sim_out.rigid_body.center.shape[0]) / sim_out.rigid_body.center.shape[0]
+    # ))
+
+
 
 
     # dopt_dsim = jax.jacfwd(sim_fn)(opt_params)
