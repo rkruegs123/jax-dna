@@ -9,6 +9,7 @@ import jax_dna.input.toml as toml_reader
 import jax_dna.energy.dna1 as dna1_energy
 import jax_dna.energy.base as jdna_energy
 import jax_dna.energy.configuration as jdna_energy_config
+import jax_dna.losses.observable_wrappers as jdna_losses
 import jax_dna.observables as jd_obs
 import jax_dna.utils.types as jdt
 import jax_dna.simulators.jax_md as jmd
@@ -94,7 +95,7 @@ if __name__=="__main__":
             seq=seq,
             mass=mass,
             bonded_neighbors=top.bonded_neighbors,
-            n_steps=50_000,
+            n_steps=5_000,
             checkpoint_every=0,
             dt=dt,
             kT=kT,
@@ -107,41 +108,69 @@ if __name__=="__main__":
     )
 
 
-    fn = jax.jit(lambda opts: sampler.run(opts, init_body, 50_000, key))
-    opt_params = [c.opt_params for c in configs]
+    sim_fn = jax.jit(lambda opts: sampler.run(opts, init_body, 5_000, key))
 
-    transformed_fns = [
-        e_fn(
-            displacement_fn=displacement_fn,
-            params=(e_c | param).init_params(),
-        )
-        for param, e_c, e_fn in zip(opt_params, configs, energy_fns, strict=True)
-    ]
-
-    composed_energy_fn = jdna_energy.ComposedEnergyFunction(
-        energy_fns=transformed_fns,
-        rigid_body_transform_fn=transform_fn,
-    )
-    outs = fn(opt_params).rigid_body[::100]
-    print(type(outs))
-    import sys
-    import jax_dna.common.trajectory as old_traj
-    import jax_dna.common.topology as old_top
-    old_traj.TrajectoryInfo(
-        old_top.TopologyInfo("data/test-data/simple-helix/generated.top", reverse_direction=True),
-        box_size=100.0,
-        read_from_states=True,
-        states=outs,
-    ).write("seems_good_test_traj.dat", reverse=True)
-    sys.exit()
-
+    sim_out  = sim_fn(opt_params)
 
     twists = jd_obs.propeller.PropellerTwist(
         rigid_body_transform_fn=transform_fn,
         h_bonded_base_pairs=jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
-    )(outs)
+    )(sim_out)
 
-    print(twists)
+    loss = jdna_losses.ObservableLossFn(
+        observable=jd_obs.propeller.PropellerTwist(
+            rigid_body_transform_fn=transform_fn,
+            h_bonded_base_pairs=jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
+        ),
+        loss_fn=jdna_losses.SquaredError(),
+    )
+
+    print(loss(
+        sim_out,
+        20.0,
+        jnp.ones(sim_out.rigid_body.center.shape[0]) / sim_out.rigid_body.center.shape[0])
+    )
+
+
+    # dopt_dsim = jax.jacfwd(sim_fn)(opt_params)
+
+
+
+
+
+
+    # transformed_fns = [
+    #     e_fn(
+    #         displacement_fn=displacement_fn,
+    #         params=(e_c | param).init_params(),
+    #     )
+    #     for param, e_c, e_fn in zip(opt_params, configs, energy_fns, strict=True)
+    # ]
+
+    # composed_energy_fn = jdna_energy.ComposedEnergyFunction(
+    #     energy_fns=transformed_fns,
+    #     rigid_body_transform_fn=transform_fn,
+    # )
+    # outs = fn(opt_params).rigid_body[::100]
+    # print(type(outs))
+    # import sys
+    # import jax_dna.common.trajectory as old_traj
+    # import jax_dna.common.topology as old_top
+    # old_traj.TrajectoryInfo(
+    #     old_top.TopologyInfo("data/test-data/simple-helix/generated.top", reverse_direction=True),
+    #     box_size=100.0,
+    #     read_from_states=True,
+    #     states=outs,
+    # ).write("seems_good_test_traj.dat", reverse=True)
+    # sys.exit()
+
+
+    # twists = jd_obs.propeller.PropellerTwist(
+    #     rigid_body_transform_fn=transform_fn,
+    #     h_bonded_base_pairs=jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
+    # )(outs)
+
+    # print(twists)
 
 
     # jax.grad(lambda opts: loss(fn(opts), target))
