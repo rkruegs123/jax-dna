@@ -129,9 +129,25 @@ if __name__=="__main__":
     dsim_dloss = jax.grad(lambda sim_traj: loss(sim_traj, 20.0, weights)[0], allow_int=True)(sim_out)
     dopt_dsim = jax.jacfwd(sim_fn)(opt_params)
 
-    for k in dopt_dsim:
-        print(k, jnp.tensordot(dopt_dsim[k].center, dsim_dloss[k].center))
+    dopt_dloss_center = jax.tree.map(
+        lambda arr: (arr * dsim_dloss.rigid_body.center).sum(),
+        dopt_dsim.rigid_body.center,
+    )
 
+    dopt_dloss_orientation = jax.tree.map(
+        lambda arr: (arr * dsim_dloss.rigid_body.orientation.vec).sum(),
+        dopt_dsim.rigid_body.orientation.vec,
+    )
+
+    def merge_dict(a, b):
+        return {k: a[k] + b[k] for k in a.keys()}
+
+    dopt_dloss = [
+        merge_dict(c, o)
+        for c, o in zip(dopt_dloss_center, dopt_dloss_orientation)
+    ]
+
+    print(dopt_dloss)
 
 
 
