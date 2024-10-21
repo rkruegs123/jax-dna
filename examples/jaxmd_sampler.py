@@ -147,9 +147,15 @@ if __name__=="__main__":
         for c, o in zip(dopt_dloss_center, dopt_dloss_orientation)
     ]
 
-    print(dopt_dloss)
+    def graddable_loss(opts):
+        return loss(sim_fn(opts), 20.0, weights)[0]
 
+    grad_fn = jax.grad(graddable_loss)
+    all_through = grad_fn(opt_params)
 
+    for a, b in zip(all_through, dopt_dloss):
+        for k in a.keys():
+            print(k, a[k], b[k], jnp.abs((a[k] - b[k])))
 
     # transformed_fns = [
     #     e_fn(
