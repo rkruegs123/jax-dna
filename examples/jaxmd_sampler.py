@@ -126,21 +126,11 @@ if __name__=="__main__":
     )
 
     weights = jnp.ones(sim_out.rigid_body.center.shape[0]) / sim_out.rigid_body.center.shape[0]
-    dsim_dloss = jax.grad(lambda sim_traj: loss(sim_traj, 20.0, weights))(sim_out)
-    print(dsim_dloss)
+    dsim_dloss = jax.grad(lambda sim_traj: loss(sim_traj, 20.0, weights)[0], allow_int=True)(sim_out)
+    dopt_dsim = jax.jacfwd(sim_fn)(opt_params)
 
-    # print(loss(
-    #     sim_out,
-    #     20.0,
-    #     jnp.ones(sim_out.rigid_body.center.shape[0]) / sim_out.rigid_body.center.shape[0]
-    # ))
-
-
-
-
-    # dopt_dsim = jax.jacfwd(sim_fn)(opt_params)
-
-
+    for k in dopt_dsim:
+        print(k, jnp.tensordot(dopt_dsim[k].center, dsim_dloss[k].center))
 
 
 
