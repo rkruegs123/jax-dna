@@ -228,7 +228,7 @@ def run(args):
 
         # Analyze
 
-        traj_apth = iter_dir / "output.dat"
+        traj_path = iter_dir / "output.dat"
 
         ## Compute RMSDs using OAT
 
