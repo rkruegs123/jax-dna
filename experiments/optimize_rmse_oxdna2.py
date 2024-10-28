@@ -120,7 +120,7 @@ def run(args):
     input_template_path = sys_basedir / "input"
 
     top_path = sys_basedir / "sys.top"
-    top_info = topology.TopologyInfo(top_path, reverse_direction=False)
+    top_info = topology.TopologyInfo(top_path, reverse_direction=False, allow_circle=True)
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
 
     target_path = sys_basedir / "unrelaxed.conf"

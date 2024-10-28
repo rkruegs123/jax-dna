@@ -129,10 +129,11 @@ class TopologyInfo:
     Specify the direction with the `reverse_direction` flag:
     True if input file is 3'->5', False otherwise (5'->3').
     """
-    def __init__(self, top_path, reverse_direction, is_rna=False):
+    def __init__(self, top_path, reverse_direction, is_rna=False, allow_circle=False):
         self.top_path = Path(top_path)
         self.reverse_direction = reverse_direction
         self.is_rna = is_rna
+        self.allow_circle = allow_circle
         if self.is_rna:
             self.alphabet = RNA_ALPHA
         else:
@@ -191,10 +192,18 @@ class TopologyInfo:
             nbr_3p = int(nuc_row['3p_nbr'])
 
             if nbr_3p != -1:
-                if not i < nbr_3p:
-                    # Note: need this for OrderedSparse
-                    raise RuntimeError(f"Nucleotides must be ordered such that i < j where j is 3' of i and i and j are on the same strand") # Note: circular strands wouldn't obey this
-                bonded_nbrs.append((i, nbr_3p)) # 5'->3'
+
+                if self.allow_circle:
+                    if i < nbr_3p:
+                        bonded_pair = (i, nbr_3p)
+                    else:
+                        bonded_pair = (nbr_3p, i)
+                    bonded_nbrs.append(bonded_pair)
+                else:
+                    if not i < nbr_3p:
+                        # Note: need this for OrderedSparse
+                        raise RuntimeError(f"Nucleotides must be ordered such that i < j where j is 3' of i and i and j are on the same strand") # Note: circular strands wouldn't obey this
+                    bonded_nbrs.append((i, nbr_3p)) # 5'->3'
 
         self.bonded_nbrs = onp.array(bonded_nbrs)
         self.seq = ''.join(self.top_df.base.tolist())
