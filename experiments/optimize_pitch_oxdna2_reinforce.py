@@ -17,7 +17,7 @@ from jax_dna.common import utils, topology, trajectory, checkpoint, center_confi
 from jax_dna.loss import geometry, pitch, propeller
 from jax_dna.dna2 import model
 from jax_dna import dna2, loss
-from jax_dna import integrate
+from jax_dna.integrate import langevin
 
 # from jax.config import config
 # config.update("jax_enable_x64", True)
@@ -131,7 +131,7 @@ def run(args):
     def sim_fn(params, body, n_steps, key, gamma):
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
         # init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
-        init_fn, step_fn = integrate.langevin.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
+        init_fn, step_fn = langevin.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
         init_state = init_fn(key, body, mass=mass, seq=seq_oh,
                              bonded_nbrs=top_info.bonded_nbrs,
                              unbonded_nbrs=top_info.unbonded_nbrs.T)
