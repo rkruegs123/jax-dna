@@ -99,7 +99,6 @@ def run(args):
     ref_traj_dir = run_dir / "ref_traj"
     ref_traj_dir.mkdir(parents=False, exist_ok=False)
 
-    loss_path = log_dir / "loss.txt"
     times_path = log_dir / "times.txt"
     grads_path = log_dir / "grads.txt"
     neff_path = log_dir / "neff.txt"
@@ -405,11 +404,9 @@ def run(args):
 
     min_n_eff = int(n_ref_states * min_neff_factor)
 
-    all_losses = list()
     all_rmses = list()
     all_n_effs = list()
 
-    all_ref_losses = list()
     all_ref_rmses = list()
     all_ref_times = list()
 
@@ -423,7 +420,6 @@ def run(args):
         num_resample_iters += 1
 
         if i == 0:
-            all_ref_losses.append(loss)
             all_ref_times.append(i)
             all_ref_rmses.append(curr_rmse)
 
@@ -444,14 +440,11 @@ def run(args):
 
             (curr_rmse, n_eff), grads = grad_fn(params, ref_states, ref_energies, unweighted_rmses)
 
-            all_ref_losses.append(loss)
             all_ref_times.append(i)
             all_ref_rmses.append(curr_rmse)
 
         iter_end = time.time()
 
-        with open(loss_path, "a") as f:
-            f.write(f"{loss}\n")
         with open(neff_path, "a") as f:
             f.write(f"{n_eff}\n")
         with open(rmse_path, "a") as f:
@@ -481,20 +474,10 @@ def run(args):
         with open(rel_diff_path, "a") as f:
             f.write(rel_diffs_str)
 
-        all_losses.append(loss)
         all_n_effs.append(n_eff)
         all_rmses.append(curr_rmse)
 
         if i % plot_every == 0 and i:
-
-            plt.plot(onp.arange(i+1), all_losses, linestyle="--", color="blue")
-            plt.scatter(all_ref_times, all_ref_losses, marker='o', label="Resample points", color="blue")
-
-            plt.legend()
-            plt.ylabel("Loss")
-            plt.xlabel("Iteration")
-            plt.savefig(img_dir / f"losses_iter{i}.png")
-            plt.clf()
 
             plt.plot(onp.arange(i+1), all_rmses, linestyle="--", color="blue")
             plt.scatter(all_ref_times, all_ref_rmses, marker='o', label="Resample points", color="blue")
