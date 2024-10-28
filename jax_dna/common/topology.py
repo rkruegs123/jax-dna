@@ -32,6 +32,10 @@ def get_unbonded_neighbors(n, bonded_neighbors):
     # Then, remove all bonded neighbors
     unbonded_neighbors -= set(bonded_neighbors)
 
+    ## Incase of circles
+    rev_bonded_nbrs = set([(j, i) for (i, j) in bonded_neighbors])
+    unbonded_neighbors -= rev_bonded_nbrs
+
     # Finally, remove identities (which shouldn't be in there in the first place)
     unbonded_neighbors -= set([(i, i) for i in range(n)])
 
@@ -195,10 +199,7 @@ class TopologyInfo:
             if nbr_3p != -1:
 
                 if self.allow_circle:
-                    if i < nbr_3p:
-                        bonded_pair = (i, nbr_3p)
-                    else:
-                        bonded_pair = (nbr_3p, i)
+                    bonded_pair = (i, nbr_3p)
                     bonded_nbrs.append(bonded_pair)
                 else:
                     if not i < nbr_3p:

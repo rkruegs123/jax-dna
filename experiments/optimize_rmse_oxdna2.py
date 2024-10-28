@@ -328,6 +328,7 @@ def run(args):
         plt.close()
 
         # Record the loss
+        mean_rmsd = onp.mean(RMSDs)
         with open(iter_dir / "summary.txt", "w+") as f:
             f.write(f"Mean energy diff: {onp.mean(energy_diffs)}\n")
             f.write(f"Calc. energy var.: {onp.var(calc_energies)}\n")

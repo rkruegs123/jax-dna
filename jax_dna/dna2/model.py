@@ -403,7 +403,7 @@ class TestDna2(unittest.TestCase):
                               t_kelvin, salt_conc,
                               r_cutoff=10.0, dr_threshold=0.2,
                               tol_places=4, verbose=True, avg_seq=True,
-                              half_charged_ends=False):
+                              half_charged_ends=False, is_circle=False):
 
 
         if avg_seq:
@@ -448,7 +448,7 @@ class TestDna2(unittest.TestCase):
             raise RuntimeError(f"No trajectory file at location: {traj_path}")
 
         ## note: we don't reverse direction to keep ordering the same
-        top_info = topology.TopologyInfo(top_path, reverse_direction=False)
+        top_info = topology.TopologyInfo(top_path, reverse_direction=False, allow_circle=is_circle)
         if half_charged_ends:
             is_end = top_info.is_end
         else:
@@ -505,16 +505,18 @@ class TestDna2(unittest.TestCase):
         print(utils.bcolors.WARNING + "\nWARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file\n" + utils.bcolors.ENDC)
 
         subterm_tests = [
-            (self.test_data_basedir / "simple-helix-oxdna2", "generated.top", "output.dat", 296.15, 0.5, True, False),
-            (self.test_data_basedir / "simple-helix-oxdna2-ss", "generated.top", "output.dat", 296.15, 0.5, False, False),
-            (self.test_data_basedir / "simple-coax-oxdna2", "generated.top", "output.dat", 296.15, 0.5, True, False),
-            (self.test_data_basedir / "simple-coax-oxdna2-rev", "generated.top", "output.dat", 296.15, 0.5, True, False),
-            (self.test_data_basedir / "simple-helix-oxdna2-half-charged-ends", "generated.top", "output.dat", 296.15, 0.5, True, True),
+            (self.test_data_basedir / "simple-helix-oxdna2", "generated.top", "output.dat", 296.15, 0.5, True, False, False),
+            (self.test_data_basedir / "simple-helix-oxdna2-ss", "generated.top", "output.dat", 296.15, 0.5, False, False, False),
+            (self.test_data_basedir / "simple-coax-oxdna2", "generated.top", "output.dat", 296.15, 0.5, True, False, False),
+            (self.test_data_basedir / "simple-coax-oxdna2-rev", "generated.top", "output.dat", 296.15, 0.5, True, False, False),
+            (self.test_data_basedir / "simple-helix-oxdna2-half-charged-ends", "generated.top", "output.dat", 296.15, 0.5, True, True, False),
+            (self.test_data_basedir / "regr-burns-natnano-2015", "sys.top", "output.dat", 296.15, 0.5, True, True, True),
+            (self.test_data_basedir / "regr-circle", "sys.top", "output.dat", 296.15, 0.5, True, True, True),
         ]
 
-        for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq, half_charged_ends in subterm_tests:
+        for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq, half_charged_ends, is_circle in subterm_tests:
             self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin, salt_conc,
-                                       avg_seq=avg_seq, half_charged_ends=half_charged_ends)
+                                       avg_seq=avg_seq, half_charged_ends=half_charged_ends, is_circle=is_circle)
 
 
 if __name__ == "__main__":
