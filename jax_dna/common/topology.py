@@ -106,7 +106,8 @@ def check_valid_top_df(top_df, n_strands, n, alphabet=DNA_ALPHA, verbose=False):
 
     # Check that the base identities are 0-indexed and increase by 1
     base_identities = set(top_df["3p_nbr"].unique()) | set(top_df["5p_nbr"].unique())
-    base_identities.remove(-1)
+    if -1 in base_identities:
+        base_identities.remove(-1)
     # note: this is an approximation, and wouldn't capture unbonded bases
     if not base_identities == set(onp.arange(n)):
         raise RuntimeError(f"Base identities must be 0-indexed and increase by 1")
