@@ -25,8 +25,8 @@ output_dir = Path("figures/fig5/output")
 
 
 m = 5
-# sizes = [(8, 8), (12, 8), (16, 8)]
-sizes = [(16, 8)]
+sizes = [(8, 8), (12, 8), (16, 8)]
+# sizes = [(16, 8)]
 
 for t_name, t_dir in [("duplex_oxdna1_t310", duplex_opt_dir), ("hairpin_oxdna2_s025_t332", hairpin_opt_dir)]:
 

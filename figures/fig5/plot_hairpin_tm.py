@@ -15,7 +15,9 @@ rc('text', usetex=True)
 
 
 data_dir = Path("figures/fig5/data")
-tm_dir = data_dir / "hairpin/opt-hairpin-tm-oxdna2-fixed-v2-t332"
+# tm_dir = data_dir / "hairpin/opt-hairpin-tm-oxdna2-fixed-v2-t332"
+tm_dir = data_dir / "hairpin/s0.25/t332/hb"
+assert(tm_dir.exists())
 output_dir = Path("figures/fig5/output")
 
 max_iter = 30
