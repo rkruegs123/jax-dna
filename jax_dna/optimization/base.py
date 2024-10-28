@@ -10,8 +10,8 @@ import jax_dna.simulators.io as jdna_sio
 import jax_dna.utils.types as jdna_types
 import ray
 
-
 META_DATA = dict[str, Any]
+
 
 class Objective:
     loss_fn: jdna_losses.LossFn
@@ -23,10 +23,11 @@ class SimulatorActor:
         self.simulator = simulator
         self.meta_data = meta_data
 
-    def run(self, params: jdna_types.Params) -> tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData, META_DATA]:
-        sim_traj, sim_meta =  self.simulator.run(params, self.meta_data)
+    def run(
+        self, params: jdna_types.Params
+    ) -> tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData, META_DATA]:
+        sim_traj, sim_meta = self.simulator.run(params, self.meta_data)
         return sim_traj, sim_meta, self.meta_data
-
 
 
 @chex.dataclass(frozen=True)
@@ -52,11 +53,10 @@ class Optimization:
         pass
 
     def update_params(params: jdna_types.Params, grads: jdna_types.Grads) -> jdna_types.Params:
-        # aggreagete function
+        # aggregate function
         pass
 
     def post_step() -> Any:
-
         pass
 
 

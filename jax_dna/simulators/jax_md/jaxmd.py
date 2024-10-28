@@ -118,10 +118,13 @@ def build_run_fn(
 
         _, trajectory = scan_fn(jax.jit(apply_fn), (init_state, neighbors), jnp.arange(n_steps))
 
-        return jd_sio.SimulatorTrajectory(
+        traj = jd_sio.SimulatorTrajectory(rigid_body=trajectory)
+
+        traj_meta = jd_sio.SimulatorMetaData(
             seq_oh=topology.seq_one_hot,
             strand_lengths=topology.strand_counts,
-            rigid_body=trajectory,
         )
+
+        return (traj, traj_meta)
 
     return run_fn
