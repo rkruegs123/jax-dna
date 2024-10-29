@@ -24,7 +24,7 @@ jax.config.update("jax_enable_x64", True)
 
 
 
-checkpoint_every = 50
+checkpoint_every = 10
 if checkpoint_every is None:
     scan = jax.lax.scan
 else:
