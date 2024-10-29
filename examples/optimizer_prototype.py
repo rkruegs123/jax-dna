@@ -1,9 +1,11 @@
 import functools
+import time
 
 import jax
 import jax.numpy as jnp
 import jax_md
 import ray
+import ray.runtime_env
 
 import jax_dna.input.topology as topology
 import jax_dna.input.trajectory as trajectory
@@ -21,7 +23,6 @@ jax.config.update("jax_enable_x64", True)
 
 
 def main():
-
     topology_fname = "data/sys-defs/simple-helix/sys.top"
     traj_fname = "data/sys-defs/simple-helix/bound_relaxed.conf"
     simulation_config = "jax_dna/input/dna1/default_simulation.toml"
@@ -112,7 +113,10 @@ def main():
         neighbors=jmd.NoNeighborList(unbonded_nbrs=top.unbonded_neighbors),
     )
 
-    def sim_fn(opts):
+
+    @jax.jit
+    def sim_fn(opt_params):
+
         prop_twist = jd_obs.propeller.PropellerTwist(
             rigid_body_transform_fn=transform_fn,
             h_bonded_base_pairs=jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]]),
@@ -122,24 +126,59 @@ def main():
             sim_traj, sim_meta = sampler.run(opts, init_body, 5_000, key)
             return prop_twist(sim_traj).mean(), (sim_traj, sim_meta)
 
-        j, t = jax.jacfwd(curr_f, has_aux=True)(opts)
+        j, t = jax.jacfwd(curr_f, has_aux=True)(opt_params)
 
         return j, t
 
 
+    def wrapped_fn(opt_params):
+        return sim_fn(opt_params)
 
 
-    print(jax.tree.map(lambda t: type(t), opt_params))
+    start = time.time()
+    print("local run 1 =======================================================")
+    results = wrapped_fn(opt_params)[0]
+    # print(wrapped_fn(opt_params)[0])
+    print("time: ", time.time() - start)
+    # print(jax.tree.map(lambda t: type(t), opt_params))
+
+    start = time.time()
+    print("local run 2 =======================================================")
+    results = wrapped_fn(opt_params)[0]
+    # print(wrapped_fn(opt_params)[0])
+    print("time: ", time.time() - start)
 
 
+    env = ray.runtime_env.RuntimeEnv(env_vars={"JAX_ENABLE_X64": "true"})
     ray.init()
-    remote_simfn = ray.remote(sim_fn)
-    result = remote_simfn.remote(opt_params)
+    remote_simfn = ray.remote(wrapped_fn)
+    remote_simfn = remote_simfn.options(runtime_env=env)
 
-    j, t = ray.get(result)
-    print(j)
+    print("remote run 1 ======================================================")
+    start = time.time()
+    result = remote_simfn.remote(opt_params)
+    j, _ = ray.get(result)
+    print("time: ", time.time() - start)
+    # print(j)
     # print(t)
 
+    print("remote run 2 ======================================================")
+    start = time.time()
+    result = remote_simfn.remote(opt_params)
+    j, _ = ray.get(result)
+    print("time: ", time.time() - start)
+    # print(j)
+    # print(t)
+
+    print("Parallel 2 runs ===================================================")
+    start = time.time()
+    result = ray.get([remote_simfn.remote(opt_params) for _ in range(2)])
+    print("time: ", time.time() - start)
+
+    print("Parallel 2 runs 2 =================================================")
+    start = time.time()
+    result = ray.get([remote_simfn.remote(opt_params) for _ in range(2)])
+    print("time: ", time.time() - start)
 
 if __name__=="__main__":
     main()
