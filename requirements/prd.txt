@@ -1,5 +1,6 @@
-jaxlib==0.4.27
-jax==0.4.27
+flatbuffers==24.3.25
+jaxlib==0.4.35
+jax==0.4.35
 jax_md @ git+https://github.com/jax-md/jax-md@c451353f6ddcab031f660befda256d8a4f657855
 numpy==1.26.4
 jaxtyping==0.2.28
