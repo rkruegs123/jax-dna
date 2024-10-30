@@ -89,9 +89,9 @@ for width, height in [(20, 14)]:
     ax4.set_ylabel('Pitch (bp/turn)', usetex=False)
     # ax.set_ylabel('c (pN·nm2)')
 
-    # y_vals = [10.5, 11, 11.5, 12]
-    # ax.set_yticks(y_vals)
-    # ax.set_yticklabels([r'$10.5$', r'$11$', r'$11.5$', r'$12$'])
+    y_vals = [10.0, 10.5, 11]
+    ax4.set_yticks(y_vals)
+    ax4.set_yticklabels([r'$10$', r'$10.5$', r'$11$'])
 
     # x_vals = [0, 25, 50]
     # ax.set_xticks(x_vals)
@@ -102,4 +102,5 @@ for width, height in [(20, 14)]:
 
     # plt.show()
     plt.savefig(output_dir / f"joint_seff_c_lp_pitch_{width}x{height}.pdf")
-    plt.clf()
+
+    plt.close()
