@@ -1,0 +1,20 @@
+n_ref_states: 2800
+run_name: oxdna2-rmse-all-n100k-b28-longer-again-with-checkpointing-m5
+n_threads: 28
+n_steps_per_sim: 100000
+n_eq_steps: 0
+sample_every: 1000
+n_sims: 28
+n_iters: 1000
+lr: 0.001
+min_neff_factor: 0.95
+max_approx_iters: 5
+optimizer_type: adam
+plot_every: 10
+save_obj_every: 50
+oxdna_path: /n/brenner_lab/User/rkrueger/oxdna-bin-cpu7/oxDNA/
+no_delete: False
+no_archive: False
+opt_keys: ['fene', 'stacking', 'cross_stacking', 'hydrogen_bonding', 'coaxial_stacking']
+ckpt_freq: 5
+orbax_ckpt_path: None
