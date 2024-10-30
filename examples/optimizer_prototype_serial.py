@@ -14,6 +14,7 @@ export.register_pytree_node_serialization(
     deserialize_auxdata=lambda x: cloudpickle.loads(x),
 )
 
+
 export.register_pytree_node_serialization(
     jd_sio.SimulatorMetaData,
     serialized_name="jd_sio.SimulatorMetaData",
@@ -21,8 +22,10 @@ export.register_pytree_node_serialization(
     deserialize_auxdata=lambda x: cloudpickle.loads(x),
 )
 
+
 def serialize_quaternion_aux(q: tuple):
     return bytes(cloudpickle.dumps(q))
+
 
 def deserialize_quaternion_aux(vec: tuple[jax.numpy.ndarray]):
     return cloudpickle.loads(vec)
@@ -31,6 +34,14 @@ def deserialize_quaternion_aux(vec: tuple[jax.numpy.ndarray]):
 export.register_pytree_node_serialization(
     jax_md.rigid_body.Quaternion,
     serialized_name="jax_md.rigid_body.Quaternion",
+    serialize_auxdata=serialize_quaternion_aux,
+    deserialize_auxdata=deserialize_quaternion_aux,
+)
+
+
+export.register_pytree_node_serialization(
+    jax_md.rigid_body.RigidBody,
+    serialized_name="jax_md.rigid_body.RigidBody",
     serialize_auxdata=serialize_quaternion_aux,
     deserialize_auxdata=deserialize_quaternion_aux,
 )
