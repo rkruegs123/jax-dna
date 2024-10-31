@@ -1,0 +1,12 @@
+run_name: oxdna2-pitch-straight-through-test-60bp-n25k-b25-c10
+n_steps_per_sim: 25000
+n_eq_steps: 10000
+sample_every: 100
+n_sims: 25
+target_pitch: 11.0
+n_iters: 200
+lr: 0.001
+n_skip_quartets: 5
+plot_every: 10
+slow_diffusion: False
+small_system: False
