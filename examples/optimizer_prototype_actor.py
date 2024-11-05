@@ -1,13 +1,11 @@
 import functools
 import time
 
-import cloudpickle
 import jax
 import jax.numpy as jnp
 import jax_md
 import ray
 import ray.runtime_env
-from jax import export
 
 import jax_dna.input.topology as topology
 import jax_dna.input.trajectory as trajectory
@@ -20,11 +18,15 @@ import jax_dna.observables as jd_obs
 import jax_dna.utils.types as jdt
 import jax_dna.simulators.jax_md as jmd
 import jax_dna.simulators.io as jd_sio
-from examples import optimizer_prototype_serial
+
+
+from examples import simulator_actor
+# from examples import optimizer_prototype_serial
+
 
 
 jax.config.update("jax_enable_x64", True)
-jax.config.update("jax_compilation_cache_dir", "/home/ryan/repos/jax-dna/examples/fn_cache")
+
 
 def main():
     topology_fname = "data/sys-defs/simple-helix/sys.top"
@@ -117,6 +119,7 @@ def main():
     )
 
 
+    @jax.jit
     def sim_fn(opt_params):
         prop_twist = jd_obs.propeller.PropellerTwist(
             rigid_body_transform_fn=transform_fn,
@@ -134,25 +137,18 @@ def main():
 
     ray.init(runtime_env={
         "env_vars": {"JAX_ENABLE_X64": "true"},
-        "py_modules":[optimizer_prototype_serial],
+        # "py_modules":[optimizer_prototype_serial],
     })
 
-    exported_f = export.export(jax.jit(sim_fn))(opt_params)
-    serialized_f: bytearray = exported_f.serialize()
-    gettable_f = ray.put(serialized_f)
-
     def wrapped_fn(opt_params):
-        jax.config.update(
-            "jax_compilation_cache_dir",
-            "/home/ryan/repos/jax-dna/examples/fn_cache"
-        )
-        import sys
-        if "examples.optimizer_prototype_serial" not in sys.modules:
-            from examples import optimizer_prototype_serial
+        # import sys
+        # if "examples.optimizer_prototype_serial" not in sys.modules:
+        #     from examples import optimizer_prototype_serial
 
+        return sim_fn(opt_params)
+        # return export.deserialize(ray.get(gettable_f)).call(opt_params)
 
-        return export.deserialize(ray.get(gettable_f)).call(opt_params)
-
+    runner = simulator_actor.SimulatorActor(f=wrapped_fn)
 
     n_local_runs = 3
     n_remote_runs = 3
@@ -164,13 +160,11 @@ def main():
         _ = wrapped_fn(opt_params)[1][0].rigid_body.center.block_until_ready()
         print("time: ", time.time() - start)
 
-    remote_simfn = ray.remote(wrapped_fn)
-    remote_simfn = remote_simfn.options()
 
     for i in range(n_remote_runs):
         print("Remote run", i, "=======================================================")
         start = time.time()
-        result = remote_simfn.remote(opt_params)
+        result = runner.remote(opt_params)
         _ = ray.get(result)
         print("time: ", time.time() - start)
 
@@ -179,7 +173,7 @@ def main():
     for i in range(n_reps):
         print(f"Parallel {n_jobs} runs {i} ==================================================")
         start = time.time()
-        result = ray.get([remote_simfn.remote(opt_params) for _ in range(n_jobs)])
+        result = ray.get([runner.remote(opt_params) for _ in range(n_jobs)])
         print("time: ", time.time() - start)
 
 
