@@ -146,12 +146,13 @@ def main():
     gettable_f = ray.put(serialized_f)
 
     def wrapped_fn(opt_params):
+        jax.config.update("jax_compilation_cache_dir", "/home/ryanhausen/repos/jax-dna/examples/f_cache_dir")
         import sys
         if "examples.optimizer_prototype_serial" not in sys.modules:
             from examples import optimizer_prototype_serial
 
-        return jitted_f(opt_params)
-        # return export.deserialize(ray.get(gettable_f)).call(opt_params)
+        # return jitted_f(opt_params)
+        return export.deserialize(ray.get(gettable_f)).call(opt_params)
 
 
     n_local_runs = 3
@@ -159,7 +160,6 @@ def main():
     n_reps_parallel_runs = 3, 2
 
     for i in range(n_local_runs):
-        print("cache intialized:", experimental.compilation_cache.compilation_cache.is_initialized())
         print("Local run", i, "=======================================================")
         start = time.time()
         _ = wrapped_fn(opt_params)[1][0].rigid_body.center.block_until_ready()
