@@ -114,7 +114,7 @@ def main():
         dna1_energy.CoaxialStacking,
     ]
 
-    n_steps = 5_000
+    n_steps = 1_000
 
     sampler = jmd.JaxMDSimulator(
         energy_configs=configs,
@@ -214,8 +214,8 @@ def main():
         if "examples.optimizer_prototype_serial" not in sys.modules:
             from examples import optimizer_prototype_serial
 
-        return jitted_f(opt_params)
-        # return export.deserialize(ray.get(gettable_f)).call(opt_params)
+        # return jitted_f(opt_params)
+        return export.deserialize(ray.get(gettable_f)).call(opt_params)
 
     remote_simfn = ray.remote(wrapped_fn)
     remote_simfn = remote_simfn.options()
