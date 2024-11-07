@@ -25,7 +25,24 @@ from examples import optimizer_prototype_serial
 
 
 jax.config.update("jax_enable_x64", True)
-jax.config.update("jax_compilation_cache_dir", "/home/ryanhausen/repos/jax-dna/examples/f_cache_dir")
+# jax.config.update(
+#     "jax_compilation_cache_dir",
+#     "/home/ryanhausen/repos/jax-dna/examples/fn_cache",
+# )
+
+import os
+# os.environ["JAX_LOG_COMPILES"] = "1"
+
+import logging
+logging.basicConfig(
+    filename="jax_log.log",
+    filemode="a",
+    format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
+    datefmt="%H:%M:%S",
+    level=logging.DEBUG,
+)
+
+logger = logging.getLogger(__name__)
 
 def main():
     topology_fname = "data/sys-defs/simple-helix/sys.top"
@@ -97,6 +114,8 @@ def main():
         dna1_energy.CoaxialStacking,
     ]
 
+    n_steps = 5_000
+
     sampler = jmd.JaxMDSimulator(
         energy_configs=configs,
         energy_fns=energy_fns,
@@ -105,8 +124,8 @@ def main():
             seq=seq,
             mass=mass,
             bonded_neighbors=top.bonded_neighbors,
-            n_steps=5_000,
-            checkpoint_every=0,
+            n_steps=n_steps,
+            checkpoint_every=100,
             dt=dt,
             kT=kT,
             gamma=gamma,
@@ -125,9 +144,10 @@ def main():
         )
 
         def curr_f(opts):
-            sim_traj, sim_meta = sampler.run(opts, init_body, 5_000, key)
+            sim_traj, sim_meta = sampler.run(opts, init_body, n_steps, key)
             return prop_twist(sim_traj).mean(), (sim_traj, sim_meta)
 
+        # consider this: https://github.com/jax-ml/jax/pull/762#issuecomment-1002267121?
         j, t = jax.jacfwd(curr_f, has_aux=True)(opt_params)
 
         return j, t
@@ -135,36 +155,67 @@ def main():
 
     # experimental.compilation_cache.compilation_cache.set_cache_dir("/home/ryanhausen/repos/jax-dna/examples/f_cache_dir")
     jitted_f = jax.jit(sim_fn)
-
-    ray.init(runtime_env={
-        "env_vars": {"JAX_ENABLE_X64": "true"},
-        "py_modules":[optimizer_prototype_serial],
-    })
-
     exported_f = export.export(jitted_f)(opt_params)
     serialized_f: bytearray = exported_f.serialize()
-    gettable_f = ray.put(serialized_f)
 
     def wrapped_fn(opt_params):
-        jax.config.update("jax_compilation_cache_dir", "/home/ryanhausen/repos/jax-dna/examples/f_cache_dir")
+        import logging
+        logging.basicConfig(
+            filename="jax_log.log",
+            filemode="a",
+            format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
+            datefmt="%H:%M:%S",
+            level=logging.DEBUG,
+        )
+
+        logger = logging.getLogger(__name__)
         import sys
         if "examples.optimizer_prototype_serial" not in sys.modules:
             from examples import optimizer_prototype_serial
 
-        # return jitted_f(opt_params)
-        return export.deserialize(ray.get(gettable_f)).call(opt_params)
+        return jitted_f(opt_params)
+        # return export.deserialize(serialized_f).call(opt_params)
 
 
-    n_local_runs = 3
-    n_remote_runs = 3
-    n_reps_parallel_runs = 3, 2
+    n_local_runs = 4
+    n_remote_runs = 4
+    n_reps_parallel_runs = 4, 2
 
     for i in range(n_local_runs):
         print("Local run", i, "=======================================================")
         start = time.time()
         _ = wrapped_fn(opt_params)[1][0].rigid_body.center.block_until_ready()
         print("time: ", time.time() - start)
+    print()
 
+
+
+    ray.init(runtime_env={
+        "env_vars": {
+            "JAX_ENABLE_X64": "true",
+            # "JAX_LOG_COMPILES": "1",
+        },
+        "py_modules":[optimizer_prototype_serial],
+    })
+    gettable_f = ray.put(serialized_f)
+
+    def wrapped_fn(opt_params):
+        import logging
+        logging.basicConfig(
+            filename="jax_log.log",
+            filemode="a",
+            format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
+            datefmt="%H:%M:%S",
+            level=logging.DEBUG,
+        )
+
+        logger = logging.getLogger(__name__)
+        import sys
+        if "examples.optimizer_prototype_serial" not in sys.modules:
+            from examples import optimizer_prototype_serial
+
+        return jitted_f(opt_params)
+        # return export.deserialize(ray.get(gettable_f)).call(opt_params)
 
     remote_simfn = ray.remote(wrapped_fn)
     remote_simfn = remote_simfn.options()
@@ -173,17 +224,28 @@ def main():
         print("Remote run", i, "=======================================================")
         start = time.time()
         result = remote_simfn.remote(opt_params)
-        _ = ray.get(result)
+        _ = ray.get(result)[1][0].rigid_body.center.block_until_ready()
         print("time: ", time.time() - start)
-
+    print()
 
     n_reps, n_jobs = n_reps_parallel_runs
     for i in range(n_reps):
         print(f"Parallel {n_jobs} runs {i} ==================================================")
         start = time.time()
         result = ray.get([remote_simfn.remote(opt_params) for _ in range(n_jobs)])
+        [r[1][0].rigid_body.center.block_until_ready() for r in result]
         print("time: ", time.time() - start)
+    print()
 
+    n_reps, n_jobs = n_reps_parallel_runs
+    n_jobs += 1
+    for i in range(n_reps):
+        print(f"Parallel {n_jobs} runs {i} ==================================================")
+        start = time.time()
+        result = ray.get([remote_simfn.remote(opt_params) for _ in range(n_jobs)])
+        [r[1][0].rigid_body.center.block_until_ready() for r in result]
+        print("time: ", time.time() - start)
+    print()
 
 if __name__=="__main__":
     main()
