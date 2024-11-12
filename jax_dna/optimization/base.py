@@ -1,3 +1,4 @@
+import dataclasses as dc
 import typing
 from typing import Any
 
@@ -12,9 +13,43 @@ import ray
 
 META_DATA = dict[str, Any]
 
+ERR_OBJECTIVE_NOT_READY = "Not all required observables have been obtained."
 
+
+@chex.dataclass(frozen=True)
 class Objective:
-    loss_fn: jdna_losses.LossFn
+    required_observables: list[str] = dc.field(default=None)
+    obtained_observables: list[tuple[str, tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData]]] = dc.field(default=None)
+    grad_fn: typing.Callable[[tuple[tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData], ...]], jdna_types.Grads] = dc.field(default=None)
+
+    @property
+    def is_ready(self) -> bool:
+        obtained_keys = [obs[0] for obs in self.obtained_observables]
+        return all([obs in obtained_keys for obs in self.required_observables])
+
+    def update(
+        self,
+        sim_results: list[tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData]],
+    ) -> "Objective":
+        new_obtained_observables = self.obtained_observables
+        for sim_result in sim_results:
+            sim_meta = sim_result[1]
+            for expose in sim_meta.exposes:
+                new_obtained_observables.append((expose, sim_result))
+        return self.replace(obtained_observables=new_obtained_observables)
+
+
+    # returns grads
+    def calculate(self) -> list[jdna_types.Grads]:
+        if not self.is_ready:
+            raise ValueError(ERR_OBJECTIVE_NOT_READY)
+
+        sorted_obs = list(map(
+            lambda x: x[1],
+            sorted(self.obtained_observables, key=lambda x: self.required_observables.index(x[0]),)
+        ))
+
+        return self.grad_fn(*sorted_obs)
 
 
 @ray.remote
@@ -45,9 +80,31 @@ class Optimization:
 
     def step(self) -> tuple["Optimization", list[jdna_types.Grads]]:
         # run the simulators
-        sim_results = [sim.run.remote() for sim, _ in self.simulators]
+        current_objectives = self.objectives
+        objectives_finished = [co.is_ready for co in current_objectives]
 
+        sim_results = [{meta.exposes:sim.run.remote()} for sim, meta in self.simulators]
+
+        completed_sims = []
         # wait for the simulators to finish
+        n_completed, n_runs = 0, len(sim_results)
+        while n_completed < n_runs:
+            # `done` is a list of object refs that are ready to collect.
+            #  `_` is a list of object refs that are not ready to collect.
+            print(sim_results)
+            done, _ = ray.wait(sim_results, num_returns=n_runs)
+            if done:
+                n_completed = len(done)
+                current_objectives = [co.update(done) for co in current_objectives]
+
+
+
+
+
+
+
+
+
 
         # collect the results and match them up to the objectives
         pass

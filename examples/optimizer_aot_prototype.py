@@ -44,6 +44,24 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+# obj_ref.task_id()).hex() should be the same for both
+def time_returns(getabble_items:list):
+    print("Input gettable items:", getabble_items)
+    start = time.time()
+    n_finished = 0
+    while n_finished < len(getabble_items):
+        done, running = ray.wait(
+            getabble_items,
+            num_returns=len(getabble_items),
+            timeout=1,
+        )
+        if done:
+            print("done:", done)
+        if len(done) != n_finished:
+            print(f"{len(done) - n_finished} done time: ", time.time() - start)
+            n_finished = len(done)
+
+
 def main():
     topology_fname = "data/sys-defs/simple-helix/sys.top"
     traj_fname = "data/sys-defs/simple-helix/bound_relaxed.conf"
@@ -181,12 +199,12 @@ def main():
     n_remote_runs = 4
     n_reps_parallel_runs = 4, 2
 
-    for i in range(n_local_runs):
-        print("Local run", i, "=======================================================")
-        start = time.time()
-        _ = wrapped_fn(opt_params)[1][0].rigid_body.center.block_until_ready()
-        print("time: ", time.time() - start)
-    print()
+    # for i in range(n_local_runs):
+    #     print("Local run", i, "=======================================================")
+    #     start = time.time()
+    #     _ = wrapped_fn(opt_params)[1][0].rigid_body.center.block_until_ready()
+    #     print("time: ", time.time() - start)
+    # print()
 
 
 
@@ -210,30 +228,30 @@ def main():
         )
 
         logger = logging.getLogger(__name__)
-        import sys
-        if "examples.optimizer_prototype_serial" not in sys.modules:
-            from examples import optimizer_prototype_serial
+        # import sys
+        # if "examples.optimizer_prototype_serial" not in sys.modules:
+        #     from examples import optimizer_prototype_serial
 
-        # return jitted_f(opt_params)
-        return export.deserialize(ray.get(gettable_f)).call(opt_params)
+        return jitted_f(opt_params)
+        # return export.deserialize(ray.get(gettable_f)).call(opt_params)
 
     remote_simfn = ray.remote(wrapped_fn)
     remote_simfn = remote_simfn.options()
 
-    for i in range(n_remote_runs):
-        print("Remote run", i, "=======================================================")
-        start = time.time()
-        result = remote_simfn.remote(opt_params)
-        _ = ray.get(result)[1][0].rigid_body.center.block_until_ready()
-        print("time: ", time.time() - start)
-    print()
+    # for i in range(n_remote_runs):
+    #     print("Remote run", i, "=======================================================")
+    #     start = time.time()
+    #     result = remote_simfn.remote(opt_params)
+    #     _ = ray.get(result)[1][0].rigid_body.center.block_until_ready()
+    #     print("time: ", time.time() - start)
+    # print()
 
     n_reps, n_jobs = n_reps_parallel_runs
     for i in range(n_reps):
         print(f"Parallel {n_jobs} runs {i} ==================================================")
         start = time.time()
-        result = ray.get([remote_simfn.remote(opt_params) for _ in range(n_jobs)])
-        [r[1][0].rigid_body.center.block_until_ready() for r in result]
+        time_returns([remote_simfn.remote(opt_params) for _ in range(n_jobs)])
+        # result = ray.get([remote_simfn.remote(opt_params) for _ in range(n_jobs)])
         print("time: ", time.time() - start)
     print()
 
@@ -242,8 +260,7 @@ def main():
     for i in range(n_reps):
         print(f"Parallel {n_jobs} runs {i} ==================================================")
         start = time.time()
-        result = ray.get([remote_simfn.remote(opt_params) for _ in range(n_jobs)])
-        [r[1][0].rigid_body.center.block_until_ready() for r in result]
+        time_returns([remote_simfn.remote(opt_params) for _ in range(n_jobs)])
         print("time: ", time.time() - start)
     print()
 

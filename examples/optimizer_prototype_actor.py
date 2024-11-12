@@ -23,6 +23,17 @@ import jax_dna.simulators.io as jd_sio
 from examples import simulator_actor
 # from examples import optimizer_prototype_serial
 
+import logging
+logging.basicConfig(
+    filename="jax_log.log",
+    filemode="a",
+    format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
+    datefmt="%H:%M:%S",
+    level=logging.DEBUG,
+)
+
+logger = logging.getLogger(__name__)
+
 
 
 jax.config.update("jax_enable_x64", True)
@@ -145,6 +156,17 @@ def main():
         # if "examples.optimizer_prototype_serial" not in sys.modules:
         #     from examples import optimizer_prototype_serial
 
+        import logging
+        logging.basicConfig(
+            filename="jax_log.log",
+            filemode="a",
+            format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
+            datefmt="%H:%M:%S",
+            level=logging.DEBUG,
+        )
+
+        logger = logging.getLogger(__name__)
+
         return sim_fn(opt_params)
         # return export.deserialize(ray.get(gettable_f)).call(opt_params)
 
@@ -169,12 +191,12 @@ def main():
         print("time: ", time.time() - start)
 
 
-    n_reps, n_jobs = n_reps_parallel_runs
-    for i in range(n_reps):
-        print(f"Parallel {n_jobs} runs {i} ==================================================")
-        start = time.time()
-        result = ray.get([runner.remote(opt_params) for _ in range(n_jobs)])
-        print("time: ", time.time() - start)
+    # n_reps, n_jobs = n_reps_parallel_runs
+    # for i in range(n_reps):
+    #     print(f"Parallel {n_jobs} runs {i} ==================================================")
+    #     start = time.time()
+    #     result = ray.get([runner.remote(opt_params) for _ in range(n_jobs)])
+    #     print("time: ", time.time() - start)
 
 
 if __name__=="__main__":
