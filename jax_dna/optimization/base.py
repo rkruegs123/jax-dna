@@ -1,4 +1,5 @@
 import dataclasses as dc
+import itertools
 import typing
 from typing import Any
 
@@ -19,6 +20,7 @@ ERR_OBJECTIVE_NOT_READY = "Not all required observables have been obtained."
 @chex.dataclass(frozen=True)
 class Objective:
     required_observables: list[str] = dc.field(default=None)
+    needed_observables: list[str] = dc.field(default=None)
     obtained_observables: list[tuple[str, tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData]]] = dc.field(default=None)
     grad_fn: typing.Callable[[tuple[tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData], ...]], jdna_types.Grads] = dc.field(default=None)
 
@@ -79,11 +81,17 @@ class Optimization:
         pass
 
     def step(self) -> tuple["Optimization", list[jdna_types.Grads]]:
-        # run the simulators
+        # get the currently needed observables
         current_objectives = self.objectives
+
+        # some objectives might use difftre and not actually need something rerun
+        # so check which objectives have observables that need to be run
         objectives_finished = [co.is_ready for co in current_objectives]
 
-        sim_results = [{meta.exposes:sim.run.remote()} for sim, meta in self.simulators]
+        need_observables = itertools.chain.from_iterable([co.needed_observables for co in current_objectives])
+        needed_simulators = [sim for sim in self.simulators if set(sim.exposes)^set(need_observables)]
+
+        sim_results = [{sim.exposes:sim.run.remote()} for sim in needed_simulators]
 
         completed_sims = []
         # wait for the simulators to finish
@@ -91,7 +99,6 @@ class Optimization:
         while n_completed < n_runs:
             # `done` is a list of object refs that are ready to collect.
             #  `_` is a list of object refs that are not ready to collect.
-            print(sim_results)
             done, _ = ray.wait(sim_results, num_returns=n_runs)
             if done:
                 n_completed = len(done)
