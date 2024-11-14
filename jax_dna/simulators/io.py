@@ -15,6 +15,7 @@ class SimulatorMetaData:
     seq_oh: jnp.ndarray
     strand_lengths: list[int]
     grads: jax_md.rigid_body.RigidBody | None = None
+    exposes: list[str] = dc.field(default_factory=list)
     misc_data: dict[str, Any] = dc.field(default_factory=dict)
 
     def slice(self, key: int | slice) -> "SimulatorMetaData":
@@ -42,6 +43,7 @@ class SimulatorTrajectory:
     """A trajectory of a simulation run."""
 
     rigid_body: jax_md.rigid_body.RigidBody
+    location: str
 
     def slice(self, key: int | slice) -> "SimulatorTrajectory":
         """Slice the trajectory."""

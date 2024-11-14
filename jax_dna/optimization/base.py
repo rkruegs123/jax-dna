@@ -67,6 +67,13 @@ class SimulatorActor:
         return sim_traj, sim_meta, self.meta_data
 
 
+def split_by_ready(objectives: list[Objective]) -> tuple[list[Objective], list[Objective]]:
+    not_ready =  list(itertools.filterfalse(lambda x: x.is_ready, objectives))
+    ready = list(filter(lambda x: not x.is_ready, objectives))
+
+    return ready, not_ready
+
+
 @chex.dataclass(frozen=True)
 class Optimization:
     energy_fns: list[jdna_energy.BaseEnergyFunction]
@@ -82,46 +89,39 @@ class Optimization:
 
     def step(self) -> tuple["Optimization", list[jdna_types.Grads]]:
         # get the currently needed observables
-        current_objectives = self.objectives
-
         # some objectives might use difftre and not actually need something rerun
         # so check which objectives have observables that need to be run
-        objectives_finished = [co.is_ready for co in current_objectives]
+        ready_objectives, not_ready_objectives = split_by_ready(self.objectives)
 
-        need_observables = itertools.chain.from_iterable([co.needed_observables for co in current_objectives])
-        needed_simulators = [sim for sim in self.simulators if set(sim.exposes)^set(need_observables)]
+        grad_refs = [objective.calculate.remote() for objective in ready_objectives]
+
+        need_observables = itertools.chain.from_iterable([co.needed_observables for co in not_ready_objectives])
+        needed_simulators = [sim for sim in self.simulators if set(sim.exposes) & set(need_observables)]
 
         sim_results = [{sim.exposes:sim.run.remote()} for sim in needed_simulators]
 
-        completed_sims = []
         # wait for the simulators to finish
-        n_completed, n_runs = 0, len(sim_results)
-        while n_completed < n_runs:
+        n_runs = len(sim_results)
+        while not_ready_objectives:
             # `done` is a list of object refs that are ready to collect.
             #  `_` is a list of object refs that are not ready to collect.
             done, _ = ray.wait(sim_results, num_returns=n_runs)
             if done:
-                n_completed = len(done)
-                current_objectives = [co.update(done) for co in current_objectives]
+                updated_objectives = [objective.update(done) for objective in not_ready_objectives]
+                ready, not_ready_objectives = split_by_ready(updated_objectives)
+                grad_refs += [objective.calculate.remote() for objective in ready]
 
+        grads = ray.get(grad_refs)
 
+        return self.post_step(), grads
 
-
-
-
-
-
-
-
-        # collect the results and match them up to the objectives
+    def update_params(self, params: jdna_types.Params, grads: jdna_types.Grads) -> jdna_types.Params:
+        # aggregate function?
         pass
 
-    def update_params(params: jdna_types.Params, grads: jdna_types.Grads) -> jdna_types.Params:
-        # aggregate function
-        pass
-
-    def post_step() -> Any:
-        pass
+    def post_step(self,) -> "Optimization":
+        objectives = [objective.post_step() for objective in self.objectives]
+        return self.replace(objectives=objectives)
 
 
 if __name__ == "__main__":
