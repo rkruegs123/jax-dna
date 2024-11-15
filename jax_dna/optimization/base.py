@@ -99,7 +99,7 @@ class Optimization:
         needed_simulators = [sim for sim in self.simulators if set(sim.exposes) & set(need_observables)]
 
         sim_remotes = [sim.run.remote() for sim in needed_simulators]
-        sims = {sr.task_id().hex():sim.exposes for sr, sim in zip(sim_remotes, needed_simulators)}
+        simid_exposes = {sr.task_id().hex():sim.exposes for sr, sim in zip(sim_remotes, needed_simulators)}
 
         # wait for the simulators to finish
         n_runs = len(sim_remotes)
@@ -108,7 +108,7 @@ class Optimization:
             #  `_` is a list of object refs that are not ready to collect.
             done, _ = ray.wait(sim_remotes, num_returns=n_runs)
             if done:
-                captured_results = {sims[d.task_id().hex()]:ray.get(d) for d in done}
+                captured_results = {simid_exposes[d.task_id().hex()]:ray.get(d) for d in done}
                 updated_objectives = [objective.update(captured_results) for objective in not_ready_objectives]
                 ready, not_ready_objectives = split_by_ready(updated_objectives)
                 grad_refs += [objective.calculate.remote() for objective in ready]

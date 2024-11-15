@@ -1,11 +1,11 @@
+import dataclasses as dc
+import itertools
+import typing
 
 import chex
-import dataclasses as dc
 import jax
 import jax_md
 import ray
-import typing
-
 
 import jax_dna.simulators.base as jdna_simulators
 import jax_dna.simulators.io as jdna_sio
@@ -33,11 +33,17 @@ class Objective:
         sim_results: list[tuple[list[str], jdna_sio.SimulatorTrajectory]],
     ) -> "Objective":
         new_obtained_observables = self.obtained_observables
-        for sim_result in sim_results:
-            sim_meta = sim_result[1]
-            for expose in sim_meta.exposes:
-                new_obtained_observables.append((expose, sim_result))
-        return self.replace(obtained_observables=new_obtained_observables)
+        currently_needed_observables = set(self.needed_observables)
+
+        for sim_exposes, sim_output in sim_results:
+            for exposed in filter(lambda e: e in currently_needed_observables, sim_exposes):
+                new_obtained_observables.append((exposed, sim_output))
+                currently_needed_observables.remove(exposed)
+
+        return self.replace(
+            obtained_observables=new_obtained_observables,
+            needed_observables=list(currently_needed_observables),
+        )
 
 
     # returns grads
