@@ -1,0 +1,186 @@
+# Tom's thesis, oxDNA 1.0
+
+# FENE
+[fene]
+eps_backbone = 2.0
+delta_backbone = 0.25
+r0_backbone = 0.7525
+
+
+# Excluded volume
+[excluded_volume]
+eps_exc = 2.0
+
+## f3(dr_backbone)
+sigma_backbone = 0.70
+dr_star_backbone = 0.675
+
+## f3(dr_base)
+sigma_base = 0.33
+dr_star_base = 0.32
+
+## f3(dr_back_base)
+sigma_back_base = 0.515
+dr_star_back_base = 0.50
+
+## f3(dr_base_back)
+sigma_base_back = 0.515
+dr_star_base_back = 0.50
+
+
+# Stacking
+[stacking]
+
+## f1(dr_stack)
+eps_stack_base = 1.3448
+eps_stack_kt_coeff = 2.6568
+a_stack = 6.0
+dr0_stack = 0.4
+dr_c_stack = 0.9
+dr_low_stack = 0.32
+dr_high_stack = 0.75
+
+## f4(theta_4)
+a_stack_4 = 1.30
+theta0_stack_4 = 0.0
+delta_theta_star_stack_4 = 0.8
+
+## f4(theta_5p)
+a_stack_5 = 0.90
+theta0_stack_5 = 0.0
+delta_theta_star_stack_5 = 0.95
+
+## f4(theta_6p)
+a_stack_6 = 0.90
+theta0_stack_6 = 0.0
+delta_theta_star_stack_6 = 0.95
+
+## f5(-cos(phi1))
+a_stack_1 = 2.00
+neg_cos_phi1_star_stack = -0.65
+
+## f5(-cos(phi2))
+a_stack_2 = 2.00
+neg_cos_phi2_star_stack = -0.65
+
+
+# Hydrogen Bonding
+[hydrogen_bonding]
+
+## f1(dr_hb)
+eps_hb = 1.077
+a_hb = 8.0
+dr0_hb = 0.4
+dr_c_hb = 0.75
+dr_low_hb = 0.34
+dr_high_hb = 0.70
+
+## f4(theta_1)
+a_hb_1 = 1.50
+theta0_hb_1 = 0.0
+delta_theta_star_hb_1 = 0.70
+
+## f4(theta_2)
+a_hb_2 = 1.50
+theta0_hb_2 = 0.0
+delta_theta_star_hb_2 = 0.70
+
+## f4(theta_3)
+a_hb_3 = 1.50
+theta0_hb_3 = 0.0
+delta_theta_star_hb_3 = 0.70
+
+## f4(theta_4)
+a_hb_4 = 0.46
+theta0_hb_4 = 3.141592653589 # FIXME: pi
+delta_theta_star_hb_4 = 0.70
+
+## f4(theta_7)
+a_hb_7 = 4.0
+theta0_hb_7 = 1.57079632679 # FIXME: pi / 2
+delta_theta_star_hb_7 = 0.45
+
+## f4(theta_8)
+a_hb_8 = 4.0
+theta0_hb_8 = 1.57079632679 # FIXME: pi / 2
+delta_theta_star_hb_8 = 0.45
+
+
+# Cross Stacking
+[cross_stacking]
+
+## f2(dr_cross) # FIXME: is the _hb a typo? (in Tom's thesis, called f2(dr_hb)
+k_cross = 47.5
+r0_cross = 0.575
+dr_c_cross = 0.675
+dr_low_cross = 0.495
+dr_high_cross = 0.655
+
+## f4(theta_1)
+a_cross_1 = 2.25
+theta0_cross_1 = 0.791592653 # FIXME: pi - 2.35
+delta_theta_star_cross_1 = 0.58
+
+## f4(theta_2)
+a_cross_2 = 1.70
+theta0_cross_2 = 1.00
+delta_theta_star_cross_2 = 0.68
+
+## f4(theta_3)
+a_cross_3 = 1.70
+theta0_cross_3 = 1.00
+delta_theta_star_cross_3 = 0.68
+
+## f4(theta_4) + f4(pi - theta_4)
+a_cross_4 = 1.50
+theta0_cross_4 = 0.0
+delta_theta_star_cross_4 = 0.65
+
+## f4(theta_7) + f4(pi - theta_7)
+a_cross_7 = 1.70
+theta0_cross_7 = 0.875
+delta_theta_star_cross_7 = 0.68
+
+## f4(theta_8) + f4(pi - theta_8)
+a_cross_8 = 1.70
+theta0_cross_8 = 0.875
+delta_theta_star_cross_8 = 0.68
+
+
+# Coaxial Stacking
+[coaxial_stacking]
+
+## f2(dr_coax)
+k_coax = 46.0
+dr0_coax = 0.4
+dr_c_coax = 0.6
+dr_low_coax = 0.22
+dr_high_coax = 0.58
+
+## f4(theta_4)
+a_coax_4 = 1.30
+theta0_coax_4 = 0.0
+delta_theta_star_coax_4 = 0.8
+
+## f4(theta_1) + f4(2*pi - theta_1)
+a_coax_1 = 2.00
+theta0_coax_1 = 2.54159265 # FIXME: pi - 0.60
+delta_theta_star_coax_1 = 0.65
+
+## f4(theta_5) + f4(pi - theta_5)
+a_coax_5 = 0.90
+theta0_coax_5 = 0.0
+delta_theta_star_coax_5 = 0.95
+
+## f4(theta_6) + f4(pi - theta_6)
+a_coax_6 = 0.90
+theta0_coax_6 = 0.0
+delta_theta_star_coax_6 = 0.95
+
+## f5(cos(phi3))
+a_coax_3p = 2.0
+cos_phi3_star_coax = -0.65
+
+## f5(cos(phi4))
+a_coax_4p = 2.0
+cos_phi4_star_coax = -0.65

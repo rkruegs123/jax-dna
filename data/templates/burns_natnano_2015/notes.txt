@@ -1,0 +1,4 @@
+Design taken from nanobase.org -- https://nanobase.org/structure/13
+
+Relates to Nature Nanotechnology:
+- Citation: Burns, J., Seifert, A., Fertig, N. et al. A biomimetic DNA-based channel for the ligand-controlled transport of charged molecular cargo across a biological membrane. Nature Nanotech 11, 152–156 (2016).

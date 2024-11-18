@@ -1,0 +1,103 @@
+
+units lj
+
+dimension 3
+
+newton off
+
+boundary  p p p
+
+atom_style hybrid bond ellipsoid oxdna
+atom_modify sort 0 1.0
+
+# Pair interactions require lists of neighbours to be calculated
+neighbor 1.0 bin
+neigh_modify every 1 delay 0 check yes
+
+read_data data
+
+set atom * mass 3.1575
+
+group all type 1 4
+
+# oxDNA bond interactions - FENE backbone
+bond_style oxdna2/fene
+bond_coeff * 2.0 0.25 0.7564
+special_bonds lj 0 1 1
+
+# oxDNA pair interactions
+pair_style hybrid/overlay oxdna2/excv oxdna2/stk oxdna2/hbond oxdna2/xstk oxdna2/coaxstk oxdna2/dh
+pair_coeff * * oxdna2/excv 2.0 0.7 0.675 2.0 0.515 0.5 2.0 0.33 0.32
+pair_coeff * * oxdna2/stk seqdep 0.1 1.3523 2.6717 6.0 0.4 0.9 0.32 0.6 1.3 0 0.8 0.9 0 0.95 0.9 0 0.95 2.0 0.65 2.0 0.65
+pair_coeff * * oxdna2/hbond seqdep 0.0 8.0 0.4 0.75 0.34 0.7 1.5 0 0.7 1.5 0 0.7 1.5 0 0.7 0.46 3.141592653589793 0.7 4.0 1.5707963267948966 0.45 4.0 1.5707963267948966 0.45
+pair_coeff 1 4 oxdna2/hbond seqdep 1.0678 8.0 0.4 0.75 0.34 0.7 1.5 0 0.7 1.5 0 0.7 1.5 0 0.7 0.46 3.141592653589793 0.7 4.0 1.5707963267948966 0.45 4.0 1.5707963267948966 0.45
+pair_coeff 2 3 oxdna2/hbond seqdep 1.0678 8.0 0.4 0.75 0.34 0.7 1.5 0 0.7 1.5 0 0.7 1.5 0 0.7 0.46 3.141592653589793 0.7 4.0 1.5707963267948966 0.45 4.0 1.5707963267948966 0.45
+pair_coeff * * oxdna2/xstk 47.5 0.575 0.675 0.495 0.655 2.25 0.791592653589793 0.58 1.7 1.0 0.68 1.7 1.0 0.68 1.5 0 0.65 1.7 0.875 0.68 1.7 0.875 0.68
+pair_coeff * * oxdna2/coaxstk 58.5 0.4 0.6 0.22 0.58 2.0 2.891592653589793 0.65 1.3 0 0.8 0.9 0 0.95 0.9 0 0.95 40.0 3.116592653589793
+pair_coeff * * oxdna2/dh 0.1 0.15 0.815
+
+#fix 1 all nve/dot
+fix 1 all nve/dotc/langevin 0.1 0.1 100.0 30362 angmom 1000
+#fix 1 all nve/asphere
+#fix 2 all langevin 0.1 0.1 0.03 457145 angmom 10
+
+timestep 0.01
+
+
+# Added by RK
+compute hbondEnergy all pair oxdna2/hbond
+compute excvEnergy all pair oxdna2/excv
+compute stkEnergy all pair oxdna2/stk
+compute xstkEnergy all pair oxdna2/xstk
+compute coaxstkEnergy all pair oxdna2/coaxstk
+compute dhEnergy all pair oxdna2/dh
+compute quat all property/atom quatw quati quatj quatk
+# End: added by RK
+
+compute		xu all property/atom xu
+compute		yu all property/atom yu
+variable	dx equal -0.5*(c_xu[39]+c_xu[42])
+variable	dy equal -0.5*(c_yu[39]+c_yu[42])
+thermo_style	custom v_dx v_dy
+run		0
+displace_atoms	all move v_dx v_dy 0 units box
+thermo_style	one
+
+group           blockA1 id <= 2
+group           blockA2 id >= 79
+group		blockA union blockA1 blockA2
+group           fB id 39 42
+group		torque id <> 39 42
+fix 		tetherA blockA spring/self 1217.58 xyz
+variable	fxB equal -1217.58*(c_xu[39]+c_xu[42])
+variable	fyB equal -1217.58*(c_yu[39]+c_yu[42])
+fix             fB fB addforce v_fxB v_fyB 0.0205634 ## 2pN/2 = 1pN
+fix             torque torque addtorque 0 0 0.241412 ## 10 pN·nm
+
+variable        tns equal time*3.03e-3
+variable        cpuh equal cpuremain/3600
+thermo_style    custom v_tns temp evdwl ecoul ebond eangle edihed pe v_cpuh
+thermo		660
+
+timestep	0.01
+dump            coord all custom 660 dump.lammpstrj id type xu yu zu
+dump_modify	coord sort id
+
+
+# Changed by RK to permit conversion via TacoxDNA
+dump 4 all custom 660 filename.dat & 
+    id mol type x y z ix iy iz vx vy vz &
+    c_quat[1] c_quat[2] c_quat[3] c_quat[4] &
+    angmomx angmomy angmomz
+dump_modify 4 sort id
+dump_modify 4 format line "&
+    %d %d %d %22.15le %22.15le %22.15le &
+    %d %d %d %22.15le %22.15le %22.15le &
+    %22.15le %22.15le %22.15le %22.15le &
+    %22.15le %22.15le %22.15le"
+
+
+run 		6600660
+
+shell           touch end
+
