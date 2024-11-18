@@ -51,7 +51,7 @@ for width, height in [(20, 14), (24, 14), (28, 14)]:
         ax.axhline(y=target, linewidth=3, linestyle="--", color=color_map[target])
 
     ax.set_xlabel("Iteration")
-    ax.set_ylabel("Lp (nm)")
+    ax.set_ylabel("Lps (nm)")
 
     # y_vals = [10.5, 11, 11.5, 12]
     # ax.set_yticks(y_vals)
@@ -63,7 +63,7 @@ for width, height in [(20, 14), (24, 14), (28, 14)]:
     ax.set_ylim(top=45)
 
     # leg = ax.legend(title="Target Lp (nm)", prop={'size': 35}, loc="upper left")
-    leg = ax.legend(title="Target Lp (nm)", prop={'size': 35})
+    leg = ax.legend(title="Target Lps (nm)", prop={'size': 35})
     # change the line width for the legend
     for line in leg.get_lines():
         line.set_linewidth(5.0)

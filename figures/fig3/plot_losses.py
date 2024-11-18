@@ -52,7 +52,7 @@ for optimizer in ["rmsprop", "adam", "optimal"]:
             ax.scatter(fin_ref_iters, fin_ref_pitches, color=colors[name], s=100)
 
         ax.set_xlabel("Iteration")
-        ax.set_ylabel("Pitch")
+        ax.set_ylabel("Pitch (bp/turn)")
 
         y_vals = [10.5, 11, 11.5, 12]
         ax.set_yticks(y_vals)
