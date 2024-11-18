@@ -6,6 +6,7 @@ To install jax-md rigid body check in locally, do FIXME. Must have this to run c
 
 ## Misc. Notes
 
+Submitted.
 
 August 13, 2023
 
