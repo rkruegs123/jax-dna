@@ -35,3 +35,4 @@ ARR_OR_SCALAR = Arr_N | Scalar
 
 Grads = jaxtyp.PyTree
 Params = jaxtyp.PyTree | dict[str, jaxtyp.PyTree]
+PyTree = jaxtyp.PyTree
