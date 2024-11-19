@@ -26,10 +26,6 @@ def split_by_ready(
     return ready, not_ready
 
 
-def tree_mean(trees: list[jax.tree_util.PyTree]) -> jax.tree_util.PyTree:
-    return jax.tree_util.tree_multimap(lambda *x: sum(x) / len(x), *trees)
-
-
 @chex.dataclass(frozen=True)
 class Optimization:
     objectives: list[sim_actor.Objective]

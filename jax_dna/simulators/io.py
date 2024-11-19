@@ -43,7 +43,7 @@ class SimulatorTrajectory:
     """A trajectory of a simulation run."""
 
     rigid_body: jax_md.rigid_body.RigidBody
-    location: str
+    location: str | None = None
 
     def slice(self, key: int | slice) -> "SimulatorTrajectory":
         """Slice the trajectory."""

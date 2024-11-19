@@ -23,7 +23,8 @@ def default_configs(overrides: dict = {}, opts: dict = {}):
         # jax_dna/
         .parent.parent.parent
         # jax_dna/input/dna1
-        .joinpath("input").joinpath("dna1")
+        .joinpath("input")
+        .joinpath("dna1")
     )
 
     default_sim_config = toml.parse_toml(config_dir.joinpath("default_simulation.toml"))
@@ -38,8 +39,7 @@ def default_configs(overrides: dict = {}, opts: dict = {}):
             get_param("bonded_excluded_volume"), get_opts("bonded_excluded_volume")
         ),
         StackingConfiguration.from_dict(
-            get_param("stacking") | {"kt": overrides.get("kT",default_sim_config["kT"])},
-            get_opts("stacking")
+            get_param("stacking") | {"kt": overrides.get("kT", default_sim_config["kT"])}, get_opts("stacking")
         ),
         UnbondedExcludedVolumeConfiguration.from_dict(get_param("unbonded_excluded_volume")),
         HydrogenBondingConfiguration.from_dict(get_param("hydrogen_bonding"), get_opts("hydrogen_bonding")),

@@ -110,6 +110,27 @@ if __name__=="__main__":
 
     sim_fn = jax.jit(lambda opts: sampler.run(opts, init_body, 5_000, key))
 
+
+    def compute_obs(opts):
+        return jd_obs.propeller.PropellerTwist(
+            rigid_body_transform_fn=transform_fn,
+            h_bonded_base_pairs=jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
+        )(sim_fn(opts)[0])
+
+    def dobs_dopts(opts):
+        return jax.jacfwd(compute_obs)(opts)
+
+
+    print("dobs_dopts")
+    outs = dobs_dopts(opt_params)
+    print(outs)
+    print(outs.shape)
+
+    import sys
+    sys.exit()
+
+
+
     sim_out  = sim_fn(opt_params)
 
     twists = jd_obs.propeller.PropellerTwist(

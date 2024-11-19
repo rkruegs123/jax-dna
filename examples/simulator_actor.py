@@ -70,17 +70,16 @@ class Objective:
         return self.grad_fn(*sorted_obs)
 
 
-
 @ray.remote
 class SimulatorActor:
-    def __init__(self, simulator: jdna_simulators.BaseSimulation, meta_data: META_DATA):
+    def __init__(self, simulator: jdna_simulators.BaseSimulation, meta_data: dict[str, typing.Any]):
         self.simulator = simulator
         self.meta_data = meta_data
 
     def run(
         self,
         params: jdna_types.Params,
-    ) -> tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData, META_DATA]:
+    ) -> tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData, dict[str, typing.Any]]:
         sim_traj, sim_meta = self.simulator.run(params, self.meta_data)
         return sim_traj, sim_meta, self.meta_data
 
