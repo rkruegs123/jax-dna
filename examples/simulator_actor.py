@@ -16,12 +16,20 @@ jax.config.update("jax_enable_x64", True)
 
 ERR_OBJECTIVE_NOT_READY = "Not all required observables have been obtained."
 
-@chex.dataclass(frozen=True)
+@ray.remote
 class Objective:
-    required_observables: list[str] = dc.field(default=None)
-    needed_observables: list[str] = dc.field(default=None)
-    obtained_observables: list[tuple[str, tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData]]] = dc.field(default=None)
-    grad_fn: typing.Callable[[tuple[tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData], ...]], jdna_types.Grads] = dc.field(default=None)
+
+    def __init__(
+        self,
+        required_observables:list[str],
+        needed_observables:list[str],
+        grad_fn:typing.Callable[[tuple[tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData], ...]], jdna_types.Grads]
+    ):
+        self.required_observables = required_observables
+        self.needed_observables = needed_observables
+        self.grad_fn = grad_fn
+        self.obtained_observables = []
+
 
     @property
     def is_ready(self) -> bool:
@@ -30,7 +38,7 @@ class Objective:
 
     def update(
         self,
-        sim_results: list[tuple[list[str], jdna_sio.SimulatorTrajectory]],
+        sim_results: list[tuple[list[str], typing.Any]],
     ) -> "Objective":
         new_obtained_observables = self.obtained_observables
         currently_needed_observables = set(self.needed_observables)
@@ -44,6 +52,9 @@ class Objective:
             obtained_observables=new_obtained_observables,
             needed_observables=list(currently_needed_observables),
         )
+
+    def latest_values(self) -> list[jdna_types.Observables]:
+        return list(map(lambda x: x[1], self.obtained_observables))
 
 
     # returns grads
@@ -67,7 +78,8 @@ class SimulatorActor:
         self.meta_data = meta_data
 
     def run(
-        self, params: jdna_types.Params
+        self,
+        params: jdna_types.Params,
     ) -> tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData, META_DATA]:
         sim_traj, sim_meta = self.simulator.run(params, self.meta_data)
         return sim_traj, sim_meta, self.meta_data

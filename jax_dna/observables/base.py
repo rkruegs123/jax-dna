@@ -16,8 +16,3 @@ class BaseObservable:
 
     def __call__(self, trajectory: jd_sio.SimulatorTrajectory) -> jnp.ndarray:
         """Calculate the observable."""
-
-
-
-
-
