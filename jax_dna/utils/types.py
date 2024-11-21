@@ -2,6 +2,7 @@
 
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 import jaxtyping as jaxtyp
 
@@ -33,6 +34,7 @@ Arr_States_3 = jaxtyp.Int[jaxtyp.Array, "#n_states 3"]
 
 ARR_OR_SCALAR = Arr_N | Scalar
 
+MetaData = dict[str, Any]
 Grads = jaxtyp.PyTree
 Params = jaxtyp.PyTree | dict[str, jaxtyp.PyTree]
 PyTree = jaxtyp.PyTree

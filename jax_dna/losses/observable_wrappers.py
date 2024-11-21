@@ -47,3 +47,7 @@ class ObservableLossFn:
             vals.append(observable)
 
         return tuple(vals)
+
+
+def l2_loss(actual: jnp.ndarray, target: jnp.ndarray) -> float:
+    return jnp.sum((actual - target) ** 2)

@@ -12,6 +12,7 @@ import jax_dna.losses.observable_wrappers as jdna_losses
 import jax_dna.simulators.base as jdna_simulators
 import jax_dna.simulators.io as jdna_sio
 import jax_dna.utils.types as jdna_types
+import optax
 import ray
 
 META_DATA = dict[str, Any]
@@ -31,6 +32,8 @@ class Optimization:
     objectives: list[sim_actor.Objective]
     simulators: list[tuple[sim_actor.SimulatorActor, META_DATA]]
     aggregate_grad_fn: typing.Callable[[list[jdna_types.Grads]], jdna_types.Grads]
+    optimizer: optax.GradientTransformation
+    optimizer_state: optax.OptState | None = None
 
     def __post_init__(self):
         # check that the energy functions and configurations are compatible
@@ -63,23 +66,22 @@ class Optimization:
                 ready, not_ready_objectives = split_by_ready(updated_objectives)
                 grad_refs += [objective.calculate.remote() for objective in ready]
 
-        grads = ray.get(grad_refs)
+        grads = self.aggregate_grad_fn(ray.get(grad_refs))
 
-        return self.post_step(), grads
+        if self.optimizer_state is None:
+            opt_state = self.optimizer.init(params)
+        else:
+            opt_state = self.optimizer_state
 
-    def update_params(
-        self,
-        params: jdna_types.Params,
-        grads: list[jdna_types.Grads],
-    ) -> jdna_types.Params:
-        """"""
+        updates, opt_state = self.optimizer.update(grads, opt_state, params)
+        new_params = optax.apply_updates(params, updates)
 
-        pass
+        return self.post_step(opt_state), new_params
 
     def post_step(
         self,
-    ) -> "Optimization":
+        optimizer_state: optax.OptState,
+    ) -> None:
         """"""
-        for objective in self.objectives:
-            objective.post_step.remote()
-        return self
+        _ = ray.get([o.post_step.remote() for o in self.objectives])
+        return self.replace(optimizer_state=optimizer_state)

@@ -1,5 +1,6 @@
 import dataclasses as dc
 import itertools
+from pathlib import Path
 import typing
 
 import chex
@@ -31,15 +32,17 @@ class Objective:
         self.obtained_observables = []
 
 
+
     @property
     def is_ready(self) -> bool:
         obtained_keys = [obs[0] for obs in self.obtained_observables]
         return all([obs in obtained_keys for obs in self.required_observables])
 
+
     def update(
         self,
         sim_results: list[tuple[list[str], typing.Any]],
-    ) -> "Objective":
+    ) -> None:
         new_obtained_observables = self.obtained_observables
         currently_needed_observables = set(self.needed_observables)
 
@@ -48,13 +51,8 @@ class Objective:
                 new_obtained_observables.append((exposed, sim_output))
                 currently_needed_observables.remove(exposed)
 
-        return self.replace(
-            obtained_observables=new_obtained_observables,
-            needed_observables=list(currently_needed_observables),
-        )
-
-    def latest_values(self) -> list[jdna_types.Observables]:
-        return list(map(lambda x: x[1], self.obtained_observables))
+        self.obtained_observables = new_obtained_observables
+        self.needed_observables = list(currently_needed_observables)
 
 
     # returns grads
@@ -67,21 +65,55 @@ class Objective:
             sorted(self.obtained_observables, key=lambda x: self.required_observables.index(x[0]),)
         ))
 
-        return self.grad_fn(*sorted_obs)
+        grads, loss = self.grad_fn(*sorted_obs)
+
+        self.obtained_observables.append([
+            ("loss", loss),
+            *self.obtained_observables
+        ])
+
+        return grads
+
+
+    def post_step(self) -> "Objective":
+        self.needed_observables = self.required_observables
+
+
+
 
 
 @ray.remote
 class SimulatorActor:
-    def __init__(self, simulator: jdna_simulators.BaseSimulation, meta_data: dict[str, typing.Any]):
-        self.simulator = simulator
+    def __init__(
+        self,
+        fn: typing.Callable[[jdna_types.Params, jdna_types.MetaData], tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData]],
+        exposes: list[str],
+        meta_data: dict[str, typing.Any],
+        write_to: tuple[jdna_types.PathOrStr,...]|None = None,
+        writer_fn: typing.Callable[[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData, jdna_types.PathOrStr], None] = None,
+    ):
+        self.fn = fn
+        self.exposes = exposes
         self.meta_data = meta_data
+        write_to = Path(write_to) if write_to is not None else None
+        self.write_to = write_to
+        self.writer_fn = writer_fn
+
+        if writer_fn is not None:
+            write_to.mkdir(parents=True, exist_ok=True)
+
 
     def run(
         self,
         params: jdna_types.Params,
     ) -> tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData, dict[str, typing.Any]]:
-        sim_traj, sim_meta = self.simulator.run(params, self.meta_data)
-        return sim_traj, sim_meta, self.meta_data
+        outs, aux = self.fn(params, self.meta_data)
+
+        if self.writer_fn is not None:
+            self.writer_fn(outs, aux)
+            return self.write_to
+
+        return outs, aux, self.meta_data
 
 
 def split_by_ready(objectives: list[Objective]) -> tuple[list[Objective], list[Objective]]:

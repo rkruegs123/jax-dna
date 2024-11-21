@@ -1,6 +1,8 @@
 import dataclasses as dc
 import functools
 import itertools
+import os
+from pathlib import Path
 import typing
 from typing import Any
 
@@ -22,15 +24,22 @@ import jax_dna.input.topology as topology
 import jax_dna.input.trajectory as trajectory
 import jax_dna.losses.observable_wrappers as jdna_losses
 import jax_dna.optimization.base as jdna_optimization
+import jax_dna.observables as jd_obs
 import jax_dna.simulators.base as jdna_simulators
 import jax_dna.simulators.io as jdna_sio
 import jax_dna.simulators.jax_md as jaxmd
 import jax_dna.utils.types as jdna_types
 
 
+class MockLogger:
+
+    def log_metric(self, name:str, value:float, step:int):
+        print(f"Step {step}: {name} = {value}")
+
+
 
 def main():
-    logger = None
+    logger = MockLogger()
 
     optimization_config = {
         "n_steps": 100,
@@ -102,9 +111,50 @@ def main():
         simulator_init=jax_md.simulate.nvt_langevin,
         neighbors=jaxmd.NoNeighborList(unbonded_nbrs=top.unbonded_neighbors),
     )
+
+    prop_twist_fn = jd_obs.propeller.PropellerTwist(
+        rigid_body_transform_fn=transform_fn,
+        h_bonded_base_pairs=jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
+    )
+
+
+    cwd = Path(os.getcwd())
+    out_dir = cwd / "proptwist_store"
+    dproptwist_dopt_loc =  out_dir / "dproptwist_dparams.pkl"
+    proptwist_loc = out_dir / "proptwist.pkl"
+
+    def proptwist_writer_fn(
+        outs: jdna_types.Grads,
+        aux: tuple[jdna_types.Arr_N, jdna_types.MetaData],
+    )-> None:
+        if not out_dir.exists():
+            out_dir.mkdir(parents=True, exist_ok=True)
+
+        jdna_tree.save_pytree(proptwist_loc, aux[0])
+        jdna_tree.save_pytree(dproptwist_dopt_loc, outs)
+
+    def simulator_fn(
+        params: jdna_types.Params,
+        meta:jdna_types.MetaData
+    ) -> tuple[str, str]:
+        sim_traj, _ = sampler.run(params)
+        obs = prop_twist_fn(sim_traj)
+
+        return obs, (obs, meta)
+
+    grad_and_obs_fn = jax.jit(jax.jacfwd(simulator_fn, has_aux=True))
+
+
+
+    proptwist_simulator = sim_actor.SimulatorActor.remote(
+        simulator=grad_and_obs_fn,
+        exposes=[obs_proptwist, obs_dproptwist_dparams],
+        meta_data={},
+        write_to=out_dir,
+        writer_fn=proptwist_writer_fn,
+    )
+
     # ==========================================================================
-
-
 
 
 
@@ -128,11 +178,11 @@ def main():
 
         proptwist = jdna_tree.load_pytree(proptwist_loc) # array of [batch_size, time]
 
-        def loss(obs:jnp.ndarray) -> jnp.ndarray:
+        def loss_fn(obs:jnp.ndarray) -> jnp.ndarray:
             return (obs.mean(axis=1).mean() - TARGET_PROPELLER_TWIST)**2
 
         # array of [batch_size, time]
-        dloss_dproptwist = jax.grad(loss)(proptwist)
+        loss, dloss_dproptwist = jax.value_and_grad(loss_fn)(proptwist)
         # pytree with vals param -> [batch_size, time]
         dproptwist_dparams = jdna_tree.load_pytree(dproptwist_dparams_loc)
 
@@ -141,7 +191,7 @@ def main():
             dproptwist_dparams,
         )
 
-        return dloss_dopts
+        return dloss_dopts, loss
 
 
     propeller_twist_objective = sim_actor.Objective.remote(
@@ -155,7 +205,7 @@ def main():
 
 
     objectives = [propeller_twist_objective]
-    simulators = []
+    simulators = [proptwist_simulator]
 
     opt = jdna_optimization.Optimization(
         objectives=objectives,
@@ -163,11 +213,10 @@ def main():
     )
 
     for i in range(optimization_config["n_steps"]):
-        opt, grads = opt.step(params)
-        params = opt.update_params(params, grads)
+        opt, params = opt.step(params)
 
         for objective in opt.objectives:
-            log_values = objective.get_latest_values()
+            log_values = objective.obtained_observables
             for (name, value) in log_values:
                 logger.log_metric(name, value, step=i)
 
