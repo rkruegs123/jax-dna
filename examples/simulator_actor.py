@@ -27,13 +27,16 @@ class Objective:
         grad_fn:typing.Callable[[tuple[tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData], ...]], jdna_types.Grads]
     ):
         self.required_observables = required_observables
-        self.needed_observables = needed_observables
+        self._needed_observables = needed_observables
         self.grad_fn = grad_fn
         self.obtained_observables = []
 
 
+    def needed_observables(self) -> list[str]:
+        return self._needed_observables
 
-    @property
+
+
     def is_ready(self) -> bool:
         obtained_keys = [obs[0] for obs in self.obtained_observables]
         return all([obs in obtained_keys for obs in self.required_observables])
@@ -44,7 +47,7 @@ class Objective:
         sim_results: list[tuple[list[str], typing.Any]],
     ) -> None:
         new_obtained_observables = self.obtained_observables
-        currently_needed_observables = set(self.needed_observables)
+        currently_needed_observables = set(self._needed_observables)
 
         for sim_exposes, sim_output in sim_results:
             for exposed in filter(lambda e: e in currently_needed_observables, sim_exposes):
@@ -75,11 +78,8 @@ class Objective:
         return grads
 
 
-    def post_step(self) -> "Objective":
+    def post_step(self) -> None:
         self.needed_observables = self.required_observables
-
-
-
 
 
 @ray.remote
@@ -93,7 +93,7 @@ class SimulatorActor:
         writer_fn: typing.Callable[[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData, jdna_types.PathOrStr], None] = None,
     ):
         self.fn = fn
-        self.exposes = exposes
+        self._exposes = exposes
         self.meta_data = meta_data
         write_to = Path(write_to) if write_to is not None else None
         self.write_to = write_to
@@ -101,6 +101,10 @@ class SimulatorActor:
 
         if writer_fn is not None:
             write_to.mkdir(parents=True, exist_ok=True)
+
+
+    def exposes(self) -> list[str]:
+        return self._exposes
 
 
     def run(

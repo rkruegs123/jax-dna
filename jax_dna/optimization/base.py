@@ -21,7 +21,7 @@ META_DATA = dict[str, Any]
 def split_by_ready(
     objectives: list[sim_actor.Objective],
 ) -> tuple[list[sim_actor.Objective], list[sim_actor.Objective]]:
-    not_ready = list(itertools.filterfalse(lambda x: x.is_ready, objectives))
+    not_ready = list(itertools.filterfalse(lambda x: ray.get(x.is_ready.remote()), objectives))
     ready = list(filter(lambda x: not x.is_ready, objectives))
 
     return ready, not_ready
@@ -48,11 +48,18 @@ class Optimization:
 
         grad_refs = [objective.calculate.remote() for objective in ready_objectives]
 
-        need_observables = itertools.chain.from_iterable([co.needed_observables for co in not_ready_objectives])
-        needed_simulators = [sim for sim in self.simulators if set(sim.exposes) & set(need_observables)]
+        need_observables = list(
+            itertools.chain.from_iterable(ray.get([co.needed_observables.remote() for co in not_ready_objectives]))
+        )
+        needed_simulators = [
+            sim for sim in self.simulators if set(ray.get(sim.exposes.remote())) & set(need_observables)
+        ]
 
         sim_remotes = [sim.run.remote(params) for sim in needed_simulators]
-        simid_exposes = {sr.task_id().hex(): sim.exposes for sr, sim in zip(sim_remotes, needed_simulators)}
+
+        simid_exposes = {}
+        for sr, sim in zip(sim_remotes, needed_simulators):
+            simid_exposes[sr.task_id().hex()] = ray.get(sim.exposes.remote())
 
         # wait for the simulators to finish
         n_runs = len(sim_remotes)
@@ -61,8 +68,18 @@ class Optimization:
             #  `_` is a list of object refs that are not ready to collect.
             done, _ = ray.wait(sim_remotes, num_returns=n_runs)
             if done:
-                captured_results = {simid_exposes[d.task_id().hex()]: ray.get(d) for d in done}
-                updated_objectives = [objective.update(captured_results) for objective in not_ready_objectives]
+                captured_results = {}
+                for d in done:
+                    task_id = d.task_id().hex()
+                    exposes = simid_exposes[task_id]
+                    result = ray.get(d)
+                    # need to accomodate mutliple exposes for a single simulator
+                    print(result, exposes)
+                    captured_results[exposes] = result
+                print(captured_results)
+                updated_objectives = ray.get(
+                    [objective.update.remote(captured_results) for objective in not_ready_objectives]
+                )
                 ready, not_ready_objectives = split_by_ready(updated_objectives)
                 grad_refs += [objective.calculate.remote() for objective in ready]
 

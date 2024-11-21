@@ -1,6 +1,7 @@
 import dataclasses as dc
 import functools
 import itertools
+import operator
 import os
 from pathlib import Path
 import typing
@@ -10,6 +11,7 @@ import chex
 import jax
 import jax.numpy as jnp
 import jax_md
+import optax
 import ray
 
 
@@ -130,14 +132,17 @@ def main():
         if not out_dir.exists():
             out_dir.mkdir(parents=True, exist_ok=True)
 
-        jdna_tree.save_pytree(proptwist_loc, aux[0])
-        jdna_tree.save_pytree(dproptwist_dopt_loc, outs)
+        jdna_tree.save_pytree(aux[0], proptwist_loc)
+        jdna_tree.save_pytree(outs, dproptwist_dopt_loc)
 
+
+    init_body = traj.states[0].to_rigid_body()
+    run_steps = 5_000
     def simulator_fn(
         params: jdna_types.Params,
         meta:jdna_types.MetaData
     ) -> tuple[str, str]:
-        sim_traj, _ = sampler.run(params)
+        sim_traj, _ = sampler.run(params, init_body, run_steps, key)
         obs = prop_twist_fn(sim_traj)
 
         return obs, (obs, meta)
@@ -147,7 +152,7 @@ def main():
 
 
     proptwist_simulator = sim_actor.SimulatorActor.remote(
-        simulator=grad_and_obs_fn,
+        fn=grad_and_obs_fn,
         exposes=[obs_proptwist, obs_dproptwist_dparams],
         meta_data={},
         write_to=out_dir,
@@ -193,6 +198,12 @@ def main():
 
         return dloss_dopts, loss
 
+    def tree_mean(trees:tuple[jdna_types.PyTree]) -> jdna_types.PyTree:
+        if len(trees) <= 1:
+            return trees
+        summed = jax.tree.map(operator.add, *trees)
+        return jax.tree.map(lambda x: x / len(trees), summed)
+
 
     propeller_twist_objective = sim_actor.Objective.remote(
         required_observables=[obs_proptwist, obs_dproptwist_dparams],
@@ -201,19 +212,18 @@ def main():
     )
     # ==========================================================================
 
-
-
-
     objectives = [propeller_twist_objective]
     simulators = [proptwist_simulator]
 
     opt = jdna_optimization.Optimization(
         objectives=objectives,
         simulators=simulators,
+        optimizer = optax.adam(learning_rate=1e-5),
+        aggregate_grad_fn=tree_mean,
     )
 
     for i in range(optimization_config["n_steps"]):
-        opt, params = opt.step(params)
+        opt, opt_params = opt.step(opt_params)
 
         for objective in opt.objectives:
             log_values = objective.obtained_observables

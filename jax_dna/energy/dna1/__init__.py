@@ -30,7 +30,7 @@ def default_configs(overrides: dict = {}, opts: dict = {}):
     default_sim_config = toml.parse_toml(config_dir.joinpath("default_simulation.toml"))
     default_config = toml.parse_toml(config_dir.joinpath("default_energy.toml"))
 
-    get_param = lambda x: default_config | overrides.get(x, {})
+    get_param = lambda x: default_config[x] | overrides.get(x, {})
     get_opts = lambda x: opts.get(x, ("*",))
 
     return [
