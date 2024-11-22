@@ -68,27 +68,31 @@ class Optimization:
             #  `_` is a list of object refs that are not ready to collect.
             done, _ = ray.wait(sim_remotes, num_returns=n_runs)
             if done:
-                captured_results = {}
+                captured_results = []
                 for d in done:
                     task_id = d.task_id().hex()
                     exposes = simid_exposes[task_id]
                     result = ray.get(d)
-                    # need to accomodate mutliple exposes for a single simulator
-                    print(result, exposes)
-                    captured_results[exposes] = result
-                print(captured_results)
-                updated_objectives = ray.get(
+                    captured_results.append((exposes, result))
+                # update the objectives with the new observables and check if they are ready
+                ray.get(
                     [objective.update.remote(captured_results) for objective in not_ready_objectives]
                 )
-                ready, not_ready_objectives = split_by_ready(updated_objectives)
+                ready, not_ready_objectives = split_by_ready(not_ready_objectives)
                 grad_refs += [objective.calculate.remote() for objective in ready]
 
+        print("grad_refs", grad_refs)
         grads = self.aggregate_grad_fn(ray.get(grad_refs))
+        print("grads", grads)
 
         if self.optimizer_state is None:
             opt_state = self.optimizer.init(params)
         else:
             opt_state = self.optimizer_state
+
+        print("\n=======================\ngrads\n", grads, "\n================================")
+        print("\n=======================\nparams\n", params, "\n================================")
+        print("opt_state", opt_state)
 
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
         new_params = optax.apply_updates(params, updates)

@@ -46,20 +46,36 @@ class Objective:
         self,
         sim_results: list[tuple[list[str], typing.Any]],
     ) -> None:
+        print("Inside update")
+        print("sim_results", sim_results)
+
         new_obtained_observables = self.obtained_observables
         currently_needed_observables = set(self._needed_observables)
 
+        print("new_obtained_observables", new_obtained_observables)
+        print("currently_needed_observables", currently_needed_observables)
+
         for sim_exposes, sim_output in sim_results:
-            for exposed in filter(lambda e: e in currently_needed_observables, sim_exposes):
-                new_obtained_observables.append((exposed, sim_output))
+
+            print("sim_exposes", sim_exposes)
+            print("sim_output", sim_output)
+            for exposed, output in filter(
+                lambda e: e[0] in currently_needed_observables,
+                zip(sim_exposes, sim_output)
+            ):
+                print("exposed", exposed)
+                new_obtained_observables.append((exposed, output))
                 currently_needed_observables.remove(exposed)
 
         self.obtained_observables = new_obtained_observables
-        self.needed_observables = list(currently_needed_observables)
+        self._needed_observables = list(currently_needed_observables)
 
+        print("self.obtained_observables", self.obtained_observables)
+        print("self._needed_observables", self._needed_observables)
 
     # returns grads
     def calculate(self) -> list[jdna_types.Grads]:
+        print("inside calculate")
         if not self.is_ready:
             raise ValueError(ERR_OBJECTIVE_NOT_READY)
 
@@ -69,6 +85,7 @@ class Objective:
         ))
 
         grads, loss = self.grad_fn(*sorted_obs)
+        print(sorted_obs)
 
         self.obtained_observables.append([
             ("loss", loss),
@@ -89,18 +106,18 @@ class SimulatorActor:
         fn: typing.Callable[[jdna_types.Params, jdna_types.MetaData], tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData]],
         exposes: list[str],
         meta_data: dict[str, typing.Any],
-        write_to: tuple[jdna_types.PathOrStr,...]|None = None,
+        # write_to: tuple[jdna_types.PathOrStr,...]|None = None,
         writer_fn: typing.Callable[[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData, jdna_types.PathOrStr], None] = None,
     ):
         self.fn = fn
         self._exposes = exposes
         self.meta_data = meta_data
-        write_to = Path(write_to) if write_to is not None else None
-        self.write_to = write_to
+        # write_to = Path(write_to) if write_to is not None else None
+        # self.write_to = write_to
         self.writer_fn = writer_fn
 
-        if writer_fn is not None:
-            write_to.mkdir(parents=True, exist_ok=True)
+        # if writer_fn is not None:
+        #     write_to.mkdir(parents=True, exist_ok=True)
 
 
     def exposes(self) -> list[str]:
@@ -114,8 +131,8 @@ class SimulatorActor:
         outs, aux = self.fn(params, self.meta_data)
 
         if self.writer_fn is not None:
-            self.writer_fn(outs, aux)
-            return self.write_to
+            return self.writer_fn(outs, aux, self.meta_data)
+            # return self.write_to
 
         return outs, aux, self.meta_data
 

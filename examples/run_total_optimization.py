@@ -128,12 +128,14 @@ def main():
     def proptwist_writer_fn(
         outs: jdna_types.Grads,
         aux: tuple[jdna_types.Arr_N, jdna_types.MetaData],
+        meta_data: jdna_types.MetaData,
     )-> None:
         if not out_dir.exists():
             out_dir.mkdir(parents=True, exist_ok=True)
 
         jdna_tree.save_pytree(aux[0], proptwist_loc)
         jdna_tree.save_pytree(outs, dproptwist_dopt_loc)
+        return dproptwist_dopt_loc, proptwist_loc
 
 
     init_body = traj.states[0].to_rigid_body()
@@ -155,7 +157,7 @@ def main():
         fn=grad_and_obs_fn,
         exposes=[obs_proptwist, obs_dproptwist_dparams],
         meta_data={},
-        write_to=out_dir,
+        # write_to=out_dir,
         writer_fn=proptwist_writer_fn,
     )
 
