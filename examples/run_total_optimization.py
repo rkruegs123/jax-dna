@@ -43,6 +43,17 @@ class MockLogger:
 def main():
     logger = MockLogger()
 
+    ray.init(
+        ignore_reinit_error=True,
+        log_to_driver=True,
+        runtime_env={
+            "env_vars": {
+                "JAX_ENABLE_X64": "True",
+            }
+        }
+    )
+
+
     optimization_config = {
         "n_steps": 100,
         "batch_size": 1,
@@ -201,6 +212,10 @@ def main():
         return dloss_dopts, loss
 
     def tree_mean(trees:tuple[jdna_types.PyTree]) -> jdna_types.PyTree:
+        print("Inside tree_mean===============================")
+        print(trees)
+
+
         if len(trees) <= 1:
             return trees
         summed = jax.tree.map(operator.add, *trees)

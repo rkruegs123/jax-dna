@@ -36,7 +36,6 @@ class Objective:
         return self._needed_observables
 
 
-
     def is_ready(self) -> bool:
         obtained_keys = [obs[0] for obs in self.obtained_observables]
         return all([obs in obtained_keys for obs in self.required_observables])
@@ -46,36 +45,36 @@ class Objective:
         self,
         sim_results: list[tuple[list[str], typing.Any]],
     ) -> None:
-        print("Inside update")
-        print("sim_results", sim_results)
+        # print("Inside update")
+        # print("sim_results", sim_results)
 
         new_obtained_observables = self.obtained_observables
         currently_needed_observables = set(self._needed_observables)
 
-        print("new_obtained_observables", new_obtained_observables)
-        print("currently_needed_observables", currently_needed_observables)
+        # print("new_obtained_observables", new_obtained_observables)
+        # print("currently_needed_observables", currently_needed_observables)
 
         for sim_exposes, sim_output in sim_results:
 
-            print("sim_exposes", sim_exposes)
-            print("sim_output", sim_output)
+            # print("sim_exposes", sim_exposes)
+            # print("sim_output", sim_output)
             for exposed, output in filter(
                 lambda e: e[0] in currently_needed_observables,
                 zip(sim_exposes, sim_output)
             ):
-                print("exposed", exposed)
+                # print("exposed", exposed)
                 new_obtained_observables.append((exposed, output))
                 currently_needed_observables.remove(exposed)
 
         self.obtained_observables = new_obtained_observables
         self._needed_observables = list(currently_needed_observables)
 
-        print("self.obtained_observables", self.obtained_observables)
-        print("self._needed_observables", self._needed_observables)
+        # print("self.obtained_observables", self.obtained_observables)
+        # print("self._needed_observables", self._needed_observables)
 
     # returns grads
     def calculate(self) -> list[jdna_types.Grads]:
-        print("inside calculate")
+        # print("inside calculate")
         if not self.is_ready:
             raise ValueError(ERR_OBJECTIVE_NOT_READY)
 
@@ -91,7 +90,8 @@ class Objective:
             ("loss", loss),
             *self.obtained_observables
         ])
-
+        print("Calculating grads")
+        print("grads", grads)
         return grads
 
 
