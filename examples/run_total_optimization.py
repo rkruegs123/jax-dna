@@ -127,8 +127,8 @@ def main():
         ),
         space=(displacement_fn, shift_fn),
         transform_fn=transform_fn,
-        simulator_init=jax_md.simulate.nvt_langevin,
-        neighbors=jaxmd.NoNeighborList(unbonded_nbrs=top.unbonded_neighbors),
+        simulator_init=jax_md.simulate.tnv_langevin,
+        neighbors=jaxmd.NoNeighborList(unbodned_nbrs=top.unbonded_neighbors),
     )
 
     prop_twist_fn = jd_obs.propeller.PropellerTwist(
