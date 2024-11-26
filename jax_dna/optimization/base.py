@@ -22,7 +22,7 @@ def split_by_ready(
     objectives: list[sim_actor.Objective],
 ) -> tuple[list[sim_actor.Objective], list[sim_actor.Objective]]:
     not_ready = list(itertools.filterfalse(lambda x: ray.get(x.is_ready.remote()), objectives))
-    ready = list(filter(lambda x: not x.is_ready, objectives))
+    ready = list(filter(lambda x: ray.get(x.is_ready.remote()), objectives))
 
     return ready, not_ready
 
@@ -46,7 +46,6 @@ class Optimization:
         # so check which objectives have observables that need to be run
         ready_objectives, not_ready_objectives = split_by_ready(self.objectives)
 
-        print("Initially ready objectives", ready_objectives)
         grad_refs = [objective.calculate.remote() for objective in ready_objectives]
 
         need_observables = list(
@@ -63,11 +62,10 @@ class Optimization:
             simid_exposes[sr.task_id().hex()] = ray.get(sim.exposes.remote())
 
         # wait for the simulators to finish
-        n_runs = len(sim_remotes)
         while not_ready_objectives:
             # `done` is a list of object refs that are ready to collect.
-            #  `_` is a list of object refs that are not ready to collect.
-            done, _ = ray.wait(sim_remotes, num_returns=n_runs)
+            #  sim_remotes is a list of object refs that are not ready to collect.
+            done, sim_remotes = ray.wait(sim_remotes)
             if done:
                 captured_results = []
                 for d in done:
@@ -82,27 +80,19 @@ class Optimization:
                 ready, not_ready_objectives = split_by_ready(not_ready_objectives)
                 grad_refs += [objective.calculate.remote() for objective in ready]
 
-
-        print("grad_refs", grad_refs)
         grads_resolved = ray.get(grad_refs)
-        print("grads_resolved", grads_resolved)
         grads = self.aggregate_grad_fn(grads_resolved)
-        # print("grads", grads)
 
         if self.optimizer_state is None:
             opt_state = self.optimizer.init(params)
         else:
             opt_state = self.optimizer_state
 
-        # print("\n=======================\ngrads\n", grads, "\n================================")
-        # print("\n=======================\nparams\n", params, "\n================================")
-        # print("opt_state", opt_state)
-
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
 
         new_params = optax.apply_updates(params, updates)
 
-        return self.post_step(opt_state), new_params
+        return opt_state, new_params
 
     def post_step(
         self,

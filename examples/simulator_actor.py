@@ -12,9 +12,6 @@ import jax_dna.simulators.base as jdna_simulators
 import jax_dna.simulators.io as jdna_sio
 import jax_dna.utils.types as jdna_types
 
-
-jax.config.update("jax_enable_x64", True)
-
 ERR_OBJECTIVE_NOT_READY = "Not all required observables have been obtained."
 
 @ray.remote
@@ -24,20 +21,37 @@ class Objective:
         self,
         required_observables:list[str],
         needed_observables:list[str],
+        logging_observables:list[str],
         grad_fn:typing.Callable[[tuple[tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData], ...]], jdna_types.Grads]
     ):
         self.required_observables = required_observables
         self._needed_observables = needed_observables
         self.grad_fn = grad_fn
-        self.obtained_observables = []
+        self._obtained_observables = []
+        self._logging_observables = logging_observables
 
 
     def needed_observables(self) -> list[str]:
         return self._needed_observables
 
 
+    def obtained_observables(self) -> list[tuple[str, typing.Any]]:
+        return self._obtained_observables
+
+
+    def logging_observables(self) -> list[tuple[str, typing.Any]]:
+        lastest_observed = self._obtained_observables
+        return_values = []
+        for log_obs in self._logging_observables:
+            for obs in lastest_observed:
+                if obs[0] == log_obs:
+                    return_values.append((obs))
+                    break
+        return return_values
+
+
     def is_ready(self) -> bool:
-        obtained_keys = [obs[0] for obs in self.obtained_observables]
+        obtained_keys = [obs[0] for obs in self._obtained_observables]
         return all([obs in obtained_keys for obs in self.required_observables])
 
 
@@ -45,58 +59,47 @@ class Objective:
         self,
         sim_results: list[tuple[list[str], typing.Any]],
     ) -> None:
-        # print("Inside update")
-        # print("sim_results", sim_results)
 
-        new_obtained_observables = self.obtained_observables
+        new_obtained_observables = self._obtained_observables
         currently_needed_observables = set(self._needed_observables)
 
-        # print("new_obtained_observables", new_obtained_observables)
-        # print("currently_needed_observables", currently_needed_observables)
-
         for sim_exposes, sim_output in sim_results:
-
-            # print("sim_exposes", sim_exposes)
-            # print("sim_output", sim_output)
             for exposed, output in filter(
                 lambda e: e[0] in currently_needed_observables,
                 zip(sim_exposes, sim_output)
             ):
-                # print("exposed", exposed)
                 new_obtained_observables.append((exposed, output))
                 currently_needed_observables.remove(exposed)
 
-        self.obtained_observables = new_obtained_observables
+        self._obtained_observables = new_obtained_observables
         self._needed_observables = list(currently_needed_observables)
 
-        # print("self.obtained_observables", self.obtained_observables)
-        # print("self._needed_observables", self._needed_observables)
 
-    # returns grads
     def calculate(self) -> list[jdna_types.Grads]:
-        # print("inside calculate")
-        if not self.is_ready:
+        if not self.is_ready():
             raise ValueError(ERR_OBJECTIVE_NOT_READY)
 
         sorted_obs = list(map(
             lambda x: x[1],
-            sorted(self.obtained_observables, key=lambda x: self.required_observables.index(x[0]),)
+            sorted(
+                self._obtained_observables,
+                key=lambda x: self.required_observables.index(x[0]),
+            )
         ))
 
         grads, loss = self.grad_fn(*sorted_obs)
-        print(sorted_obs)
 
-        self.obtained_observables.append([
+        self._obtained_observables = [
             ("loss", loss),
-            *self.obtained_observables
-        ])
-        print("Calculating grads")
-        print("grads", grads)
+            *[(ro, so) for (ro, so) in zip(self.required_observables, sorted_obs)],
+        ]
+
         return grads
 
 
     def post_step(self) -> None:
-        self.needed_observables = self.required_observables
+        self._needed_observables = self.required_observables
+        self._obtained_observables = []
 
 
 @ray.remote
@@ -106,18 +109,12 @@ class SimulatorActor:
         fn: typing.Callable[[jdna_types.Params, jdna_types.MetaData], tuple[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData]],
         exposes: list[str],
         meta_data: dict[str, typing.Any],
-        # write_to: tuple[jdna_types.PathOrStr,...]|None = None,
         writer_fn: typing.Callable[[jdna_sio.SimulatorTrajectory, jdna_sio.SimulatorMetaData, jdna_types.PathOrStr], None] = None,
     ):
         self.fn = fn
         self._exposes = exposes
         self.meta_data = meta_data
-        # write_to = Path(write_to) if write_to is not None else None
-        # self.write_to = write_to
         self.writer_fn = writer_fn
-
-        # if writer_fn is not None:
-        #     write_to.mkdir(parents=True, exist_ok=True)
 
 
     def exposes(self) -> list[str]:
@@ -132,7 +129,6 @@ class SimulatorActor:
 
         if self.writer_fn is not None:
             return self.writer_fn(outs, aux, self.meta_data)
-            # return self.write_to
 
         return outs, aux, self.meta_data
 
@@ -140,6 +136,5 @@ class SimulatorActor:
 def split_by_ready(objectives: list[Objective]) -> tuple[list[Objective], list[Objective]]:
     not_ready =  list(itertools.filterfalse(lambda x: x.is_ready, objectives))
     ready = list(filter(lambda x: not x.is_ready, objectives))
-
     return ready, not_ready
 

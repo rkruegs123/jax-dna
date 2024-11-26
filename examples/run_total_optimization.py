@@ -15,6 +15,10 @@ import optax
 import ray
 
 
+jax.config.update("jax_enable_x64", True)
+jax.config.update('jax_platform_name', 'cpu')
+
+
 import examples.simulator_actor as sim_actor
 
 import jax_dna.energy.base as jdna_energy
@@ -49,6 +53,8 @@ def main():
         runtime_env={
             "env_vars": {
                 "JAX_ENABLE_X64": "True",
+                "JAX_PLATFORM_NAME": "cpu",
+                # "RAY_DEBUG": "legacy",
             }
         }
     )
@@ -146,11 +152,11 @@ def main():
 
         jdna_tree.save_pytree(aux[0], proptwist_loc)
         jdna_tree.save_pytree(outs, dproptwist_dopt_loc)
-        return dproptwist_dopt_loc, proptwist_loc
+        return proptwist_loc, dproptwist_dopt_loc
 
 
     init_body = traj.states[0].to_rigid_body()
-    run_steps = 5_000
+    run_steps = 1000
     def simulator_fn(
         params: jdna_types.Params,
         meta:jdna_types.MetaData
@@ -168,7 +174,6 @@ def main():
         fn=grad_and_obs_fn,
         exposes=[obs_proptwist, obs_dproptwist_dparams],
         meta_data={},
-        # write_to=out_dir,
         writer_fn=proptwist_writer_fn,
     )
 
@@ -183,7 +188,6 @@ def main():
     def proptwist_gradfn(
         proptwist_loc: str,
         dproptwist_dparams_loc: str,
-        meta_data: str,
     ) -> jdna_types.Grads:
         TARGET_PROPELLER_TWIST = 21.7
 
@@ -197,14 +201,14 @@ def main():
         proptwist = jdna_tree.load_pytree(proptwist_loc) # array of [batch_size, time]
 
         def loss_fn(obs:jnp.ndarray) -> jnp.ndarray:
-            return (obs.mean(axis=1).mean() - TARGET_PROPELLER_TWIST)**2
+            return (obs.mean(axis=-1).mean() - TARGET_PROPELLER_TWIST)**2
 
         # array of [batch_size, time]
         loss, dloss_dproptwist = jax.value_and_grad(loss_fn)(proptwist)
         # pytree with vals param -> [batch_size, time]
         dproptwist_dparams = jdna_tree.load_pytree(dproptwist_dparams_loc)
 
-        dloss_dopts = jax.tree_map(
+        dloss_dopts = jax.tree.map(
             lambda dpt_dparam: (dpt_dparam * dloss_dproptwist).sum(),
             dproptwist_dparams,
         )
@@ -212,12 +216,8 @@ def main():
         return dloss_dopts, loss
 
     def tree_mean(trees:tuple[jdna_types.PyTree]) -> jdna_types.PyTree:
-        print("Inside tree_mean===============================")
-        print(trees)
-
-
         if len(trees) <= 1:
-            return trees
+            return trees[0]
         summed = jax.tree.map(operator.add, *trees)
         return jax.tree.map(lambda x: x / len(trees), summed)
 
@@ -225,6 +225,7 @@ def main():
     propeller_twist_objective = sim_actor.Objective.remote(
         required_observables=[obs_proptwist, obs_dproptwist_dparams],
         needed_observables=[obs_proptwist, obs_dproptwist_dparams],
+        logging_observables=["loss", obs_proptwist],
         grad_fn=proptwist_gradfn,
     )
     # ==========================================================================
@@ -240,12 +241,16 @@ def main():
     )
 
     for i in range(optimization_config["n_steps"]):
-        opt, opt_params = opt.step(opt_params)
+        print("Step", i, "Starting")
+        opt_state, opt_params = opt.step(opt_params)
 
         for objective in opt.objectives:
-            log_values = objective.obtained_observables
+            log_values = ray.get(objective.logging_observables.remote())
             for (name, value) in log_values:
                 logger.log_metric(name, value, step=i)
+
+        opt = opt.post_step(optimizer_state=opt_state)
+        print("Step", i, "Completed")
 
 
 
