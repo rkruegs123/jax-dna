@@ -1,6 +1,7 @@
 
 import typing
 
+import jax
 import ray
 
 import jax.numpy as jnp
@@ -9,6 +10,8 @@ import jax_dna.input.tree as jdna_tree
 import jax_dna.utils.types as jdna_types
 
 ERR_OBJECTIVE_NOT_READY = "Not all required observables have been obtained."
+
+ERR_DIFFTRE_MISSING_KWARGS = "`opt_params` and `trajectory_key` not provided."
 
 
 class Objective:
@@ -118,11 +121,20 @@ class DiffTReObjective(Objective):
             grad_fn,
             **kwargs,
         )
-        self.n_eff_factor = kwargs.get("min_n_eff", 0.95)
-        self.opt_params = kwargs.get("opt_params")
+        self.n_eff_factor = kwargs.get("min_n_eff_factor", 0.95)
+        self.accept_expired_trajectory_grads = kwargs.get("accept_expired_trajectory_grads", False)
+
+        if "opt_params" not in kwargs or "trajectory_key" not in kwargs:
+            raise ValueError(ERR_DIFFTRE_MISSING_KWARGS)
+
+        self._opt_params = kwargs.get("opt_params")
+        self._trajectory_key = kwargs.get("trajectory_key")
+        self._reference_states = None
 
 
     def calculate(self) -> list[jdna_types.Grads]:
+        # we need override the grads calculation to check if the trajectory
+        # is still valid and if so ask for a new trajectory
         if not self.is_ready():
             raise ValueError(ERR_OBJECTIVE_NOT_READY)
 
@@ -134,32 +146,27 @@ class DiffTReObjective(Objective):
             )
         ))
 
-        ref_states_index = self.required_observables.index("trajectory")
-        ref_states = sorted_obs[ref_states_index]
-
-        new_energies = energy_fn_builder(params)(ref_states)
-        diffs = new_energies - ref_energies
-        boltz = jnp.exp(-beta * diffs)
-        weights = boltz / jnp.sum(boltz)
-        n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
-
-
-        grads, loss = self.grad_fn(*sorted_obs)
+        grads, loss, is_valid_trajectory = self.grad_fn(
+            self._reference_states,
+            *sorted_obs,
+        )
 
         self._obtained_observables = [
             ("loss", loss),
             *[(ro, so) for (ro, so) in zip(self.required_observables, sorted_obs)],
         ]
 
-        # if this is a batch of runs we need the second index, otherwise the first
-        # TODO(ryanhausen): is this correct?
-        t_index = 0 if len(new_energies.shape) == 2 else 1
-
-        if n_eff < self.n_eff_factor * new_energies.shape[0]:
-            self._needed_observables = self.required_observables
-            self._obtained_observables
+        if not is_valid_trajectory:
+            # we need to regenerate the trajectory
+            self._needed_observables.append(self._trajectory_key)
+            self._reference_states = None
+            if not self.accept_expired_trajectory_grads:
+                # if we are not accepting expired trajectory grads
+                # we zero them out
+                grads = jax.tree.map(lambda x: jnp.zeros_like(x), grads)
 
         return grads
+
 
 
     def post_step(self) -> None:
