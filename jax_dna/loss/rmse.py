@@ -22,7 +22,6 @@ jax.config.update("jax_enable_x64", True)
 
 from oxDNA_analysis_tools.UTILS.RyeReader import describe, inbox, get_confs
 from oxDNA_analysis_tools.align import svd_align
-from oxDNA_analysis_tools.UTILS.data_structures import Configuration, TopInfo, TrajInfo
 
 
 
@@ -60,24 +59,6 @@ def single_mfs(state, target_positions, indices):
     return MF
 
 
-def my_svd_align(ref_coords, coords, indexes, center=True):
-    ref_center = onp.zeros(3)
-
-    av1 = ref_center
-    av2 = onp.mean(coords[0][indexes], axis=0)
-    coords[0] = coords[0] - av2
-    # correlation matrix
-    a = onp.dot(onp.transpose(coords[0][indexes]), ref_coords - av1)
-    u, _, vt = onp.linalg.svd(a)
-    rot = onp.transpose(onp.dot(onp.transpose(vt), onp.transpose(u)))
-    # check if we have found a reflection
-    if onp.linalg.det(rot) < 0:
-        vt[2] = -vt[2]
-        rot = onp.transpose(onp.dot(onp.transpose(vt), onp.transpose(u)))
-    tran = av1
-    return  (onp.dot(coords[0], rot) + tran,
-             onp.dot(coords[1], rot),
-             onp.dot(coords[2], rot))
 
 
 def compute_rmses(traj_path, target_path, top_path, displacement_fn):
@@ -119,27 +100,17 @@ def compute_rmses(traj_path, target_path, top_path, displacement_fn):
         MF = onp.power(onp.linalg.norm(aligned_conf - mean_conf.positions, axis=1), 2)
         MFs.append(MF)
 
-        ## JAX-DNA calculation, onp
-        state = traj_states_jdna[c_idx]
-        back_base_vectors = utils.Q_to_back_base(state.orientation) # a1s
-        base_normals = utils.Q_to_base_normal(state.orientation) # a3
-        jdna_conf = onp.asarray([state.center, back_base_vectors, base_normals])
-        aligned_conf_jdna = my_svd_align(mean_conf.positions[indexes], deepcopy(jdna_conf), indexes)[0]
-        MF_jdna = onp.power(onp.linalg.norm(aligned_conf_jdna - mean_conf.positions, axis=1), 2)
-        MFs_jdna.append(MF_jdna)
-
         ## JAX-DNA calculation, full jax
+        state = traj_states_jdna[c_idx]
         MFs_jax = single_mfs(state, jnp.array(mean_conf.positions), jnp.array(indexes))
         MFs_jdna_full.append(MFs_jax)
 
-
-        assert(onp.allclose(MF_jdna, MF))
-        assert(onp.allclose(MFs_jax, MF_jdna))
-
+        assert(onp.allclose(MFs_jax, MF))
 
     MFs = onp.array(MFs)
 
     RMSDs = onp.sqrt(onp.mean(MFs, axis=1)) * 0.8518
+    pdb.set_trace()
     RMSFs = onp.sqrt(onp.mean(MFs, axis=0)) * 0.8518
 
     return (RMSDs, RMSFs)
@@ -153,8 +124,7 @@ class TestRMSE(unittest.TestCase):
     def test_rmse(self):
 
         from oxDNA_analysis_tools.UTILS.RyeReader import describe, get_confs
-        # from oxDNA_analysis_tools.deviations import deviations
-        from jax_dna.loss.my_deviations import deviations, deviations_serial
+        from oxDNA_analysis_tools.deviations import deviations
 
         test_cases = [
             (self.test_data_basedir / f"simple-helix", model1.com_to_hb)
@@ -198,3 +168,13 @@ class TestRMSE(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    """
+    compute RMSD directly, no RMSF. Then change error checking appropriately.
+
+    vmap
+
+    remove indicies. Assume we care about  the whole structure every time.
+
+    put into real functionaltiy/API
+    """
