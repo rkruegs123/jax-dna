@@ -51,6 +51,7 @@ def run(args):
     lr = args['lr']
     min_neff_factor = args['min_neff_factor']
     max_approx_iters = args['max_approx_iters']
+    use_nbrs = args['use_nbrs']
 
     seq_avg_opt_keys = args['seq_avg_opt_keys']
     opt_seq_dep_stacking = args['opt_seq_dep_stacking']
@@ -127,6 +128,16 @@ def run(args):
 
     displacement_fn, shift_fn = space.free()
 
+    default_neighbors = None
+    if use_nbrs:
+        r_cutoff = 10.0
+        dr_threshold = 0.2
+        neighbor_fn = top_info.get_neighbor_list_fn(
+            displacement_fn, box_size, r_cutoff, dr_threshold)
+        # Note that we only allocate once
+        neighbors = neighbor_fn.allocate(target_state.center) # We use the COMs.
+        default_neighbors = deepcopy(neighbors)
+
     dt = 3e-3
     kT = utils.get_kt(t_kelvin)
     beta = 1 / kT
@@ -138,29 +149,43 @@ def run(args):
 
     def sim_fn(params, body, key, curr_stack_weights):
 
+        if use_nbrs:
+            neighbors_idx = default_neighbors.idx
+        else:
+            neighbors_idx = top_info.unbonded_nbrs.T
+
         em = model.EnergyModel(
             displacement_fn, params["seq_avg"], t_kelvin=t_kelvin, salt_conc=salt_conc,
             ss_hb_weights=ss_hb_weights,
             ss_stack_weights=curr_stack_weights)
-        energy_fn = lambda body: em.energy_fn(
+        energy_fn = lambda body, neighbors_idx: em.energy_fn(
             body,
             seq=seq_oh,
             bonded_nbrs=top_info.bonded_nbrs,
-            unbonded_nbrs=top_info.unbonded_nbrs.T)
+            unbonded_nbrs=neighbors_idx)
         energy_fn = jit(energy_fn)
 
         init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
-        init_state = init_fn(key, body, mass=mass)
-
-        fori_step_fn = lambda t, state: step_fn(state)
+        init_state = init_fn(key, body, mass=mass, neighbors_idx=neighbors_idx)
 
         @jit
-        def scan_fn(state, step):
-            state = lax.fori_loop(0, sample_every, fori_step_fn, state)
-            return state, state.position
+        def fori_step_fn(t, carry):
+            state, neighbors = carry
+            if use_nbrs:
+                neighbors = neighbors.update(state.position.center)
+                neighbors_idx = neighbors.idx
+            else:
+                neighbors_idx = top_info.unbonded_nbrs.T
+            state = step_fn(state, neighbors_idx=neighbors_idx)
+            return (state, neighbors)
 
-        eq_state = lax.fori_loop(0, n_eq_steps, fori_step_fn, init_state)
-        fin_state, traj = scan(scan_fn, eq_state, jnp.arange(n_ref_states_per_sim))
+        @jit
+        def scan_fn(carry, step):
+            (state, neighbors) = lax.fori_loop(0, sample_every, fori_step_fn, carry)
+            return (state, neighbors), state.position
+
+        (eq_state, eq_neighbors) = lax.fori_loop(0, n_eq_steps, fori_step_fn, (init_state, default_neighbors))
+        (fin_state, _), traj = scan(scan_fn, (eq_state, eq_neighbors), jnp.arange(n_ref_states_per_sim))
 
         return traj
 
@@ -177,7 +202,11 @@ def run(args):
 
         iter_key, sim_key = random.split(iter_key)
         sim_keys = random.split(sim_key, n_sims)
+        sim_start = time.time()
         all_batch_ref_states = vmap(sim_fn, (None, None, 0, None))(params, init_body, sim_keys, curr_stack_weights)
+        sim_end = time.time()
+        with open(resample_log_path, "a") as f:
+            f.write(f"- Simulating took {sim_end - sim_start} seconds\n")
 
         combined_center = all_batch_ref_states.center.reshape(-1, top_info.n, 3)
         combined_quat_vec = all_batch_ref_states.orientation.vec.reshape(-1, top_info.n, 4)
@@ -398,8 +427,8 @@ def get_parser():
     parser.add_argument('--min-neff-factor', type=float, default=0.95,
                         help="Factor for determining min Neff")
 
-
     parser.add_argument('--full-system', action='store_true')
+    parser.add_argument('--use-nbrs', action='store_true')
 
     parser.add_argument(
         '--seq-avg-opt-keys',
