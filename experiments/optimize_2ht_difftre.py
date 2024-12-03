@@ -311,7 +311,7 @@ def run(args):
     key = random.PRNGKey(0)
     init_body = conf_info.get_states()[0]
     start = time.time()
-    ref_states, ref_energies, unweighted_rmses, ref_iter_dir = get_ref_states(params, i=0, key=key, init_body=init_body)
+    ref_states, ref_energies, unweighted_rmses, ref_iter_dir = get_ref_states(params, i=0, iter_key=key, init_body=init_body)
     end = time.time()
     with open(resample_log_path, "a") as f:
         f.write(f"Finished generating initial reference states. Took {end - start} seconds.\n\n")
@@ -335,7 +335,7 @@ def run(args):
 
             key, split = random.split(key)
             start = time.time()
-            ref_states, ref_energies, unweighted_rmses, ref_iter_dir = get_ref_states(params, i=i, key=split, init_body=ref_states[-1])
+            ref_states, ref_energies, unweighted_rmses, ref_iter_dir = get_ref_states(params, i=i, iter_key=split, init_body=ref_states[-1])
             end = time.time()
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
