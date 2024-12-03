@@ -21,15 +21,20 @@ jax.config.update("jax_enable_x64", True)
 
 
 
-def my_svd_align_jax(ref_coords, coords, indexes):
+def svd_align(ref_coords, coords):
+
+    n_nt = coords.shape[1]
+    indexes = jnp.arange(n_nt)
+
     ref_center = jnp.zeros(3)
 
     av1 = ref_center
     av2 = jnp.mean(coords[0][indexes], axis=0)
-    coords[0] = coords[0] - av2
+    coords = coords.at[0].set(coords[0] - av2)
+    # coords[0] = coords[0] - av2
 
     # correlation matrix
-    a = jnp.dot(onp.transpose(coords[0][indexes]), ref_coords - av1)
+    a = jnp.dot(jnp.transpose(coords[0][indexes]), ref_coords - av1)
     u, _, vt = jnp.linalg.svd(a)
     rot = jnp.transpose(jnp.dot(jnp.transpose(vt), jnp.transpose(u)))
 
@@ -45,51 +50,41 @@ def my_svd_align_jax(ref_coords, coords, indexes):
              jnp.dot(coords[2], rot))
 
 
-def single_mfs(state, target_positions, indices):
+def compute_fluc_sq(state, target_positions):
     back_base_vectors = utils.Q_to_back_base(state.orientation) # a1s
     base_normals = utils.Q_to_base_normal(state.orientation) # a3
 
-    conf = onp.asarray([state.center, back_base_vectors, base_normals])
-    aligned_conf = my_svd_align_jax(target_positions[indices], conf, indices)[0]
-    MF = jnp.power(jnp.linalg.norm(aligned_conf - target_positions, axis=1), 2)
-    return MF
+    conf = jnp.asarray([state.center, back_base_vectors, base_normals])
+    aligned_conf = svd_align(target_positions, conf)[0]
+    fluc_sq = jnp.power(jnp.linalg.norm(aligned_conf - target_positions, axis=1), 2)
+    return fluc_sq
 
 
+def compute_rmses(traj_states, target_state, top_info):
 
+    n_states = traj_states.center.shape[0]
 
-def compute_rmses(traj_path, target_path, top_path, displacement_fn):
-
-    ## Processing for JAX-DNA
-    top_info = topology.TopologyInfo(top_path, reverse_direction=False)
-    n = len(top_info.seq)
-    indices = jnp.arange(n)
-
-    traj_info = trajectory.TrajectoryInfo(
-        top_info, read_from_file=True, traj_path=traj_path, reverse_direction=False)
-    traj_states = traj_info.get_states()
-    n_states = len(traj_states)
-
-    target_info = trajectory.TrajectoryInfo(
-        top_info, read_from_file=True, traj_path=target_path, reverse_direction=False)
-    target_state = target_info.get_states()[0]
+    # Center the target state
     target_state = target_state.set(center=target_state.center - jnp.mean(target_state.center, axis=0))
 
-
-
-    MFs = list()
+    # Compute squared fluctuations
+    """
+    all_fluc_sqs = list()
     for c_idx in tqdm(range(n_states)):
 
         ## JAX-DNA calculation, full jax
         state = traj_states[c_idx]
-        MF = single_mfs(state, target_state.center, indices)
-        MFs.append(MF)
+        fluc_sq = compute_fluc_sq(state, target_state.center)
+        all_fluc_sqs.append(fluc_sq)
+    all_fluc_sqs = jnp.array(all_fluc_sqs)
+    """
+    all_fluc_sqs = vmap(compute_fluc_sq, (0, None))(traj_states, target_state.center)
 
-    MFs = onp.array(MFs)
+    # Average
+    rmsds = jnp.sqrt(jnp.mean(all_fluc_sqs, axis=1)) * utils.nm_per_oxdna_length
+    rmsfs = jnp.sqrt(jnp.mean(all_fluc_sqs, axis=0)) * utils.nm_per_oxdna_length
 
-    RMSDs = onp.sqrt(onp.mean(MFs, axis=1)) * 0.8518
-    RMSFs = onp.sqrt(onp.mean(MFs, axis=0)) * 0.8518
-
-    return (RMSDs, RMSFs)
+    return (rmsds, rmsfs)
 
 
 
@@ -108,32 +103,35 @@ class TestRMSE(unittest.TestCase):
         for basedir, com_to_hb in test_cases:
 
             top_path = basedir / "generated.top"
-            top_info = topology.TopologyInfo(top_path, reverse_direction=False)
-            n = len(top_info.seq)
-
             traj_path = basedir / "output.dat"
-            traj_info = trajectory.TrajectoryInfo(
-                top_info, read_from_file=True, traj_path=traj_path, reverse_direction=False)
-            traj_states = traj_info.get_states()
-
             target_path = basedir / "start.conf"
-            target_info = trajectory.TrajectoryInfo(
-                top_info, read_from_file=True, traj_path=target_path, reverse_direction=False)
-            target_state = target_info.get_states()[0]
-
-            displacement_fn, _ = space.periodic(traj_info.box_size)
 
 
             ## Compute RMSDs using OAT
-
             ti_ref, di_ref = describe(None, str(target_path))
             ti_trj, di_trj = describe(None, str(traj_path))
 
             ref_conf = get_confs(ti_ref, di_ref, 0, 1)[0]
-            RMSDs_default, RMSFs_default = deviations(di_trj, ti_trj, ref_conf, indexes=[], ncpus=1)
-            RMSDs_my, RMSFs_my = compute_rmses(traj_path, target_path, top_path, displacement_fn)
-            assert(onp.allclose(RMSDs_my, RMSDs_default))
-            assert(onp.allclose(RMSFs_my, RMSFs_default))
+            RMSDs_oat, RMSFs_oat = deviations(di_trj, ti_trj, ref_conf, indexes=[], ncpus=1)
+
+            ## Compute RMSDs using JAX
+            top_info = topology.TopologyInfo(top_path, reverse_direction=False)
+            n = len(top_info.seq)
+
+            traj_info = trajectory.TrajectoryInfo(
+                top_info, read_from_file=True, traj_path=traj_path, reverse_direction=False)
+            traj_states = traj_info.get_states()
+            traj_states = utils.tree_stack(traj_states)
+
+            target_info = trajectory.TrajectoryInfo(
+                top_info, read_from_file=True, traj_path=target_path, reverse_direction=False)
+            target_state = target_info.get_states()[0]
+
+            RMSDs_jax, RMSFs_jax = compute_rmses(traj_states, target_state, top_info)
+
+            ## Check for equality
+            assert(onp.allclose(RMSDs_jax, RMSDs_oat))
+            assert(onp.allclose(RMSFs_jax, RMSFs_oat))
 
 
 
@@ -143,13 +141,3 @@ class TestRMSE(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-    """
-    compute RMSD directly, no RMSF. Then change error checking appropriately.
-
-    vmap
-
-    remove indicies. Assume we care about  the whole structure every time.
-
-    put into real functionaltiy/API
-    """
