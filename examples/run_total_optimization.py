@@ -146,7 +146,7 @@ def main():
         outs: jdna_types.Grads,
         aux: tuple[jdna_types.Arr_N, jdna_types.MetaData],
         meta_data: jdna_types.MetaData,
-    )-> None:
+    )-> tuple[str, str]:
         if not out_dir.exists():
             out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -167,8 +167,6 @@ def main():
         return obs, (obs, meta)
 
     grad_and_obs_fn = jax.jit(jax.jacfwd(simulator_fn, has_aux=True))
-
-
 
     proptwist_simulator = sim_actor.SimulatorActor.remote(
         fn=grad_and_obs_fn,
