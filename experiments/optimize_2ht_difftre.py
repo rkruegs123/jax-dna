@@ -39,7 +39,6 @@ else:
 def run(args):
     # Load parameters
     n_sims = args['n_sims']
-    assert(n_sims == 1)
     n_steps_per_sim = args['n_steps_per_sim']
     n_eq_steps = args['n_eq_steps']
     sample_every = args['sample_every']
@@ -137,7 +136,7 @@ def run(args):
     mass = rigid_body.RigidBody(center=jnp.array([utils.nucleotide_mass], dtype=jnp.float64),
                                 orientation=jnp.array([utils.moment_of_inertia], dtype=jnp.float64))
 
-    def sim_fn(params, body, n_steps, key, curr_stack_weights):
+    def sim_fn(params, body, key, curr_stack_weights):
 
         em = model.EnergyModel(
             displacement_fn, params["seq_avg"], t_kelvin=t_kelvin, salt_conc=salt_conc,
@@ -153,16 +152,19 @@ def run(args):
         init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
         init_state = init_fn(key, body, mass=mass)
 
+        fori_step_fn = lambda t, state: step_fn(state)
+
         @jit
         def scan_fn(state, step):
-            state = step_fn(state)
+            state = lax.fori_loop(0, sample_every, fori_step_fn, state)
             return state, state.position
 
-        fin_state, traj = scan(scan_fn, init_state, jnp.arange(n_steps))
+        eq_state = lax.fori_loop(0, n_eq_steps, fori_step_fn, init_state)
+        fin_state, traj = scan(scan_fn, eq_state, jnp.arange(n_ref_states_per_sim))
 
         return traj
 
-    def get_ref_states(params, i, key, init_body):
+    def get_ref_states(params, i, iter_key, init_body):
 
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
@@ -173,9 +175,16 @@ def run(args):
         else:
             curr_stack_weights = ss_stack_weights
 
-        trajectory = sim_fn(params, init_body, n_eq_steps + n_steps_per_sim, key, curr_stack_weights)
-        eq_trajectory = trajectory[n_eq_steps:]
-        traj_states = eq_trajectory[::sample_every]
+        iter_key, sim_key = random.split(iter_key)
+        sim_keys = random.split(sim_key, n_sims)
+        all_batch_ref_states = vmap(sim_fn, (None, None, 0, None))(params, init_body, sim_keys, curr_stack_weights)
+
+        combined_center = all_batch_ref_states.center.reshape(-1, top_info.n, 3)
+        combined_quat_vec = all_batch_ref_states.orientation.vec.reshape(-1, top_info.n, 4)
+
+        traj_states = rigid_body.RigidBody(
+            center=combined_center,
+            orientation=rigid_body.Quaternion(combined_quat_vec))
 
         # n_traj_states = len(ref_states)
         n_traj_states = traj_states.center.shape[0]
@@ -231,6 +240,7 @@ def run(args):
         with open(iter_dir / "summary.txt", "w+") as f:
             f.write(f"Calc. energy var.: {onp.var(calc_energies)}\n")
             f.write(f"Mean RMSD: {mean_rmsd}\n")
+            f.write(f"# Traj. States: {n_traj_states}\n")
 
         with open(iter_dir / "params.txt", "w+") as f:
             f.write(f"{pprint.pformat(params)}\n")
