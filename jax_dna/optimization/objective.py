@@ -107,12 +107,11 @@ class SimGradObjective(Objective):
 
 
 def compute_weights_and_neff(
-    energy_fn:callable,
     beta:float,
-    ref_states:jnp.ndarray,
-    new_states:jnp.ndarray,
+    new_energies:jdna_types.Arr_N,
+    ref_energies:jdna_types.Arr_N,
 ) -> jnp.ndarray:
-    diffs = energy_fn(new_states) - energy_fn(ref_states)
+    diffs = new_energies - ref_energies
     boltz = jnp.exp(-beta * diffs)
     weights = boltz / jnp.sum(boltz)
     n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
@@ -129,16 +128,16 @@ def compute_loss(
         tuple[jnp.ndarray, tuple[str, typing.Any]]
     ],
     ref_states:jax_md.rigid_body.RigidBody,
-    new_states:jnp.ndarray,
+    ref_energies:jdna_types.Arr_N,
 ) -> tuple[float, tuple[float, jnp.ndarray]]:
+    new_energies = energy_fn_builder(opt_params)(ref_states)
     weights, neff = compute_weights_and_neff(
-        energy_fn_builder(opt_params),
         beta,
-        ref_states,
-        new_states,
+        new_energies,
+        ref_energies,
     )
-    loss, measured_value = loss_fn(new_states, weights)
-    return loss, (neff, measured_value)
+    loss, measured_value = loss_fn(ref_states, weights)
+    return loss, (neff, measured_value, new_energies)
 
 
 @ray.remote
@@ -154,6 +153,7 @@ class DiffTReObjective(Objective):
         opt_params:jdna_types.Params,
         trajectory_key:str,
         beta:float,
+        n_equilibration_steps:int,
         **kwargs:dict[str, typing.Any],
     ):
         super().__init__(
@@ -167,12 +167,14 @@ class DiffTReObjective(Objective):
         self._opt_params = opt_params
         self._trajectory_key = trajectory_key
         self._beta = beta
+        self._n_eq_steps = n_equilibration_steps
 
         self.n_eff_factor = kwargs.get("min_n_eff_factor", 0.95)
         self.accept_expired_trajectory_grads = kwargs.get("accept_expired_trajectory_grads", False)
         self.expired_trajectory_value = kwargs.get("expired_trajectory_value", 0.0)
 
         self._reference_states = None
+        self._reference_energies = None
 
 
     def calculate(self) -> list[jdna_types.Grads]:
@@ -181,7 +183,6 @@ class DiffTReObjective(Objective):
         if not self.is_ready():
             raise ValueError(ERR_OBJECTIVE_NOT_READY)
 
-
         sorted_obs = list(map(
             lambda x: x[1],
             sorted(
@@ -189,36 +190,43 @@ class DiffTReObjective(Objective):
                 key=lambda x: self._required_observables.index(x[0]),
             )
         ))
-        new_trajectory = sorted_obs
+        new_trajectory = sorted_obs[0]
         if self._reference_states is None:
-            self._reference_states = new_trajectory
+            self._reference_states = new_trajectory.slice(
+                slice(self._n_eq_steps, len(new_trajectory.rigid_body.center), None)
+            )
+            self._reference_energies = self._energy_fn_builder(self._opt_params)(self._reference_states)
+
         # n_eff_measured here should be the normalized effective sample size
         # of the trajectory.
-        (loss, (n_eff_measured, measured_value)), grads = compute_loss(
+        (loss, (n_eff_measured, measured_value, new_energies)), grads = compute_loss(
             self._opt_params,
             self._energy_fn_builder,
             self._beta,
             self.grad_or_loss_fn,
             self._reference_states,
-            new_trajectory,
+            self._reference_energies,
         )
+        self._reference_energies = new_energies
 
         self._obtained_observables = [
             ("loss", loss),
             measured_value,
-            *[(ro, so) for (ro, so) in zip(self.required_observables, sorted_obs)],
+            *[(ro, so) for (ro, so) in zip(self._required_observables, sorted_obs)],
 
         ]
 
         invalid_trajectory = n_eff_measured < self.n_eff_factor
+        print("n_eff_measured", n_eff_measured)
+        print("n_eff_factor", self.n_eff_factor)
         if invalid_trajectory:
+            print("invalid trajectory")
             # we need to regenerate the trajectory
             self._needed_observables.append(self._trajectory_key)
             self._reference_states = None
             if not self.accept_expired_trajectory_grads:
-                # if we are not accepting expired trajectory grads
-                # we zero them out.
-                # maybe change this to `nan` or make it a settable value/
+                # if we are not accepting expired trajectory grads we zero/nan
+                # the grads
                 grads = jax.tree.map(
                     lambda x: jnp.zeros_like(x) + self.expired_trajectory_value,
                     grads,
@@ -228,7 +236,14 @@ class DiffTReObjective(Objective):
 
 
 
-    def post_step(self, opt_params:jdna_types.Params) -> None:
-        self._needed_observables = self.required_observables
-        self._obtained_observables = []
+    def post_step(
+        self,
+        opt_params:jdna_types.Params,
+    ) -> None:
+        self._obtained_observables = list(filter(
+            lambda x: x[0] == self._trajectory_key,
+            self._obtained_observables
+        ))
+        # self._needed_observables = self._required_observables
+        # self._obtained_observables = []
         self._opt_params = opt_params

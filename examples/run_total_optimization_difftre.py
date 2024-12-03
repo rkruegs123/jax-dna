@@ -19,6 +19,7 @@ import jax_dna.observables as jd_obs
 import jax_dna.optimization.objective as jdna_objective
 import jax_dna.optimization.base as jdna_optimization
 import jax_dna.simulators.jax_md as jaxmd
+import jax_dna.simulators.io as jdna_sio
 import jax_dna.utils.types as jdna_types
 from jax_dna.input import topology, trajectory
 
@@ -78,14 +79,22 @@ def main():
         transform_fn=transform_fn,
     )
 
-    energy_fn_builder = jax.vmap(
-        lambda rigid_body: energy_fn_builder_fn(
-            rigid_body,
-            seq=jnp.array(top.seq_one_hot),
-            bonded_neighbors=top.bonded_neighbors,
-            unbonded_neighbors=top.unbonded_neighbors.T,
+    def energy_fn_builder(params: jdna_types.Params) -> callable:
+        return jax.vmap(
+            lambda trajectory: energy_fn_builder_fn(params)(
+                trajectory.rigid_body,
+                seq=jnp.array(top.seq_one_hot),
+                bonded_neighbors=top.bonded_neighbors,
+                unbonded_neighbors=top.unbonded_neighbors.T,
+            )
         )
-    )
+
+    # energy_fn_builder = lambda rigid_body: energy_fn_builder_fn(
+    #         rigid_body,
+    #         seq=jnp.array(top.seq_one_hot),
+    #         bonded_neighbors=top.bonded_neighbors,
+    #         unbonded_neighbors=top.unbonded_neighbors.T,
+    # )
 
     # Simulator ================================================================
     topology_fname = "data/sys-defs/simple-helix/sys.top"
@@ -142,6 +151,7 @@ def main():
         output_dir.mkdir(parents=True, exist_ok=True)
     init_body = traj.states[0].to_rigid_body()
     run_steps = 1000
+    n_equilibration_steps = run_steps // 10
 
     def simulator_fn(
         params: jdna_types.Params,
@@ -151,7 +161,7 @@ def main():
         return traj, meta
 
     def trajectory_writer_fn(
-        traj: jax_md.rigid_body.RigidBody,
+        traj: jdna_sio.SimulatorTrajectory,
         aux: dict[str, typing.Any],
         meta: jdna_types.MetaData,
     ) -> list[str]:
@@ -180,7 +190,8 @@ def main():
         weights: jnp.ndarray,
     ) -> tuple[float, tuple[str, typing.Any]]:
         obs = prop_twist_fn(traj)
-        loss = jnp.sum(weights * obs)
+        loss = (jnp.dot(weights, obs) - jd_obs.propeller.TARGETS["oxDNA"])**2
+        loss = jnp.sqrt(loss)
         return loss, (obs, {})
 
 
@@ -193,6 +204,7 @@ def main():
         opt_params = opt_params,
         trajectory_key = obs_trajectory,
         beta = jnp.array(1/kT),
+        n_equilibration_steps = n_equilibration_steps,
     )
     # ==========================================================================
 
@@ -202,7 +214,7 @@ def main():
     opt = jdna_optimization.Optimization(
         objectives=objectives,
         simulators=simulators,
-        optimizer = optax.adam(learning_rate=1e-5),
+        optimizer = optax.adam(learning_rate=1e-3),
         aggregate_grad_fn=tree_mean,
     )
 
@@ -216,7 +228,10 @@ def main():
             for (name, value) in log_values:
                 logger.log_metric(name, value, step=i)
 
-        opt = opt.post_step(optimizer_state=opt_state)
+        opt = opt.post_step(
+            optimizer_state=opt_state,
+            opt_params=opt_params,
+        )
         print("Step", i, "Completed")
 
 

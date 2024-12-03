@@ -48,6 +48,22 @@ class SimulatorTrajectory:
     def slice(self, key: int | slice) -> "SimulatorTrajectory":
         """Slice the trajectory."""
 
-        return self.replace(
-            rigid_body=self.rigid_body[key],
+        sub_rigid_body = jax_md.rigid_body.RigidBody(
+            center=self.rigid_body.center[key],
+            orientation=jax_md.rigid_body.Quaternion(
+                vec=self.rigid_body.orientation.vec[key],
+            )
         )
+
+        return self.replace(
+            rigid_body=jax_md.rigid_body.RigidBody(
+                center=self.rigid_body.center[key, ...],
+                orientation=jax_md.rigid_body.Quaternion(
+                    vec=self.rigid_body.orientation.vec[key, ...],
+                )
+            )
+        )
+
+    def __len__(self):
+        print(self.rigid_body.center.shape, self.rigid_body.center.shape[0])
+        return self.rigid_body.center.shape[0]

@@ -129,7 +129,7 @@ class SimulatorActor:
 
         if self.writer_fn is not None:
             return self.writer_fn(outs, aux, self.meta_data)
-        print("outs", outs)
+
         return outs, aux, self.meta_data
 
 

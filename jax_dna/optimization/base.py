@@ -97,7 +97,8 @@ class Optimization:
     def post_step(
         self,
         optimizer_state: optax.OptState,
+        opt_params: jdna_types.Params,
     ) -> None:
         """"""
-        _ = ray.get([o.post_step.remote() for o in self.objectives])
+        _ = ray.get([o.post_step.remote(opt_params) for o in self.objectives])
         return self.replace(optimizer_state=optimizer_state)
