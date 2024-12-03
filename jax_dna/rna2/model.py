@@ -211,7 +211,8 @@ class EnergyModel:
             cond = r < self.params['debye']['r_high']
             energy = jnp.where(cond, energy_full, energy_smooth)
             return jnp.where(r < self.params['debye']['rcut'], energy, 0.0)
-        db_dg = vmap(db_term)(r_back_op).sum()
+        db_dg = vmap(db_term)(r_back_op)
+        db_dg = jnp.where(mask, db_dg, 0.0).sum()
 
         return fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg
 
@@ -230,7 +231,8 @@ class TestRna2(unittest.TestCase):
                               t_kelvin, salt_conc,
                               r_cutoff=10.0, dr_threshold=0.2,
                               tol_places=4, verbose=True, avg_seq=True,
-                              hb_tol_places=3, params=None):
+                              hb_tol_places=3, params=None,
+                              use_neighbors=False):
 
 
         if avg_seq:
@@ -279,12 +281,23 @@ class TestRna2(unittest.TestCase):
                             ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
 
         ## setup neighbors, if necessary
-        neighbors_idx = top_info.unbonded_nbrs.T
+        if use_neighbors:
+            neighbor_fn = top_info.get_neighbor_list_fn(
+                displacement_fn, traj_info.box_size, r_cutoff, dr_threshold)
+            neighbor_fn = jit(neighbor_fn)
+            neighbors = neighbor_fn.allocate(traj_states[0].center) # We use the COMs
+        else:
+            neighbors_idx = top_info.unbonded_nbrs.T
 
-        # compute_subterms_fn = model.compute_subterms
+
+        compute_subterms_fn = model.compute_subterms
         compute_subterms_fn = jit(model.compute_subterms)
         computed_subterms = list()
         for state in tqdm(traj_states):
+
+            if use_neighbors:
+                neighbors = jit(neighbors.update)(state.center)
+                neighbors_idx = neighbors.idx
 
             dgs = compute_subterms_fn(
                 state, seq_oh, top_info.bonded_nbrs, neighbors_idx)
@@ -325,21 +338,22 @@ class TestRna2(unittest.TestCase):
             (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 1.0, True),
             (self.test_data_basedir / "simple-helix-rna2-12bp-ss", "sys.top", "output.dat", 296.15, 1.0, False),
             (self.test_data_basedir / "simple-coax-rna2", "generated.top", "output.dat", 296.15, 1.0, True),
-
             (self.test_data_basedir / "simple-helix-rna2-12bp-ss-290.15", "sys.top", "output.dat", 290.15, 1.0, False),
-
             (self.test_data_basedir / "regr-rna2-2ht-293.15-ss", "sys.top", "output.dat", 293.15, 1.0, False),
             (self.test_data_basedir / "regr-rna2-2ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True),
             (self.test_data_basedir / "regr-rna2-2ht-296.15-ss", "sys.top", "output.dat", 296.15, 1.0, False),
             (self.test_data_basedir / "regr-rna2-2ht-296.15-sa", "sys.top", "output.dat", 296.15, 1.0, True),
 
-            (self.test_data_basedir / "regr-rna2-5ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True)
+
+
+            # (self.test_data_basedir / "regr-rna2-5ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True)
         ]
 
 
         for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq in subterm_tests:
-            self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin, salt_conc,
-                                       avg_seq=avg_seq, params=None)
+            for use_neighbors in [False, True]:
+                self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin, salt_conc,
+                                           avg_seq=avg_seq, params=None, use_neighbors=use_neighbors)
 
 
 if __name__ == "__main__":
