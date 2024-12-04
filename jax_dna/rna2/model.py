@@ -34,7 +34,7 @@ class EnergyModel:
     def __init__(self, displacement_fn, override_base_params=EMPTY_BASE_PARAMS,
                  t_kelvin=DEFAULT_TEMP, ss_hb_weights=utils.HB_WEIGHTS_SA,
                  ss_stack_weights=utils.STACK_WEIGHTS_SA,
-                 salt_conc=0.5, q_eff=0.815
+                 salt_conc=0.5, q_eff=0.815, use_symm_coax=False
     ):
         self.displacement_fn = displacement_fn
         self.displacement_mapped = jit(space.map_bond(partial(displacement_fn)))
@@ -196,9 +196,14 @@ class EnergyModel:
             theta7_op, theta8_op, **self.params["cross_stacking"])
         cr_stack_dg = jnp.where(mask, cr_stack_dg, 0.0).sum() # Mask for neighbors
 
-        cx_stack_dg = coaxial_stacking(
-            dr_stack_op, theta4_op, theta1_op, theta5_op,
-            theta6_op, cosphi3_op, cosphi4_op, **self.params["coaxial_stacking"])
+        if use_symm_coax:
+            cx_stack_dg = coaxial_stacking3(
+                dr_stack_op, theta4_op, theta1_op, theta5_op,
+                theta6_op, cosphi3_op, cosphi4_op, **self.params["coaxial_stacking"])
+        else:
+            cx_stack_dg = coaxial_stacking(
+                dr_stack_op, theta4_op, theta1_op, theta5_op,
+                theta6_op, cosphi3_op, cosphi4_op, **self.params["coaxial_stacking"])
         cx_stack_dg = jnp.where(mask, cx_stack_dg, 0.0).sum() # Mask for neighbors
 
         # Compute debye_dg

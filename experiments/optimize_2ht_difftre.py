@@ -53,6 +53,8 @@ def run(args):
     max_approx_iters = args['max_approx_iters']
     use_nbrs = args['use_nbrs']
 
+    use_symm_coax = args['use_symm_coax']
+
     seq_avg_opt_keys = args['seq_avg_opt_keys']
     opt_seq_dep_stacking = args['opt_seq_dep_stacking']
 
@@ -157,7 +159,7 @@ def run(args):
         em = model.EnergyModel(
             displacement_fn, params["seq_avg"], t_kelvin=t_kelvin, salt_conc=salt_conc,
             ss_hb_weights=ss_hb_weights,
-            ss_stack_weights=curr_stack_weights)
+            ss_stack_weights=curr_stack_weights, use_symm_coax=use_symm_coax)
         energy_fn = lambda body, neighbors_idx: em.energy_fn(
             body,
             seq=seq_oh,
@@ -223,7 +225,7 @@ def run(args):
         em = model.EnergyModel(
             displacement_fn, params["seq_avg"], t_kelvin=t_kelvin, salt_conc=salt_conc,
             ss_hb_weights=ss_hb_weights,
-            ss_stack_weights=curr_stack_weights)
+            ss_stack_weights=curr_stack_weights, use_symm_coax=use_symm_coax)
         energy_fn = lambda body: em.energy_fn(
             body,
             seq=seq_oh,
@@ -293,7 +295,7 @@ def run(args):
             displacement_fn, params["seq_avg"], t_kelvin=t_kelvin, salt_conc=salt_conc,
             ss_hb_weights=ss_hb_weights,
             # ss_stack_weights=ss_stack_weights)
-            ss_stack_weights=curr_stack_weights)
+            ss_stack_weights=curr_stack_weights, use_symm_coax=use_symm_coax)
         energy_fn = lambda body: em.energy_fn(
             body,
             seq=seq_oh,
@@ -437,6 +439,8 @@ def get_parser():
         help='Parameter keys to optimize'
     )
     parser.add_argument('--opt-seq-dep-stacking', action='store_true')
+
+    parser.add_argument('--use-symm-coax', action='store_true')
 
 
     return parser
