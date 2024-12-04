@@ -42,6 +42,8 @@ class EnergyModel:
         self.salt_conc = salt_conc
         kT = utils.get_kt(self.t_kelvin)
 
+        self.use_symm_coax = use_symm_coax
+
         self.ss_hb_weights = ss_hb_weights
         self.ss_hb_weights_flat = self.ss_hb_weights.flatten()
 
@@ -196,7 +198,7 @@ class EnergyModel:
             theta7_op, theta8_op, **self.params["cross_stacking"])
         cr_stack_dg = jnp.where(mask, cr_stack_dg, 0.0).sum() # Mask for neighbors
 
-        if use_symm_coax:
+        if self.use_symm_coax:
             cx_stack_dg = coaxial_stacking3(
                 dr_stack_op, theta4_op, theta1_op, theta5_op,
                 theta6_op, cosphi3_op, cosphi4_op, **self.params["coaxial_stacking"])
