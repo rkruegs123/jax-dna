@@ -19,7 +19,7 @@ from jax_dna.common.utils import Q_to_back_base, Q_to_base_normal, Q_to_cross_pr
 from jax_dna.common.base_functions import v_fene
 from jax_dna.common.interactions import v_fene_smooth, stacking2, exc_vol_bonded, \
     exc_vol_unbonded, cross_stacking2, coaxial_stacking, hydrogen_bonding, \
-    coaxial_stacking
+    coaxial_stacking3
 from jax_dna.common import utils, topology, trajectory
 from jax_dna.rna2.load_params import load, _process, read_seq_specific, \
     DEFAULT_BASE_PARAMS, EMPTY_BASE_PARAMS, get_full_base_params
