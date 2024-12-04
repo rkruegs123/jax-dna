@@ -645,7 +645,7 @@ def coaxial_stacking3(
 
     return f2_dr_coax \
         * (f4_theta_1_coax_fn(theta1) + f4_theta_1_coax_fn(2 * jnp.pi - theta1)) \
-        * (f4_theta_4_coax_fn(theta4) + f4_theta_4_coax_fn(jnp.pi - theta4)) \ # Changed this
+        * (f4_theta_4_coax_fn(theta4) + f4_theta_4_coax_fn(jnp.pi - theta4)) \
         * (f4_theta_5_coax_fn(theta5) + f4_theta_5_coax_fn(jnp.pi - theta5)) \
         * (f4_theta_6_coax_fn(theta6) + f4_theta_6_coax_fn(jnp.pi - theta6)) \
         * f5_cosphi3_coax * f5_cosphi4_coax
