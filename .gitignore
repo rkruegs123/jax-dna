@@ -13,6 +13,8 @@ bak/v2/data/output
 
 output/
 
+**/*.zip
+
 *.png
 *.dat
 *.pkl
