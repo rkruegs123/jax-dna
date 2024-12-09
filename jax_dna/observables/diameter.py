@@ -1,4 +1,4 @@
-"""Pitch observable."""
+"""Diameter observable."""
 
 import dataclasses as dc
 import functools

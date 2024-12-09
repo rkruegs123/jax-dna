@@ -1,4 +1,4 @@
-"""Pitch observable."""
+"""Rise observable."""
 
 import dataclasses as dc
 import functools
