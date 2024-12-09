@@ -15,10 +15,8 @@ import jax_dna.simulators.io as jd_sio
 import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as jd_types
 
-ERR_RIGID_BODY_TRANSFORM_FN_REQUIRED = "rigid_body_transform_fn must be provided"
-
 TARGETS = {
-    "oxDNA": 21.7,
+    "oxDNA": 21.7, # degrees
 }
 
 
@@ -56,7 +54,7 @@ class PropellerTwist(jd_obs.BaseObservable):
     def __post_init__(self) -> None:
         """Validate the input."""
         if self.rigid_body_transform_fn is None:
-            raise ValueError(ERR_RIGID_BODY_TRANSFORM_FN_REQUIRED)
+            raise ValueError(jd_obs.ERR_RIGID_BODY_TRANSFORM_FN_REQUIRED)
 
     def __call__(self, trajectory: jd_sio.SimulatorTrajectory) -> jd_types.ARR_OR_SCALAR:
         """Calculate the twist of the propeller in degrees.

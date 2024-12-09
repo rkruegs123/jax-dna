@@ -7,6 +7,7 @@ import jax.numpy as jnp
 
 import jax_dna.input.trajectory as jd_traj
 
+ERR_RIGID_BODY_TRANSFORM_FN_REQUIRED = "rigid_body_transform_fn must be provided"
 
 @chex.dataclass(frozen=True)
 class BaseObservable:
