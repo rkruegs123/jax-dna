@@ -89,7 +89,7 @@ class Rise(jd_obs.BaseObservable):
         rises = jax.vmap(single_rise, (None, 0, None))(
             self.quartets, base_sites, self.displacement_fn
         )
-        return rises
+        return jnp.mean(rises, axis=1)
 
 
 if __name__ == "__main__":
