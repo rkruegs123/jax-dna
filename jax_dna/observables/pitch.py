@@ -57,13 +57,13 @@ def single_pitch_angle(
 
 @chex.dataclass(frozen=True, kw_only=True)
 class PitchAngle(jd_obs.BaseObservable):
-    """Computes the average pitch angle for each state.
+    """Computes the average pitch angle in radians for each state.
 
     The pitch is defined by (2*pi) / <angle> where <angle> is the average angle
     between adjacent base pairs across states
 
     Args:
-    - quartets: a (n_bp, 2, 2) array containing the pairs of adjacent base pairs
+    - quartets: a (n_quartets, 2, 2) array containing the pairs of adjacent base pairs
       for which to compute pitch angles
     - displacement_fn: a function for computing displacements between two positions
     """

@@ -63,8 +63,8 @@ class PropellerTwist(jd_obs.BaseObservable):
             trajectory (jd_traj.Trajectory): the trajectory to calculate the propeller twist for
 
         Returns:
-            jd_types.ARR_OR_SCALAR: the propeller twist in degrees for each state and for each
-            base pair, so expect a size of (n_states, n_base_pairs)
+            jd_types.ARR_OR_SCALAR: the propeller twist in degrees for each state , so expect a size
+            of (n_states,)
         """
         nucleotides = jax.vmap(self.rigid_body_transform_fn)(trajectory.rigid_body)
 
