@@ -16,6 +16,8 @@ verlet_skin = 1.00
 umbrella_sampling = 1
 op_file = op.txt
 weights_file = wfile.txt
+safe_weights = 0
+default_weight = 0
 extrapolate_hist = 45C, 47C, 49C, 51C, 53C, 55C, 57C, 59C, 61C, 63C
 small_system = 1
 
