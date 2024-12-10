@@ -127,10 +127,11 @@ def run(args):
 
     top_path = sys_basedir / "sys.top"
     top_info = topology.TopologyInfo(top_path,
-                                     reverse_direction=False
+                                     reverse_direction=False,
                                      # reverse_direction=True
+                                     is_rna=True
     )
-    seq_oh = jnp.array(utils.get_one_hot(top_info.seq), dtype=jnp.float64)
+    seq_oh = jnp.array(utils.get_one_hot(top_info.seq, is_rna=True), dtype=jnp.float64)
     assert(seq_oh.shape[0] % 2 == 0)
     n_bp = seq_oh.shape[0] // 2
 

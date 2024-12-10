@@ -6,7 +6,6 @@ from jax import jit
 from jax_dna.common.base_functions import f1, f2, f3, f4, f5, f6, v_fene
 
 
-@jit
 def smooth_abs(x, eps=1e-10):
     """
     A smooth absolute value function. Note that a non-zero eps
@@ -16,7 +15,6 @@ def smooth_abs(x, eps=1e-10):
     """
     return jnp.sqrt(x**2 + eps)
 
-@jit
 def v_fene_smooth(r, eps_backbone, r0_backbone, delta_backbone, fmax=500, finf=4.0):
     eps = eps_backbone; r0 = r0_backbone; delt = delta_backbone
 
@@ -35,7 +33,6 @@ def v_fene_smooth(r, eps_backbone, r0_backbone, delta_backbone, fmax=500, finf=4
     return jnp.where(diff > xmax, smoothed_energy, v_fene(r, eps, r0, delt))
 
 
-@jit
 def exc_vol_bonded(
         dr_base, dr_back_base, dr_base_back,
         eps_exc,
@@ -71,7 +68,6 @@ def exc_vol_bonded(
 
     return f3_base_exc_vol + f3_back_base_exc_vol + f3_base_back_exc_vol
 
-@jit
 def exc_vol_unbonded(
         dr_base, dr_backbone, dr_back_base, dr_base_back,
         eps_exc,
@@ -98,7 +94,6 @@ def exc_vol_unbonded(
 
 # Note that we use r_stack instead of dr_stack
 # FIXME: fix this one with bs and rcs
-@jit
 def stacking(
         r_stack, theta4, theta5, theta6, cosphi1, cosphi2, # observables
         dr_low_stack, dr_high_stack, eps_stack, a_stack, dr0_stack, dr_c_stack,
@@ -166,7 +161,6 @@ def stacking(
         * f4_theta_5p_stack * f4_theta_6p_stack \
         * f5_neg_cosphi1_stack * f5_neg_cosphi2_stack
 
-@jit
 def stacking2(
         r_stack, theta5, theta6, theta9, theta10, cosphi1, cosphi2, # observables
         dr_low_stack, dr_high_stack, eps_stack, a_stack, dr0_stack, dr_c_stack,
@@ -240,7 +234,6 @@ def stacking2(
 
 
 
-@jit
 def hydrogen_bonding(
         dr_hb, theta1, theta2, theta3, theta4, theta7, theta8, # observables
         dr_low_hb, dr_high_hb, dr_c_low_hb, dr_c_high_hb, eps_hb, a_hb, # f1_dr_hb
@@ -311,7 +304,6 @@ def hydrogen_bonding(
     return f1_dr_hb * f4_theta_1_hb * f4_theta_2_hb \
         * f4_theta_3_hb * f4_theta_4_hb * f4_theta_7_hb * f4_theta_8_hb
 
-@jit
 def cross_stacking(r_hb, theta1, theta2, theta3, theta4, theta7, theta8,
                    dr_low_cross, dr_high_cross, dr_c_low_cross, dr_c_high_cross, # f2_dr_cross
                    k_cross, r0_cross, dr_c_cross, b_low_cross, b_high_cross, # f2_dr_cross (cont.)
@@ -375,7 +367,6 @@ def cross_stacking(r_hb, theta1, theta2, theta3, theta4, theta7, theta8,
         * (f4_theta_8_cross_fn(theta8) + f4_theta_8_cross_fn(jnp.pi - theta8))
 
 
-@jit
 def cross_stacking2(r_hb, theta1, theta2, theta3, theta7, theta8,
                    dr_low_cross, dr_high_cross, dr_c_low_cross, dr_c_high_cross, # f2_dr_cross
                    k_cross, r0_cross, dr_c_cross, b_low_cross, b_high_cross, # f2_dr_cross (cont.)
@@ -431,7 +422,6 @@ def cross_stacking2(r_hb, theta1, theta2, theta3, theta7, theta8,
         * (f4_theta_8_cross_fn(theta8) + f4_theta_8_cross_fn(jnp.pi - theta8))
 
 
-@jit
 def coaxial_stacking(dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4, # observables
                      dr_low_coax, dr_high_coax, dr_c_low_coax, dr_c_high_coax, # f2(dr_stack)
                      k_coax, dr0_coax, dr_c_coax, b_low_coax, b_high_coax, # f2(dr_stack), cont.
@@ -505,7 +495,6 @@ def coaxial_stacking(dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4,
 
 
 
-@jit
 def coaxial_stacking2(dr_stack, theta4, theta1, theta5, theta6, # observables
                       dr_low_coax, dr_high_coax, dr_c_low_coax, dr_c_high_coax, # f2(dr_stack)
                       k_coax, dr0_coax, dr_c_coax, b_low_coax, b_high_coax, # f2(dr_stack), cont.
@@ -568,7 +557,6 @@ def coaxial_stacking2(dr_stack, theta4, theta1, theta5, theta6, # observables
 
 
 
-@jit
 def coaxial_stacking3(
         dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4, # observables
         dr_low_coax, dr_high_coax, dr_c_low_coax, dr_c_high_coax, # f2(dr_stack)

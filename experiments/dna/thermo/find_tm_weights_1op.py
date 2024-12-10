@@ -58,6 +58,7 @@ def run(args):
     assert(not seq_dep)
 
     interaction = args['interaction']
+    is_rna = ("RNA" in interaction)
     if interaction == "DNA_nomesh" or interaction == "DNA2_nomesh":
         salt = 0.5
     elif interaction == "RNA2":

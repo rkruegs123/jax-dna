@@ -32,10 +32,13 @@ def center_conf(top_info, config_info):
 def run(args):
     top_path = args['top_path']
     conf_path = args['conf_path']
+    is_rna = args['is_rna']
 
-    top_info = TopologyInfo(top_path, reverse_direction=True) # Note: we assume reversal for now
-    config_info = TrajectoryInfo(top_info, read_from_file=True,
-                                 traj_path=conf_path, reverse_direction=True)
+    top_info = TopologyInfo(top_path, reverse_direction=True, is_rna=is_rna) # Note: we assume reversal for now
+    config_info = TrajectoryInfo(
+        top_info, read_from_file=True,
+        traj_path=conf_path, reverse_direction=True,
+    )
 
     centered_traj = center_conf(top_info, config_info)
 
@@ -50,5 +53,6 @@ if __name__ == "__main__":
                         help='Path to topology file')
     parser.add_argument('--conf-path', type=str,
                         help='Path to configuration file')
+    parser.add_argument('--is-rna', action='store_true')
     args = vars(parser.parse_args())
     run(args)
