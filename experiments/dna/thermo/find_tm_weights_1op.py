@@ -18,6 +18,8 @@ from jax_dna.dna1 import model as model1
 from jax_dna.dna1 import oxdna_utils as oxdna_utils1
 from jax_dna.dna2 import model as model2
 from jax_dna.dna2 import oxdna_utils as oxdna_utils2
+from jax_dna.rna2 import oxrna_utils
+from jax_dna.rna2 import load_params as load_params_rna
 
 
 
@@ -113,8 +115,11 @@ def run(args):
         # technically we don't have to recompile because we never do, but might as well
         params = deepcopy(model2.default_base_params_seq_avg)
         oxdna_utils2.recompile_oxdna(params, oxdna_path, t_kelvin, num_threads=n_threads)
+
     else:
         raise RuntimeError(f"Invalid interaction type: {interaction}")
+
+    empty_rna_params = load_params_rna.EMPTY_BASE_PARAMS
 
     # Setup a run with bad weights
     initial_weights_dir = run_dir / "initial_weights"
@@ -128,6 +133,9 @@ def run(args):
         shutil.copy(top_path, repeat_dir / "sys.top")
         shutil.copy(wfile_path, repeat_dir / "wfile.txt")
         shutil.copy(op_path, repeat_dir / "op.txt")
+
+        external_model_fpath = repeat_dir / "external_model.txt"
+        oxrna_utils.write_external_model(empty_rna_params, t_kelvin, salt, external_model_fpath)
 
         if i % 2 == 0:
             shutil.copy(conf_path_bound, repeat_dir / "init.conf")
@@ -147,7 +155,8 @@ def run(args):
             restart_step_counter=1, # Because we will not be concatenating the outputs, so we can equilibrate
             interaction_type=interaction,
             salt_concentration=salt,
-            extrapolate_hist=extrapolate_temp_str
+            extrapolate_hist=extrapolate_temp_str,
+            external_model=str(external_model_fpath)
         )
 
         procs.append(subprocess.Popen([oxdna_exec_path, repeat_dir / "input"]))
@@ -244,6 +253,9 @@ def run(args):
         shutil.copy(optimal_wfile_path, repeat_dir / "wfile.txt")
         shutil.copy(op_path, repeat_dir / "op.txt")
 
+        external_model_fpath = repeat_dir / "external_model.txt"
+        oxrna_utils.write_external_model(empty_rna_params, t_kelvin, salt, external_model_fpath)
+
         if i % 2 == 0:
             shutil.copy(conf_path_bound, repeat_dir / "init.conf")
         else:
@@ -263,7 +275,8 @@ def run(args):
             restart_step_counter=1, # Because we will not be concatenating the outputs, so we can equilibrate
             interaction_type=interaction,
             salt_concentration=salt,
-            extrapolate_hist=extrapolate_temp_str
+            extrapolate_hist=extrapolate_temp_str,
+            external_model=str(external_model_fpath)
         )
 
         procs.append(subprocess.Popen([oxdna_exec_path, repeat_dir / "input"]))
