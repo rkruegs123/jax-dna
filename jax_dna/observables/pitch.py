@@ -22,6 +22,14 @@ TARGETS = {
 }
 
 
+def compute_pitch(avg_pitch_angle: float) -> float:
+    """Computes the pitch given an average pitch angle in radians.
+
+    Args:
+    - avg_pitch_angle: a value in radians specifying the pitch value averaged over a trajectory
+    """
+    return jnp.pi / avg_pitch_angle
+
 @functools.partial(jax.vmap, in_axes=(0, None, None, None))
 def single_pitch_angle(
         quartet: jnp.ndarray,
