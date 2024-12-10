@@ -639,6 +639,89 @@ def coaxial_stacking3(
         * f5_cosphi3_coax * f5_cosphi4_coax
 
 
+def coaxial_stacking4(
+        dr_stack, theta4, theta1, theta5, theta6, cosphi3, cosphi4, # observables
+        dr_low_coax, dr_high_coax, dr_c_low_coax, dr_c_high_coax, # f2(dr_stack)
+        k_coax, dr0_coax, dr_c_coax, b_low_coax, b_high_coax, # f2(dr_stack), cont.
+        theta0_coax_4, delta_theta_star_coax_4, delta_theta_coax_4_c, a_coax_4, b_coax_4, # f4(theta4)
+        theta0_coax_1, delta_theta_star_coax_1, delta_theta_coax_1_c, a_coax_1, b_coax_1, # f4(theta1)
+        theta0_coax_1_bonus, delta_theta_coax_1_c_bonus, b_coax_1_bonus, # f4(theta1), cont. (bonus)
+        theta0_coax_5, delta_theta_star_coax_5, delta_theta_coax_5_c, a_coax_5, b_coax_5, # f4(theta5)
+        theta0_coax_6, delta_theta_star_coax_6, delta_theta_coax_6_c, a_coax_6, b_coax_6, # f4(theta6)
+        cos_phi3_star_coax, cos_phi3_c_coax, a_coax_3p, b_cos_phi3_coax, # f5(cosphi3)
+        cos_phi4_star_coax, cos_phi4_c_coax, a_coax_4p, b_cos_phi4_coax # f5(cosphi4)
+):
+    r_stack = jnp.linalg.norm(dr_stack, axis=1)
+
+    f2_dr_coax = f2(r_stack,
+                    r_low=dr_low_coax,
+                    r_high=dr_high_coax,
+                    r_c_low=dr_c_low_coax,
+                    r_c_high=dr_c_high_coax,
+                    k=k_coax,
+                    r0=dr0_coax,
+                    r_c=dr_c_coax,
+                    b_low=b_low_coax,
+                    b_high=b_high_coax)
+
+    f4_theta_4_coax_fn = Partial(
+        f4,
+        theta0=theta0_coax_4,
+        delta_theta_star=delta_theta_star_coax_4,
+        delta_theta_c=delta_theta_coax_4_c,
+        a=a_coax_4,
+        b=b_coax_4)
+
+
+    f4_theta_1_coax_fn = Partial(f4,
+                                 theta0=theta0_coax_1,
+                                 delta_theta_star=delta_theta_star_coax_1,
+                                 delta_theta_c=delta_theta_coax_1_c,
+                                 a=a_coax_1,
+                                 b=b_coax_1)
+
+    f4_theta_1_coax_fn_bonus = Partial(f4,
+                                       theta0=theta0_coax_1_bonus,
+                                       delta_theta_star=delta_theta_star_coax_1,
+                                       delta_theta_c=delta_theta_coax_1_c_bonus,
+                                       a=a_coax_1,
+                                       b=b_coax_1_bonus)
+
+    f4_theta_5_coax_fn = Partial(f4,
+                                 theta0=theta0_coax_5,
+                                 delta_theta_star=delta_theta_star_coax_5,
+                                 delta_theta_c=delta_theta_coax_5_c,
+                                 a=a_coax_5,
+                                 b=b_coax_5)
+
+    f4_theta_6_coax_fn = Partial(f4,
+                                 theta0=theta0_coax_6,
+                                 delta_theta_star=delta_theta_star_coax_6,
+                                 delta_theta_c=delta_theta_coax_6_c,
+                                 a=a_coax_6,
+                                 b=b_coax_6)
+
+    f5_cosphi3_coax = f5(cosphi3,
+                         x_star=cos_phi3_star_coax,
+                         x_c=cos_phi3_c_coax,
+                         a=a_coax_3p,
+                         b=b_cos_phi3_coax)
+
+    f5_cosphi4_coax = f5(cosphi4,
+                         x_star=cos_phi4_star_coax,
+                         x_c=cos_phi4_c_coax,
+                         a=a_coax_4p,
+                         b=b_cos_phi4_coax)
+
+    return f2_dr_coax \
+        * (f4_theta_1_coax_fn(theta1) + f4_theta_1_coax_fn(2 * jnp.pi - theta1) + f4_theta_1_coax_fn_bonus(theta1)) \
+        * (f4_theta_4_coax_fn(theta4) + f4_theta_4_coax_fn(jnp.pi - theta4)) \
+        * (f4_theta_5_coax_fn(theta5) + f4_theta_5_coax_fn(jnp.pi - theta5)) \
+        * (f4_theta_6_coax_fn(theta6) + f4_theta_6_coax_fn(jnp.pi - theta6)) \
+        * f5_cosphi3_coax * f5_cosphi4_coax
+
+
+
 
 if __name__ == "__main__":
     pass

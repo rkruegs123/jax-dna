@@ -325,6 +325,11 @@ def run(args):
     if opt_seq_dep_stacking:
         params["seq_dep"]["stacking"] = jnp.array(ss_stack_weights)
 
+    if use_symm_coax:
+        assert("coaxial_stacking" in seq_avg_opt_keys)
+
+        params["seq_avg"]["coaxial_stacking"]["theta0_coax_1_bonus"] = 0.35
+
     init_params = deepcopy(params)
 
     optimizer = optax.adam(learning_rate=lr)

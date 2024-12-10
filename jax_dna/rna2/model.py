@@ -9,30 +9,26 @@ import numpy as onp
 from io import StringIO
 
 import jax
+jax.config.update("jax_enable_x64", True)
 from jax import jit, random, lax, grad, value_and_grad, vmap
 import jax.numpy as jnp
 from jax_md import space, simulate, rigid_body
 
 from jax_dna.common.read_seq_specific import read_ss_oxdna
-from jax_dna.common.utils import DEFAULT_TEMP, clamp
-from jax_dna.common.utils import Q_to_back_base, Q_to_base_normal, Q_to_cross_prod
+from jax_dna.common.utils import clamp
 from jax_dna.common.base_functions import v_fene
 from jax_dna.common.interactions import v_fene_smooth, stacking2, exc_vol_bonded, \
     exc_vol_unbonded, cross_stacking2, coaxial_stacking, hydrogen_bonding, \
-    coaxial_stacking3
-from jax_dna.common import utils, topology, trajectory
+    coaxial_stacking3, coaxial_stacking4
+from jax_dna.common import utils, topology, trajectory, smoothing
 from jax_dna.rna2.load_params import load, _process, read_seq_specific, \
     DEFAULT_BASE_PARAMS, EMPTY_BASE_PARAMS, get_full_base_params
-
-# from jax.config import config
-# config.update("jax_enable_x64", True)
-jax.config.update("jax_enable_x64", True)
 
 
 
 class EnergyModel:
     def __init__(self, displacement_fn, override_base_params=EMPTY_BASE_PARAMS,
-                 t_kelvin=DEFAULT_TEMP, ss_hb_weights=utils.HB_WEIGHTS_SA,
+                 t_kelvin=utils.DEFAULT_TEMP, ss_hb_weights=utils.HB_WEIGHTS_SA,
                  ss_stack_weights=utils.STACK_WEIGHTS_SA,
                  salt_conc=0.5, q_eff=0.815, use_symm_coax=False
     ):
@@ -52,6 +48,14 @@ class EnergyModel:
 
         self.base_params = get_full_base_params(override_base_params)
         self.params = _process(self.base_params, self.t_kelvin, self.salt_conc)
+
+        if self.use_symm_coax:
+            b_coax_1_bonus, delta_theta_coax_1_c_bonus = smoothing.get_f4_smoothing_params(
+                self.params['coaxial_stacking']['a_coax_1'],
+                self.params['coaxial_stacking']['theta0_coax_1_bonus'],
+                self.params['coaxial_stacking']['delta_theta_star_coax_1'])
+            self.params['coaxial_stacking']['b_coax_1_bonus'] = b_coax_1_bonus
+            self.params['coaxial_stacking']['delta_theta_coax_1_c_bonus'] = delta_theta_coax_1_c_bonus
 
         self.com_to_backbone_x = self.params["geometry"]["pos_back_a1"]
         self.com_to_backbone_y = self.params["geometry"]["pos_back_a3"]
@@ -81,9 +85,9 @@ class EnergyModel:
 
         # Compute relevant variables for our potential
         Q = body.orientation
-        back_base_vectors = Q_to_back_base(Q) # space frame, normalized
-        base_normals = Q_to_base_normal(Q) # space frame, normalized
-        cross_prods = Q_to_cross_prod(Q) # space frame, normalized
+        back_base_vectors = utils.Q_to_back_base(Q) # space frame, normalized
+        base_normals = utils.Q_to_base_normal(Q) # space frame, normalized
+        cross_prods = utils.Q_to_cross_prod(Q) # space frame, normalized
 
         back_sites = body.center + self.com_to_backbone_x*back_base_vectors + self.com_to_backbone_y*base_normals
         stack_sites = body.center + self.com_to_stacking * back_base_vectors
@@ -199,7 +203,8 @@ class EnergyModel:
         cr_stack_dg = jnp.where(mask, cr_stack_dg, 0.0).sum() # Mask for neighbors
 
         if self.use_symm_coax:
-            cx_stack_dg = coaxial_stacking3(
+            # cx_stack_dg = coaxial_stacking3(
+            cx_stack_dg = coaxial_stacking4(
                 dr_stack_op, theta4_op, theta1_op, theta5_op,
                 theta6_op, cosphi3_op, cosphi4_op, **self.params["coaxial_stacking"])
         else:
