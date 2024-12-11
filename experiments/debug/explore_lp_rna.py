@@ -3,6 +3,7 @@ import numpy as onp
 from pathlib import Path
 from copy import deepcopy
 from tqdm import tqdm
+from functools import partial
 
 import jax
 jax.config.update("jax_enable_x64", True)
@@ -53,7 +54,7 @@ def fit_plane(points):
     vals, vecs = jnp.linalg.eigh(A)
     return vecs[:, 0]
 
-
+@partial(jax.jit, static_argnums=(5, 6))
 def get_localized_axis(body, back_sites, stack_sites, base_sites, base_id, down_length, up_length):
 
     n = body.center.shape[0]
@@ -69,7 +70,10 @@ def get_localized_axis(body, back_sites, stack_sites, base_sites, base_id, down_
         p3 = midpoint_A - midpoint_B
         return guess, jnp.array([p1, p2, p3])
 
-    base_plane_idxs = jnp.arange(base_id-down_length, base_id+up_length+1)
+    n_base_plane_idxs = 1 + down_length + up_length
+    base_plane_idxs = base_id-down_length + jnp.arange(n_base_plane_idxs)
+
+    # base_plane_idxs = jnp.arange(base_id-down_length, base_id+up_length+1)
     guesses, plane_points = vmap(get_base_plane_nuc_info)(base_plane_idxs)
     plane_points = plane_points.reshape(-1, 3)
 
