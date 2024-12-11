@@ -95,6 +95,25 @@ def get_cosines(body, cosines, cosines_counter, base_start, down_neigh, up_neigh
         cosines[i - base_start] += onp.dot( l_0, l_i  )
         cosines_counter[i - base_start] += 1
 
+
+def get_cosines_jax(body, base_start, down_neigh, up_neigh, max_dist):
+
+    back_sites, stack_sites, base_sites = get_site_positions(body)
+    l_0 = get_localized_axis(body, back_sites, stack_sites, base_sites, base_start, down_neigh, up_neigh)
+
+    corr_dists = jnp.arange(max_dist) # FIXME: max_dist is really one too big. It's really one more than the max dist
+    def get_corr(dist):
+        i = base_start + dist
+        l_i = get_localized_axis(body, back_sites, stack_sites, base_sites, i, down_neigh, up_neigh)
+        corr = jnp.dot(l_0, l_i)
+        count = 1
+        return corr, count
+    body_corrs_jax, body_corr_counters_jax = vmap(get_corr)(corr_dists)
+
+    return body_corrs_jax, body_corr_counters_jax
+
+
+
 def run():
     basedir = Path("output") / "test-rna-lp"
     assert(basedir.exists())
@@ -124,9 +143,19 @@ def run():
     for idx in tqdm(range(n_traj_states)):
         body = traj_states[idx]
         get_cosines(body, cosines, cosines_counter, offset, 1, 1)
+        # get_cosines_jax(body, cosines, cosines_counter, offset, 1, 1)
+
+    max_dist = len(cosines)
+    traj_states = utils.tree_stack(traj_states)
+    all_cosines_jax, all_cosines_counter_jax = vmap(get_cosines_jax, (0, None, None, None, None))(traj_states, offset, 1, 1, max_dist)
+    cosines_jax = onp.sum(all_cosines_jax, axis=0)
+    cosines_counter_jax = onp.sum(all_cosines_counter_jax, axis=0)
+
+    pdb.set_trace()
 
     for i in range(len(cosines)):
-        print(f"{i} {cosines[i] / float(cosines_counter[i])}")
+        # print(f"{i} {cosines[i] / float(cosines_counter[i])}")
+        print(f"{i} {cosines_jax[i] / float(cosines_counter_jax[i])}")
 
 
 
