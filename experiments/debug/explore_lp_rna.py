@@ -96,23 +96,6 @@ def get_cosines(body, cosines, cosines_counter, base_start, down_neigh, up_neigh
         cosines_counter[i - base_start] += 1
 
 
-def get_end_j(body, bp1_idx, bp2_idx, displacement_fn):
-
-    n = body.center.shape[0]
-
-    back_sites, stack_sites, base_sites = get_site_positions(body)
-
-    nt11 = bp1_idx
-    nt12 = n - 1 - bp1_idx
-
-    nt21 = bp2_idx
-    nt22 = n - 1 - bp2_idx
-
-    first_midpos = (base_sites[nt11] + base_sites[nt12]) / 2.0
-    last_midpos = (base_sites[nt21] + base_sites[nt22]) / 2.0
-
-    r0N = displacement_fn(last_midpos, first_midpos)
-    return onp.sqrt(onp.dot(r0N, r0N)) / float((bp2_idx - bp1_idx))
 
 
 
@@ -163,17 +146,10 @@ def run():
 
     displacement_fn, _ = space.periodic(box_size)
 
-    end_distances = list()
     for idx in tqdm(range(n_traj_states)):
         body = traj_states[idx]
         get_cosines(body, cosines, cosines_counter, offset, 1, 1)
         # get_cosines_jax(body, cosines, cosines_counter, offset, 1, 1)
-
-        end_dist = get_end_j(body, offset, n_bp - offset, displacement_fn)
-        end_distances.append(end_dist)
-
-    r2 = onp.mean(onp.array(end_distances)**2)
-    pdb.set_trace()
 
     max_dist = len(cosines)
     traj_states = utils.tree_stack(traj_states)
