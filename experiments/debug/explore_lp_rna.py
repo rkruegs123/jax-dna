@@ -149,7 +149,7 @@ def get_rises(body, first_base, last_base):
 
 
     # Check if plane vector is pointing in opposite direction
-    plane_vector = jnp.where(jnp.dot(mean_guess, plane_vector) < 0, -1.0*plane_vector, plane_vector)
+    plane_vector = jnp.where(jnp.dot(guess, plane_vector) < 0, -1.0*plane_vector, plane_vector)
 
     """
     if (onp.rad2deg(math.acos(np.dot(plane_vector,guess/my_norm(guess)))) > 20):
@@ -159,12 +159,9 @@ def get_rises(body, first_base, last_base):
     """
 
     # Now, compute the rises
-    rises = []
-
     n_bps = last_base - first_base
 
-    for bp_idx in range(n_bps):
-
+    def single_rise(bp_idx):
         i = first_base + bp_idx
 
         midp = (stack_sites[i] + stack_sites[n-i-1]) / 2
@@ -172,8 +169,10 @@ def get_rises(body, first_base, last_base):
 
         midp_proj = jnp.dot(plane_vector, midp)
         midp_ip1_proj = jnp.dot(plane_vector, midp_ip1)
-        rises.append(midp_ip1_proj - midp_proj)
 
+        rise = midp_ip1_proj - midp_proj
+        return rise
+    rises = vmap(single_rise)(jnp.arange(n_bps))
 
     return rises
 
@@ -211,14 +210,17 @@ def run():
     for idx in tqdm(range(n_traj_states)):
         body = traj_states[idx]
         get_cosines(body, cosines, cosines_counter, offset, 1, 1)
-        # get_cosines_jax(body, cosines, cosines_counter, offset, 1, 1)
-        rises = get_rises(body, first_base=offset, last_base=n_bp-offset-2)
 
     max_dist = len(cosines)
     traj_states = utils.tree_stack(traj_states)
     all_cosines_jax, all_cosines_counter_jax = vmap(get_cosines_jax, (0, None, None, None, None))(traj_states, offset, 1, 1, max_dist)
     cosines_jax = onp.sum(all_cosines_jax, axis=0)
     cosines_counter_jax = onp.sum(all_cosines_counter_jax, axis=0)
+
+    all_rises = vmap(get_rises, (0, None, None))(traj_states, offset, n_bp-offset-2)
+
+    import matplotlib.pyplot as plt
+    plt.plot(all_rises.flatten().cumsum() / jnp.arange(1, all_rises.flatten().shape[0] + 1) * 0.8518)
 
     for i in range(len(cosines)):
         # print(f"{i} {cosines[i] / float(cosines_counter[i])}")
