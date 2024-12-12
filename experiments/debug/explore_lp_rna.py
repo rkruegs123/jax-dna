@@ -4,6 +4,7 @@ from pathlib import Path
 from copy import deepcopy
 from tqdm import tqdm
 from functools import partial
+import matplotlib.pyplot as plt
 
 import jax
 jax.config.update("jax_enable_x64", True)
@@ -12,32 +13,32 @@ from jax import vmap, jit
 from jax_md import space
 
 from jax_dna.common import utils, topology, trajectory
+from jax_dna.loss import persistence_length as jd_lp
 
 @jit
-def get_site_positions(body):
+def get_site_positions(body, is_rna=True):
     Q = body.orientation
     back_base_vectors = utils.Q_to_back_base(Q) # space frame, normalized
     base_normals = utils.Q_to_base_normal(Q) # space frame, normalized
     cross_prods = utils.Q_to_cross_prod(Q) # space frame, normalized
 
-    # RNA values
-    """
-    com_to_backbone_x = -0.4
-    com_to_backbone_y = 0.2
-    com_to_stacking = 0.34
-    com_to_hb = 0.4
-    back_sites = body.center + com_to_backbone_x*back_base_vectors + com_to_backbone_y*base_normals
-    stack_sites = body.center + com_to_stacking * back_base_vectors
-    base_sites = body.center + com_to_hb * back_base_vectors
-    """
-
-    # In code (like DNA1)
-    com_to_backbone = -0.4
-    com_to_stacking = 0.34
-    com_to_hb = 0.4
-    back_sites = body.center + com_to_backbone*back_base_vectors
-    stack_sites = body.center + com_to_stacking * back_base_vectors
-    base_sites = body.center + com_to_hb * back_base_vectors
+    if is_rna:
+        # RNA values
+        com_to_backbone_x = -0.4
+        com_to_backbone_y = 0.2
+        com_to_stacking = 0.34
+        com_to_hb = 0.4
+        back_sites = body.center + com_to_backbone_x*back_base_vectors + com_to_backbone_y*base_normals
+        stack_sites = body.center + com_to_stacking * back_base_vectors
+        base_sites = body.center + com_to_hb * back_base_vectors
+    else:
+        # In code (like DNA1)
+        com_to_backbone = -0.4
+        com_to_stacking = 0.34
+        com_to_hb = 0.4
+        back_sites = body.center + com_to_backbone*back_base_vectors
+        stack_sites = body.center + com_to_stacking * back_base_vectors
+        base_sites = body.center + com_to_hb * back_base_vectors
 
     return back_sites, stack_sites, base_sites
 
@@ -116,6 +117,15 @@ def get_cosines_jax(body, base_start, down_neigh, up_neigh, max_dist):
     return body_corrs_jax, body_corr_counters_jax
 
 
+def get_cosines_jax_full(body, base_start, down_neigh, up_neigh, max_dist):
+    back_sites, stack_sites, base_sites = get_site_positions(body)
+    bp_idxs = base_start + jnp.arange(max_dist)
+    compute_l_vector = lambda bp_idx: get_localized_axis(body, back_sites, stack_sites, base_sites, bp_idx, down_neigh, up_neigh)
+    all_l_vectors = vmap(compute_l_vector)(bp_idxs)
+    autocorr = jd_lp.vector_autocorrelate(all_l_vectors)
+    return autocorr
+
+
 
 def get_rises(body, first_base, last_base):
 
@@ -136,7 +146,6 @@ def get_rises(body, first_base, last_base):
         return jnp.array([back_pos1, back_pos2])
     back_poses = vmap(get_back_positions)(jnp.arange(first_base, last_base))
     back_poses = back_poses.reshape(-1, 3)
-
 
     # now we try to fit a plane through all these points
     plane_vector = fit_plane(back_poses)
@@ -212,19 +221,34 @@ def run():
         get_cosines(body, cosines, cosines_counter, offset, 1, 1)
 
     max_dist = len(cosines)
+
     traj_states = utils.tree_stack(traj_states)
     all_cosines_jax, all_cosines_counter_jax = vmap(get_cosines_jax, (0, None, None, None, None))(traj_states, offset, 1, 1, max_dist)
+
     cosines_jax = onp.sum(all_cosines_jax, axis=0)
     cosines_counter_jax = onp.sum(all_cosines_counter_jax, axis=0)
+    corrs_jax = [cosines_jax[i] / float(cosines_counter_jax[i]) for i in range(cosines_jax.shape[0])]
+
+    all_corrs_jax_full = vmap(get_cosines_jax_full, (0, None, None, None, None))(traj_states, offset, 1, 1, max_dist)
+    corrs_jax_full = onp.mean(all_corrs_jax_full, axis=0)
+
+    plt.plot(corrs_jax_full, label="Full")
+    plt.plot(corrs_jax, label="Partial")
+    plt.xlabel("Distance")
+    plt.ylabel("Correlation")
+    plt.legend()
+    plt.show()
+    plt.clf()
 
     all_rises = vmap(get_rises, (0, None, None))(traj_states, offset, n_bp-offset-2)
 
-    import matplotlib.pyplot as plt
-    plt.plot(all_rises.flatten().cumsum() / jnp.arange(1, all_rises.flatten().shape[0] + 1) * 0.8518)
+    # plt.plot(all_rises.flatten().cumsum() / jnp.arange(1, all_rises.flatten().shape[0] + 1) * 0.8518)
+    print(f"\nAvg. Rise (nm): {onp.mean(all_rises) * 0.8518}\n")
 
     for i in range(len(cosines)):
         # print(f"{i} {cosines[i] / float(cosines_counter[i])}")
-        print(f"{i} {cosines_jax[i] / float(cosines_counter_jax[i])}")
+        # print(f"{i} {cosines_jax[i] / float(cosines_counter_jax[i])}")
+        print(f"{i} {corrs_jax[i]}")
 
 
 
