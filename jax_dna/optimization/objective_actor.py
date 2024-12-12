@@ -2,6 +2,7 @@
 from collections.abc import Callable
 import functools
 import typing
+import typing_extensions
 
 import jax
 import jax_md
@@ -20,6 +21,7 @@ ERR_DIFFTRE_MISSING_KWARGS = "Missing required kwargs: {missing_kwargs}."
 EnergyFn = jdna_energy.base.BaseEnergyFunction|jdna_energy.base.ComposedEnergyFunction
 
 class Objective:
+    """Base class for objectives that calculate gradients."""
 
     def __init__(
         self,
@@ -36,14 +38,17 @@ class Objective:
 
 
     def needed_observables(self) -> list[str]:
+        """Return the observables that are still needed."""
         return self._needed_observables
 
 
     def obtained_observables(self) -> list[tuple[str, jdna_types.SimulatorActorOutput]]:
+        """Return the latest observed values for all observables."""
         return self._obtained_observables
 
 
     def logging_observables(self) -> list[tuple[str, typing.Any]]:
+        """Return the latest observed values for the logging observables."""
         lastest_observed = self._obtained_observables
         return_values = []
         for log_obs in self._logging_observables:
@@ -54,7 +59,8 @@ class Objective:
         return return_values
 
 
-    def is_ready(self) -> bool:
+    def is_ready(self, params:jdna_types.Params) -> bool:
+        """Check if the objective is ready to calculate its gradients."""
         obtained_keys = [obs[0] for obs in self._obtained_observables]
         return all([obs in obtained_keys for obs in self._required_observables])
 
@@ -63,7 +69,7 @@ class Objective:
         self,
         sim_results: list[tuple[list[str], typing.Any]],
     ) -> None:
-
+        """Update the observables with the latest simulation results."""
         for sim_exposes, sim_output in sim_results:
             for exposed, output in filter(
                 lambda e: e[0] in self._needed_observables,
@@ -76,6 +82,7 @@ class Objective:
 
 
     def calculate(self) -> list[jdna_types.Grads]:
+        """Calculate the gradients of the objective."""
         if not self.is_ready():
             raise ValueError(ERR_OBJECTIVE_NOT_READY)
 
@@ -98,12 +105,14 @@ class Objective:
 
 
     def post_step(self, opt_params:dict) -> None:
+        """Reset the needed observables for the next step."""
         self._needed_observables = self._required_observables
         self._obtained_observables = []
 
 
 @ray.remote
 class SimGradObjective(Objective):
+    """Objective that calculates the gradients of a simulation."""
     pass
 
 
@@ -111,7 +120,17 @@ def compute_weights_and_neff(
     beta:float,
     new_energies:jdna_types.Arr_N,
     ref_energies:jdna_types.Arr_N,
-) -> jnp.ndarray:
+) -> tuple[jnp.ndarray, float]:
+    """Compute the weights and normalized effective sample size of a trajectory.
+
+    Args:
+        beta: The inverse temperature.
+        new_energies: The new energies of the trajectory.
+        ref_energies: The reference energies of the trajectory.
+
+    Returns:
+        The weights and the normalized effective sample size
+    """
     diffs = new_energies - ref_energies
     boltz = jnp.exp(-beta * diffs)
     weights = boltz / jnp.sum(boltz)
@@ -131,6 +150,23 @@ def compute_loss(
     ref_states:jax_md.rigid_body.RigidBody,
     ref_energies:jdna_types.Arr_N,
 ) -> tuple[float, tuple[float, jnp.ndarray]]:
+    """Compute the grads, loss, and auxiliary values.
+
+    Note this function is decorated with jax.value_and_grad to compute the
+    gradients of the loss function.
+
+    Args:
+        opt_params: The optimization parameters.
+        energy_fn_builder: A function that builds the energy function.
+        beta: The inverse temperature.
+        loss_fn: The loss function.
+        ref_states: The reference states of the trajectory.
+        ref_energies: The reference energies of the trajectory.
+
+    Returns:
+        The grads, the loss, a tuple containing the normalized effective sample
+        size and the measured value of the trajectory, and the new energies.
+    """
     energy_fn = energy_fn_builder(opt_params)
     new_energies = energy_fn_builder(opt_params)(ref_states)
     weights, neff = compute_weights_and_neff(
@@ -144,6 +180,8 @@ def compute_loss(
 
 @ray.remote
 class DiffTReObjective(Objective):
+    """Objective that calculates the gradients of an objective using DiffTRe."""
+
 
     def __init__(
         self,
@@ -157,9 +195,22 @@ class DiffTReObjective(Objective):
         beta:float,
         n_equilibration_steps:int,
         min_n_eff_factor:float = 0.95,
-        accept_expired_trajectory_grads:bool = False,
-        expired_trajectory_value:float = 0.0,
     ):
+        """Initialize the DiffTRe objective.
+
+        Args:
+            required_observables: The observables that are required to calculate the gradients.
+            needed_observables: The observables that are needed to calculate the gradients.
+            logging_observables: The observables that are used for logging.
+            grad_or_loss_fn: The function that calculates the loss of the objective.
+            energy_fn_builder: A function that builds the energy function.
+            opt_params: The optimization parameters.
+            trajectory_key: The key of the trajectory in the observables.
+            beta: The inverse temperature.
+            n_equilibration_steps: The number of equilibration steps.
+            min_n_eff_factor: The minimum normalized effective sample size.
+        """
+
         super().__init__(
             required_observables,
             needed_observables,
@@ -172,13 +223,12 @@ class DiffTReObjective(Objective):
         self._beta = beta
         self._n_eq_steps = n_equilibration_steps
         self._n_eff_factor = min_n_eff_factor
-        self.accept_expired_trajectory_grads = accept_expired_trajectory_grads
-        self._expired_trajectory_value = expired_trajectory_value
 
         self._reference_states = None
         self._reference_energies = None
 
 
+    @typing_extensions.override
     def calculate(self) -> list[jdna_types.Grads]:
         # we need override the grads calculation to check if the trajectory
         # is still valid and if so ask for a new trajectory
@@ -221,6 +271,7 @@ class DiffTReObjective(Objective):
         return grads
 
 
+    @typing_extensions.override
     def is_ready(self, params:jdna_types.Params) -> bool:
         have_trajectory = super().is_ready()
 
@@ -238,6 +289,7 @@ class DiffTReObjective(Objective):
         return have_trajectory
 
 
+    @typing_extensions.override
     def post_step(
         self,
         opt_params:jdna_types.Params,
