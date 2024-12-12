@@ -1,46 +1,77 @@
-import dataclasses as dc
 import itertools
 import typing
-from typing import Any
 
 import chex
-import examples.simulator_actor as sim_actor
-import jax
-import jax_dna.energy.base as jdna_energy
-import jax_dna.energy.configuration as jdna_energy_config
-import jax_dna.losses.observable_wrappers as jdna_losses
-import jax_dna.simulators.base as jdna_simulators
-import jax_dna.simulators.io as jdna_sio
-import jax_dna.utils.types as jdna_types
 import optax
 import ray
 
-META_DATA = dict[str, Any]
+import jax_dna.optimization.simulation_actor as jdna_actor
+import jax_dna.optimization.objective_actor as jdna_objective
+import jax_dna.utils.types as jdna_types
 
+
+ERR_MISSING_OBJECTIVES = "At least one objective is required."
+ERR_MISSING_SIMULATORS = "At least one simulator is required."
+ERR_MISSING_AGG_GRAD_FN = "An aggregate gradient function is required."
+ERR_MISSING_OPTIMIZER = "An optimizer is required."
 
 def split_by_ready(
-    objectives: list[sim_actor.Objective],
-) -> tuple[list[sim_actor.Objective], list[sim_actor.Objective]]:
-    not_ready = list(itertools.filterfalse(lambda x: ray.get(x.is_ready.remote()), objectives))
-    ready = list(filter(lambda x: ray.get(x.is_ready.remote()), objectives))
+    objectives: list[jdna_objective.Objective],
+) -> tuple[list[jdna_objective.Objective], list[jdna_objective.Objective]]:
+    """Splits a list of objectives into two lists: ready and not ready."""
+    ready, not_ready = [], []
+    for objective in objectives:
+        if ray.get(objective.is_ready.remote()):
+            ready.append(objective)
+        else:
+            not_ready.append(objective)
 
     return ready, not_ready
 
 
 @chex.dataclass(frozen=True)
 class Optimization:
-    objectives: list[sim_actor.Objective]
-    simulators: list[tuple[sim_actor.SimulatorActor, META_DATA]]
+    """Optimization of a list of objectives using a list of simulators.
+
+    Attributes:
+        objectives: A list of objectives to optimize.
+        simulators: A list of simulators to use for the optimization.
+        aggregate_grad_fn: A function that aggregates the gradients from the objectives.
+        optimizer: An optax optimizer.
+        optimizer_state: The state of the optimizer.
+    """
+    objectives: list[jdna_objective.Objective]
+    simulators: list[tuple[jdna_actor.SimulatorActor, jdna_types.MetaData]]
     aggregate_grad_fn: typing.Callable[[list[jdna_types.Grads]], jdna_types.Grads]
     optimizer: optax.GradientTransformation
     optimizer_state: optax.OptState | None = None
 
     def __post_init__(self):
-        # check that the energy functions and configurations are compatible
-        # with the parameters
-        pass
+        if not self.objectives:
+            raise ValueError(ERR_MISSING_OBJECTIVES)
 
-    def step(self, params: jdna_types.Params) -> tuple["Optimization", list[jdna_types.Grads]]:
+        if not self.simulators:
+            raise ValueError(ERR_MISSING_SIMULATORS)
+
+        if self.aggregate_grad_fn is None:
+            raise ValueError(ERR_MISSING_AGG_GRAD_FN)
+
+        if self.optimizer is None:
+            raise ValueError(ERR_MISSING_OPTIMIZER)
+
+
+    def step(
+        self,
+        params: jdna_types.Params
+    ) -> tuple[optax.OptState, list[jdna_types.Grads]]:
+        """Perform a single optimization step.
+
+        Args:
+            params: The current parameters.
+
+        Returns:
+            A tuple containing the updated optimizer state and the gradients.
+        """
         # get the currently needed observables
         # some objectives might use difftre and not actually need something rerun
         # so check which objectives have observables that need to be run
@@ -98,7 +129,7 @@ class Optimization:
         self,
         optimizer_state: optax.OptState,
         opt_params: jdna_types.Params,
-    ) -> None:
-        """"""
+    ) -> "Optimization":
+        """An update step intended to be called after an optimization step."""
         _ = ray.get([o.post_step.remote(opt_params) for o in self.objectives])
         return self.replace(optimizer_state=optimizer_state)
