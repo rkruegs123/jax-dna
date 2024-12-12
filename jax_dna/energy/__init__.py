@@ -3,19 +3,20 @@
 from collections.abc import Callable
 
 import jax_md
+
 import jax_dna.energy.base as base
 import jax_dna.energy.configuration as configuration
 import jax_dna.utils.types as jdna_types
 
-def energy_fn_builder(
-    energy_fns:list[base.BaseEnergyFunction],
-    energy_configs:list[configuration.BaseConfiguration],
-    transform_fn:Callable[[jdna_types.PyTree], jdna_types.PyTree],
-    displacement_fn:Callable[[jdna_types.PyTree], jdna_types.PyTree] = jax_md.space.free()[0],
-) -> Callable[[jdna_types.PyTree], float]:
 
+def energy_fn_builder(
+    energy_fns: list[base.BaseEnergyFunction],
+    energy_configs: list[configuration.BaseConfiguration],
+    transform_fn: Callable[[jdna_types.PyTree], jdna_types.PyTree],
+    displacement_fn: Callable[[jdna_types.PyTree], jdna_types.PyTree] = jax_md.space.free()[0],
+) -> Callable[[jdna_types.PyTree], float]:
     def energy_fn(
-        opt_params:jdna_types.PyTree,
+        opt_params: jdna_types.PyTree,
     ) -> float:
         """Energy function generated using jax_dna.energy.energy_fn_builder.
 
@@ -36,6 +37,6 @@ def energy_fn_builder(
         return base.ComposedEnergyFunction(
             energy_fns=transformed_fns,
             rigid_body_transform_fn=transform_fn,
-
         )
+
     return energy_fn

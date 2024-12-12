@@ -1,51 +1,75 @@
+"""Objectives implemented as ray actors."""
 
-from collections.abc import Callable
 import functools
 import typing
-import typing_extensions
+from collections.abc import Callable
 
 import jax
-import jax_md
-import ray
-
 import jax.numpy as jnp
-
 import jax_dna.energy as jdna_energy
 import jax_dna.input.tree as jdna_tree
 import jax_dna.utils.types as jdna_types
+import jax_md
+import ray
+import typing_extensions
 
 ERR_OBJECTIVE_NOT_READY = "Not all required observables have been obtained."
-
 ERR_DIFFTRE_MISSING_KWARGS = "Missing required kwargs: {missing_kwargs}."
 
-EnergyFn = jdna_energy.base.BaseEnergyFunction|jdna_energy.base.ComposedEnergyFunction
+EnergyFn = jdna_energy.base.BaseEnergyFunction | jdna_energy.base.ComposedEnergyFunction
+
+ERR_MISSING_ARG = "Missing required argument: {missing_arg}."
+
 
 class Objective:
     """Base class for objectives that calculate gradients."""
 
     def __init__(
         self,
-        required_observables:list[str],
-        needed_observables:list[str],
-        logging_observables:list[str],
-        grad_or_loss_fn:typing.Callable[[tuple[jdna_types.SimulatorActorOutput]], jdna_types.Grads],
+        required_observables: list[str],
+        needed_observables: list[str],
+        logging_observables: list[str],
+        grad_or_loss_fn: typing.Callable[[tuple[str, ...]], jdna_types.Grads],
     ):
+        """Initialize the objective.
+
+        Args:
+            required_observables (list[str]): The observables that are required
+                to calculate the gradients.
+            needed_observables (list[str]): The observables that are needed to
+                calculate the gradients.
+            logging_observables (list[str]): The observables that are used for
+                logging.
+            grad_or_loss_fn (typing.Callable[[tuple[str, ...]], jdna_types.Grads]):
+                The function that calculates the loss of the objective
+        """
+
+        if required_observables is None:
+            raise ValueError(ERR_MISSING_ARG.format(missing_arg="required_observables"))
+        if needed_observables is None:
+            raise ValueError(ERR_MISSING_ARG.format(missing_arg="needed_observables"))
+        if logging_observables is None:
+            raise ValueError(ERR_MISSING_ARG.format(missing_arg="logging_observables"))
+        if grad_or_loss_fn is None:
+            raise ValueError(ERR_MISSING_ARG.format(missing_arg="grad_or_loss_fn"))
+
         self._required_observables = required_observables
         self._needed_observables = needed_observables
-        self.grad_or_loss_fn = grad_or_loss_fn
+        self._grad_or_loss_fn = grad_or_loss_fn
         self._obtained_observables = []
         self._logging_observables = logging_observables
 
+    def required_observables(self) -> list[str]:
+        """Return the observables that are required to calculate the gradients."""
+        return self._required_observables
 
     def needed_observables(self) -> list[str]:
         """Return the observables that are still needed."""
         return self._needed_observables
 
-
     def obtained_observables(self) -> list[tuple[str, jdna_types.SimulatorActorOutput]]:
         """Return the latest observed values for all observables."""
         return self._obtained_observables
-
 
     def logging_observables(self) -> list[tuple[str, typing.Any]]:
         """Return the latest observed values for the logging observables."""
@@ -58,43 +82,37 @@ class Objective:
                     break
         return return_values
 
-
-    def is_ready(self, params:jdna_types.Params) -> bool:
+    def is_ready(self, params: jdna_types.Params) -> bool:
         """Check if the objective is ready to calculate its gradients."""
         obtained_keys = [obs[0] for obs in self._obtained_observables]
         return all([obs in obtained_keys for obs in self._required_observables])
 
-
     def update(
         self,
-        sim_results: list[tuple[list[str], typing.Any]],
+        sim_results: list[tuple[list[str], list]],
     ) -> None:
         """Update the observables with the latest simulation results."""
         for sim_exposes, sim_output in sim_results:
-            for exposed, output in filter(
-                lambda e: e[0] in self._needed_observables,
-                zip(sim_exposes, sim_output)
-            ):
-                self._obtained_observables.append(
-                    (exposed, jdna_tree.load_pytree(output))
-                )
+            for exposed, output in filter(lambda e: e[0] in self._needed_observables, zip(sim_exposes, sim_output)):
+                self._obtained_observables.append((exposed, jdna_tree.load_pytree(output)))
                 self._needed_observables.remove(exposed)
-
 
     def calculate(self) -> list[jdna_types.Grads]:
         """Calculate the gradients of the objective."""
         if not self.is_ready():
             raise ValueError(ERR_OBJECTIVE_NOT_READY)
 
-        sorted_obs = list(map(
-            lambda x: x[1],
-            sorted(
-                self._obtained_observables,
-                key=lambda x: self.required_observables.index(x[0]),
+        sorted_obs = list(
+            map(
+                lambda x: x[1],
+                sorted(
+                    self._obtained_observables,
+                    key=lambda x: self.required_observables.index(x[0]),
+                ),
             )
-        ))
+        )
 
-        grads, loss = self.grad_or_loss_fn(*sorted_obs)
+        grads, loss = self._grad_or_loss_fn(*sorted_obs)
 
         self._obtained_observables = [
             ("loss", loss),
@@ -103,23 +121,23 @@ class Objective:
 
         return grads
 
-
-    def post_step(self, opt_params:dict) -> None:
+    def post_step(self, opt_params: dict) -> None:
         """Reset the needed observables for the next step."""
         self._needed_observables = self._required_observables
         self._obtained_observables = []
 
 
 @ray.remote
-class SimGradObjective(Objective):
+class SimGradObjectiveActor(Objective):
     """Objective that calculates the gradients of a simulation."""
+
     pass
 
 
 def compute_weights_and_neff(
-    beta:float,
-    new_energies:jdna_types.Arr_N,
-    ref_energies:jdna_types.Arr_N,
+    beta: float,
+    new_energies: jdna_types.Arr_N,
+    ref_energies: jdna_types.Arr_N,
 ) -> tuple[jnp.ndarray, float]:
     """Compute the weights and normalized effective sample size of a trajectory.
 
@@ -141,14 +159,13 @@ def compute_weights_and_neff(
 @functools.partial(jax.value_and_grad, has_aux=True)
 def compute_loss(
     opt_params: jdna_types.Params,
-    energy_fn_builder:callable,
-    beta:float,
-    loss_fn:Callable[
-        [jax_md.rigid_body.RigidBody, jdna_types.Arr_N, EnergyFn],
-        tuple[jnp.ndarray, tuple[str, typing.Any]]
+    energy_fn_builder: callable,
+    beta: float,
+    loss_fn: Callable[
+        [jax_md.rigid_body.RigidBody, jdna_types.Arr_N, EnergyFn], tuple[jnp.ndarray, tuple[str, typing.Any]]
     ],
-    ref_states:jax_md.rigid_body.RigidBody,
-    ref_energies:jdna_types.Arr_N,
+    ref_states: jax_md.rigid_body.RigidBody,
+    ref_energies: jdna_types.Arr_N,
 ) -> tuple[float, tuple[float, jnp.ndarray]]:
     """Compute the grads, loss, and auxiliary values.
 
@@ -178,23 +195,21 @@ def compute_loss(
     return loss, (neff, measured_value, new_energies)
 
 
-@ray.remote
 class DiffTReObjective(Objective):
     """Objective that calculates the gradients of an objective using DiffTRe."""
 
-
     def __init__(
         self,
-        required_observables:list[str],
-        needed_observables:list[str],
-        logging_observables:list[str],
-        grad_or_loss_fn:typing.Callable[[tuple[jdna_types.SimulatorActorOutput]], jdna_types.Grads],
-        energy_fn_builder:Callable[[jdna_types.Params], Callable[[jnp.ndarray], jnp.ndarray]],
-        opt_params:jdna_types.Params,
-        trajectory_key:str,
-        beta:float,
-        n_equilibration_steps:int,
-        min_n_eff_factor:float = 0.95,
+        required_observables: list[str],
+        needed_observables: list[str],
+        logging_observables: list[str],
+        grad_or_loss_fn: typing.Callable[[tuple[jdna_types.SimulatorActorOutput]], jdna_types.Grads],
+        energy_fn_builder: Callable[[jdna_types.Params], Callable[[jnp.ndarray], jnp.ndarray]],
+        opt_params: jdna_types.Params,
+        trajectory_key: str,
+        beta: float,
+        n_equilibration_steps: int,
+        min_n_eff_factor: float = 0.95,
     ):
         """Initialize the DiffTRe objective.
 
@@ -227,7 +242,6 @@ class DiffTReObjective(Objective):
         self._reference_states = None
         self._reference_energies = None
 
-
     @typing_extensions.override
     def calculate(self) -> list[jdna_types.Grads]:
         # we need override the grads calculation to check if the trajectory
@@ -235,13 +249,15 @@ class DiffTReObjective(Objective):
         if not self.is_ready():
             raise ValueError(ERR_OBJECTIVE_NOT_READY)
 
-        sorted_obs = list(map(
-            lambda x: x[1],
-            sorted(
-                self._obtained_observables,
-                key=lambda x: self._required_observables.index(x[0]),
+        sorted_obs = list(
+            map(
+                lambda x: x[1],
+                sorted(
+                    self._obtained_observables,
+                    key=lambda x: self._required_observables.index(x[0]),
+                ),
             )
-        ))
+        )
         new_trajectory = sorted_obs[0]
         if self._reference_states is None:
             self._reference_states = new_trajectory.slice(
@@ -265,14 +281,12 @@ class DiffTReObjective(Objective):
             ("loss", loss),
             measured_value,
             *[(ro, so) for (ro, so) in zip(self._required_observables, sorted_obs)],
-
         ]
 
         return grads
 
-
     @typing_extensions.override
-    def is_ready(self, params:jdna_types.Params) -> bool:
+    def is_ready(self, params: jdna_types.Params) -> bool:
         have_trajectory = super().is_ready()
 
         if have_trajectory:
@@ -288,14 +302,15 @@ class DiffTReObjective(Objective):
 
         return have_trajectory
 
-
     @typing_extensions.override
     def post_step(
         self,
-        opt_params:jdna_types.Params,
+        opt_params: jdna_types.Params,
     ) -> None:
-        self._obtained_observables = list(filter(
-            lambda x: x[0] == self._trajectory_key,
-            self._obtained_observables
-        ))
+        self._obtained_observables = list(filter(lambda x: x[0] == self._trajectory_key, self._obtained_observables))
         self._opt_params = opt_params
+
+
+@ray.remote
+class DiffTReObjectiveActor(DiffTReObjective):
+    """Objective that calculates the gradients of an objective using DiffTRe and ray."""

@@ -52,7 +52,7 @@ class SimulatorTrajectory:
             center=self.rigid_body.center[key],
             orientation=jax_md.rigid_body.Quaternion(
                 vec=self.rigid_body.orientation.vec[key],
-            )
+            ),
         )
 
         return self.replace(
@@ -60,7 +60,7 @@ class SimulatorTrajectory:
                 center=self.rigid_body.center[key, ...],
                 orientation=jax_md.rigid_body.Quaternion(
                     vec=self.rigid_body.orientation.vec[key, ...],
-                )
+                ),
             )
         )
 

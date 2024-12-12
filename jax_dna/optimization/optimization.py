@@ -1,19 +1,20 @@
+"""Runs an optimization loop using Ray actors for objectives and simulators."""
+
 import itertools
 import typing
 
 import chex
+import jax_dna.optimization.objective_actor as jdna_objective
+import jax_dna.optimization.simulation_actor as jdna_actor
+import jax_dna.utils.types as jdna_types
 import optax
 import ray
-
-import jax_dna.optimization.simulation_actor as jdna_actor
-import jax_dna.optimization.objective_actor as jdna_objective
-import jax_dna.utils.types as jdna_types
-
 
 ERR_MISSING_OBJECTIVES = "At least one objective is required."
 ERR_MISSING_SIMULATORS = "At least one simulator is required."
 ERR_MISSING_AGG_GRAD_FN = "An aggregate gradient function is required."
 ERR_MISSING_OPTIMIZER = "An optimizer is required."
+
 
 def split_by_ready(
     objectives: list[jdna_objective.Objective],
@@ -40,6 +41,7 @@ class Optimization:
         optimizer: An optax optimizer.
         optimizer_state: The state of the optimizer.
     """
+
     objectives: list[jdna_objective.Objective]
     simulators: list[tuple[jdna_actor.SimulatorActor, jdna_types.MetaData]]
     aggregate_grad_fn: typing.Callable[[list[jdna_types.Grads]], jdna_types.Grads]
@@ -59,11 +61,7 @@ class Optimization:
         if self.optimizer is None:
             raise ValueError(ERR_MISSING_OPTIMIZER)
 
-
-    def step(
-        self,
-        params: jdna_types.Params
-    ) -> tuple[optax.OptState, list[jdna_types.Grads]]:
+    def step(self, params: jdna_types.Params) -> tuple[optax.OptState, list[jdna_types.Grads]]:
         """Perform a single optimization step.
 
         Args:
@@ -105,9 +103,7 @@ class Optimization:
                     result = ray.get(d)
                     captured_results.append((exposes, result))
                 # update the objectives with the new observables and check if they are ready
-                ray.get(
-                    [objective.update.remote(captured_results) for objective in not_ready_objectives]
-                )
+                ray.get([objective.update.remote(captured_results) for objective in not_ready_objectives])
                 ready, not_ready_objectives = split_by_ready(not_ready_objectives)
                 grad_refs += [objective.calculate.remote() for objective in ready]
 
