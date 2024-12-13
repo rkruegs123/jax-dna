@@ -551,6 +551,13 @@ def run(args):
         plt.savefig(iter_dir / "full_corr_curve.png")
         plt.clf()
 
+        plt.plot(mean_corr_curve_full)
+        plt.axvline(x=truncation, linestyle='--', label="Truncation")
+        plt.legend()
+        plt.title("Full Correlation Curve")
+        plt.savefig(iter_dir / "full_corr_curve_full.png")
+        plt.clf()
+
         plt.plot(jnp.log(mean_corr_curve))
         plt.title("Full Log-Correlation Curve")
         plt.axvline(x=truncation, linestyle='--', label="Truncation")
@@ -558,6 +565,15 @@ def run(args):
         plt.ylabel("Log-Correlation")
         plt.legend()
         plt.savefig(iter_dir / "full_log_corr_curve.png")
+        plt.clf()
+
+        plt.plot(jnp.log(mean_corr_curve_full))
+        plt.title("Full Log-Correlation Curve")
+        plt.axvline(x=truncation, linestyle='--', label="Truncation")
+        plt.xlabel("Nuc. Index")
+        plt.ylabel("Log-Correlation")
+        plt.legend()
+        plt.savefig(iter_dir / "full_log_corr_curve_full.png")
         plt.clf()
 
         fit_fn = lambda n: -n * (avg_rise / mean_Lp_truncated) + fit_offset
@@ -576,6 +592,22 @@ def run(args):
         plt.clf()
 
 
+        fit_fn = lambda n: -n * (avg_rise / mean_Lp_truncated_full) + fit_offset_full
+        plt.plot(jnp.log(mean_corr_curve_full)[:truncation])
+        neg_inverse_slope = mean_Lp_truncated_full / avg_rise # in nucleotides
+        rounded_offset = onp.round(fit_offset_full, 3)
+        rounded_neg_inverse_slope = onp.round(neg_inverse_slope, 3)
+        fit_str = f"fit, -n/{rounded_neg_inverse_slope} + {rounded_offset}"
+        plt.plot(fit_fn(jnp.arange(truncation)), linestyle='--', label=fit_str)
+
+        plt.title(f"Log-Correlation Curve, Truncated.")
+        plt.xlabel("Nuc. Index")
+        plt.ylabel("Log-Correlation")
+        plt.legend()
+        plt.savefig(iter_dir / "log_corr_curve_full.png")
+        plt.clf()
+
+
         # Record the loss
         with open(iter_dir / "summary.txt", "w+") as f:
             f.write(f"Mean energy diff: {onp.mean(energy_diffs)}\n")
@@ -589,7 +621,12 @@ def run(args):
             f.write(f"Mean Lp truncated (num bp via oxDNA units): {mean_Lp_truncated / avg_rise}\n")
 
             f.write(f"\nMean Lp truncated (nm): {mean_Lp_truncated * utils.nm_per_oxdna_length}\n")
-            f.write(f"Mean Rise (nm): {avg_rise * utils.nm_per_oxdna_length}\n")
+
+
+            f.write(f"\nMean Lp truncated, full (oxDNA units): {mean_Lp_truncated_full}\n")
+            f.write(f"Mean Lp truncated, full (num bp via oxDNA units): {mean_Lp_truncated_full / avg_rise}\n")
+
+            f.write(f"\nMean Lp truncated, full (nm): {mean_Lp_truncated_full * utils.nm_per_oxdna_length}\n")
 
         with open(iter_dir / "params.txt", "w+") as f:
             f.write(f"{pprint.pformat(params)}\n")
