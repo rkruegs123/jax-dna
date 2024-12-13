@@ -242,9 +242,7 @@ def run(args):
     t_kelvin = utils.DEFAULT_TEMP
 
     seq_avg_opt_keys = args['seq_avg_opt_keys']
-    opt_seq_dep_stacking = args['opt_seq_dep_stacking']
 
-    ss_hb_weights, ss_stack_weights, ss_cross_weights = read_seq_specific(DEFAULT_BASE_PARAMS)
 
 
     # Recompile oxDNA
@@ -334,12 +332,6 @@ def run(args):
 
             shutil.copy(top_path, repeat_dir / "sys.top")
 
-            seq_dep_path = repeat_dir / "rna_sequence_dependent_parameters.txt"
-            if "stacking" in params["seq_dep"]:
-                curr_stack_weights = params["seq_dep"]["stacking"]
-            else:
-                curr_stack_weights = ss_stack_weights
-            oxrna_utils.write_seq_specific(seq_dep_path, params["seq_avg"], ss_hb_weights, curr_stack_weights, ss_cross_weights)
 
             if prev_basedir is None:
                 init_conf_info = deepcopy(centered_conf_info)
@@ -371,8 +363,6 @@ def run(args):
                 no_stdout_energy=0,
                 log_file=str(repeat_dir / "sim.log"),
                 external_model=str(external_model_fpath),
-                seq_dep_file=str(seq_dep_path),
-                seq_dep_file_RNA=str(seq_dep_path),
                 salt_concentration=salt_conc
             )
 
@@ -435,10 +425,7 @@ def run(args):
 
         ## Generate an energy function
         em = model.EnergyModel(
-            displacement_fn, params["seq_avg"], t_kelvin=t_kelvin, salt_conc=salt_conc,
-            ss_hb_weights=ss_hb_weights,
-            # ss_stack_weights=ss_stack_weights)
-            ss_stack_weights=curr_stack_weights)
+            displacement_fn, params["seq_avg"], t_kelvin=t_kelvin, salt_conc=salt_conc)
         energy_fn = lambda body: em.energy_fn(
             body,
             seq=seq_oh,
@@ -645,15 +632,8 @@ def run(args):
     # Construct the loss function
     @jit
     def loss_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_rises):
-        if "stacking" in params["seq_dep"]:
-            curr_stack_weights = params["seq_dep"]["stacking"]
-        else:
-            curr_stack_weights = ss_stack_weights
         em = model.EnergyModel(
-            displacement_fn, params["seq_avg"], t_kelvin=t_kelvin, salt_conc=salt_conc,
-            ss_hb_weights=ss_hb_weights,
-            # ss_stack_weights=ss_stack_weights)
-            ss_stack_weights=curr_stack_weights)
+            displacement_fn, params["seq_avg"], t_kelvin=t_kelvin, salt_conc=salt_conc)
         energy_fn = lambda body: em.energy_fn(
             body,
             seq=seq_oh,
@@ -698,9 +678,7 @@ def run(args):
     seq_avg_params = deepcopy(EMPTY_BASE_PARAMS)
     for opt_key in seq_avg_opt_keys:
         seq_avg_params[opt_key] = deepcopy(DEFAULT_BASE_PARAMS[opt_key])
-    params = {"seq_avg": seq_avg_params, "seq_dep": dict()}
-    if opt_seq_dep_stacking:
-        params["seq_dep"]["stacking"] = jnp.array(ss_stack_weights)
+    params = {"seq_avg": seq_avg_params}
 
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
@@ -898,7 +876,6 @@ def get_parser():
         default=["stacking", "cross_stacking"],
         help='Parameter keys to optimize'
     )
-    parser.add_argument('--opt-seq-dep-stacking', action='store_true')
 
     parser.add_argument('--no-delete', action='store_true')
     parser.add_argument('--no-archive', action='store_true')
