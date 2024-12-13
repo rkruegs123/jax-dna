@@ -807,7 +807,7 @@ def run(args):
             plt.savefig(img_dir / f"corr_iter{i}.png")
             plt.clf()
 
-            log_corr_fn = lambda n: -n * curr_rise_avg / (curr_lp) + curr_offset
+            log_corr_fn = lambda n: -n * curr_rise / (curr_lp) + curr_offset
             plt.plot(jnp.log(expected_corr_curve))
             plt.plot(log_corr_fn(jnp.arange(expected_corr_curve.shape[0])), linestyle='--')
             plt.xlabel("Nuc. Index")
