@@ -4,17 +4,20 @@ from collections.abc import Callable
 
 import jax_md
 
-import jax_dna.energy.base as base
-import jax_dna.energy.configuration as configuration
 import jax_dna.utils.types as jdna_types
+from jax_dna.energy import base, configuration
+
+DEFAULT_DISPLACEMENT = jax_md.space.free()[0]
 
 
 def energy_fn_builder(
     energy_fns: list[base.BaseEnergyFunction],
     energy_configs: list[configuration.BaseConfiguration],
     transform_fn: Callable[[jdna_types.PyTree], jdna_types.PyTree],
-    displacement_fn: Callable[[jdna_types.PyTree], jdna_types.PyTree] = jax_md.space.free()[0],
+    displacement_fn: Callable[[jdna_types.PyTree], jdna_types.PyTree] = DEFAULT_DISPLACEMENT,
 ) -> Callable[[jdna_types.PyTree], float]:
+    """Build an energy function from a list of energy functions and configurations."""
+
     def energy_fn(
         opt_params: jdna_types.PyTree,
     ) -> float:

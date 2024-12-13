@@ -6,19 +6,19 @@ from collections.abc import Callable
 
 import jax
 import jax.numpy as jnp
-import jax_dna.energy as jdna_energy
-import jax_dna.input.tree as jdna_tree
-import jax_dna.utils.types as jdna_types
 import jax_md
 import ray
 import typing_extensions
 
-ERR_OBJECTIVE_NOT_READY = "Not all required observables have been obtained."
+import jax_dna.energy as jdna_energy
+import jax_dna.input.tree as jdna_tree
+import jax_dna.utils.types as jdna_types
+
 ERR_DIFFTRE_MISSING_KWARGS = "Missing required kwargs: {missing_kwargs}."
+ERR_MISSING_ARG = "Missing required argument: {missing_arg}."
+ERR_OBJECTIVE_NOT_READY = "Not all required observables have been obtained."
 
 EnergyFn = jdna_energy.base.BaseEnergyFunction | jdna_energy.base.ComposedEnergyFunction
-
-ERR_MISSING_ARG = "Missing required argument: {missing_arg}."
 
 
 class Objective:
@@ -30,7 +30,7 @@ class Objective:
         needed_observables: list[str],
         logging_observables: list[str],
         grad_or_loss_fn: typing.Callable[[tuple[str, ...]], jdna_types.Grads],
-    ):
+    ) -> "Objective":
         """Initialize the objective.
 
         Args:
@@ -43,7 +43,6 @@ class Objective:
             grad_or_loss_fn (typing.Callable[[tuple[str, ...]], jdna_types.Grads]):
                 The function that calculates the loss of the objective
         """
-
         if required_observables is None:
             raise ValueError(ERR_MISSING_ARG.format(missing_arg="required_observables"))
         if needed_observables is None:
@@ -78,22 +77,24 @@ class Objective:
         for log_obs in self._logging_observables:
             for obs in lastest_observed:
                 if obs[0] == log_obs:
-                    return_values.append((obs))
+                    return_values.append(obs)
                     break
         return return_values
 
-    def is_ready(self, params: jdna_types.Params) -> bool:
+    def is_ready(self, params: jdna_types.Params) -> bool:  # noqa: ARG002 - this implementation doesn't use params
         """Check if the objective is ready to calculate its gradients."""
         obtained_keys = [obs[0] for obs in self._obtained_observables]
-        return all([obs in obtained_keys for obs in self._required_observables])
+        return all(obs in obtained_keys for obs in self._required_observables)
 
     def update(
         self,
-        sim_results: list[tuple[list[str], list]],
+        sim_results: list[tuple[list[str], list[str]]],
     ) -> None:
         """Update the observables with the latest simulation results."""
         for sim_exposes, sim_output in sim_results:
-            for exposed, output in filter(lambda e: e[0] in self._needed_observables, zip(sim_exposes, sim_output)):
+            for exposed, output in filter(
+                lambda e: e[0] in self._needed_observables, zip(sim_exposes, sim_output, strict=True)
+            ):
                 self._obtained_observables.append((exposed, jdna_tree.load_pytree(output)))
                 self._needed_observables.remove(exposed)
 
@@ -102,26 +103,22 @@ class Objective:
         if not self.is_ready():
             raise ValueError(ERR_OBJECTIVE_NOT_READY)
 
-        sorted_obs = list(
-            map(
-                lambda x: x[1],
-                sorted(
-                    self._obtained_observables,
-                    key=lambda x: self.required_observables.index(x[0]),
-                ),
-            )
+        sorted_obtained_observables = sorted(
+            self._obtained_observables,
+            key=lambda x: self.required_observables.index(x[0]),
         )
+        sorted_obs = [x[1] for x in sorted_obtained_observables]
 
         grads, loss = self._grad_or_loss_fn(*sorted_obs)
 
         self._obtained_observables = [
             ("loss", loss),
-            *[(ro, so) for (ro, so) in zip(self._required_observables, sorted_obs)],
+            *list(zip(self._required_observables, sorted_obs, strict=True)),
         ]
 
         return grads
 
-    def post_step(self, opt_params: dict) -> None:
+    def post_step(self, opt_params: dict) -> None:  # noqa: ARG002 - not all objectives need params
         """Reset the needed observables for the next step."""
         self._needed_observables = self._required_observables
         self._obtained_observables = []
@@ -130,8 +127,6 @@ class Objective:
 @ray.remote
 class SimGradObjectiveActor(Objective):
     """Objective that calculates the gradients of a simulation."""
-
-    pass
 
 
 def compute_weights_and_neff(
@@ -210,7 +205,7 @@ class DiffTReObjective(Objective):
         beta: float,
         n_equilibration_steps: int,
         min_n_eff_factor: float = 0.95,
-    ):
+    ) -> "DiffTReObjective":
         """Initialize the DiffTRe objective.
 
         Args:
@@ -225,7 +220,6 @@ class DiffTReObjective(Objective):
             n_equilibration_steps: The number of equilibration steps.
             min_n_eff_factor: The minimum normalized effective sample size.
         """
-
         super().__init__(
             required_observables,
             needed_observables,
@@ -249,15 +243,11 @@ class DiffTReObjective(Objective):
         if not self.is_ready():
             raise ValueError(ERR_OBJECTIVE_NOT_READY)
 
-        sorted_obs = list(
-            map(
-                lambda x: x[1],
-                sorted(
-                    self._obtained_observables,
-                    key=lambda x: self._required_observables.index(x[0]),
-                ),
-            )
+        sorted_obtained_observables = sorted(
+            self._obtained_observables,
+            key=lambda x: self._required_observables.index(x[0]),
         )
+        sorted_obs = [x[1] for x in sorted_obtained_observables]
         new_trajectory = sorted_obs[0]
         if self._reference_states is None:
             self._reference_states = new_trajectory.slice(
@@ -280,7 +270,7 @@ class DiffTReObjective(Objective):
         self._obtained_observables = [
             ("loss", loss),
             measured_value,
-            *[(ro, so) for (ro, so) in zip(self._required_observables, sorted_obs)],
+            *list(zip(self._required_observables, sorted_obs, strict=True)),
         ]
 
         return grads

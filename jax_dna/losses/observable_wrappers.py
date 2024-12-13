@@ -50,4 +50,5 @@ class ObservableLossFn:
 
 
 def l2_loss(actual: jnp.ndarray, target: jnp.ndarray) -> float:
+    """Calculate the L2 loss between the actual and target values."""
     return jnp.sum((actual - target) ** 2)

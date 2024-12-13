@@ -39,4 +39,4 @@ Grads = jaxtyp.PyTree
 Params = jaxtyp.PyTree | dict[str, jaxtyp.PyTree]
 PyTree = jaxtyp.PyTree
 
-SimulatorActorOutput = PyTree | str
+SimulatorActorOutput = str

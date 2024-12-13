@@ -4,11 +4,12 @@ import itertools
 import typing
 
 import chex
+import optax
+import ray
+
 import jax_dna.optimization.objective_actor as jdna_objective
 import jax_dna.optimization.simulation_actor as jdna_actor
 import jax_dna.utils.types as jdna_types
-import optax
-import ray
 
 ERR_MISSING_OBJECTIVES = "At least one objective is required."
 ERR_MISSING_SIMULATORS = "At least one simulator is required."
@@ -48,7 +49,8 @@ class Optimization:
     optimizer: optax.GradientTransformation
     optimizer_state: optax.OptState | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Validate the initialization of the Optimization."""
         if not self.objectives:
             raise ValueError(ERR_MISSING_OBJECTIVES)
 
@@ -87,7 +89,7 @@ class Optimization:
         sim_remotes = [sim.run.remote(params) for sim in needed_simulators]
 
         simid_exposes = {}
-        for sr, sim in zip(sim_remotes, needed_simulators):
+        for sr, sim in zip(sim_remotes, needed_simulators, strict=True):
             simid_exposes[sr.task_id().hex()] = ray.get(sim.exposes.remote())
 
         # wait for the simulators to finish
@@ -110,10 +112,7 @@ class Optimization:
         grads_resolved = ray.get(grad_refs)
         grads = self.aggregate_grad_fn(grads_resolved)
 
-        if self.optimizer_state is None:
-            opt_state = self.optimizer.init(params)
-        else:
-            opt_state = self.optimizer_state
+        opt_state = self.optimizer.init(params) if self.optimizer_state is None else self.optimizer_state
 
         updates, opt_state = self.optimizer.update(grads, opt_state, params)
 

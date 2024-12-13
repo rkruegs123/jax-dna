@@ -2,9 +2,9 @@
 
 import typing
 
-import jax_dna.simulators.io as jdna_sio
-import jax_dna.utils.types as jdna_types
 import ray
+
+import jax_dna.utils.types as jdna_types
 
 
 class BaseSimulator:
@@ -18,7 +18,7 @@ class BaseSimulator:
         fn: typing.Callable[[jdna_types.Params, jdna_types.MetaData], tuple[str, ...]],
         exposes: list[str],
         meta_data: jdna_types.MetaData,
-    ):
+    ) -> "BaseSimulator":
         """Initializes a SimulatorActor.
 
         Args:

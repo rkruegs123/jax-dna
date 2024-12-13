@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 import jax_md
 
-import jax_dna.input.tree as tree
+from jax_dna.input import tree
 
 TEST_FILES_DIR = Path(__file__).parent / "test_files"
 

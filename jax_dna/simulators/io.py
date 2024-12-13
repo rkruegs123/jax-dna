@@ -20,7 +20,6 @@ class SimulatorMetaData:
 
     def slice(self, key: int | slice) -> "SimulatorMetaData":
         """Slice the metadata."""
-
         new_grads = self.grads
         if new_grads:
             centers = [{k: c[k][key] for k in c} for c in self.grads.center]
@@ -47,14 +46,6 @@ class SimulatorTrajectory:
 
     def slice(self, key: int | slice) -> "SimulatorTrajectory":
         """Slice the trajectory."""
-
-        sub_rigid_body = jax_md.rigid_body.RigidBody(
-            center=self.rigid_body.center[key],
-            orientation=jax_md.rigid_body.Quaternion(
-                vec=self.rigid_body.orientation.vec[key],
-            ),
-        )
-
         return self.replace(
             rigid_body=jax_md.rigid_body.RigidBody(
                 center=self.rigid_body.center[key, ...],
@@ -64,6 +55,6 @@ class SimulatorTrajectory:
             )
         )
 
-    def __len__(self):
-        print(self.rigid_body.center.shape, self.rigid_body.center.shape[0])
+    def __len__(self) -> int:
+        """Return the length of the trajectory."""
         return self.rigid_body.center.shape[0]

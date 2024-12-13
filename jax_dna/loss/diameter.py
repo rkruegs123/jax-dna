@@ -1,3 +1,5 @@
+# ruff: noqa
+# fmt: off
 import pdb
 import unittest
 import pandas as pd
