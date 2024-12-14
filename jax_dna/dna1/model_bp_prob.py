@@ -1,3 +1,15 @@
+"""
+need better testing
+
+right now, i think only the 1st and 4th cases matter
+
+should add things like the bulge case where something is still technically unpaired but it still has hydrogen bonding interact with things
+
+have to do this from both directions
+
+should also add some one-hot examples
+"""
+
 import pdb
 import unittest
 from functools import partial
