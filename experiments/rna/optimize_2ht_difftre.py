@@ -12,6 +12,7 @@ import shutil
 import seaborn as sns
 import argparse
 import functools
+import os
 
 import jax
 import optax
@@ -98,6 +99,9 @@ def run(args):
         params_str += f"{k}: {v}\n"
     with open(run_dir / "params.txt", "w+") as f:
         f.write(params_str)
+
+    nvidia_smi_path = run_dir / "nvidia-smi.txt"
+    os.system(f"nvidia-smi >> {nvidia_smi_path}")
 
     # Load the system
     if full_system:
