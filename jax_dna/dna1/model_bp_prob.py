@@ -202,8 +202,72 @@ class EnergyModel:
                                            **self.params["excluded_volume_bonded"]).sum()
 
         v_stack = stacking(r_stack_nn, theta4, theta5, theta6, cosphi1, cosphi2, **self.params["stacking"])
-        stack_probs = utils.get_pair_probs(seq, nn_i, nn_j)
-        stack_weights = jnp.dot(stack_probs, self.ss_stack_weights_flat)
+        # stack_probs = utils.get_pair_probs(seq, nn_i, nn_j)
+        # stack_weights = jnp.dot(stack_probs, self.ss_stack_weights_flat)
+
+
+        def compute_stack_weight(op1, op2):
+            op1_unpaired = self.is_unpaired[op1]
+            op2_unpaired = self.is_unpaired[op2]
+
+            # Case 1: Both unpaired
+            pair_probs = jnp.kron(unpaired_pseq[self.idx_to_unpaired_idx[op1]], unpaired_pseq[self.idx_to_unpaired_idx[op2]])
+            pair_weight_unpaired = jnp.dot(pair_probs, self.ss_stack_weights_flat)
+
+            # Case 2: op1 unpaired, op2 base paired
+            op1_nt_probs = unpaired_pseq[self.idx_to_unpaired_idx[op1]]
+            op2_bp_idx, within_op2_bp_idx = self.idx_to_bp_idx[op2]
+            bp_probs = bp_pseq[op2_bp_idx]
+
+            def op1_up_fn(op1_nt, op2_bp_type_idx):
+                op2_nt = BP_IDXS[op2_bp_type_idx][within_op2_bp_idx]
+                return op1_nt_probs[op1_nt] * bp_probs[op2_bp_type_idx] * self.ss_stack_weights[op1_nt, op2_nt]
+            pair_weight_op1_up = vmap(vmap(op1_up_fn, (None, 0)), (0, None))(jnp.arange(N_NT), jnp.arange(N_BP_TYPES)).sum()
+
+            # Case 3: op2 unpaired, op1 base paired
+
+            op2_nt_probs = unpaired_pseq[self.idx_to_unpaired_idx[op2]]
+            op1_bp_idx, within_op1_bp_idx = self.idx_to_bp_idx[op1]
+            bp_probs = bp_pseq[op1_bp_idx]
+
+            def op2_up_fn(op2_nt, op1_bp_type_idx):
+                op1_nt = BP_IDXS[op1_bp_type_idx][within_op1_bp_idx]
+                return op2_nt_probs[op2_nt] * bp_probs[op1_bp_type_idx] * self.ss_stack_weights[op1_nt, op2_nt]
+            pair_weight_op2_up = vmap(vmap(op2_up_fn, (None, 0)), (0, None))(jnp.arange(N_NT), jnp.arange(N_BP_TYPES)).sum()
+
+            # Case 4: both op1 and op2 are base paired
+
+            op1_bp_idx, within_op1_bp_idx = self.idx_to_bp_idx[op1]
+            op2_bp_idx, within_op2_bp_idx = self.idx_to_bp_idx[op2]
+
+            ## Case 4.I: op1 and op2 are in the same base pair
+            bp_probs = bp_pseq[op1_bp_idx]
+            def same_bp_fn(bp_idx):
+                bp_prob = bp_probs[bp_idx]
+                bp_nt1, bp_nt2 = BP_IDXS[bp_idx][jnp.array([within_op1_bp_idx, within_op2_bp_idx])]
+                return bp_prob * self.ss_stack_weights[bp_nt1, bp_nt2]
+            pair_weight_same_bp = vmap(same_bp_fn)(jnp.arange(N_BP_TYPES)).sum()
+
+            ## Case 4.II: op1 and op2 are in different base pairs
+            bp1_probs = bp_pseq[op1_bp_idx]
+            bp2_probs = bp_pseq[op2_bp_idx]
+            def diff_bps_fn(bp1_idx, bp2_idx):
+                bp1_prob = bp1_probs[bp1_idx]
+                op1_nt = BP_IDXS[bp1_idx][within_op1_bp_idx]
+
+                bp2_prob = bp2_probs[bp2_idx]
+                op2_nt = BP_IDXS[bp2_idx][within_op2_bp_idx]
+
+                return bp1_prob * bp2_prob * self.ss_stack_weights[op1_nt, op2_nt]
+            pair_weight_diff_bps = vmap(vmap(diff_bps_fn, (None, 0)), (0, None))(jnp.arange(N_BP_TYPES), jnp.arange(N_BP_TYPES)).sum()
+
+            pair_weight_both_paired = jnp.where(op1_bp_idx == op2_bp_idx, pair_weight_same_bp, pair_weight_diff_bps)
+
+            return jnp.where(jnp.logical_and(op1_unpaired, op2_unpaired), pair_weight_unpaired,
+                             jnp.where(op1_unpaired, pair_weight_op1_up,
+                                       jnp.where(op2_unpaired, pair_weight_op2_up, pair_weight_both_paired)))
+
+        stack_weights = vmap(compute_stack_weight)(nn_i, nn_j)
         stack_dg = jnp.dot(stack_weights, v_stack)
         # stack_dg = stacking(r_stack_nn, theta4, theta5, theta6, cosphi1, cosphi2, **self.params["stacking"]).sum()
 
@@ -282,76 +346,7 @@ class EnergyModel:
                              jnp.where(op1_unpaired, pair_weight_op1_up,
                                        jnp.where(op2_unpaired, pair_weight_op2_up, pair_weight_both_paired)))
 
-        hb_weights_jax = vmap(compute_hb_weight)(op_i, op_j)
-
-        hb_weights = list()
-        for op1, op2 in zip(op_i, op_j):
-            op1_unpaired = self.is_unpaired[op1]
-            op2_unpaired = self.is_unpaired[op2]
-
-            if op1_unpaired and op2_unpaired:
-                pair_probs = jnp.kron(unpaired_pseq[self.idx_to_unpaired_idx[op1]], unpaired_pseq[self.idx_to_unpaired_idx[op2]])
-                pair_weight = jnp.dot(pair_probs, self.ss_hb_weights_flat)
-            elif op1_unpaired:
-                # op2 must be paired
-
-                op1_nt_probs = unpaired_pseq[self.idx_to_unpaired_idx[op1]]
-                op2_bp_idx, within_op2_bp_idx = self.idx_to_bp_idx[op2]
-                bp_probs = bp_pseq[op2_bp_idx]
-
-                pair_weight = 0.0
-                for op1_nt in range(len(utils.DNA_ALPHA)):
-                    for op2_bp_type_idx in range(len(BP_TYPES)):
-                        op2_nt = BP_IDXS[op2_bp_type_idx][within_op2_bp_idx]
-                        pair_weight += op1_nt_probs[op1_nt] * bp_probs[op2_bp_type_idx] * self.ss_hb_weights[op1_nt, op2_nt]
-
-
-            elif op2_unpaired:
-                # op1 must be paired
-
-                op2_nt_probs = unpaired_pseq[self.idx_to_unpaired_idx[op2]]
-                op1_bp_idx, within_op1_bp_idx = self.idx_to_bp_idx[op1]
-                bp_probs = bp_pseq[op1_bp_idx]
-
-                pair_weight = 0.0
-                for op2_nt in range(len(utils.DNA_ALPHA)):
-                    for op1_bp_type_idx in range(len(BP_TYPES)):
-                        op1_nt = BP_IDXS[op1_bp_type_idx][within_op1_bp_idx]
-                        pair_weight += op2_nt_probs[op2_nt] * bp_probs[op1_bp_type_idx] * self.ss_hb_weights[op1_nt, op2_nt]
-
-
-            else:
-                # op1 and op2 are both paired. It's just a questio of if they're in the same base pair
-
-                op1_bp_idx, within_op1_bp_idx = self.idx_to_bp_idx[op1]
-                op2_bp_idx, within_op2_bp_idx = self.idx_to_bp_idx[op2]
-
-                if op1_bp_idx == op2_bp_idx:
-                    # op1 and op2 are base paired
-                    bp_probs = bp_pseq[op1_bp_idx]
-                    pair_weight = 0.0
-                    for bp_idx in range(len(BP_TYPES)):
-                        bp_prob = bp_probs[bp_idx]
-                        bp_nt1, bp_nt2 = BP_IDXS[bp_idx][jnp.array([within_op1_bp_idx, within_op2_bp_idx])]
-                        pair_weight += bp_prob * self.ss_hb_weights[bp_nt1, bp_nt2]
-                else:
-                    bp1_probs = bp_pseq[op1_bp_idx]
-                    bp2_probs = bp_pseq[op2_bp_idx]
-                    pair_weight = 0.0
-
-                    for bp1_idx in range(len(BP_TYPES)):
-                        bp1_prob = bp1_probs[bp1_idx]
-                        op1_nt = BP_IDXS[bp1_idx][within_op1_bp_idx]
-
-                        for bp2_idx in range(len(BP_TYPES)):
-                            bp2_prob = bp2_probs[bp2_idx]
-                            op2_nt = BP_IDXS[bp2_idx][within_op2_bp_idx]
-
-                            pair_weight += bp1_prob * bp2_prob * self.ss_hb_weights[op1_nt, op2_nt]
-
-            hb_weights.append(pair_weight)
-        hb_weights = jnp.array(hb_weights)
-        pdb.set_trace()
+        hb_weights = vmap(compute_hb_weight)(op_i, op_j)
         hb_dg = jnp.dot(hb_weights, v_hb)
 
 
@@ -384,11 +379,14 @@ class TestDna1(unittest.TestCase):
 
         ss_path = "data/seq-specific/seq_oxdna1.txt"
 
-        # ss_hb_weights, ss_stack_weights = read_ss_oxdna(ss_path)
+        ss_hb_weights, ss_stack_weights = read_ss_oxdna(ss_path)
         # ss_hb_weights, ss_stack_weights = utils.HB_WEIGHTS_SA, utils.STACK_WEIGHTS_SA
 
-        ss_hb_weights, _ = read_ss_oxdna(ss_path)
-        _, ss_stack_weights = utils.HB_WEIGHTS_SA, utils.STACK_WEIGHTS_SA
+        # ss_hb_weights, _ = read_ss_oxdna(ss_path)
+        # _, ss_stack_weights = utils.HB_WEIGHTS_SA, utils.STACK_WEIGHTS_SA
+
+        ss_hb_weights = jnp.array(ss_hb_weights)
+        ss_stack_weights = jnp.array(ss_stack_weights)
 
         basedir = self.test_data_basedir / "helix-4bp"
         t_kelvin = utils.DEFAULT_TEMP
@@ -456,9 +454,8 @@ class TestDna1(unittest.TestCase):
         pseq = logits / logits.sum(axis=1, keepdims=True)
         pseq = jnp.array(pseq)
 
-        pdb.set_trace()
         model = EnergyModel(displacement_fn, bps, unpaired, is_unpaired, idx_to_unpaired_idx, idx_to_bp_idx,
-                            t_kelvin=t_kelvin, ss_hb_weights=jnp.array(ss_hb_weights), ss_stack_weights=ss_stack_weights)
+                            t_kelvin=t_kelvin, ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
         energy_fn = model.energy_fn
         # energy_fn = jit(energy_fn)
 
