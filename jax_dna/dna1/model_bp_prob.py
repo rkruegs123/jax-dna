@@ -206,13 +206,13 @@ class EnergyModel:
         # stack_weights = jnp.dot(stack_probs, self.ss_stack_weights_flat)
 
 
-        def compute_stack_weight(op1, op2):
+        def compute_seq_dep_weight(op1, op2, weights_table, flattened_weights_table):
             op1_unpaired = self.is_unpaired[op1]
             op2_unpaired = self.is_unpaired[op2]
 
             # Case 1: Both unpaired
             pair_probs = jnp.kron(unpaired_pseq[self.idx_to_unpaired_idx[op1]], unpaired_pseq[self.idx_to_unpaired_idx[op2]])
-            pair_weight_unpaired = jnp.dot(pair_probs, self.ss_stack_weights_flat)
+            pair_weight_unpaired = jnp.dot(pair_probs, flattened_weights_table)
 
             # Case 2: op1 unpaired, op2 base paired
             op1_nt_probs = unpaired_pseq[self.idx_to_unpaired_idx[op1]]
@@ -221,7 +221,7 @@ class EnergyModel:
 
             def op1_up_fn(op1_nt, op2_bp_type_idx):
                 op2_nt = BP_IDXS[op2_bp_type_idx][within_op2_bp_idx]
-                return op1_nt_probs[op1_nt] * bp_probs[op2_bp_type_idx] * self.ss_stack_weights[op1_nt, op2_nt]
+                return op1_nt_probs[op1_nt] * bp_probs[op2_bp_type_idx] * weights_table[op1_nt, op2_nt]
             pair_weight_op1_up = vmap(vmap(op1_up_fn, (None, 0)), (0, None))(jnp.arange(N_NT), jnp.arange(N_BP_TYPES)).sum()
 
             # Case 3: op2 unpaired, op1 base paired
@@ -232,7 +232,7 @@ class EnergyModel:
 
             def op2_up_fn(op2_nt, op1_bp_type_idx):
                 op1_nt = BP_IDXS[op1_bp_type_idx][within_op1_bp_idx]
-                return op2_nt_probs[op2_nt] * bp_probs[op1_bp_type_idx] * self.ss_stack_weights[op1_nt, op2_nt]
+                return op2_nt_probs[op2_nt] * bp_probs[op1_bp_type_idx] * weights_table[op1_nt, op2_nt]
             pair_weight_op2_up = vmap(vmap(op2_up_fn, (None, 0)), (0, None))(jnp.arange(N_NT), jnp.arange(N_BP_TYPES)).sum()
 
             # Case 4: both op1 and op2 are base paired
@@ -245,7 +245,7 @@ class EnergyModel:
             def same_bp_fn(bp_idx):
                 bp_prob = bp_probs[bp_idx]
                 bp_nt1, bp_nt2 = BP_IDXS[bp_idx][jnp.array([within_op1_bp_idx, within_op2_bp_idx])]
-                return bp_prob * self.ss_stack_weights[bp_nt1, bp_nt2]
+                return bp_prob * weights_table[bp_nt1, bp_nt2]
             pair_weight_same_bp = vmap(same_bp_fn)(jnp.arange(N_BP_TYPES)).sum()
 
             ## Case 4.II: op1 and op2 are in different base pairs
@@ -258,7 +258,7 @@ class EnergyModel:
                 bp2_prob = bp2_probs[bp2_idx]
                 op2_nt = BP_IDXS[bp2_idx][within_op2_bp_idx]
 
-                return bp1_prob * bp2_prob * self.ss_stack_weights[op1_nt, op2_nt]
+                return bp1_prob * bp2_prob * weights_table[op1_nt, op2_nt]
             pair_weight_diff_bps = vmap(vmap(diff_bps_fn, (None, 0)), (0, None))(jnp.arange(N_BP_TYPES), jnp.arange(N_BP_TYPES)).sum()
 
             pair_weight_both_paired = jnp.where(op1_bp_idx == op2_bp_idx, pair_weight_same_bp, pair_weight_diff_bps)
@@ -267,7 +267,7 @@ class EnergyModel:
                              jnp.where(op1_unpaired, pair_weight_op1_up,
                                        jnp.where(op2_unpaired, pair_weight_op2_up, pair_weight_both_paired)))
 
-        stack_weights = vmap(compute_stack_weight)(nn_i, nn_j)
+        stack_weights = vmap(compute_seq_dep_weight, (0, 0, None, None))(nn_i, nn_j, self.ss_stack_weights, self.ss_stack_weights_flat)
         stack_dg = jnp.dot(stack_weights, v_stack)
         # stack_dg = stacking(r_stack_nn, theta4, theta5, theta6, cosphi1, cosphi2, **self.params["stacking"]).sum()
 
@@ -278,75 +278,12 @@ class EnergyModel:
         exc_vol_unbonded_dg = jnp.where(mask, exc_vol_unbonded_dg, 0.0).sum() # Mask for neighbors
 
 
-
         v_hb = hydrogen_bonding(
             dr_base_op, theta1_op, theta2_op, theta3_op, theta4_op,
             theta7_op, theta8_op, **self.params["hydrogen_bonding"])
 
         v_hb = jnp.where(mask, v_hb, 0.0) # Mask for neighbors
-
-        def compute_hb_weight(op1, op2):
-            op1_unpaired = self.is_unpaired[op1]
-            op2_unpaired = self.is_unpaired[op2]
-
-            # Case 1: Both unpaired
-            pair_probs = jnp.kron(unpaired_pseq[self.idx_to_unpaired_idx[op1]], unpaired_pseq[self.idx_to_unpaired_idx[op2]])
-            pair_weight_unpaired = jnp.dot(pair_probs, self.ss_hb_weights_flat)
-
-            # Case 2: op1 unpaired, op2 base paired
-            op1_nt_probs = unpaired_pseq[self.idx_to_unpaired_idx[op1]]
-            op2_bp_idx, within_op2_bp_idx = self.idx_to_bp_idx[op2]
-            bp_probs = bp_pseq[op2_bp_idx]
-
-            def op1_up_fn(op1_nt, op2_bp_type_idx):
-                op2_nt = BP_IDXS[op2_bp_type_idx][within_op2_bp_idx]
-                return op1_nt_probs[op1_nt] * bp_probs[op2_bp_type_idx] * self.ss_hb_weights[op1_nt, op2_nt]
-            pair_weight_op1_up = vmap(vmap(op1_up_fn, (None, 0)), (0, None))(jnp.arange(N_NT), jnp.arange(N_BP_TYPES)).sum()
-
-            # Case 3: op2 unpaired, op1 base paired
-
-            op2_nt_probs = unpaired_pseq[self.idx_to_unpaired_idx[op2]]
-            op1_bp_idx, within_op1_bp_idx = self.idx_to_bp_idx[op1]
-            bp_probs = bp_pseq[op1_bp_idx]
-
-            def op2_up_fn(op2_nt, op1_bp_type_idx):
-                op1_nt = BP_IDXS[op1_bp_type_idx][within_op1_bp_idx]
-                return op2_nt_probs[op2_nt] * bp_probs[op1_bp_type_idx] * self.ss_hb_weights[op1_nt, op2_nt]
-            pair_weight_op2_up = vmap(vmap(op2_up_fn, (None, 0)), (0, None))(jnp.arange(N_NT), jnp.arange(N_BP_TYPES)).sum()
-
-            # Case 4: both op1 and op2 are base paired
-
-            op1_bp_idx, within_op1_bp_idx = self.idx_to_bp_idx[op1]
-            op2_bp_idx, within_op2_bp_idx = self.idx_to_bp_idx[op2]
-
-            ## Case 4.I: op1 and op2 are in the same base pair
-            bp_probs = bp_pseq[op1_bp_idx]
-            def same_bp_fn(bp_idx):
-                bp_prob = bp_probs[bp_idx]
-                bp_nt1, bp_nt2 = BP_IDXS[bp_idx][jnp.array([within_op1_bp_idx, within_op2_bp_idx])]
-                return bp_prob * self.ss_hb_weights[bp_nt1, bp_nt2]
-            pair_weight_same_bp = vmap(same_bp_fn)(jnp.arange(N_BP_TYPES)).sum()
-
-            ## Case 4.II: op1 and op2 are in different base pairs
-            bp1_probs = bp_pseq[op1_bp_idx]
-            bp2_probs = bp_pseq[op2_bp_idx]
-            def diff_bps_fn(bp1_idx, bp2_idx):
-                bp1_prob = bp1_probs[bp1_idx]
-                op1_nt = BP_IDXS[bp1_idx][within_op1_bp_idx]
-
-                bp2_prob = bp2_probs[bp2_idx]
-                op2_nt = BP_IDXS[bp2_idx][within_op2_bp_idx]
-
-                return bp1_prob * bp2_prob * self.ss_hb_weights[op1_nt, op2_nt]
-            pair_weight_diff_bps = vmap(vmap(diff_bps_fn, (None, 0)), (0, None))(jnp.arange(N_BP_TYPES), jnp.arange(N_BP_TYPES)).sum()
-
-            pair_weight_both_paired = jnp.where(op1_bp_idx == op2_bp_idx, pair_weight_same_bp, pair_weight_diff_bps)
-
-            return jnp.where(jnp.logical_and(op1_unpaired, op2_unpaired), pair_weight_unpaired,
-                             jnp.where(op1_unpaired, pair_weight_op1_up,
-                                       jnp.where(op2_unpaired, pair_weight_op2_up, pair_weight_both_paired)))
-
-        hb_weights = vmap(compute_hb_weight)(op_i, op_j)
+        hb_weights = vmap(compute_seq_dep_weight, (0, 0, None, None))(op_i, op_j, self.ss_hb_weights, self.ss_hb_weights_flat)
         hb_dg = jnp.dot(hb_weights, v_hb)
 
 
