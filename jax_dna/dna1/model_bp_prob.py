@@ -266,7 +266,7 @@ class EnergyModel:
                     pair_weight = 0.0
                     for bp_idx in range(len(BP_TYPES)):
                         bp_prob = bp_probs[bp_idx]
-                        bp_nt1, bp_nt2 = BP_IDXS[op1_bp_idx][jnp.array([within_op1_bp_idx, within_op2_bp_idx])]
+                        bp_nt1, bp_nt2 = BP_IDXS[bp_idx][jnp.array([within_op1_bp_idx, within_op2_bp_idx])]
                         pair_weight += bp_prob * self.ss_hb_weights[bp_nt1, bp_nt2]
                 else:
                     bp1_probs = bp_pseq[op1_bp_idx]
@@ -286,7 +286,6 @@ class EnergyModel:
             hb_weights.append(pair_weight)
         hb_weights = jnp.array(hb_weights)
         hb_dg = jnp.dot(hb_weights, v_hb)
-        # jnp.allclose(jnp.array(reconstructed_weights), hb_weights) # This is true!
 
 
 
@@ -317,8 +316,12 @@ class TestDna1(unittest.TestCase):
         from jax_dna.dna1 import model as orig_model
 
         ss_path = "data/seq-specific/seq_oxdna1.txt"
+
         # ss_hb_weights, ss_stack_weights = read_ss_oxdna(ss_path)
-        ss_hb_weights, ss_stack_weights = utils.HB_WEIGHTS_SA, utils.STACK_WEIGHTS_SA
+        # ss_hb_weights, ss_stack_weights = utils.HB_WEIGHTS_SA, utils.STACK_WEIGHTS_SA
+
+        ss_hb_weights, _ = read_ss_oxdna(ss_path)
+        _, ss_stack_weights = utils.HB_WEIGHTS_SA, utils.STACK_WEIGHTS_SA
 
         basedir = self.test_data_basedir / "helix-4bp"
         t_kelvin = utils.DEFAULT_TEMP
@@ -396,11 +399,11 @@ class TestDna1(unittest.TestCase):
             probability = 1.0
 
             for n_up_idx, up_idx in enumerate(unpaired):
-                up_bp_idx = utils.DNA_ALPHA.index(seq[up_idx])
-                probability *= unpaired_pseq[n_up_idx, up_bp_idx]
+                up_nt_idx = utils.DNA_ALPHA.index(sequence[up_idx])
+                probability *= unpaired_pseq[n_up_idx, up_nt_idx]
 
             for bp_idx, (nt1, nt2) in enumerate(bps):
-                bp_type_idx = BP_TYPES.index(seq[nt1] + seq[nt2])
+                bp_type_idx = BP_TYPES.index(sequence[nt1] + seq[nt2])
                 probability *= bp_pseq[bp_idx, bp_type_idx]
 
             return probability
