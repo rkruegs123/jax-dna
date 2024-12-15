@@ -16,7 +16,7 @@ import jax.numpy as jnp
 from jax import jit, vmap, random, grad, value_and_grad, lax, lax
 from jax_md import space, simulate, rigid_body
 
-from jax_dna.common import utils, topology, trajectory, checkpoint
+from jax_dna.common import utils, topology, trajectory, checkpoint, center_configuration
 from jax_dna.dna1 import model_bp_prob as model
 from jax_dna.common.read_seq_specific import read_ss_oxdna
 
@@ -43,6 +43,7 @@ def run(args):
     gumbel_temps = onp.linspace(gumbel_start, gumbel_end, n_iters)
 
     use_rg = args['use_rg']
+    use_nbrs = args['use_nbrs']
 
     n_sims = args['n_sims']
     n_sample_steps = args['n_sample_steps']
@@ -116,9 +117,23 @@ def run(args):
         top_info,
         read_from_file=True, traj_path=conf_path, reverse_direction=True
     )
+    centered_conf_info = center_configuration.center_conf(top_info, conf_info)
+    box_size = conf_info.box_size
 
     # Setup utilities for simulation
     displacement_fn, shift_fn = space.free()
+
+    default_neighbors = None
+    if use_nbrs:
+        r_cutoff = 10.0
+        dr_threshold = 0.2
+        neighbor_fn = top_info.get_neighbor_list_fn(
+            displacement_fn, box_size, r_cutoff, dr_threshold)
+        # Note that we only allocate once
+        tmp_nbr_state = centered_conf_info.get_states()[0]
+        neighbors = neighbor_fn.allocate(tmp_nbr_state.center) # We use the COMs.
+        default_neighbors = deepcopy(neighbors)
+
 
     dt = 5e-3
     t_kelvin = utils.DEFAULT_TEMP
@@ -155,25 +170,15 @@ def run(args):
     em = model.EnergyModel(displacement_fn, bps, unpaired, is_unpaired, idx_to_unpaired_idx, idx_to_bp_idx,
                            override_base_params=empty_params, t_kelvin=t_kelvin, ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
 
-    def eq_fn(eq_key, body, unpaired_pseq, bp_pseq):
-        init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
-        init_state = init_fn(
-            key, body, mass=mass,
-            unpaired_pseq=unpaired_pseq, bp_pseq=bp_pseq,
-            bonded_nbrs=top_info.bonded_nbrs,
-            unbonded_nbrs=top_info.unbonded_nbrs.T)
-        def fori_step_fn(t, state):
-            return step_fn(
-                state,
-                unpaired_pseq=unpaired_pseq, bp_pseq=bp_pseq,
-                bonded_nbrs=top_info.bonded_nbrs,
-                unbonded_nbrs=top_info.unbonded_nbrs.T)
-        fori_step_fn = jit(fori_step_fn)
-
-        eq_state = lax.fori_loop(0, n_eq_steps, fori_step_fn, init_state)
-        return eq_state.position
 
     def sample_fn(body, key, unpaired_pseq, bp_pseq):
+
+        if use_nbrs:
+            neighbors_idx = default_neighbors.idx
+        else:
+            neighbors_idx = top_info.unbonded_nbrs.T
+
+
         init_fn, step_fn = simulate.nvt_langevin(em.energy_fn, shift_fn, dt, kT, gamma)
         init_state = init_fn(
             key, body, mass=mass,
@@ -181,33 +186,39 @@ def run(args):
             bonded_nbrs=top_info.bonded_nbrs,
             unbonded_nbrs=top_info.unbonded_nbrs.T)
 
-        def fori_step_fn(t, state):
-            return step_fn(
+        @jit
+        def fori_step_fn(t, carry):
+            state, neighbors = carry
+            if use_nbrs:
+                neighbors = neighbors.update(state.position.center)
+                neighbors_idx = neighbors.idx
+            else:
+                neighbors_idx = top_info.unbonded_nbrs.T
+
+            state= step_fn(
                 state,
                 unpaired_pseq=unpaired_pseq, bp_pseq=bp_pseq,
                 bonded_nbrs=top_info.bonded_nbrs,
-                unbonded_nbrs=top_info.unbonded_nbrs.T)
+                unbonded_nbrs=neighbors_idx)
+            return (state, neighbors)
         fori_step_fn = jit(fori_step_fn)
 
         @jit
-        def scan_fn(state, step):
-            state = lax.fori_loop(0, sample_every, fori_step_fn, state)
-            return state, state.position
+        def scan_fn(carry, step):
+            (state, neighbors) = lax.fori_loop(0, sample_every, fori_step_fn, carry)
+            return (state, neighbors), state.position
 
         start = time.time()
-        fin_state, traj = scan(scan_fn, init_state, jnp.arange(num_points_per_batch))
+        (eq_state, eq_neighbors) = lax.fori_loop(0, n_eq_steps, fori_step_fn, (init_state, default_neighbors))
+        (fin_state, _), traj = scan(scan_fn, (eq_state, eq_neighbors), jnp.arange(num_points_per_batch))
         end = time.time()
 
         return traj
 
     def batch_sim(ref_key, R, unpaired_pseq, bp_pseq):
 
-        ref_key, eq_key = random.split(ref_key)
-        eq_keys = random.split(eq_key, n_sims)
-        eq_states = vmap(eq_fn, (0, None, None, None))(eq_keys, R, unpaired_pseq, bp_pseq)
-
         sample_keys = random.split(ref_key, n_sims)
-        sample_trajs = vmap(sample_fn, (0, 0, None, None))(eq_states, sample_keys, unpaired_pseq, bp_pseq)
+        sample_trajs = vmap(sample_fn, (None, 0, None, None))(R, sample_keys, unpaired_pseq, bp_pseq)
 
         # sample_traj = utils.tree_stack(sample_trajs)
         sample_center = sample_trajs.center.reshape(-1, seq_length, 3)
@@ -347,7 +358,7 @@ def run(args):
 
     key = random.PRNGKey(0)
 
-    init_body = conf_info.get_states()[0]
+    init_body = centered_conf_info.get_states()[0]
     print(f"Generating initial reference states and energies...")
     ref_states, ref_energies, ref_obs = get_ref_states(params, init_body, key, 0, temp=gumbel_temps[0])
 
@@ -482,6 +493,8 @@ def get_parser():
 
     parser.add_argument('--use-rg', action='store_true',
                         help="If true, will use Rg instaed of e2e dist")
+
+    parser.add_argument('--use-nbrs', action='store_true')
 
     return parser
 
