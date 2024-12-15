@@ -349,7 +349,7 @@ def run(args):
         f.write(f"Generating initial reference states and energies...\n")
 
     key = random.PRNGKey(0)
-    init_body = conf_info.get_states()[0]
+    init_body = centered_conf_info.get_states()[0]
     start = time.time()
     ref_states, ref_energies, unweighted_rmses, ref_iter_dir = get_ref_states(params, i=0, iter_key=key, init_body=init_body)
     end = time.time()
