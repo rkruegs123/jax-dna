@@ -354,18 +354,25 @@ class TestDna1(unittest.TestCase):
         energy_fn_base = model_base.energy_fn
         energy_fn_base = jit(energy_fn_base)
 
+        """
         bps = jnp.array([
             [0, 7],
             [1, 6],
             # [2, 5], we should ignore one
             [3, 4]
         ])
+        """
+        bps = jnp.array([
+            [0, 1],
+            [2, 5],
+        ])
         n_bps = bps.shape[0]
         bp_logits = onp.random.rand(n_bps, 4)
         bp_pseq = bp_logits / bp_logits.sum(axis=1, keepdims=True)
         bp_pseq = jnp.array(bp_pseq)
 
-        unpaired = jnp.array([2, 5])
+        # unpaired = jnp.array([2, 5])
+        unpaired = jnp.array([3, 4, 6, 7])
         is_unpaired = jnp.array([(i in set(onp.array(unpaired))) for i in range(n)]).astype(jnp.int32)
         n_unpaired = unpaired.shape[0]
         unpaired_logits = onp.random.rand(n_unpaired, 4)
@@ -394,7 +401,7 @@ class TestDna1(unittest.TestCase):
         model = EnergyModel(displacement_fn, bps, unpaired, is_unpaired, idx_to_unpaired_idx, idx_to_bp_idx,
                             t_kelvin=t_kelvin, ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
         energy_fn = model.energy_fn
-        # energy_fn = jit(energy_fn)
+        energy_fn = jit(energy_fn)
 
         def sequence_probability(sequence, unpaired_pseq, bp_pseq):
             # Initialize probability to 1 (neutral for multiplication)
@@ -446,10 +453,8 @@ class TestDna1(unittest.TestCase):
 
                 expected_energy_brute += seq_prob*seq_energy_calc
 
-        pdb.set_trace()
-
-
-
+        print(f"Brute force: {expected_energy_brute}")
+        print(f"Calculated: {expected_energy_calc}")
 
 
 
