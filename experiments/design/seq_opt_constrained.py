@@ -44,6 +44,7 @@ def run(args):
 
     use_rg = args['use_rg']
     use_nbrs = args['use_nbrs']
+    bigger_system = args['bigger_system']
 
     n_sims = args['n_sims']
     n_sample_steps = args['n_sample_steps']
@@ -97,12 +98,18 @@ def run(args):
     # Load the system
     # sys_basedir = Path("data/templates/ss20")
     # sys_basedir = Path("data/templates/ss100")
-    sys_basedir = Path("data/templates/simple-helix-60bp")
+    if bigger_system:
+        sys_basedir = Path("data/templates/persistence-length")
+    else:
+        sys_basedir = Path("data/templates/simple-helix-60bp")
     top_path = sys_basedir / "sys.top"
     top_info = topology.TopologyInfo(top_path, reverse_direction=True)
     seq_length = len(top_info.seq)
     n_bp = (seq_length // 2)
-    assert(n_bp == 60)
+    if bigger_system:
+        assert(n_bp == 202)
+    else:
+        assert(n_bp == 60)
 
     def normalize(logits, temp):
         if use_gumbel:
@@ -495,6 +502,8 @@ def get_parser():
                         help="If true, will use Rg instaed of e2e dist")
 
     parser.add_argument('--use-nbrs', action='store_true')
+
+    parser.add_argument('--bigger-system', action='store_true')
 
     return parser
 
