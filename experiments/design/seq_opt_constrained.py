@@ -219,7 +219,7 @@ def run(args):
 
 
     def e2e_distance(body):
-        return space.distance(displacement_fn(body.center[0], body.center[-1]))
+        return space.distance(displacement_fn(body.center[0], body.center[n_bp-1]))
 
     def rg(body):
         R = body.center
