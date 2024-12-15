@@ -1,15 +1,3 @@
-"""
-need better testing
-
-right now, i think only the 1st and 4th cases matter
-
-should add things like the bulge case where something is still technically unpaired but it still has hydrogen bonding interact with things
-
-have to do this from both directions
-
-should also add some one-hot examples
-"""
-
 import pdb
 import unittest
 from functools import partial
@@ -127,7 +115,7 @@ class EnergyModel:
         self.idx_to_unpaired_idx = idx_to_unpaired_idx
         self.idx_to_bp_idx = idx_to_bp_idx
 
-    def compute_subterms(self, body, unpaired_pseq, bp_pseq, seq, bonded_nbrs, unbonded_nbrs):
+    def compute_subterms(self, body, unpaired_pseq, bp_pseq, bonded_nbrs, unbonded_nbrs):
         nn_i = bonded_nbrs[:, 0]
         nn_j = bonded_nbrs[:, 1]
 
@@ -301,8 +289,8 @@ class EnergyModel:
         return fene_dg, exc_vol_bonded_dg, stack_dg, \
             exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg
 
-    def energy_fn(self, body, unpaired_pseq, bp_pseq, seq, bonded_nbrs, unbonded_nbrs):
-        dgs = self.compute_subterms(body, unpaired_pseq, bp_pseq, seq, bonded_nbrs, unbonded_nbrs)
+    def energy_fn(self, body, unpaired_pseq, bp_pseq, bonded_nbrs, unbonded_nbrs):
+        dgs = self.compute_subterms(body, unpaired_pseq, bp_pseq, bonded_nbrs, unbonded_nbrs)
         fene_dg, b_exc_dg, stack_dg, n_exc_dg, hb_dg, cr_stack, cx_stack = dgs
         return fene_dg + b_exc_dg + stack_dg + n_exc_dg + hb_dg + cr_stack + cx_stack
 
@@ -362,9 +350,17 @@ class TestDna1(unittest.TestCase):
             [3, 4]
         ])
         """
+        """
         bps = jnp.array([
             [0, 1],
             [2, 5],
+        ])
+        """
+        bps = jnp.array([
+            [0, 7],
+            [1, 6],
+            [2, 5],
+            [3, 4]
         ])
         n_bps = bps.shape[0]
         bp_logits = onp.random.rand(n_bps, 4)
@@ -372,12 +368,19 @@ class TestDna1(unittest.TestCase):
         bp_pseq = jnp.array(bp_pseq)
 
         # unpaired = jnp.array([2, 5])
-        unpaired = jnp.array([3, 4, 6, 7])
+        # unpaired = jnp.array([3, 4, 6, 7])
+        unpaired = jnp.array([])
         is_unpaired = jnp.array([(i in set(onp.array(unpaired))) for i in range(n)]).astype(jnp.int32)
         n_unpaired = unpaired.shape[0]
         unpaired_logits = onp.random.rand(n_unpaired, 4)
         unpaired_pseq = unpaired_logits / unpaired_logits.sum(axis=1, keepdims=True)
         unpaired_pseq = jnp.array(unpaired_pseq)
+
+        ## Note: just a hack to avoid errors
+        if n_unpaired == 0:
+            unpaired_logits = onp.random.rand(1, 4)
+            unpaired_pseq = unpaired_logits / unpaired_logits.sum(axis=1, keepdims=True)
+            unpaired_pseq = jnp.array(unpaired_pseq)
 
 
         idx_to_unpaired_idx = onp.arange(n)
@@ -423,7 +426,7 @@ class TestDna1(unittest.TestCase):
             state = traj_states[struc_idx]
 
             expected_energy_calc = energy_fn(
-                state, unpaired_pseq, bp_pseq, pseq, top_info.bonded_nbrs, neighbors_idx)
+                state, unpaired_pseq, bp_pseq, top_info.bonded_nbrs, neighbors_idx)
 
             expected_energy_brute = 0.0
 
