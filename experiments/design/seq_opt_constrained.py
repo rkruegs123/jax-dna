@@ -11,6 +11,7 @@ import argparse
 import seaborn as sns
 
 import jax
+jax.config.update("jax_enable_x64", True)
 import optax
 import jax.numpy as jnp
 from jax import jit, vmap, random, grad, value_and_grad, lax, lax
@@ -20,9 +21,6 @@ from jax_dna.common import utils, topology, trajectory, checkpoint, center_confi
 from jax_dna.dna1 import model_bp_prob as model
 from jax_dna.common.read_seq_specific import read_ss_oxdna
 
-# from jax.config import config
-# config.update("jax_enable_x64", True)
-jax.config.update("jax_enable_x64", True)
 
 
 checkpoint_every = 10
@@ -327,7 +325,12 @@ def run(args):
             bonded_nbrs=top_info.bonded_nbrs,
             unbonded_nbrs=top_info.unbonded_nbrs.T)
         energy_fn = jit(energy_fn)
-        new_energies = vmap(energy_fn)(ref_states)
+
+        # new_energies = vmap(energy_fn)(ref_states)
+        energy_scan_fn = lambda state, rs: (None, energy_fn(rs))
+        _, new_energies = scan(energy_scan_fn, None, ref_states)
+
+
         diffs = new_energies - ref_energies # element-wise subtraction
         boltzs = jnp.exp(-beta * diffs)
         denom = jnp.sum(boltzs)
