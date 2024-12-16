@@ -420,6 +420,36 @@ def run(args):
         bp_pseq_fpath = pseq_dir / f"bp_pseq_i{i}.npy"
         jnp.save(bp_pseq_fpath, bp_pseq, allow_pickle=False)
 
+
+        argmax_seq = ["X"] * seq_length
+        argmax_seq_scaled = ["X"] * seq_length
+        max_up_nts = jnp.argmax(up_pseq, axis=1)
+        if n_unpaired:
+            raise RuntimeError(f"Haven't implemented including max unpaired")
+
+        max_bps = jnp.argmax(bp_pseq, axis=1)
+        max_bp_probs = jnp.max(bp_pseq, axis=1)
+        for (nt1_idx, nt2_idx), bp_type_idx, bp_type_prob in zip(bps, max_bps, max_bp_probs):
+            bp1, bp2 = model.BP_TYPES[bp_type_idx]
+
+            argmax_seq[nt1_idx] = bp1
+            argmax_seq[nt2_idx] = bp2
+
+            if bp_type_prob < 0.5:
+                argmax_seq_scaled[nt1_idx] = bp1.lower()
+                argmax_seq_scaled[nt2_idx] = bp2.lower()
+            else:
+                argmax_seq_scaled[nt1_idx] = bp1
+                argmax_seq_scaled[nt2_idx] = bp2
+
+        argmax_seq = ''.join(argmax_seq)
+        argmax_seq_scaled = ''.join(argmax_seq_scaled)
+
+        with open(argmax_seq_path, "a") as f:
+            f.write(f"{argmax_seq}\n")
+        with open(argmax_seq_scaled_path, "a") as f:
+            f.write(f"{argmax_seq_scaled}\n")
+
         """
         max_nts = jnp.argmax(pseq, axis=1)
         argmax_seq = ''.join([utils.DNA_ALPHA[nt_idx] for nt_idx in max_nts])
