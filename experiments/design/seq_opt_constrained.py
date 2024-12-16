@@ -25,7 +25,7 @@ from jax_dna.common.read_seq_specific import read_ss_oxdna
 jax.config.update("jax_enable_x64", True)
 
 
-checkpoint_every = None
+checkpoint_every = 10
 if checkpoint_every is None:
     scan = lax.scan
 else:
@@ -286,10 +286,14 @@ def run(args):
         # ref_energies = [energy_fn(body) for body in ref_states]
         # return ref_states, jnp.array(ref_energies)
 
-        ref_energies = vmap(energy_fn)(ref_states)
+        energy_scan_fn = lambda state, ts: (None, energy_fn(ts))
+        _, ref_energies = scan(energy_scan_fn, None, ref_states)
+        # ref_energies = vmap(energy_fn)(ref_states)
 
         # ref_dists = vmap(e2e_distance)(ref_states) # FIXME: this doesn't depend on params...
-        ref_obs = vmap(observable_fn)(ref_states)
+        obs_scan_fn = lambda state, ts: (None, observable_fn(ts))
+        _, ref_obs = scan(obs_scan_fn, None, ref_states)
+        # ref_obs = vmap(observable_fn)(ref_states)
 
         n_traj_states = len(ref_obs)
         running_avg_obs = onp.cumsum(ref_obs) / onp.arange(1, n_traj_states + 1)
