@@ -313,7 +313,7 @@ def run(args):
 
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
-        (loss, (n_eff, expected_obs, pseq)), grads = grad_fn(params, ref_states, ref_energies, ref_obs, gumbel_temps[0])
+        (loss, (n_eff, expected_obs, pseq)), grads = grad_fn(params, ref_states, ref_energies, ref_obs, gumbel_temps[i])
 
 
         if i == 0:
@@ -326,7 +326,7 @@ def run(args):
 
             print(f"Resampling reference states...")
             key, split = random.split(key)
-            ref_states, ref_energies, ref_dists = get_ref_states(params, ref_states[-1], split, i, temp=gumbel_temps[i])
+            ref_states, ref_energies, ref_obs = get_ref_states(params, ref_states[-1], split, i, temp=gumbel_temps[i])
             # ref_states, ref_energies, ref_obs = get_ref_states(params, init_body, split, i, temp=gumbel_temps[i])
             (loss, (n_eff, expected_obs, pseq)), grads = grad_fn(params, ref_states, ref_energies, ref_obs, gumbel_temps[i])
 

@@ -20,6 +20,7 @@ from jax_md import space, simulate, rigid_body
 from jax_dna.common import utils, topology, trajectory, checkpoint, center_configuration
 from jax_dna.dna1 import model_bp_prob as model
 from jax_dna.common.read_seq_specific import read_ss_oxdna
+from jax_dna.loss import persistence_length
 
 
 
@@ -30,6 +31,7 @@ else:
     scan = functools.partial(checkpoint.checkpoint_scan,
                              checkpoint_every=checkpoint_every)
 
+compute_all_curves = vmap(persistence_length.get_correlation_curve, (0, None, None))
 
 def run(args):
 
@@ -40,9 +42,7 @@ def run(args):
     gumbel_start = args['gumbel_start']
     gumbel_temps = onp.linspace(gumbel_start, gumbel_end, n_iters)
 
-    use_rg = args['use_rg']
     use_nbrs = args['use_nbrs']
-    bigger_system = args['bigger_system']
 
     n_sims = args['n_sims']
     n_sample_steps = args['n_sample_steps']
@@ -57,8 +57,11 @@ def run(args):
 
     plot_every = args['plot_every']
     run_name = args['run_name']
-    target_obs = args['target_obs']
+    target_lp = args['target_lp']
     max_approx_iters = args['max_approx_iters']
+
+    truncation = args['truncation']
+    offset = args['offset']
 
     # Setup the logging directoroy
     if run_name is None:
@@ -94,20 +97,17 @@ def run(args):
 
 
     # Load the system
-    # sys_basedir = Path("data/templates/ss20")
-    # sys_basedir = Path("data/templates/ss100")
-    if bigger_system:
-        sys_basedir = Path("data/templates/persistence-length")
-    else:
-        sys_basedir = Path("data/templates/simple-helix-60bp")
+    sys_basedir = Path("data/templates/simple-helix-60bp-ss")
+
     top_path = sys_basedir / "sys.top"
     top_info = topology.TopologyInfo(top_path, reverse_direction=True)
     seq_length = len(top_info.seq)
     n_bp = (seq_length // 2)
-    if bigger_system:
-        assert(n_bp == 202)
-    else:
-        assert(n_bp == 60)
+    assert(n_bp == 60)
+
+    quartets = utils.get_all_quartets(n_nucs_per_strand=n_bp)
+    quartets = quartets[offset:-offset-1]
+    base_site = jnp.array([model.com_to_hb, 0.0, 0.0])
 
     def normalize(logits, temp):
         if use_gumbel:
@@ -169,11 +169,9 @@ def run(args):
     idx_to_unpaired_idx = jnp.array(idx_to_unpaired_idx)
 
 
-
-
-
     em = model.EnergyModel(displacement_fn, bps, unpaired, is_unpaired, idx_to_unpaired_idx, idx_to_bp_idx,
                            override_base_params=empty_params, t_kelvin=t_kelvin, ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
+
 
 
     def sample_fn(body, key, unpaired_pseq, bp_pseq):
@@ -234,29 +232,6 @@ def run(args):
         return sample_traj
 
 
-    def e2e_distance(body):
-        return space.distance(displacement_fn(body.center[0], body.center[n_bp-1]))
-
-    def rg(body):
-        R = body.center
-        n_states = R.shape[0]
-        mass = jnp.ones(n_states) # assumes equal mass
-
-        com = jnp.sum(jnp.multiply(R, jnp.expand_dims(mass, axis=1)), axis=0) / jnp.sum(mass) # note: assumes free boundary conditions
-
-        drs = vmap(displacement_fn, (None, 0))(com, R)
-        rs = space.distance(drs)
-
-        I = jnp.sum(mass * rs**2)
-        M = jnp.sum(mass)
-        rg = jnp.sqrt(I/M)
-        return rg
-
-    if use_rg:
-        observable_fn = rg
-    else:
-        observable_fn = e2e_distance
-
 
     def get_ref_states(params, init_body, key, i, temp):
 
@@ -281,42 +256,91 @@ def run(args):
             unbonded_nbrs=top_info.unbonded_nbrs.T)
         energy_fn = jit(energy_fn)
 
-        # ref_energies = [energy_fn(body) for body in ref_states]
-        # return ref_states, jnp.array(ref_energies)
-
         energy_scan_fn = lambda state, ts: (None, energy_fn(ts))
         _, ref_energies = scan(energy_scan_fn, None, ref_states)
-        # ref_energies = vmap(energy_fn)(ref_states)
 
-        # ref_dists = vmap(e2e_distance)(ref_states) # FIXME: this doesn't depend on params...
-        obs_scan_fn = lambda state, ts: (None, observable_fn(ts))
-        _, ref_obs = scan(obs_scan_fn, None, ref_states)
-        # ref_obs = vmap(observable_fn)(ref_states)
 
-        n_traj_states = len(ref_obs)
-        running_avg_obs = onp.cumsum(ref_obs) / onp.arange(1, n_traj_states + 1)
-        plt.plot(running_avg_obs)
-        plt.savefig(iter_dir / f"running_avg.png")
-        plt.close()
+        unweighted_corr_curves, unweighted_l0_avgs = compute_all_curves(ref_states, quartets, base_site)
+        mean_corr_curve = jnp.mean(unweighted_corr_curves, axis=0)
+        mean_l0 = jnp.mean(unweighted_l0_avgs)
+        mean_Lp_truncated, offset = persistence_length.persistence_length_fit(mean_corr_curve[:truncation], mean_l0)
 
-        plt.plot(running_avg_obs[-int(n_traj_states // 2):])
-        plt.savefig(iter_dir / f"running_avg_second_half.png")
-        plt.close()
 
-        sns.histplot(ref_obs)
-        plt.savefig(iter_dir / "obs_hist.png")
+
+        compute_every = 10
+        n_curves = unweighted_corr_curves.shape[0]
+        all_inter_lps = list()
+        all_inter_lps_truncated = list()
+        for i in range(0, n_curves, compute_every):
+            inter_mean_corr_curve = jnp.mean(unweighted_corr_curves[:i], axis=0)
+
+            inter_mean_Lp_truncated, _ = persistence_length.persistence_length_fit(inter_mean_corr_curve[:truncation], mean_l0)
+            all_inter_lps_truncated.append(inter_mean_Lp_truncated * utils.nm_per_oxdna_length)
+
+            inter_mean_Lp, _ = persistence_length.persistence_length_fit(inter_mean_corr_curve, mean_l0)
+            all_inter_lps.append(inter_mean_Lp * utils.nm_per_oxdna_length)
+
+
+
+        plt.plot(list(range(0, n_curves, compute_every)), all_inter_lps)
+        plt.ylabel("Lp (nm)")
+        plt.xlabel("# Samples")
+        plt.title("Lp running average")
+        plt.savefig(iter_dir / "running_avg.png")
         plt.clf()
+
+        plt.plot(list(range(0, n_curves, compute_every)), all_inter_lps_truncated)
+        plt.ylabel("Lp (nm)")
+        plt.xlabel("# Samples")
+        plt.title("Lp running average, truncated")
+        plt.savefig(iter_dir / "running_avg_truncated.png")
+        plt.clf()
+
+        plt.plot(mean_corr_curve)
+        plt.axvline(x=truncation, linestyle='--', label="Truncation")
+        plt.legend()
+        plt.title("Full Correlation Curve")
+        plt.savefig(iter_dir / "full_corr_curve.png")
+        plt.clf()
+
+        plt.plot(jnp.log(mean_corr_curve))
+        plt.title("Full Log-Correlation Curve")
+        plt.axvline(x=truncation, linestyle='--', label="Truncation")
+        plt.xlabel("Nuc. Index")
+        plt.ylabel("Log-Correlation")
+        plt.legend()
+        plt.savefig(iter_dir / "full_log_corr_curve.png")
+        plt.clf()
+
+        # fit_fn = lambda n: -n * mean_l0 / (mean_Lp_truncated/utils.nm_per_oxdna_length) + offset
+        fit_fn = lambda n: -n * (mean_l0 / mean_Lp_truncated) + offset
+        plt.plot(jnp.log(mean_corr_curve)[:truncation])
+        # neg_inverse_slope = (mean_Lp_truncated / utils.nm_per_oxdna_length) / mean_l0 # in nucleotides
+        neg_inverse_slope = mean_Lp_truncated / mean_l0 # in nucleotides
+        rounded_offset = onp.round(offset, 3)
+        rounded_neg_inverse_slope = onp.round(neg_inverse_slope, 3)
+        fit_str = f"fit, -n/{rounded_neg_inverse_slope} + {rounded_offset}"
+        plt.plot(fit_fn(jnp.arange(truncation)), linestyle='--', label=fit_str)
+
+
+
 
 
         # Record the loss
         with open(iter_dir / "summary.txt", "w+") as f:
-            f.write(f"\nMean observable: {onp.mean(ref_obs)}\n")
 
-        return ref_states, ref_energies, ref_obs
+            f.write(f"\nMean Lp truncated (oxDNA units): {mean_Lp_truncated}\n")
+            f.write(f"Mean L0 (oxDNA units): {mean_l0}\n")
+
+            f.write(f"\nMean Lp truncated (nm): {mean_Lp_truncated * utils.nm_per_oxdna_length}\n")
+            f.write(f"Mean L0 (nm): {mean_l0 * utils.nm_per_oxdna_length}\n")
+
+
+        return ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs
 
 
     @jit
-    def loss_fn(params, ref_states: rigid_body.RigidBody, ref_energies, ref_obs, temp):
+    def loss_fn(params, ref_states: rigid_body.RigidBody, ref_energies, unweighted_corr_curves, unweighted_l0_avgs, temp):
         curr_bp_logits = params['bp_logits']
         bp_pseq = normalize(curr_bp_logits, temp)
 
@@ -342,15 +366,24 @@ def run(args):
         weights = boltzs / denom
 
         # Compute the observable
-        expected_obs = jnp.dot(weights, ref_obs)
+        weighted_corr_curves = vmap(lambda v, w: v * w)(unweighted_corr_curves, weights)
+        expected_corr_curve = jnp.sum(weighted_corr_curves, axis=0)
+
+        expected_l0_avg = jnp.dot(unweighted_l0_avgs, weights)
+
+        expected_lp, expected_offset = persistence_length.persistence_length_fit(
+            expected_corr_curve[:truncation],
+            expected_l0_avg)
+
+        expected_lp = expected_lp * utils.nm_per_oxdna_length
 
         # Compute effective sample size
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
 
-        mse = (expected_obs - target_obs)**2
+        mse = (expected_lp - target_lp)**2
         rmse = jnp.sqrt(mse)
 
-        return rmse, (n_eff, expected_obs, up_pseq, bp_pseq)
+        return rmse, (n_eff, expected_lp, expected_corr_curve, expected_l0_avg*utils.nm_per_oxdna_length, expected_offset, up_pseq, bp_pseq)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
@@ -379,43 +412,38 @@ def run(args):
 
     init_body = centered_conf_info.get_states()[0]
     print(f"Generating initial reference states and energies...")
-    ref_states, ref_energies, ref_obs = get_ref_states(params, init_body, key, 0, temp=gumbel_temps[0])
+    ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs = get_ref_states(params, init_body, key, 0, temp=gumbel_temps[0])
 
     min_n_eff = int(n_ref_states * min_neff_factor)
     all_losses = list()
-    all_obs = list()
     all_ref_losses = list()
-    all_ref_obs = list()
     all_ref_times = list()
 
     loss_path = log_dir / "loss.txt"
+    lp_path = log_dir / "lp.txt"
     neff_path = log_dir / "neff.txt"
-    obs_path = log_dir / "obs.txt"
     argmax_seq_path = log_dir / "argmax_seq.txt"
     argmax_seq_scaled_path = log_dir / "argmax_seq_scaled.txt"
     grads_path = log_dir / "grads.txt"
 
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
-        (loss, (n_eff, expected_obs, up_pseq, bp_pseq)), grads = grad_fn(params, ref_states, ref_energies, ref_obs, gumbel_temps[i])
+        (loss, (n_eff, curr_lp, expected_corr_curve, curr_l0_avg, curr_offset, up_pseq, bp_pseq)), grads = grad_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs, gumbel_temps[i])
 
 
         if i == 0:
             all_ref_losses.append(loss)
             all_ref_times.append(i)
-            all_ref_obs.append(expected_obs)
 
         if n_eff < min_n_eff or num_resample_iters >= max_approx_iters:
             num_resample_iters
 
             print(f"Resampling reference states...")
             key, split = random.split(key)
-            ref_states, ref_energies, ref_obs = get_ref_states(params, ref_states[-1], split, i, temp=gumbel_temps[i])
-            # ref_states, ref_energies, ref_obs = get_ref_states(params, init_body, split, i, temp=gumbel_temps[i])
-            (loss, (n_eff, expected_obs, up_pseq, bp_pseq)), grads = grad_fn(params, ref_states, ref_energies, ref_obs, gumbel_temps[i])
+            ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs = get_ref_states(params, ref_states[-1], split, i, temp=gumbel_temps[i])
+            (loss, (n_eff, curr_lp, expected_corr_curve, curr_l0_avg, curr_offset, up_pseq, bp_pseq)), grads = grad_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs, gumbel_temps[i])
 
             all_ref_losses.append(loss)
-            all_ref_obs.append(expected_obs)
             all_ref_times.append(i)
 
 
@@ -455,28 +483,16 @@ def run(args):
         with open(argmax_seq_scaled_path, "a") as f:
             f.write(f"{argmax_seq_scaled}\n")
 
-        """
-        max_nts = jnp.argmax(pseq, axis=1)
-        argmax_seq = ''.join([utils.DNA_ALPHA[nt_idx] for nt_idx in max_nts])
-        with open(argmax_seq_path, "a") as f:
-            f.write(f"{argmax_seq}\n")
-        argmax_seq_scaled = ''.join([argmax_seq[nt_idx].lower() if pseq[nt_idx, max_nts[nt_idx]] < 0.5 else argmax_seq[nt_idx] for nt_idx in range(len(argmax_seq))])
-        with open(argmax_seq_scaled_path, "a") as f:
-            f.write(f"{argmax_seq_scaled}\n")
-        """
-
         with open(grads_path, "a") as f:
             f.write(f"{pprint.pformat(grads)}\n")
 
         with open(loss_path, "a") as f:
             f.write(f"{loss}\n")
-        with open(obs_path, "a") as f:
-            f.write(f"{expected_obs}\n")
+        with open(lp_path, "a") as f:
+            f.write(f"{curr_lp}\n")
         with open(neff_path, "a") as f:
             f.write(f"{n_eff}\n")
         all_losses.append(loss)
-        all_obs.append(expected_obs)
-
 
 
         print(f"Loss: {loss}")
@@ -496,16 +512,6 @@ def run(args):
             plt.savefig(img_dir / f"losses_iter{i}.png")
             plt.clf()
 
-            # Plot the persistence lengths
-            plt.plot(onp.arange(i+1), all_obs, linestyle="--", color='blue')
-            plt.scatter(all_ref_times, all_ref_obs, marker='o', label="Resample points", color='blue')
-            plt.axhline(y=target_obs, linestyle='--', label="Target obs", color='red')
-            plt.xlabel("Iteration")
-            plt.ylabel("Expected Observable (oxDNA units)")
-            plt.legend()
-            # plt.title(f"DiffTRE E2E Dist Optimization, Neff factor={min_neff_factor}")
-            plt.savefig(img_dir / f"obs_iter{i}.png")
-            plt.clf()
 
 def get_parser():
     parser = argparse.ArgumentParser(description="Optimize structural properties using differentiable trajectory reweighting")
@@ -526,8 +532,6 @@ def get_parser():
                         help="Learning rate")
     parser.add_argument('--min-neff-factor', type=float, default=0.95,
                         help="Factor for determining min Neff")
-    parser.add_argument('--target-obs', type=float, default=0.0,
-                        help="Target end to end distance (or Rg) in oxDNA units")
     parser.add_argument('--run-name', type=str,
                         help='Run name')
     parser.add_argument('--max-approx-iters', type=int, default=5,
@@ -540,12 +544,16 @@ def get_parser():
     parser.add_argument('--gumbel-end', type=float, default=0.01,
                         help="End temperature for gumbel softmax")
 
-    parser.add_argument('--use-rg', action='store_true',
-                        help="If true, will use Rg instaed of e2e dist")
+    parser.add_argument('--target-lp', type=float, default=0.0,
+                        help="Target persistence length in nanometers")
 
     parser.add_argument('--use-nbrs', action='store_true')
 
-    parser.add_argument('--bigger-system', action='store_true')
+    parser.add_argument('--truncation', type=int, default=40,
+                        help="Truncation of quartets for fitting correlatoin curve")
+    parser.add_argument('--offset', type=int, default=4,
+                        help="Offset for number of quartets to skip on either end of the duplex")
+
 
     return parser
 
