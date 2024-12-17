@@ -81,7 +81,7 @@ class Objective:
                     break
         return return_values
 
-    def is_ready(self, params: jdna_types.Params) -> bool:  # noqa: ARG002 - this implementation doesn't use params
+    def is_ready(self) -> bool:
         """Check if the objective is ready to calculate its gradients."""
         obtained_keys = [obs[0] for obs in self._obtained_observables]
         return all(obs in obtained_keys for obs in self._required_observables)
@@ -105,8 +105,10 @@ class Objective:
 
         sorted_obtained_observables = sorted(
             self._obtained_observables,
-            key=lambda x: self.required_observables.index(x[0]),
+            key=lambda x: self._required_observables.index(x[0]),
         )
+
+
         sorted_obs = [x[1] for x in sorted_obtained_observables]
 
         grads, loss = self._grad_or_loss_fn(*sorted_obs)
@@ -136,6 +138,11 @@ def compute_weights_and_neff(
 ) -> tuple[jnp.ndarray, float]:
     """Compute the weights and normalized effective sample size of a trajectory.
 
+    Calculation derived from the DiffTRe algorithm.
+
+    https://www.nature.com/articles/s41467-021-27241-4
+    See equations 4 and 5.
+
     Args:
         beta: The inverse temperature.
         new_energies: The new energies of the trajectory.
@@ -151,7 +158,6 @@ def compute_weights_and_neff(
     return weights, n_eff / len(weights)
 
 
-@functools.partial(jax.value_and_grad, has_aux=True)
 def compute_loss(
     opt_params: jdna_types.Params,
     energy_fn_builder: callable,
@@ -190,6 +196,9 @@ def compute_loss(
     return loss, (neff, measured_value, new_energies)
 
 
+compute_loss_and_grad = jax.value_and_grad(compute_loss, has_aux=True)
+
+
 class DiffTReObjective(Objective):
     """Objective that calculates the gradients of an objective using DiffTRe."""
 
@@ -226,6 +235,17 @@ class DiffTReObjective(Objective):
             logging_observables,
             grad_or_loss_fn,
         )
+        if energy_fn_builder is None:
+            raise ValueError(ERR_MISSING_ARG.format(missing_arg="energy_fn_builder"))
+        if opt_params is None:
+            raise ValueError(ERR_MISSING_ARG.format(missing_arg="opt_params"))
+        if trajectory_key is None:
+            raise ValueError(ERR_MISSING_ARG.format(missing_arg="trajectory_key"))
+        if beta is None:
+            raise ValueError(ERR_MISSING_ARG.format(missing_arg="beta"))
+        if n_equilibration_steps is None:
+            raise ValueError(ERR_MISSING_ARG.format(missing_arg="n_equilibration_steps"))
+
         self._energy_fn_builder = energy_fn_builder
         self._opt_params = opt_params
         self._trajectory_key = trajectory_key
@@ -238,8 +258,6 @@ class DiffTReObjective(Objective):
 
     @typing_extensions.override
     def calculate(self) -> list[jdna_types.Grads]:
-        # we need override the grads calculation to check if the trajectory
-        # is still valid and if so ask for a new trajectory
         if not self.is_ready():
             raise ValueError(ERR_OBJECTIVE_NOT_READY)
 
@@ -248,20 +266,12 @@ class DiffTReObjective(Objective):
             key=lambda x: self._required_observables.index(x[0]),
         )
         sorted_obs = [x[1] for x in sorted_obtained_observables]
-        new_trajectory = sorted_obs[0]
-        if self._reference_states is None:
-            self._reference_states = new_trajectory.slice(
-                slice(self._n_eq_steps, len(new_trajectory.rigid_body.center), None)
-            )
-            self._reference_energies = self._energy_fn_builder(self._opt_params)(self._reference_states)
 
-        # n_eff_measured here should be the normalized effective sample size
-        # of the trajectory.
-        (loss, (_, measured_value, new_energies)), grads = compute_loss(
+        (loss, (_, measured_value, new_energies)), grads = compute_loss_and_grad(
             self._opt_params,
             self._energy_fn_builder,
             self._beta,
-            self.grad_or_loss_fn,
+            self._grad_or_loss_fn,
             self._reference_states,
             self._reference_energies,
         )
@@ -276,13 +286,27 @@ class DiffTReObjective(Objective):
         return grads
 
     @typing_extensions.override
-    def is_ready(self, params: jdna_types.Params) -> bool:
+    def is_ready(self) -> bool:
         have_trajectory = super().is_ready()
 
         if have_trajectory:
-            neff, _ = compute_weights_and_neff(
+            sorted_obtained_observables = sorted(
+                self._obtained_observables,
+                key=lambda x: self._required_observables.index(x[0]),
+            )
+            sorted_obs = [x[1] for x in sorted_obtained_observables]
+            new_trajectory = sorted_obs[0]
+
+            if self._reference_states is None:
+                self._reference_states = new_trajectory.slice(
+                    slice(self._n_eq_steps, len(new_trajectory.rigid_body.center), None)
+                )
+                self._reference_energies = self._energy_fn_builder(self._opt_params)(self._reference_states)
+
+
+            _, neff = compute_weights_and_neff(
                 beta=self._beta,
-                new_energies=self._energy_fn_builder(params)(self._reference_states),
+                new_energies=self._energy_fn_builder(self._opt_params)(self._reference_states),
                 ref_energies=self._reference_energies,
             )
 
