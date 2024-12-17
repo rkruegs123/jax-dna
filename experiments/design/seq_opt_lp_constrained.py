@@ -322,6 +322,13 @@ def run(args):
         fit_str = f"fit, -n/{rounded_neg_inverse_slope} + {rounded_offset}"
         plt.plot(fit_fn(jnp.arange(truncation)), linestyle='--', label=fit_str)
 
+        plt.title(f"Log-Correlation Curve, Truncated.")
+        plt.xlabel("Nuc. Index")
+        plt.ylabel("Log-Correlation")
+        plt.legend()
+        plt.savefig(iter_dir / "log_corr_curve.png")
+        plt.clf()
+
 
 
 
@@ -418,6 +425,8 @@ def run(args):
     all_losses = list()
     all_ref_losses = list()
     all_ref_times = list()
+    all_lps = list()
+    all_ref_lps = list()
 
     loss_path = log_dir / "loss.txt"
     lp_path = log_dir / "lp.txt"
@@ -433,6 +442,7 @@ def run(args):
 
         if i == 0:
             all_ref_losses.append(loss)
+            all_ref_lps.append(curr_lp)
             all_ref_times.append(i)
 
         if n_eff < min_n_eff or num_resample_iters >= max_approx_iters:
@@ -444,6 +454,7 @@ def run(args):
             (loss, (n_eff, curr_lp, expected_corr_curve, curr_l0_avg, curr_offset, up_pseq, bp_pseq)), grads = grad_fn(params, ref_states, ref_energies, unweighted_corr_curves, unweighted_l0_avgs, gumbel_temps[i])
 
             all_ref_losses.append(loss)
+            all_ref_lps.append(curr_lp)
             all_ref_times.append(i)
 
 
@@ -492,7 +503,9 @@ def run(args):
             f.write(f"{curr_lp}\n")
         with open(neff_path, "a") as f:
             f.write(f"{n_eff}\n")
+
         all_losses.append(loss)
+        all_lps.append(curr_lp)
 
 
         print(f"Loss: {loss}")
@@ -508,8 +521,16 @@ def run(args):
             plt.xlabel("Iteration")
             plt.ylabel("Loss")
             plt.legend()
-            # plt.title(f"DiffTRE E2E Dist Optimization, Neff factor={min_neff_factor}")
             plt.savefig(img_dir / f"losses_iter{i}.png")
+            plt.clf()
+
+            # Plot the Lps
+            plt.plot(onp.arange(i+1), all_lps, linestyle="--")
+            plt.scatter(all_ref_times, all_ref_lps, marker='o', label="Resample points")
+            plt.xlabel("Iteration")
+            plt.ylabel("Lp")
+            plt.legend()
+            plt.savefig(img_dir / f"lps_iter{i}.png")
             plt.clf()
 
 
