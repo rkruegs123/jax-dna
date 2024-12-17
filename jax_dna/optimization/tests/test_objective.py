@@ -1,8 +1,8 @@
 """Tests for jax_dna.optimization.objective"""
 
-from collections.abc import Callable
 import pathlib
 import typing
+from collections.abc import Callable
 
 import jax.numpy as jnp
 import jax_md
@@ -16,6 +16,15 @@ import jax_dna.utils.types as jdna_types
 
 file_location = pathlib.Path(__file__).parent
 data_dir = file_location / "data"
+
+
+def mock_return_function(should_return: typing.Any) -> Callable:
+    """Return a function that returns the given value."""
+
+    def mock_function(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        return should_return
+
+    return mock_function
 
 
 @pytest.mark.parametrize(
@@ -166,7 +175,7 @@ def test_objective_calculate() -> None:
         required_observables=["a", "b", "c"],
         needed_observables=["a", "b"],
         logging_observables=[],
-        grad_or_loss_fn=lambda a, b, c: (1.0, 0.0),
+        grad_or_loss_fn=mock_return_function((1.0, 0.0)),
     )
 
     # simulate getting the observables
@@ -205,15 +214,15 @@ def test_objective_post_step() -> None:
 @pytest.mark.parametrize(
     ("beta", "new_energies", "ref_energies", "expected_weights", "expected_neff"),
     [
-        (1, np.array([1, 2, 3]), np.array([1, 2, 3]), np.array([1/3, 1/3, 1/3]), np.array(1.0, dtype=np.float64)),
+        (1, np.array([1, 2, 3]), np.array([1, 2, 3]), np.array([1 / 3, 1 / 3, 1 / 3]), np.array(1.0, dtype=np.float64)),
     ],
 )
 def test_compute_weights_and_neff(
-    beta:float,
-    new_energies:np.ndarray,
-    ref_energies:np.ndarray,
-    expected_weights:np.ndarray,
-    expected_neff:float,
+    beta: float,
+    new_energies: np.ndarray,
+    ref_energies: np.ndarray,
+    expected_weights: np.ndarray,
+    expected_neff: float,
 ) -> None:
     """Test the weights calculation in for a Difftre Objective."""
     weights, neff = o.compute_weights_and_neff(beta, new_energies, ref_energies)
@@ -222,9 +231,25 @@ def test_compute_weights_and_neff(
 
 
 @pytest.mark.parametrize(
-    ("opt_params", "energy_fn_builder", "beta", "ref_states", "ref_energies", "expected_loss", "expected_measured_value"),
+    (
+        "opt_params",
+        "energy_fn_builder",
+        "beta",
+        "ref_states",
+        "ref_energies",
+        "expected_loss",
+        "expected_measured_value",
+    ),
     [
-        ({}, lambda params: lambda x: np.array([1, 2, 3]), 1.0, np.array([1, 2, 3]), np.array([1, 2, 3]), 0.0, ("test", 1.0)),
+        (
+            {},
+            lambda _: mock_return_function(np.array([1, 2, 3])),
+            1.0,
+            np.array([1, 2, 3]),
+            np.array([1, 2, 3]),
+            0.0,
+            ("test", 1.0),
+        ),
     ],
 )
 def test_compute_loss(
@@ -238,30 +263,21 @@ def test_compute_loss(
 ) -> None:
     """Test the loss calculation in for a Difftre Objective."""
     expected_aux = (np.array(1.0), expected_measured_value, np.array([1, 2, 3]))
-    loss_fn = lambda a, y, z: (expected_loss, expected_measured_value)
+    loss_fn = mock_return_function((expected_loss, expected_measured_value))
 
-    loss, aux = o.compute_loss(
-        opt_params,
-        energy_fn_builder,
-        beta,
-        loss_fn,
-        ref_states,
-        ref_energies
-    )
+    loss, aux = o.compute_loss(opt_params, energy_fn_builder, beta, loss_fn, ref_states, ref_energies)
 
-    print("loss", loss, expected_loss)
     assert loss == expected_loss
 
     def eq(a, b) -> bool:
-        if isinstance(a, np.ndarray|jnp.ndarray):
+        if isinstance(a, np.ndarray | jnp.ndarray):
             assert np.allclose(a, b)
         elif isinstance(a, tuple):
-            [eq(x, y) for x, y in zip(a, b)]
+            [eq(x, y) for x, y in zip(a, b, strict=True)]
         else:
             assert a == b
 
-    for a, ea in zip(aux, expected_aux):
-        print(type(a), a, type(ea), ea)
+    for a, ea in zip(aux, expected_aux, strict=True):
         eq(a, ea)
 
 
@@ -269,10 +285,10 @@ def test_compute_loss(
     ("energy_fn_builder", "opt_params", "trajectory_key", "beta", "n_equilibration_steps", "missing_arg"),
     [
         (None, {}, "test", 1.0, 1, "energy_fn_builder"),
-        (lambda params: lambda x: np.array([1, 2, 3]), None, "test", 1.0, 1, "opt_params"),
-        (lambda params: lambda x: np.array([1, 2, 3]), {"a": 1}, None, 1.0, 1, "trajectory_key"),
-        (lambda params: lambda x: np.array([1, 2, 3]), {"a": 1}, "test", None, 1, "beta"),
-        (lambda params: lambda x: np.array([1, 2, 3]), {"a": 1}, "test", 1.0, None, "n_equilibration_steps"),
+        (lambda _: mock_return_function(np.array([1, 2, 3])), None, "test", 1.0, 1, "opt_params"),
+        (lambda _: mock_return_function(np.array([1, 2, 3])), {"a": 1}, None, 1.0, 1, "trajectory_key"),
+        (lambda _: mock_return_function(np.array([1, 2, 3])), {"a": 1}, "test", None, 1, "beta"),
+        (lambda _: mock_return_function(np.array([1, 2, 3])), {"a": 1}, "test", 1.0, None, "n_equilibration_steps"),
     ],
 )
 def test_difftreobjective_init_raises(
@@ -281,9 +297,8 @@ def test_difftreobjective_init_raises(
     trajectory_key: str,
     beta: float,
     n_equilibration_steps: int,
-    missing_arg:str,
+    missing_arg: str,
 ) -> None:
-
     required_observables = ["a"]
     needed_observables = ["b"]
     logging_observables = ["c"]
@@ -309,8 +324,8 @@ def test_difftreobjective_calculate() -> None:
         required_observables=["test"],
         needed_observables=["test"],
         logging_observables=[],
-        grad_or_loss_fn=lambda a, b, c: (1.0, 0.0),
-        energy_fn_builder=lambda params: lambda x: np.ones(100),
+        grad_or_loss_fn=mock_return_function((1.0, 0.0)),
+        energy_fn_builder=lambda _: mock_return_function(np.ones(100)),
         opt_params={"test": 1.0},
         trajectory_key="test",
         beta=1.0,
@@ -319,14 +334,17 @@ def test_difftreobjective_calculate() -> None:
 
     # simulate getting the observables
     obj._obtained_observables = [
-        ("test", jdna_sio.SimulatorTrajectory(
-            rigid_body=jax_md.rigid_body.RigidBody(
-                center=np.arange(110),
-                orientation=jax_md.rigid_body.Quaternion(
-                    vec=np.arange(440).reshape(110, 4),
-                ),
-            )
-        )),
+        (
+            "test",
+            jdna_sio.SimulatorTrajectory(
+                rigid_body=jax_md.rigid_body.RigidBody(
+                    center=np.arange(110),
+                    orientation=jax_md.rigid_body.Quaternion(
+                        vec=np.arange(440).reshape(110, 4),
+                    ),
+                )
+            ),
+        ),
     ]
 
     # simulate the calculate
@@ -342,8 +360,8 @@ def test_difftreobjective_post_step() -> None:
         required_observables=["test"],
         needed_observables=["test"],
         logging_observables=[],
-        grad_or_loss_fn=lambda a, b, c: (1.0, 0.0),
-        energy_fn_builder=lambda params: lambda x: np.ones(100),
+        grad_or_loss_fn=mock_return_function((1.0, 0.0)),
+        energy_fn_builder=lambda _: mock_return_function(np.ones(100)),
         opt_params={"test": 1.0},
         trajectory_key="test",
         beta=1.0,
@@ -363,8 +381,3 @@ def test_difftreobjective_post_step() -> None:
 
     assert obj._obtained_observables == [mock_traj]
     assert obj._opt_params == new_params
-
-
-
-if __name__=="__main__":
-    test_difftreobjective_calculate()

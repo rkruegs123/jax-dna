@@ -1,6 +1,5 @@
 """Objectives implemented as ray actors."""
 
-import functools
 import typing
 from collections.abc import Callable
 
@@ -107,7 +106,6 @@ class Objective:
             self._obtained_observables,
             key=lambda x: self._required_observables.index(x[0]),
         )
-
 
         sorted_obs = [x[1] for x in sorted_obtained_observables]
 
@@ -302,7 +300,6 @@ class DiffTReObjective(Objective):
                     slice(self._n_eq_steps, len(new_trajectory.rigid_body.center), None)
                 )
                 self._reference_energies = self._energy_fn_builder(self._opt_params)(self._reference_states)
-
 
             _, neff = compute_weights_and_neff(
                 beta=self._beta,
