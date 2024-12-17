@@ -8,6 +8,7 @@ import jax
 import jax.numpy as jnp
 import jax_md
 
+import jax_dna.energy as jdna_energy
 import jax_dna.energy.base as jd_energy_fn
 import jax_dna.energy.configuration as jd_energy_cnfg
 import jax_dna.input.topology as jd_topology
@@ -82,18 +83,12 @@ def build_run_fn(
         # The  energy function configuration init calls need to happen inside the function
         # so that if the gradient is calculated for this run it will be tracked
 
-        transformed_fns = [
-            e_fn(
-                displacement_fn=displacement_fn,
-                params=(e_c | param).init_params(),
-            )
-            for param, e_c, e_fn in zip(opt_params, energy_configs, energy_fns, strict=True)
-        ]
-
-        energy_fn = jd_energy_fn.ComposedEnergyFunction(
-            energy_fns=transformed_fns,
-            rigid_body_transform_fn=transform_fn,
-        )
+        energy_fn = jdna_energy.energy_fn_builder(
+            energy_fns=energy_fns,
+            energy_configs=energy_configs,
+            transform_fn=transform_fn,
+            displacement_fn=displacement_fn,
+        )(opt_params)
 
         init_fn, step_fn = simulator_init(energy_fn, shift_fn, **simulator_params.sim_init_fn)
 

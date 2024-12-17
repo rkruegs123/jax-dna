@@ -20,7 +20,7 @@ def energy_fn_builder(
 
     def energy_fn(
         opt_params: jdna_types.PyTree,
-    ) -> float:
+    ) -> base.ComposedEnergyFunction:
         """Energy function generated using jax_dna.energy.energy_fn_builder.
 
         Input:
