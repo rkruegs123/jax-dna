@@ -22,7 +22,6 @@ TARGETS = {
 }
 
 
-@functools.partial(jax.vmap, in_axes=(0, None))
 def single_propeller_twist_rad(
     bp: jnp.ndarray,  # this is a array of shape (2,) containing the indices of the h-bonded nucleotides
     base_normals: jnp.ndarray,
@@ -37,7 +36,10 @@ def single_propeller_twist_rad(
     return jnp.arccos(jd_math.clamp(jnp.dot(nv1, nv2)))
 
 
-@chex.dataclass(frozen=True, kw_only=True)
+propeller_twist_rad = jax.vmap(single_propeller_twist_rad, in_axes=(0, None))
+
+
+@chex.dataclass(frozen=True)
 class PropellerTwist(jd_obs.BaseObservable):
     """Computes the propeller twist of a base pair.
 
@@ -71,9 +73,7 @@ class PropellerTwist(jd_obs.BaseObservable):
         nucleotides = jax.vmap(self.rigid_body_transform_fn)(trajectory.rigid_body)
 
         base_normals = nucleotides.base_normals
-        ptwist = jax.vmap(
-            lambda bn: 180.0 - (single_propeller_twist_rad(self.h_bonded_base_pairs, bn) * 180.0 / jnp.pi)
-        )
+        ptwist = jax.vmap(lambda bn: 180.0 - (propeller_twist_rad(self.h_bonded_base_pairs, bn) * 180.0 / jnp.pi))
         return jnp.mean(ptwist(base_normals), axis=1)
 
 
