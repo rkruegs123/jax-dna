@@ -87,7 +87,7 @@ class TwistXY(jd_obs.BaseObservable):
 
 
 def single_extension_z(
-        center: jnp.ndarray
+        center: jd_types.Arr_Nucleotide_3,
         bp1: jnp.ndarray,
         bp2: jnp.ndarray,
         displacement_fn: Callable
