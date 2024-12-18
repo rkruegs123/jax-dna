@@ -25,7 +25,6 @@ class BaseSimulator:
             fn: The simulation function to run.
             exposes: The list of observables exposed by the simulation.
             meta_data: The metadata to pass to the simulation function.
-            writer_fn: A function that writes the simulation output to a file.
         """
         self._fn = fn
         self._exposes = exposes
