@@ -2,6 +2,7 @@
 
 import chex
 import jax.numpy as jnp
+import jax_dna.observables.base as jd_obs
 import jax_dna.observables.propeller as p
 import jax_dna.simulators.io as jd_sio
 import jax_md
@@ -31,7 +32,7 @@ def test_single_propeller_twist_rad(a: int, b: int):
 
 def test_propeller_twist_init_raises():
     """Test that the propeller twist init raises an error."""
-    with pytest.raises(ValueError, match=p.ERR_RIGID_BODY_TRANSFORM_FN_REQUIRED):
+    with pytest.raises(ValueError, match=jd_obs.ERR_RIGID_BODY_TRANSFORM_FN_REQUIRED):
         p.PropellerTwist(rigid_body_transform_fn=None, h_bonded_base_pairs=jnp.array([0, 1]))
 
 

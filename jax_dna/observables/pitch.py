@@ -18,7 +18,7 @@ import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as jd_types
 
 TARGETS = {
-    "oxDNA": 10.5, # bp/turn
+    "oxDNA": 10.5,  # bp/turn
 }
 
 
@@ -26,19 +26,20 @@ def compute_pitch(avg_pitch_angle: float) -> float:
     """Computes the pitch given an average pitch angle in radians.
 
     Args:
-    - avg_pitch_angle: a value in radians specifying the pitch value averaged over a trajectory
+        avg_pitch_angle (float): a value in radians specifying the pitch value
+            averaged over a trajectory
+
+    Returns:
+        float: the pitch value in base pairs per turn
     """
     return jnp.pi / avg_pitch_angle
 
+
 @functools.partial(jax.vmap, in_axes=(0, None, None, None))
 def single_pitch_angle(
-        quartet: jnp.ndarray,
-        base_sites: jnp.ndarray,
-        back_sites: jnp.ndarray,
-        displacement_fn: Callable
+    quartet: jnp.ndarray, base_sites: jnp.ndarray, back_sites: jnp.ndarray, displacement_fn: Callable
 ) -> jd_types.ARR_OR_SCALAR:
     """Computes the pitch angle between adjacent base pairs."""
-
     # Extract the base pairs
     bp1, bp2 = quartet
     (a1, b1), (a2, b2) = bp1, bp2
@@ -48,9 +49,9 @@ def single_pitch_angle(
 
     # Compute the vector between backbone sites for each base pair
     bb1 = displacement_fn(back_sites[b1], back_sites[a1])
-    bb1_dir = bb1 / jnp.linalg.norm(bb1)
+    # Do we need this? bb1_dir = bb1 / jnp.linalg.norm(bb1)
     bb2 = displacement_fn(back_sites[b2], back_sites[a2])
-    bb2_dir = bb2 / jnp.linalg.norm(bb2)
+    # Do we need this? bb2_dir = bb2 / jnp.linalg.norm(bb2)
 
     # Project each vector onto the local helical axis
     bb1_proj = displacement_fn(bb1, jnp.dot(local_helix_dir, bb1) * local_helix_dir)
@@ -59,8 +60,7 @@ def single_pitch_angle(
     bb2_proj_dir = bb2_proj / jnp.linalg.norm(bb2_proj)
 
     # Compute the angle between these projections
-    theta = jnp.arccos(jd_math.clamp(jnp.dot(bb1_proj_dir, bb2_proj_dir)))
-    return theta
+    return jnp.arccos(jd_math.clamp(jnp.dot(bb1_proj_dir, bb2_proj_dir)))
 
 
 @chex.dataclass(frozen=True, kw_only=True)
@@ -76,9 +76,7 @@ class PitchAngle(jd_obs.BaseObservable):
     - displacement_fn: a function for computing displacements between two positions
     """
 
-    quartets: jnp.ndarray = dc.field(
-        hash=False
-    )
+    quartets: jnp.ndarray = dc.field(hash=False)
     displacement_fn: Callable
 
     def __post_init__(self) -> None:
@@ -108,8 +106,6 @@ class PitchAngle(jd_obs.BaseObservable):
 
 
 if __name__ == "__main__":
-    import jax_md
-
     import jax_dna.input.topology as jd_top
 
     test_geometry = jd_toml.parse_toml("jax_dna/input/dna1/default_energy.toml")["geometry"]

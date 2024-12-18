@@ -1,12 +1,11 @@
 """Tests for the optimization simulator module."""
 
-import pytest
 import jax_dna.optimization.simulator as jdna_simulator
 
 
 def test_simulator_init():
     """Test the initialization of the SimulatorActor."""
-    fn = lambda x, y: ("a", "b")
+    fn = lambda x, y: ("a", "b")  # noqa: ARG005 -- This is just for testing
     exposes = ["a", "b"]
     meta_data = {"a": 1, "b": 2}
 

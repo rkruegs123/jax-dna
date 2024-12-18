@@ -14,23 +14,17 @@ import jax_dna.input.toml as jd_toml
 import jax_dna.input.trajectory as jd_traj
 import jax_dna.observables.base as jd_obs
 import jax_dna.simulators.io as jd_sio
-import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as jd_types
 import jax_dna.utils.units as jd_units
 
 TARGETS = {
-    "oxDNA": 3.4, # Angstroms
+    "oxDNA": 3.4,  # Angstroms
 }
 
 
 @functools.partial(jax.vmap, in_axes=(0, None, None))
-def single_rise(
-        quartet: jnp.ndarray,
-        base_sites: jnp.ndarray,
-        displacement_fn: Callable
-) -> jd_types.ARR_OR_SCALAR:
+def single_rise(quartet: jnp.ndarray, base_sites: jnp.ndarray, displacement_fn: Callable) -> jd_types.ARR_OR_SCALAR:
     """Computes the rise between adjacent base pairs."""
-
     # Extract the base pairs
     bp1, bp2 = quartet
     (a1, b1), (a2, b2) = bp1, bp2
@@ -63,9 +57,7 @@ class Rise(jd_obs.BaseObservable):
     - displacement_fn: a function for computing displacements between two positions
     """
 
-    quartets: jnp.ndarray = dc.field(
-        hash=False
-    )
+    quartets: jnp.ndarray = dc.field(hash=False)
     displacement_fn: Callable
 
     def __post_init__(self) -> None:
@@ -86,15 +78,11 @@ class Rise(jd_obs.BaseObservable):
         nucleotides = jax.vmap(self.rigid_body_transform_fn)(trajectory.rigid_body)
         base_sites = nucleotides.base_sites
 
-        rises = jax.vmap(single_rise, (None, 0, None))(
-            self.quartets, base_sites, self.displacement_fn
-        )
+        rises = jax.vmap(single_rise, (None, 0, None))(self.quartets, base_sites, self.displacement_fn)
         return jnp.mean(rises, axis=1)
 
 
 if __name__ == "__main__":
-    import jax_md
-
     import jax_dna.input.topology as jd_top
 
     test_geometry = jd_toml.parse_toml("jax_dna/input/dna1/default_energy.toml")["geometry"]

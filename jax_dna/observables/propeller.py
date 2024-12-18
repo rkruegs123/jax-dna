@@ -12,7 +12,7 @@ import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as jd_types
 
 TARGETS = {
-    "oxDNA": 21.7, # degrees
+    "oxDNA": 21.7,  # degrees
 }
 
 

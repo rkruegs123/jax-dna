@@ -3,13 +3,11 @@
 import dataclasses as dc
 import functools
 from collections.abc import Callable
-import pdb
-from typing import Tuple
 
 import chex
 import jax
-from jax import vmap
 import jax.numpy as jnp
+from jax import vmap
 from jax_md import space
 
 import jax_dna.energy.dna1 as jd_energy
@@ -17,17 +15,14 @@ import jax_dna.input.toml as jd_toml
 import jax_dna.input.trajectory as jd_traj
 import jax_dna.observables.base as jd_obs
 import jax_dna.simulators.io as jd_sio
-import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as jd_types
-import jax_dna.utils.units as jd_units
-
 
 TARGETS = {
-    "oxDNA": 47.5, # nm
+    "oxDNA": 47.5,  # nm
 }
 
 
-def persistence_length_fit(correlations: jnp.ndarray, l0_av: float) -> Tuple[float, float]:
+def persistence_length_fit(correlations: jnp.ndarray, l0_av: float) -> tuple[float, float]:
     """Computes the Lp given correlations in alignment decay and average distance between base pairs.
 
     Lp obeys the following equality: `<l_n * l_0> = exp(-n<l_0> / Lp)`, where `<l_n * l_0>` represents the
@@ -37,11 +32,10 @@ def persistence_length_fit(correlations: jnp.ndarray, l0_av: float) -> Tuple[flo
     we compute Lp via a linear fit.
 
     Args:
-    - correlations: a (max_dist,) array containing the average correlation between base pairs separated by
-      distances up to `max_dist`
-    - l0_av: the average distance between adjacent base pairs
+        correlations (jnp.ndarray): a (max_dist,) array containing the average correlation between
+            base pairs separated by distances up to `max_dist`
+        l0_av (jnp.ndarray): the average distance between adjacent base pairs
     """
-
     # Format the correlations for a linear fit
     y = jnp.log(correlations)
     x = jnp.arange(correlations.shape[0])
@@ -52,30 +46,31 @@ def persistence_length_fit(correlations: jnp.ndarray, l0_av: float) -> Tuple[flo
 
     # Extract slope and offset, and compute Lp
     offset = fit_[0][0]
-    slope = fit_[0][1] # slope = -l0_av / Lp
-    Lp = -l0_av / slope
+    slope = fit_[0][1]  # slope = -l0_av / Lp
+    Lp = -l0_av / slope  # noqa: N806 -- This is a special variable name
 
     return Lp, offset
 
 
-def compute_l_vector(base_sites: jnp.ndarray, quartet: jnp.ndarray) -> Tuple[jnp.ndarray, float]:
-    """Computes the distance between two adjacent base pairs"""
-
+def compute_l_vector(base_sites: jnp.ndarray, quartet: jnp.ndarray) -> tuple[jnp.ndarray, float]:
+    """Computes the distance between two adjacent base pairs."""
     # Extract the two base pairs defined by a quartet
     bp1, bp2 = quartet
-    (a1, b1), (a2, b2) = bp1, bp2 # a1 and b1, and a2 and b2 are base paired
+    (a1, b1), (a2, b2) = bp1, bp2  # a1 and b1, and a2 and b2 are base paired
 
     # Compute midpoints for each base pair
-    mp1 = (base_sites[b1] + base_sites[a1]) / 2.
-    mp2 = (base_sites[b2] + base_sites[a2]) / 2.
+    mp1 = (base_sites[b1] + base_sites[a1]) / 2.0
+    mp2 = (base_sites[b2] + base_sites[a2]) / 2.0
 
     # Compute vector between midpoints
-    l = mp2 - mp1
-    l0 = jnp.linalg.norm(l)
-    l /= l0
+    midpoint_diff = mp2 - mp1
+    l0 = jnp.linalg.norm(midpoint_diff)
+    midpoint_diff /= l0
 
     # Return vector and its norm
-    return l, l0
+    return midpoint_diff, l0
+
+
 get_all_l_vectors = vmap(compute_l_vector, in_axes=(None, 0))
 
 
@@ -88,21 +83,20 @@ def vector_autocorrelate(vecs: jnp.ndarray) -> jnp.ndarray:
     values < n-1.
 
     Args:
-    - vecs: a (n, 3) array of vectors corresponding to displacements between midpoints of adjacent
-      base pairs.
+        vecs (jnp.ndarray): a (n, 3) array of vectors corresponding to displacements between midpoints of adjacent
+            base pairs.
 
     """
-
     max_dist = vecs.shape[0]
 
-    def window_correlations(i):
+    def window_correlations(i: int) -> jnp.ndarray:
         li = vecs[i]
-        i_correlation_fn = lambda j: jnp.where(j >= i, jnp.dot(li, vecs[j]), 0.0)
-        i_correlations = vmap(i_correlation_fn)(jnp.arange(max_dist))
-        i_correlations = jnp.roll(i_correlations, -i)
-        return i_correlations
 
-        all_correlations += i_correlations
+        def i_correlation_fn(j: int) -> jnp.ndarray:
+            return jnp.where(j >= i, jnp.dot(li, vecs[j]), 0.0)
+
+        i_correlations = vmap(i_correlation_fn)(jnp.arange(max_dist))
+        return jnp.roll(i_correlations, -i)
 
     all_correlations = vmap(window_correlations)(jnp.arange(max_dist))
     all_correlations = jnp.sum(all_correlations, axis=0)
@@ -111,13 +105,11 @@ def vector_autocorrelate(vecs: jnp.ndarray) -> jnp.ndarray:
     return all_correlations
 
 
-def compute_metadata(base_sites: jnp.ndarray, quartets: jnp.ndarray) -> Tuple[jnp.ndarray, float]:
-    """Computes (i) average correlations in alignment decay and (ii) average distance between base pairs"""
-
+def compute_metadata(base_sites: jnp.ndarray, quartets: jnp.ndarray) -> tuple[jnp.ndarray, float]:
+    """Computes (i) average correlations in alignment decay and (ii) average distance between base pairs."""
     all_l_vectors, l0_vals = get_all_l_vectors(base_sites, quartets)
     autocorr = vector_autocorrelate(all_l_vectors)
     return autocorr, jnp.mean(l0_vals)
-
 
 
 @chex.dataclass(frozen=True, kw_only=True)
@@ -136,9 +128,7 @@ class LpMetadata(jd_obs.BaseObservable):
     - displacement_fn: a function for computing displacements between two positions
     """
 
-    quartets: jnp.ndarray = dc.field(
-        hash=False
-    )
+    quartets: jnp.ndarray = dc.field(hash=False)
     displacement_fn: Callable
 
     def __post_init__(self) -> None:
@@ -146,9 +136,8 @@ class LpMetadata(jd_obs.BaseObservable):
         if self.rigid_body_transform_fn is None:
             raise ValueError(jd_obs.ERR_RIGID_BODY_TRANSFORM_FN_REQUIRED)
 
-    def __call__(self, trajectory: jd_sio.SimulatorTrajectory) -> Tuple[jnp.ndarray, jd_types.ARR_OR_SCALAR]:
-        """Calculate the correlations in alignment decay and average distance between adjacent
-        base pairs for each state in a trajectory..
+    def __call__(self, trajectory: jd_sio.SimulatorTrajectory) -> tuple[jnp.ndarray, jd_types.ARR_OR_SCALAR]:
+        """Calculate aligment decay and average distance correlations for adjacent base pairs.
 
         Args:
             trajectory (jd_traj.Trajectory): the trajectory to calculate the rise for
@@ -168,9 +157,8 @@ class LpMetadata(jd_obs.BaseObservable):
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    import jax_md
-    import jax_dna.input.topology as jd_top
 
+    import jax_dna.input.topology as jd_top
 
     test_geometry = jd_toml.parse_toml("jax_dna/input/dna1/default_energy.toml")["geometry"]
     tranform_fn = functools.partial(
@@ -197,16 +185,17 @@ if __name__ == "__main__":
     lp_metadata = LpMetadata(rigid_body_transform_fn=tranform_fn, quartets=quartets, displacement_fn=displacement_fn)
     output_all_corrs, output_all_l0_vals = lp_metadata(sim_traj)
 
-
     mean_all_corrs = jnp.mean(output_all_corrs, axis=0)
     mean_l0_val = jnp.mean(output_all_l0_vals, axis=0)
 
     truncation = 40
     fit_lp, fit_offset = persistence_length_fit(mean_all_corrs[:truncation], mean_l0_val)
 
-    log_corr_fn = lambda n: -n * mean_l0_val / (fit_lp) + fit_offset
+    def log_corr_fn(n: jnp.ndarray) -> jnp.ndarray:  # noqa: D103 -- This is for testing
+        return -n * mean_l0_val / fit_lp + fit_offset
+
     plt.plot(jnp.log(mean_all_corrs[:truncation]))
-    plt.plot(log_corr_fn(jnp.arange(mean_all_corrs[:truncation].shape[0])), linestyle='--')
+    plt.plot(log_corr_fn(jnp.arange(mean_all_corrs[:truncation].shape[0])), linestyle="--")
     plt.xlabel("Distance")
     plt.ylabel("Log-Correlation")
     plt.show()

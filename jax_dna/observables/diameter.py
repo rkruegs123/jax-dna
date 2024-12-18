@@ -14,24 +14,19 @@ import jax_dna.input.toml as jd_toml
 import jax_dna.input.trajectory as jd_traj
 import jax_dna.observables.base as jd_obs
 import jax_dna.simulators.io as jd_sio
-import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as jd_types
 import jax_dna.utils.units as jd_units
 
 TARGETS = {
-    "oxDNA": 23.0, # Angstroms. Experimental value for helical radius is 11.5-12 A
+    "oxDNA": 23.0,  # Angstroms. Experimental value for helical radius is 11.5-12 A
 }
 
 
 @functools.partial(jax.vmap, in_axes=(0, None, None, None))
 def single_diameter(
-        bp: jnp.ndarray,
-        back_sites: jnp.ndarray,
-        displacement_fn: Callable,
-        sigma_backbone: float
+    bp: jnp.ndarray, back_sites: jnp.ndarray, displacement_fn: Callable, sigma_backbone: float
 ) -> jd_types.ARR_OR_SCALAR:
     """Computes the helical diameter of a base pair."""
-
     bp1, bp2 = bp
 
     # Compute the distance between the backbone sites
@@ -56,9 +51,7 @@ class Diameter(jd_obs.BaseObservable):
     - displacement_fn: a function for computing displacements between two positions
     """
 
-    h_bonded_base_pairs: jnp.ndarray = dc.field(
-        hash=False
-    )
+    h_bonded_base_pairs: jnp.ndarray = dc.field(hash=False)
     displacement_fn: Callable
 
     def __post_init__(self) -> None:
@@ -87,8 +80,6 @@ class Diameter(jd_obs.BaseObservable):
 
 
 if __name__ == "__main__":
-    import jax_md
-
     import jax_dna.input.topology as jd_top
 
     test_geometry = jd_toml.parse_toml("jax_dna/input/dna1/default_energy.toml")["geometry"]

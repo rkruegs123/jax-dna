@@ -189,5 +189,3 @@ def test_optimization_post_step():
     new_state = "new"
     opt = opt.post_step(optimizer_state=new_state, opt_params={})
     assert opt.optimizer_state == new_state
-
-
