@@ -12,6 +12,80 @@ import jax_dna.utils.units as jd_units
 
 
 
+
+@functools.partial(jax.vmap, in_axes=(0, None, None, None))
+def single_angle_xy(
+        quartet: jnp.ndarray,
+        base_sites: jnp.ndarray,
+        displacement_fn: Callable
+) -> jd_types.ARR_OR_SCALAR:
+    """Computes the angle in the X-Y plane between adjacent base pairs."""
+
+    # Extract the base pairs
+    bp1, bp2 = quartet
+    (a1, b1), (a2, b2) = bp1, bp2
+
+    # Compute the vector between base sites for each base pair
+    bb1 = displacement_fn(base_sites[b1], base_sites[a1])
+    bb2 = displacement_fn(base_sites[b2], base_sites[a2])
+
+    # Omit the z-direction from normalization
+    bb1 = bb1[:2]
+    bb2 = bb2[:2]
+
+    # Normalize
+    bb1 = bb1 / jnp.linalg.norm(bb1)
+    bb2 = bb2 / jnp.linalg.norm(bb2)
+
+    # Compute
+    theta = jnp.arccos(jd_math.clamp(jnp.dot(bb1, bb2)))
+    return theta
+
+
+@chex.dataclass(frozen=True, kw_only=True)
+class Twist(jd_obs.BaseObservable):
+    """Computes the total twist of a duplex in the X-Y plane in radians.
+
+    The total twist of a duplex is defined as the sum of angles in the X-Y plane between
+    adjacent base pairs.
+
+    Args:
+    - quartets: a (n_quartets, 2, 2) array containing the pairs of adjacent base pairs
+    - displacement_fn: a function for computing displacements between two positions
+    """
+
+    quartets: jnp.ndarray = dc.field(
+        hash=False
+    )
+    displacement_fn: Callable
+
+    def __post_init__(self) -> None:
+        """Validate the input."""
+        if self.rigid_body_transform_fn is None:
+            raise ValueError(jd_obs.ERR_RIGID_BODY_TRANSFORM_FN_REQUIRED)
+
+    def __call__(self, trajectory: jd_sio.SimulatorTrajectory) -> jd_types.ARR_OR_SCALAR:
+        """Calculate the total twist in the X-Y plane in radians.
+
+        Args:
+            trajectory (jd_traj.Trajectory): the trajectory
+
+        Returns:
+            jd_types.ARR_OR_SCALAR: the total twist in radians for each state, so expect
+            a size of (n_states,)
+        """
+        nucleotides = jax.vmap(self.rigid_body_transform_fn)(trajectory.rigid_body)
+
+        base_sites = nucleotides.base_sites
+
+        angles = jax.vmap(single_angle_xy, (None, 0, 0, None))(
+            self.quartets, base_sites, self.displacement_fn
+        )
+        return jnp.sum(angles, axis=1)
+
+
+
+
 def stretch(
         forces: jnp.ndarray,
         extensions: jnp.ndarray
