@@ -22,7 +22,6 @@ TARGETS = {
 }
 
 
-@functools.partial(jax.vmap, in_axes=(0, None, None))
 def single_rise(quartet: jnp.ndarray, base_sites: jnp.ndarray, displacement_fn: Callable) -> jd_types.ARR_OR_SCALAR:
     """Computes the rise between adjacent base pairs."""
     # Extract the base pairs
@@ -38,9 +37,13 @@ def single_rise(quartet: jnp.ndarray, base_sites: jnp.ndarray, displacement_fn: 
 
     # Project the displacement between the midpoints onto the local helical axis
     dr = displacement_fn(midp2, midp1)
+
     rise = jnp.dot(dr, local_helix_dir)
 
     return rise * jd_units.ANGSTROMS_PER_OXDNA_LENGTH
+
+
+single_rise_mapped = jax.vmap(single_rise, (0, None, None))
 
 
 @chex.dataclass(frozen=True, kw_only=True)
@@ -69,7 +72,7 @@ class Rise(jd_obs.BaseObservable):
         """Calculate the average rise in Angstroms.
 
         Args:
-            trajectory (jd_traj.Trajectory): the trajectory to calculate the rise for
+            trajectory (jd_sio.Trajectory): the trajectory to calculate the rise for
 
         Returns:
             jd_types.ARR_OR_SCALAR: the average rise in Angstroms for each state, so expect a
@@ -78,34 +81,5 @@ class Rise(jd_obs.BaseObservable):
         nucleotides = jax.vmap(self.rigid_body_transform_fn)(trajectory.rigid_body)
         base_sites = nucleotides.base_sites
 
-        rises = jax.vmap(single_rise, (None, 0, None))(self.quartets, base_sites, self.displacement_fn)
+        rises = jax.vmap(single_rise_mapped, (None, 0, None))(self.quartets, base_sites, self.displacement_fn)
         return jnp.mean(rises, axis=1)
-
-
-if __name__ == "__main__":
-    import jax_dna.input.topology as jd_top
-
-    test_geometry = jd_toml.parse_toml("jax_dna/input/dna1/default_energy.toml")["geometry"]
-    tranform_fn = functools.partial(
-        jd_energy.Nucleotide.from_rigid_body,
-        com_to_backbone=test_geometry["com_to_backbone"],
-        com_to_hb=test_geometry["com_to_hb"],
-        com_to_stacking=test_geometry["com_to_stacking"],
-    )
-
-    top = jd_top.from_oxdna_file("data/templates/simple-helix/sys.top")
-    test_traj = jd_traj.from_file(
-        path="data/templates/simple-helix/init.conf",
-        strand_lengths=top.strand_counts,
-    )
-
-    sim_traj = jd_sio.SimulatorTrajectory(
-        seq_oh=jnp.array(top.seq_one_hot),
-        strand_lengths=top.strand_counts,
-        rigid_body=test_traj.state_rigid_body,
-    )
-
-    quartets = jd_obs.get_duplex_quartets(8)
-    displacement_fn, _ = space.free()
-    rise = Rise(rigid_body_transform_fn=tranform_fn, quartets=quartets, displacement_fn=displacement_fn)
-    output_rises = rise(sim_traj)
