@@ -1,8 +1,12 @@
 import functools
+import time
 
 import jax
 import jax.numpy as jnp
 import jax_md
+import ray
+import ray.runtime_env
+
 import jax_dna.input.topology as topology
 import jax_dna.input.trajectory as trajectory
 import jax_dna.input.toml as toml_reader
@@ -13,11 +17,29 @@ import jax_dna.losses.observable_wrappers as jdna_losses
 import jax_dna.observables as jd_obs
 import jax_dna.utils.types as jdt
 import jax_dna.simulators.jax_md as jmd
+import jax_dna.simulators.io as jd_sio
+
+
+from examples import simulator_actor
+# from examples import optimizer_prototype_serial
+
+import logging
+logging.basicConfig(
+    filename="jax_log.log",
+    filemode="a",
+    format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
+    datefmt="%H:%M:%S",
+    level=logging.DEBUG,
+)
+
+logger = logging.getLogger(__name__)
+
+
 
 jax.config.update("jax_enable_x64", True)
 
-if __name__=="__main__":
 
+def main():
     topology_fname = "data/sys-defs/simple-helix/sys.top"
     traj_fname = "data/sys-defs/simple-helix/bound_relaxed.conf"
     simulation_config = "jax_dna/input/dna1/default_simulation.toml"
@@ -108,118 +130,74 @@ if __name__=="__main__":
     )
 
 
-    sim_fn = jax.jit(lambda opts: sampler.run(opts, init_body, 5_000, key))
-
-
-    def compute_obs(opts):
-        return jd_obs.propeller.PropellerTwist(
+    @jax.jit
+    def sim_fn(opt_params):
+        prop_twist = jd_obs.propeller.PropellerTwist(
             rigid_body_transform_fn=transform_fn,
-            h_bonded_base_pairs=jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
-        )(sim_fn(opts)[0])
+            h_bonded_base_pairs=jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]]),
+        )
 
-    def dobs_dopts(opts):
-        return jax.jacfwd(compute_obs)(opts)
+        def curr_f(opts):
+            sim_traj, sim_meta = sampler.run(opts, init_body, 5_000, key)
+            return prop_twist(sim_traj).mean(), (sim_traj, sim_meta)
 
+        j, t = jax.jacfwd(curr_f, has_aux=True)(opt_params)
 
-    print("dobs_dopts")
-    outs = dobs_dopts(opt_params)
-    print(outs)
-    print(outs.shape)
-
-    import sys
-    sys.exit()
+        return j, t
 
 
+    ray.init(runtime_env={
+        "env_vars": {"JAX_ENABLE_X64": "true"},
+        # "py_modules":[optimizer_prototype_serial],
+    })
 
-    sim_out  = sim_fn(opt_params)
+    def wrapped_fn(opt_params):
+        # import sys
+        # if "examples.optimizer_prototype_serial" not in sys.modules:
+        #     from examples import optimizer_prototype_serial
 
-    twists = jd_obs.propeller.PropellerTwist(
-        rigid_body_transform_fn=transform_fn,
-        h_bonded_base_pairs=jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
-    )(sim_out)
+        import logging
+        logging.basicConfig(
+            filename="jax_log.log",
+            filemode="a",
+            format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s",
+            datefmt="%H:%M:%S",
+            level=logging.DEBUG,
+        )
 
-    loss = jdna_losses.ObservableLossFn(
-        observable=jd_obs.propeller.PropellerTwist(
-            rigid_body_transform_fn=transform_fn,
-            h_bonded_base_pairs=jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
-        ),
-        loss_fn=jdna_losses.SquaredError(),
-    )
+        logger = logging.getLogger(__name__)
 
-    weights = jnp.ones(sim_out.rigid_body.center.shape[0]) / sim_out.rigid_body.center.shape[0]
-    dsim_dloss = jax.grad(lambda sim_traj: loss(sim_traj, 20.0, weights)[0], allow_int=True)(sim_out)
-    dopt_dsim = jax.jacfwd(sim_fn)(opt_params)
+        return sim_fn(opt_params)
+        # return export.deserialize(ray.get(gettable_f)).call(opt_params)
 
-    dopt_dloss_center = jax.tree.map(
-        lambda arr: (arr * dsim_dloss.rigid_body.center).sum(),
-        dopt_dsim.rigid_body.center,
-    )
+    runner = simulator_actor.SimulatorActor(f=wrapped_fn)
 
-    dopt_dloss_orientation = jax.tree.map(
-        lambda arr: (arr * dsim_dloss.rigid_body.orientation.vec).sum(),
-        dopt_dsim.rigid_body.orientation.vec,
-    )
+    n_local_runs = 3
+    n_remote_runs = 3
+    n_reps_parallel_runs = 3, 2
 
-    def merge_dict(a, b):
-        return {k: a[k] + b[k] for k in a.keys()}
-
-    dopt_dloss = [
-        merge_dict(c, o)
-        for c, o in zip(dopt_dloss_center, dopt_dloss_orientation)
-    ]
-
-    def graddable_loss(opts):
-        return loss(sim_fn(opts), 20.0, weights)[0]
-
-    grad_fn = jax.grad(graddable_loss)
-    all_through = grad_fn(opt_params)
-
-    for a, b in zip(all_through, dopt_dloss):
-        for k in a.keys():
-            print(k, a[k], b[k], jnp.abs((a[k] - b[k])))
-
-    # transformed_fns = [
-    #     e_fn(
-    #         displacement_fn=displacement_fn,
-    #         params=(e_c | param).init_params(),
-    #     )
-    #     for param, e_c, e_fn in zip(opt_params, configs, energy_fns, strict=True)
-    # ]
-
-    # composed_energy_fn = jdna_energy.ComposedEnergyFunction(
-    #     energy_fns=transformed_fns,
-    #     rigid_body_transform_fn=transform_fn,
-    # )
-    # outs = fn(opt_params).rigid_body[::100]
-    # print(type(outs))
-    # import sys
-    # import jax_dna.common.trajectory as old_traj
-    # import jax_dna.common.topology as old_top
-    # old_traj.TrajectoryInfo(
-    #     old_top.TopologyInfo("data/test-data/simple-helix/generated.top", reverse_direction=True),
-    #     box_size=100.0,
-    #     read_from_states=True,
-    #     states=outs,
-    # ).write("seems_good_test_traj.dat", reverse=True)
-    # sys.exit()
+    for i in range(n_local_runs):
+        print("Local run", i, "=======================================================")
+        start = time.time()
+        _ = wrapped_fn(opt_params)[1][0].rigid_body.center.block_until_ready()
+        print("time: ", time.time() - start)
 
 
-    # twists = jd_obs.propeller.PropellerTwist(
-    #     rigid_body_transform_fn=transform_fn,
-    #     h_bonded_base_pairs=jnp.array([[1, 14], [2, 13], [3, 12], [4, 11], [5, 10], [6, 9]])
-    # )(outs)
-
-    # print(twists)
-
-
-    # jax.grad(lambda opts: loss(fn(opts), target))
-
-    # def loss_fn(trajectory, target) -> float:
-    #     return trajectory - target
-
-    # grad_fn = jax.jit(jax.grad(lambda opts: loss_fn(opts, sim_fn)))
+    for i in range(n_remote_runs):
+        print("Remote run", i, "=======================================================")
+        start = time.time()
+        result = runner.remote(opt_params)
+        _ = ray.get(result)
+        print("time: ", time.time() - start)
 
 
-    # graddable_fn = lambda op: sampler.run(op, init_body, experiment_config["n_steps"], key).center.sum()
-    # grad_fn = jax.jit(jax.grad(graddable_fn))
-    # print(grad_fn(opt_params))
+    # n_reps, n_jobs = n_reps_parallel_runs
+    # for i in range(n_reps):
+    #     print(f"Parallel {n_jobs} runs {i} ==================================================")
+    #     start = time.time()
+    #     result = ray.get([runner.remote(opt_params) for _ in range(n_jobs)])
+    #     print("time: ", time.time() - start)
+
+
+if __name__=="__main__":
+    main()

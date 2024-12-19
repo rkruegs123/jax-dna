@@ -108,74 +108,14 @@ if __name__=="__main__":
         )
 
     print("init_body", init_body.center.shape, init_body.orientation.vec.shape)
-    print(test_energy_fn(opt_params)(init_body))
+    print("initial energy", test_energy_fn(opt_params)(init_body))
 
-    expanded = jax_md.rigid_body.RigidBody(
-        center = jnp.stack([init_body.center]*3),
-        orientation = jax_md.rigid_body.Quaternion(vec=jnp.stack([init_body.orientation.vec]*3)),
-    )
+    force_fn = jax.grad(test_energy_fn(opt_params))
+    force = force_fn(init_body)
 
-    print("expanded", expanded.center.shape, expanded.orientation.vec.shape)
-    print(jax.vmap(test_energy_fn(opt_params))(expanded))
+    print("force", force.center.shape, force.orientation.vec.shape)
 
+    jit_force_fn = jax.jit(force_fn)
+    force = jit_force_fn(init_body)
 
-
-
-    # def test_energy_grad_fn(
-    #     params: list[dict[str, jdt.ARR_OR_SCALAR] | jdna_energy_config.BaseConfiguration],
-    # ) -> float:
-    #     transformed_fns = [
-    #         energy_fn(
-    #             displacement_fn=displacement_fn,
-    #             params=(config | param).init_params(),
-    #         )
-    #         for param, config, energy_fn in zip(params, configs, energy_fns)
-    #     ]
-
-    #     energy_fn = jdna_energy.ComposedEnergyFunction(
-    #         transformed_fns,
-    #         rigid_body_transform_fn=transform_fn,
-    #     )
-
-    #     init_fn, step_fn = jax_md.simulate.nvt_langevin(
-    #         energy_fn,
-    #         shift_fn,
-    #         dt,
-    #         kT,
-    #         gamma,
-    #     )
-
-    #     init_state = init_fn(
-    #         key,
-    #         init_body,
-    #         mass=mass,
-    #         seq=seq,
-    #         bonded_neighbors=top.bonded_neighbors,
-    #         unbonded_neighbors=top.unbonded_neighbors.T,
-    #     )
-
-    #     next_state = step_fn(
-    #         init_state,
-    #         seq=seq,
-    #         bonded_neighbors=top.bonded_neighbors,
-    #         unbonded_neighbors=top.unbonded_neighbors.T,
-    #     )
-
-    #     return next_state.position.center.sum()
-
-
-    # print("jitting test_energy_fn")
-    # f = jax.jit(test_energy_fn)
-    # print("running test_energy_fn")
-    # print(f(opt_params))
-
-    # print("gradding test_energy_grad_fn")
-    # f = jax.grad(test_energy_grad_fn)
-    # print("jitting test_energy_grad_fn")
-    # f = jax.jit(jax.value_and_grad(test_energy_grad_fn))
-    # print("running test_energy_grad_fn")
-    # print(f(opt_params))
-
-
-
-
+    print("force", force.center.shape, force.orientation.vec.shape)

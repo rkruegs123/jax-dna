@@ -37,7 +37,6 @@ def test_StaticSimulatorParams_init():  # noqa: N802 - class name
         "mass": 456,  # this is normally an rigid_body
         "gamma": 789,  # this is normally an rigid_body
         "bonded_neighbors": 101112,  # this is normally an array
-        "n_steps": 10,
         "checkpoint_every": 5,
         "dt": 0.1,
         "kT": 296.0,

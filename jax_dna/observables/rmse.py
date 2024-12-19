@@ -1,37 +1,34 @@
 """RMSE observable."""
 
-import dataclasses as dc
 import functools
-from collections.abc import Callable
 
 import chex
 import jax
 import jax.numpy as jnp
-from jax_md import space, rigid_body
+from jax_md import rigid_body
 
 import jax_dna.energy.dna1 as jd_energy
 import jax_dna.input.toml as jd_toml
 import jax_dna.input.trajectory as jd_traj
 import jax_dna.observables.base as jd_obs
 import jax_dna.simulators.io as jd_sio
-import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as jd_types
 import jax_dna.utils.units as jd_units
 
 
-def svd_align(ref_coords: jnp.ndarray, coords: jnp.ndarray):
+def svd_align(ref_coords: jnp.ndarray, coords: jnp.ndarray) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """Aligns a set of 3D coordinates to a reference configuration via SVD."""
-
     n_nt = coords.shape[1]
-    indexes = jnp.arange(n_nt) # Note: this could be a subset of the structure if desired
+    indexes = jnp.arange(n_nt)  # Note: this could be a subset of the structure if desired
 
     # Set the origin of the reference configuration
-    ref_center = jnp.zeros(3) # Reference structure is assumed to be centered at the origin
+    ref_center = jnp.zeros(3)  # Reference structure is assumed to be centered at the origin
 
     # Calculate centroids of the reference and input structures
     av1 = ref_center
     av2 = jnp.mean(coords[0][indexes], axis=0)
-    coords = coords.at[0].set(coords[0] - av2) # Shift the first input structure to be centered
+    # Shift the first input structure to be centered
+    coords = coords.at[0].set(coords[0] - av2)  # noqa: PD008 -- Not a pandas operation
 
     # Compute the correlation matrix between the reference and input coordinates
     a = jnp.dot(jnp.transpose(coords[0][indexes]), ref_coords - av1)
@@ -43,28 +40,22 @@ def svd_align(ref_coords: jnp.ndarray, coords: jnp.ndarray):
     rot = jnp.transpose(jnp.dot(jnp.transpose(vt), jnp.transpose(u)))
 
     # Check for a reflection
-    found_reflection = (jnp.linalg.det(rot) < 0)
-    vt = jnp.where(found_reflection, vt.at[2].set(-vt[2]), vt)
-    rot = jnp.where(found_reflection,
-                    jnp.transpose(jnp.dot(jnp.transpose(vt), jnp.transpose(u))),
-                    rot)
+    found_reflection = jnp.linalg.det(rot) < 0
+    vt = jnp.where(found_reflection, vt.at[2].set(-vt[2]), vt)  # noqa: PD008 -- Not a pandas operation
+    rot = jnp.where(found_reflection, jnp.transpose(jnp.dot(jnp.transpose(vt), jnp.transpose(u))), rot)
 
     # Translation is trivial here as `tran` is effectively the center of reference (set to `av1`)
     tran = av1
 
     # Apply the computed rotation to the coordinates, back-base vectors, and base normals
-    return (jnp.dot(coords[0], rot) + tran,
-            jnp.dot(coords[1], rot),
-            jnp.dot(coords[2], rot))
-
+    return (jnp.dot(coords[0], rot) + tran, jnp.dot(coords[1], rot), jnp.dot(coords[2], rot))
 
 
 def single_rmse(
-        target: rigid_body.RigidBody,
-        state_nts: jd_energy.nucleotide.Nucleotide,
+    target: rigid_body.RigidBody,
+    state_nts: jd_energy.nucleotide.Nucleotide,
 ) -> jd_types.ARR_OR_SCALAR:
     """Computes the RMSE between a state and a target configuration."""
-
     conf = jnp.asarray([state_nts.center, state_nts.back_base_vectors, state_nts.base_normals])
     aligned_conf = svd_align(target.center, conf)[0]
     fluc_sq = jnp.power(jnp.linalg.norm(aligned_conf - target.center, axis=1), 2)
@@ -73,8 +64,13 @@ def single_rmse(
 
     return rmse * jd_units.ANGSTROMS_PER_OXDNA_LENGTH
 
+
 ERR_SINGLE_TARGET_STATE_REQUIRED = "the target state must be a single conformation"
 ERR_TARGET_STATE_DIM = "the target state must have center positions in (x, y, z) format"
+
+THREE_DIMENSIONS = 3
+N_DIMS_NUCLEOTIDES_POSITION = 2
+
 
 @chex.dataclass(frozen=True, kw_only=True)
 class RMSE(jd_obs.BaseObservable):
@@ -91,12 +87,11 @@ class RMSE(jd_obs.BaseObservable):
         if self.rigid_body_transform_fn is None:
             raise ValueError(jd_obs.ERR_RIGID_BODY_TRANSFORM_FN_REQUIRED)
 
-        if len(target_state.center.shape) != 2:
+        if len(target_state.center.shape) != N_DIMS_NUCLEOTIDES_POSITION:
             raise ValueError(ERR_SINGLE_TARGET_STATE_REQUIRED)
 
-        if target_state.center.shape[1] != 3:
+        if target_state.center.shape[1] != THREE_DIMENSIONS:
             raise ValueError(ERR_TARGET_STATE_DIM)
-
 
     def __call__(self, trajectory: jd_sio.SimulatorTrajectory) -> jd_types.ARR_OR_SCALAR:
         """Calculate the RMSE in Angstroms.
@@ -108,21 +103,18 @@ class RMSE(jd_obs.BaseObservable):
             jd_types.ARR_OR_SCALAR: the RMSE in Angstroms for each state, so expect a
             size of (n_states,)
         """
-
         nucleotides = jax.vmap(self.rigid_body_transform_fn)(trajectory.rigid_body)
 
         # Center the target state
         centered_target_state = self.target_state.set(
-            center=self.target_state.center - jnp.mean(self.target_state.center, axis=0))
+            center=self.target_state.center - jnp.mean(self.target_state.center, axis=0)
+        )
 
         # Compute the RMSE per state
-        rmses = jax.vmap(single_rmse, (None, 0))(centered_target_state, nucleotides)
-        return rmses
+        return jax.vmap(single_rmse, (None, 0))(centered_target_state, nucleotides)
 
 
 if __name__ == "__main__":
-    import jax_md
-
     import jax_dna.input.topology as jd_top
 
     test_geometry = jd_toml.parse_toml("jax_dna/input/dna1/default_energy.toml")["geometry"]
@@ -147,7 +139,7 @@ if __name__ == "__main__":
 
     target_state = rigid_body.RigidBody(
         center=test_traj.state_rigid_body.center[0],
-        orientation=rigid_body.Quaternion(test_traj.state_rigid_body.orientation.vec[0])
+        orientation=rigid_body.Quaternion(test_traj.state_rigid_body.orientation.vec[0]),
     )
     rmse = RMSE(rigid_body_transform_fn=tranform_fn, target_state=target_state)
     output_rmses = rmse(sim_traj)

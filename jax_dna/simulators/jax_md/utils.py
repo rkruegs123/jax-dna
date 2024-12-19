@@ -134,7 +134,6 @@ class StaticSimulatorParams:
     mass: jax_md.rigid_body.RigidBody
     gamma: jax_md.rigid_body.RigidBody
     bonded_neighbors: jnp.ndarray
-    n_steps: int
     checkpoint_every: int
     dt: float
     kT: float  # noqa: N815, the variable is commonly referred to using this casing

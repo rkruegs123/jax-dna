@@ -2,6 +2,7 @@
 
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 import jaxtyping as jaxtyp
 
@@ -21,7 +22,7 @@ PathOrStr = Path | str
 Scalar = jaxtyp.Float[jaxtyp.Array, ""]
 Vector3D = jaxtyp.Float[jaxtyp.Array, "3"]
 Vector4D = jaxtyp.Float[jaxtyp.Array, "4"]
-Arr_N = jaxtyp.Float[jaxtyp.Array, "#n"]
+Arr_N = jaxtyp.Array  # jaxtyp.Float[jaxtyp.Array, "#n"]
 Arr_Nucleotide = jaxtyp.Float[jaxtyp.Array, "#n_nucleotides"]
 Arr_Nucleotide_3 = jaxtyp.Float[jaxtyp.Array, "#n_nucleotides 3"]
 Arr_Nucleotide_4 = jaxtyp.Float[jaxtyp.Array, "#n_nucleotides 4"]
@@ -32,3 +33,10 @@ Arr_States = jaxtyp.Int[jaxtyp.Array, "#n_states"]
 Arr_States_3 = jaxtyp.Int[jaxtyp.Array, "#n_states 3"]
 
 ARR_OR_SCALAR = Arr_N | Scalar
+
+MetaData = dict[str, Any]
+Grads = jaxtyp.PyTree
+Params = jaxtyp.PyTree | dict[str, jaxtyp.PyTree]
+PyTree = jaxtyp.PyTree
+
+SimulatorActorOutput = str
