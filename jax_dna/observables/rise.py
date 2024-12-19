@@ -1,17 +1,12 @@
 """Rise observable."""
 
 import dataclasses as dc
-import functools
 from collections.abc import Callable
 
 import chex
 import jax
 import jax.numpy as jnp
-from jax_md import space
 
-import jax_dna.energy.dna1 as jd_energy
-import jax_dna.input.toml as jd_toml
-import jax_dna.input.trajectory as jd_traj
 import jax_dna.observables.base as jd_obs
 import jax_dna.simulators.io as jd_sio
 import jax_dna.utils.types as jd_types

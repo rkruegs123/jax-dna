@@ -10,6 +10,7 @@ import jax_dna.observables.base as b
 import jax_dna.observables.rise as r
 import jax_dna.simulators.io as jd_sio
 
+
 # the test values assume that the original implementation is correct
 @pytest.mark.parametrize(
     ("quartet", "base_sites", "expected"),
@@ -50,7 +51,7 @@ def test_rise_post_init_raises() -> None:
 )
 def test_rise_call(
     quartets: jnp.ndarray,
-    expected:jnp.ndarray,
+    expected: jnp.ndarray,
 ) -> None:
     """Test rise call."""
 
@@ -64,7 +65,6 @@ def test_rise_call(
 
     def mock_rbt(x: jax_md.rigid_body.RigidBody) -> jnp.ndarray:
         return MockNucleotide.from_rigid_body(x)
-
 
     t = 5
     centers = jnp.array([[[0, 0, 0], [1, 1, 1], [2, 2, 2]]] * t)
@@ -83,8 +83,6 @@ def test_rise_call(
     )(trajectory)
 
     np.testing.assert_allclose(actual, expected)
-
-
 
 
 if __name__ == "__main__":
