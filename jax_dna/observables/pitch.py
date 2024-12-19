@@ -35,7 +35,6 @@ def compute_pitch(avg_pitch_angle: float) -> float:
     return jnp.pi / avg_pitch_angle
 
 
-@functools.partial(jax.vmap, in_axes=(0, None, None, None))
 def single_pitch_angle(
     quartet: jnp.ndarray, base_sites: jnp.ndarray, back_sites: jnp.ndarray, displacement_fn: Callable
 ) -> jd_types.ARR_OR_SCALAR:
@@ -61,6 +60,9 @@ def single_pitch_angle(
 
     # Compute the angle between these projections
     return jnp.arccos(jd_math.clamp(jnp.dot(bb1_proj_dir, bb2_proj_dir)))
+
+
+single_pitch_angle_mapped = jax.vmap(single_pitch_angle, in_axes=(0, None, None, None))
 
 
 @chex.dataclass(frozen=True, kw_only=True)
@@ -99,7 +101,7 @@ class PitchAngle(jd_obs.BaseObservable):
         base_sites = nucleotides.base_sites
         back_sites = nucleotides.back_sites
 
-        angles = jax.vmap(single_pitch_angle, (None, 0, 0, None))(
+        angles = jax.vmap(single_pitch_angle_mapped, (None, 0, 0, None))(
             self.quartets, base_sites, back_sites, self.displacement_fn
         )
         return jnp.mean(angles, axis=1)
