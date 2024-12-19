@@ -4,7 +4,6 @@ import jax.numpy as jnp
 from jaxopt import GaussNewton
 
 import jax_dna.utils.types as jd_types
-import jax_dna.utils.units as jd_units
 
 
 def coth(x: jd_types.ARR_OR_SCALAR) -> jd_types.ARR_OR_SCALAR:
@@ -102,21 +101,3 @@ def fit_wlc(
     gn = GaussNewton(residual_fun=loss, implicit_diff=implicit_diff)
     res = gn.run(init_guess, extensions=extensions, forces=forces, kT=kT)
     return res.params
-
-
-if __name__ == "__main__":
-    t_kelvin = 296.15
-    kT = jd_units.get_kt(t_kelvin)  # noqa: N816 -- kT is a special unit variable
-
-    # Values provided by T. Ouldridge
-    per_nuc_forces = jnp.array([0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.375])
-    total_forces = per_nuc_forces * 2.0
-    extensions = jnp.array([35.0, 36.67, 37.84, 38.37, 38.71, 38.98, 39.19, 39.46])
-
-    init_guess = jnp.array([39.87, 50.60, 44.54])  # initialize to the true values
-
-    # Perform the fit
-    res = fit_wlc(extensions, total_forces, init_guess, kT)
-    l0_nm = res[0] * jd_units.NM_PER_OXDNA_LENGTH
-    lp_nm = res[1] * jd_units.NM_PER_OXDNA_LENGTH
-    k_pn = res[2] * jd_units.PN_PER_OXDNA_FORCE
