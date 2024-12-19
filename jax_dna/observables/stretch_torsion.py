@@ -1,24 +1,22 @@
 """Utility functions for computing stretch-torsion moduli."""
 
-import jax.numpy as jnp
-from jaxopt import GaussNewton
-from typing import Tuple
+import dataclasses as dc
+import functools
+from collections.abc import Callable
 
+import chex
+import jax
+import jax.numpy as jnp
+
+import jax_dna.observables.base as jd_obs
+import jax_dna.simulators.io as jd_sio
 import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as jd_types
-import jax_dna.utils.units as jd_units
-
-
 
 
 @functools.partial(jax.vmap, in_axes=(0, None, None, None))
-def single_angle_xy(
-        quartet: jnp.ndarray,
-        base_sites: jnp.ndarray,
-        displacement_fn: Callable
-) -> jd_types.ARR_OR_SCALAR:
+def single_angle_xy(quartet: jnp.ndarray, base_sites: jnp.ndarray, displacement_fn: Callable) -> jd_types.ARR_OR_SCALAR:
     """Computes the angle in the X-Y plane between adjacent base pairs."""
-
     # Extract the base pairs
     bp1, bp2 = quartet
     (a1, b1), (a2, b2) = bp1, bp2
@@ -36,8 +34,7 @@ def single_angle_xy(
     bb2 = bb2 / jnp.linalg.norm(bb2)
 
     # Compute
-    theta = jnp.arccos(jd_math.clamp(jnp.dot(bb1, bb2)))
-    return theta
+    return jnp.arccos(jd_math.clamp(jnp.dot(bb1, bb2)))
 
 
 @chex.dataclass(frozen=True, kw_only=True)
@@ -52,9 +49,7 @@ class TwistXY(jd_obs.BaseObservable):
     - displacement_fn: a function for computing displacements between two positions
     """
 
-    quartets: jnp.ndarray = dc.field(
-        hash=False
-    )
+    quartets: jnp.ndarray = dc.field(hash=False)
     displacement_fn: Callable
 
     def __post_init__(self) -> None:
@@ -76,22 +71,16 @@ class TwistXY(jd_obs.BaseObservable):
 
         base_sites = nucleotides.base_sites
 
-        angles = jax.vmap(single_angle_xy, (None, 0, 0, None))(
-            self.quartets, base_sites, self.displacement_fn
-        )
+        angles = jax.vmap(single_angle_xy, (None, 0, 0, None))(self.quartets, base_sites, self.displacement_fn)
         return jnp.sum(angles, axis=1)
 
 
-
-
 def single_extension_z(
-        center: jd_types.Arr_Nucleotide_3,
-        bp1: jnp.ndarray,
-        bp2: jnp.ndarray,
-        displacement_fn: Callable
+    center: jd_types.Arr_Nucleotide_3,
+    bp1: jnp.ndarray,
+    bp2: jnp.ndarray,
 ) -> jd_types.ARR_OR_SCALAR:
     """Computes the distance between the midpoints of two base pairs."""
-
     # Extract the base pair indices
     a1, b1 = bp1
     a2, b2 = bp2
@@ -101,9 +90,7 @@ def single_extension_z(
     bp2_midp = (center[a2] + center[b2]) / 2
 
     # Compute the extension between the two base pairs in the Z-direction
-    extension = jnp.abs(bp1_midp[2] - bp2_midp[2])
-    return extension
-
+    return jnp.abs(bp1_midp[2] - bp2_midp[2])
 
 
 @chex.dataclass(frozen=True, kw_only=True)
@@ -119,12 +106,8 @@ class ExtensionZ(jd_obs.BaseObservable):
     - displacement_fn: a function for computing displacements between two positions
     """
 
-    bp1: jnp.ndarray = dc.field(
-        hash=False
-    )
-    bp2: jnp.ndarray = dc.field(
-        hash=False
-    )
+    bp1: jnp.ndarray = dc.field(hash=False)
+    bp2: jnp.ndarray = dc.field(hash=False)
     displacement_fn: Callable
 
     def __post_init__(self) -> None:
@@ -146,17 +129,11 @@ class ExtensionZ(jd_obs.BaseObservable):
 
         center = nucleotides.center
 
-        extensions = jax.vmap(single_extension_z, (None, 0, 0, None))(
-            center, self.bp1, self.bp2, self.displacement_fn
-        )
-        return extensions
+        # return the extension
+        return jax.vmap(single_extension_z, (None, 0, 0, None))(center, self.bp1, self.bp2, self.displacement_fn)
 
 
-
-def stretch(
-        forces: jnp.ndarray,
-        extensions: jnp.ndarray
-) -> Tuple[float, float, float]:
+def stretch(forces: jnp.ndarray, extensions: jnp.ndarray) -> tuple[float, float, float]:
     r"""Computes the effective stretch modulus and relevant summary statistics from stretch experiments.
 
     Following Assenza and Perez (JCTC 2022), the effective stretch modulus can be computed as

@@ -1,8 +1,9 @@
 """Tests for the base observable and utility functions."""
 
 import jax.numpy as jnp
-import jax_dna.observables.base as jd_obs_base
 import pytest
+
+import jax_dna.observables.base as jd_obs_base
 
 
 def test_local_helical_axis():

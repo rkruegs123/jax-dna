@@ -2,12 +2,13 @@
 
 import chex
 import jax.numpy as jnp
-import jax_dna.observables.base as jd_obs
-import jax_dna.observables.propeller as p
-import jax_dna.simulators.io as jd_sio
 import jax_md
 import numpy as np
 import pytest
+
+import jax_dna.observables.base as jd_obs
+import jax_dna.observables.propeller as p
+import jax_dna.simulators.io as jd_sio
 
 TEST_NORMALS = jnp.array(
     [
