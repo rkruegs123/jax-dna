@@ -105,32 +105,3 @@ class PitchAngle(jd_obs.BaseObservable):
             self.quartets, base_sites, back_sites, self.displacement_fn
         )
         return jnp.mean(angles, axis=1)
-
-
-if __name__ == "__main__":
-    import jax_dna.input.topology as jd_top
-
-    test_geometry = jd_toml.parse_toml("jax_dna/input/dna1/default_energy.toml")["geometry"]
-    tranform_fn = functools.partial(
-        jd_energy.Nucleotide.from_rigid_body,
-        com_to_backbone=test_geometry["com_to_backbone"],
-        com_to_hb=test_geometry["com_to_hb"],
-        com_to_stacking=test_geometry["com_to_stacking"],
-    )
-
-    top = jd_top.from_oxdna_file("data/templates/simple-helix/sys.top")
-    test_traj = jd_traj.from_file(
-        path="data/templates/simple-helix/init.conf",
-        strand_lengths=top.strand_counts,
-    )
-
-    sim_traj = jd_sio.SimulatorTrajectory(
-        seq_oh=jnp.array(top.seq_one_hot),
-        strand_lengths=top.strand_counts,
-        rigid_body=test_traj.state_rigid_body,
-    )
-
-    quartets = jd_obs.get_duplex_quartets(8)
-    displacement_fn, _ = space.free()
-    pitch_angle = PitchAngle(rigid_body_transform_fn=tranform_fn, quartets=quartets, displacement_fn=displacement_fn)
-    output_pitch_angles = pitch_angle(sim_traj)
