@@ -23,6 +23,12 @@ extensions = [
     'sphinx.ext.napoleon',
 ]
 
+autosummary_generate = True
+
+# ignore test modules
+exclude_patterns = ['**/tests/*.py']
+
+
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'sphinx': ('https://www.sphinx-doc.org/en/master/', None),
@@ -48,10 +54,23 @@ if html_theme == 'sphinx_book_theme':
             'image_dark': '../_static/SSEC_logo_vert_white_lg_1184x661.png',
             'text': f'{html_title}',
         },
-        'repository_url': 'https://github.com/ssec-jhu/base-template',
+        'repository_url': 'https://github.com/rkruegs123/jax-dna-dev',
         'use_repository_button': True,
     })
 
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
+
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../jax_dna'))
+
+def skip_tests(app, what, name, obj, skip, options):
+    # Skip any module or member that is in a 'tests' directory
+    if hasattr(obj, '__module__') and 'tests' in obj.__module__.split('.'):
+        return True
+    return skip
+
+def setup(app):
+    app.connect('autodoc-skip-member', skip_tests)
