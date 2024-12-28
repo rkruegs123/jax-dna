@@ -33,6 +33,7 @@ def run(args):
     assert(n_steps_per_sim % sample_every == 0)
     n_skip_quartets = args['n_skip_quartets']
     small_system = args['small_system']
+    max_norm = args['max_norm']
 
     clip_every = args['clip_every']
     checkpoint_every = args['checkpoint_every']
@@ -123,7 +124,7 @@ def run(args):
     mass = rigid_body.RigidBody(center=jnp.array([utils.nucleotide_mass], dtype=jnp.float64),
                                 orientation=jnp.array([utils.moment_of_inertia], dtype=jnp.float64))
 
-    grad_clip_fn = gradient_clip.get_clip_grad_fn("norm", 0.1)
+    grad_clip_fn = gradient_clip.get_clip_grad_fn("norm", max_norm)
 
     def sim_fn(params, body, n_steps, key, gamma):
         em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
@@ -245,6 +246,8 @@ def get_parser():
                         help="Frequency of gradient clipping")
     parser.add_argument('--checkpoint-every', type=int, default=10,
                         help="Frequency of gradient checkpointing")
+
+    parser.add_argument('--max-norm', type=float, default=0.1, help="Max norm for normalization")
 
     return parser
 
