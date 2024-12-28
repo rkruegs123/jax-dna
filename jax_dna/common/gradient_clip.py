@@ -126,7 +126,7 @@ if __name__ == "__main__":
     _, shift = space.free()
     T =  1.0
 
-    clip_every = 1
+    clip_every = 10
 
     def sim_fn(R0):
         E = functools.partial(
