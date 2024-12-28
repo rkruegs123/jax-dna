@@ -148,7 +148,7 @@ def run(args):
 
 
     pitch_angles_fn = lambda body: pitch2.get_all_angles(body, quartets, displacement_fn, model.com_to_hb, model1.com_to_backbone, 0.0)
-    compute_traj_angles = vmap(pitch_angle_fn)
+    compute_traj_angles = vmap(pitch_angles_fn)
     batch_sim_fn = vmap(sim_fn, (None, 0, None, 0, None))
     def loss_fn(params, eq_bodies, key):
         batch_keys = random.split(key, n_sims)
