@@ -7,6 +7,7 @@ from tqdm import tqdm
 import time
 import argparse
 import numpy as onp
+import matplotlib.pyplot as plt
 
 import jax
 jax.config.update("jax_enable_x64", True)
@@ -193,7 +194,6 @@ def run(args):
         plt.plot(running_avg_pitches)
         plt.savefig(img_dir / f"running_avg_i{i}.png")
         plt.close()
-
 
         with open(loss_path, "a") as f:
             f.write(f"{rmse}\n")
