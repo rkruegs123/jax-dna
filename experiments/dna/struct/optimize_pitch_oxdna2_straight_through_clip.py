@@ -16,7 +16,7 @@ from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util
 from jax_md import space, simulate, rigid_body
 
 from jax_dna.common import utils, topology, trajectory, checkpoint, center_configuration, gradient_clip
-from jax_dna.loss import pitch2
+from jax_dna.loss import pitch2, pitch
 from jax_dna.dna1 import model as model1
 from jax_dna.dna2 import model
 from jax_dna import dna2, loss
@@ -243,7 +243,7 @@ def get_parser():
 
     parser.add_argument('--clip-every', type=int, default=100,
                         help="Frequency of gradient clipping")
-    parser.add_argument('--checkpoint-every', type=int, default=100,
+    parser.add_argument('--checkpoint-every', type=int, default=10,
                         help="Frequency of gradient checkpointing")
 
     return parser
