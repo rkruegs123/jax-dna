@@ -6,6 +6,7 @@ import pprint
 from tqdm import tqdm
 import time
 import argparse
+import numpy as onp
 
 import jax
 jax.config.update("jax_enable_x64", True)
@@ -15,7 +16,8 @@ from jax import jit, vmap, random, grad, value_and_grad, lax, tree_util
 from jax_md import space, simulate, rigid_body
 
 from jax_dna.common import utils, topology, trajectory, checkpoint, center_configuration, gradient_clip
-from jax_dna.loss import geometry, pitch, propeller
+from jax_dna.loss import pitch2
+from jax_dna.dna1 import model as model1
 from jax_dna.dna2 import model
 from jax_dna import dna2, loss
 
@@ -103,9 +105,6 @@ def run(args):
     displacement_fn, shift_fn = space.free()
 
     # Get the loss function
-    compute_avg_pitch, _ = pitch.get_pitch_loss_fn(
-        quartets, displacement_fn, model.com_to_hb)
-
 
     dt = 5e-3
     t_kelvin = utils.DEFAULT_TEMP
@@ -147,16 +146,24 @@ def run(args):
     eq_fn = lambda params, key: sim_fn(params, init_body, n_eq_steps, key, gamma_eq)
     eq_fn = jit(eq_fn)
 
-    @jit
-    def loss_fn(params, eq_body, key):
-        fin_pos, traj = sim_fn(params, eq_body, n_steps_per_sim, key, gamma_opt)
-        states_to_eval = traj[::sample_every]
-        pitches = vmap(compute_avg_pitch)(states_to_eval)
-        avg_pitch = pitches.mean()
-        rmse = jnp.sqrt((avg_pitch - target_pitch)**2)
-        return rmse, avg_pitch
+
+    pitch_angles_fn = lambda body: pitch2.get_all_angles(body, quartets, displacement_fn, model.com_to_hb, model1.com_to_backbone, 0.0)
+    compute_traj_angles = vmap(pitch_angle_fn)
+    batch_sim_fn = vmap(sim_fn, (None, 0, None, 0, None))
+    def loss_fn(params, eq_bodies, key):
+        batch_keys = random.split(key, n_sims)
+        all_fin_pos, all_trajs = batch_sim_fn(params, eq_bodies, n_steps_per_sim, batch_keys, gamma_opt)
+        all_traj_angles = vmap(compute_traj_angles)(all_trajs)
+        avg_pitch_angle = all_traj_angles.mean()
+        pitch = (2*jnp.pi) / avg_pitch_angle
+
+        rmse = jnp.sqrt((pitch - target_pitch)**2)
+        return rmse, (pitch, all_traj_angles)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
-    batched_grad_fn = jit(vmap(grad_fn, (None, 0, 0)))
+    grad_fn = jit(grad_fn)
+
+
+
 
     params = deepcopy(model.EMPTY_BASE_PARAMS)
     # params["fene"] = model.default_base_params_seq_avg["fene"]
@@ -172,23 +179,27 @@ def run(args):
         key, iter_key = random.split(key)
         iter_key, eq_key = random.split(iter_key)
         eq_keys = random.split(eq_key, n_sims)
-        em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin)
         eq_bodies, _ = mapped_eq_fn(params, eq_keys)
 
-        batch_keys = random.split(iter_key, n_sims)
         start = time.time()
-        (losses, avg_pitches), grads = batched_grad_fn(params, eq_bodies, batch_keys)
+        (rmse, aux), grads = grad_fn(params, eq_bodies, iter_key)
+        avg_pitch, all_traj_angles = aux
         end = time.time()
         iter_time = end - start
 
-        avg_grads = tree_util.tree_map(jnp.mean, grads)
-        avg_pitch = jnp.mean(avg_pitches)
+        all_angles = all_traj_angles.flatten()
+        running_avg_angles = onp.cumsum(all_angles) / onp.arange(1, all_angles.shape[0] + 1)
+        running_avg_pitches = 2*onp.pi / running_avg_angles
+        plt.plot(running_avg_pitches)
+        plt.savefig(img_dir / f"running_avg_i{i}.png")
+        plt.close()
+
 
         with open(loss_path, "a") as f:
-            f.write(f"{jnp.mean(losses)}\n")
+            f.write(f"{rmse}\n")
 
         with open(grads_path, "a") as f:
-            f.write(f"{pprint.pformat(avg_grads, indent=4)}\n")
+            f.write(f"{pprint.pformat(grads, indent=4)}\n")
 
         with open(params_path, "a") as f:
             f.write(f"{pprint.pformat(params, indent=4)}\n")
@@ -196,7 +207,7 @@ def run(args):
         with open(pitch_path, "a") as f:
             f.write(f"{avg_pitch}\n")
 
-        updates, opt_state = optimizer.update(avg_grads, opt_state, params)
+        updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
 
     return
