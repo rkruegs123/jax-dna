@@ -383,14 +383,16 @@ class TestDna1(unittest.TestCase):
             unpaired_pseq = jnp.array(unpaired_pseq)
 
 
-        idx_to_unpaired_idx = onp.arange(n)
+        # idx_to_unpaired_idx = onp.arange(n)
+        idx_to_unpaired_idx = onp.full((n,), -1, dtype=onp.int32)
         for up_idx, idx in enumerate(unpaired):
             idx_to_unpaired_idx[idx] = up_idx
         idx_to_unpaired_idx = jnp.array(idx_to_unpaired_idx)
 
 
         # idx_to_bp_idx = onp.arange(n)
-        idx_to_bp_idx = onp.zeros((n, 2), dtype=onp.int32)
+        # idx_to_bp_idx = onp.zeros((n, 2), dtype=onp.int32)
+        idx_to_bp_idx = onp.full((n, 2), -1, dtype=onp.int32)
         for bp_idx, (nt1, nt2) in enumerate(bps):
             idx_to_bp_idx[nt1] = [bp_idx, 0]
             idx_to_bp_idx[nt2] = [bp_idx, 1]
@@ -415,7 +417,7 @@ class TestDna1(unittest.TestCase):
                 probability *= unpaired_pseq[n_up_idx, up_nt_idx]
 
             for bp_idx, (nt1, nt2) in enumerate(bps):
-                bp_type_idx = BP_TYPES.index(sequence[nt1] + seq[nt2])
+                bp_type_idx = BP_TYPES.index(sequence[nt1] + sequence[nt2])
                 probability *= bp_pseq[bp_idx, bp_type_idx]
 
             return probability

@@ -189,6 +189,7 @@ class EnergyModel:
         v_hb = jnp.where(mask, v_hb, 0.0) # Mask for neighbors
         hb_probs = utils.get_pair_probs(seq, op_i, op_j) # get the probabilities of all possibile hydrogen bonds for all neighbors
         hb_weights = jnp.dot(hb_probs, self.ss_hb_weights_flat)
+
         hb_dg = jnp.dot(hb_weights, v_hb)
 
         cr_stack_dg = cross_stacking(
@@ -355,7 +356,8 @@ class TestDna1(unittest.TestCase):
         else:
             neighbors_idx = top_info.unbonded_nbrs.T
 
-        compute_subterms_fn = jit(model.compute_subterms)
+        compute_subterms_fn = model.compute_subterms
+        compute_subterms_fn = jit(compute_subterms_fn)
         computed_subterms = list()
         for state in tqdm(traj_states):
 
