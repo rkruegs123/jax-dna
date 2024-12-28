@@ -133,7 +133,7 @@ def run(args):
 
         @jit
         def scan_fn(state, step):
-            state = grad_clip_fn(i % clip_every == 0, state)
+            state = grad_clip_fn(step % clip_every == 0, state)
             state = step_fn(state,
                             seq=seq_oh,
                             bonded_nbrs=top_info.bonded_nbrs,
