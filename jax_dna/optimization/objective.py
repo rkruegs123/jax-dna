@@ -286,7 +286,6 @@ class DiffTReObjective(Objective):
     @typing_extensions.override
     def is_ready(self) -> bool:
         have_trajectory = super().is_ready()
-
         if have_trajectory:
             sorted_obtained_observables = sorted(
                 self._obtained_observables,
@@ -306,9 +305,17 @@ class DiffTReObjective(Objective):
                 new_energies=self._energy_fn_builder(self._opt_params)(self._reference_states),
                 ref_energies=self._reference_energies,
             )
+            with open("neff.txt", "a") as f:
+                print("Neff", neff, file=f)
 
+            # if the trajectory is no longer valid remove it form obtained
+            # and add it to needed so that a new trajectory is run.
             if neff < self._n_eff_factor:
-                self._obtained_observables.remove(self._trajectory_key)
+                self._obtained_observables = list(
+                    filter(lambda x: x[0] != self._trajectory_key, self._obtained_observables)
+                )
+                self._needed_observables = [self._trajectory_key]
+                self._reference_states = None
                 have_trajectory = False
 
         return have_trajectory

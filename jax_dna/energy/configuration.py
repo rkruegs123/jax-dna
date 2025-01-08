@@ -10,6 +10,7 @@ import jax_dna.utils.types as jdt
 ERR_MISSING_REQUIRED_PARAMS = "Required properties {props} are not initialized."
 ERR_OPT_DEPENDENT_PARAMS = "Only {req_params} permitted for optimization, but found {given_params}"
 WARN_INIT_PARAMS_NOT_IMPLEMENTED = "init_params not implemented"
+WARN_DEPENDENT_PARAMS_NOT_INITIALIZED = "Dependent parameters not initialized"
 
 
 @chex.dataclass(frozen=True)
@@ -22,12 +23,14 @@ class BaseConfiguration:
         params_to_optimize (tuple[str]): parameters to optimize
         required_params (tuple[str]): required parameters
         non_optimizable_required_params (tuple[str]): required parameters that are not optimizable
+        dependent_params (tuple[str]): dependent parameters, these are calculated from the independent parameters
         OPT_ALL (tuple[str]): CONSTANT, is a wild card for all parameters
     """
 
     params_to_optimize: tuple[str] = ()
     required_params: tuple[str] = ()
     non_optimizable_required_params: tuple[str] = ()
+    dependent_params: tuple[str] = ()
     OPT_ALL: tuple[str] = ("*",)
 
     @property
@@ -72,6 +75,29 @@ class BaseConfiguration:
     def from_dict(cls, params: dict[str, float], params_to_optimize: tuple[str] = ()) -> "BaseConfiguration":
         """Creates a configuration from a dictionary."""
         return cls(**(params | {"params_to_optimize": params_to_optimize}))
+
+    def to_dictionary(
+        self,
+        *,
+        include_dependent: bool,
+        exclude_non_optimizable: bool,
+    ) -> dict[str, jdt.ARR_OR_SCALAR]:
+        """Converts the configuration to a dictionary."""
+
+        params = {k: getattr(self, k) for k in self.required_params}
+
+        if include_dependent:
+            for k in self.dependent_params:
+                if val := getattr(self, k):
+                    params[k] = val
+                else:
+                    warnings.warn(WARN_DEPENDENT_PARAMS_NOT_INITIALIZED, stacklevel=1)
+
+        if exclude_non_optimizable:
+            for k in self.non_optimizable_required_params:
+                params.pop(k, None)
+
+        return params
 
     def __merge__baseconfig(self, other: "BaseConfiguration") -> "BaseConfiguration":
         """Merges two BaseConfiguration objects."""

@@ -16,6 +16,7 @@ import jax_dna.input.trajectory as jd_traj
 import jax_dna.simulators.base as jd_sim_base
 import jax_dna.simulators.io as jd_sio
 import jax_dna.simulators.jax_md.utils as jaxmd_utils
+import jax_dna.utils.types as jd_types
 
 REQUIRED_KEYS = {
     "track_gradients",
@@ -76,7 +77,7 @@ def build_run_fn(
     )
 
     def run_fn(
-        opt_params: dict[str, float],
+        opt_params: jd_types.Params,
         init_state: jax_md.rigid_body.RigidBody,
         n_steps: int,
         key: jax.random.PRNGKey,

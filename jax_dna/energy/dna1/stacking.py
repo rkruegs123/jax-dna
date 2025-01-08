@@ -95,6 +95,24 @@ class StackingConfiguration(config.BaseConfiguration):
 
     non_optimizable_required_params: tuple[str] = ("kt",)
 
+    dependent_params: tuple[str] = (
+        "b_low_stack",
+        "dr_c_low_stack",
+        "b_high_stack",
+        "dr_c_high_stack",
+        "b_stack_4",
+        "delta_theta_stack_4_c",
+        "b_stack_5",
+        "delta_theta_stack_5_c",
+        "b_stack_6",
+        "delta_theta_stack_6_c",
+        "b_neg_cos_phi1_stack",
+        "neg_cos_phi1_c_stack",
+        "b_neg_cos_phi2_stack",
+        "neg_cos_phi2_c_stack",
+        "eps_stack",
+    )
+
     @override
     def init_params(self) -> "StackingConfiguration":
         eps_stack = self.eps_stack_base + self.eps_stack_kt_coeff * self.kt

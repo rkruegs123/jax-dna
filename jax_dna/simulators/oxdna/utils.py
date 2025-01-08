@@ -1,11 +1,13 @@
 """Utilities for the oxDNA simulator."""
 
 import datetime
-import math
+import functools
+import operator
 from pathlib import Path
 
 import sympy
 
+import jax_dna.utils.types as jd_types
 from jax_dna.utils.types import oxDNAModelHType
 
 ERR_CANNOT_PROCESS_SRC_H = "Cannot process src/model.h file. Failed parsing: {}"
@@ -275,7 +277,7 @@ def write_src_h(src_h: Path, params: dict[str, tuple[oxDNAModelHType, int | floa
                     " */",
                     "",
                     "#ifndef MODEL_H_",
-                    "#define MODEL_H_",
+                    "#define MODEL_H_\n",
                 ]
             )
         )
@@ -294,15 +296,16 @@ def write_src_h(src_h: Path, params: dict[str, tuple[oxDNAModelHType, int | floa
         f.write("#endif /* MODEL_H_ */\n")
 
 
-def update_params(src_h: Path, new_params: dict[str, float]) -> None:
+def update_params(src_h: Path, new_params: list[jd_types.Params]) -> None:
     """Update the src/model.h file with the new parameters."""
     params = read_src_h(src_h)
-    for np in new_params:
+    flattened_params = functools.reduce(operator.or_, new_params, {})
+    for np in filter(lambda k: k in DEFAULT_OXDNA_VARIABLE_MAPPER, flattened_params):
         mapped_name = DEFAULT_OXDNA_VARIABLE_MAPPER[np]
         if mapped_name in params:
             # preserve the enum and get the new value
-            params[mapped_name] = (params[mapped_name][0], new_params[np])
-        if np not in params:
+            params[mapped_name] = (params[mapped_name][0], flattened_params[np])
+        else:
             raise ValueError(f"Parameter {np} not found in src/model.h")
 
     write_src_h(src_h, params)
