@@ -8,10 +8,25 @@ import jaxtyping as jaxtyp
 
 
 class OxdnaFormat(Enum):
-    """OxDNA file format."""
+    """oxDNA file format."""
 
     CLASSIC = 1
     NEW = 2
+
+
+class oxDNASimulatorType(Enum):
+    """oxDNA simulator type."""
+
+    DNA1 = 1
+    DNA2 = 2
+
+
+class oxDNAModelHType(Enum):
+    """oxDNA model.h file type."""
+
+    INTEGER = 1
+    FLOAT = 2
+    STRING = 3
 
 
 PathOrStr = Path | str

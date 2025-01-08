@@ -9,10 +9,14 @@ from pathlib import Path
 
 import chex
 
+import jax_dna.energy.configuration as jd_energy
 import jax_dna.input.oxdna_input as jd_oxdna
 import jax_dna.input.topology as jd_top
 import jax_dna.input.trajectory as jd_traj
+import jax_dna.simulators.base as jd_base
 import jax_dna.simulators.io as jd_sio
+import jax_dna.simulators.oxdna.utils as oxdna_utils
+import jax_dna.utils.types as jd_types
 
 REQUIRED_KEYS = {
     "oxnda_bin",
@@ -28,13 +32,19 @@ OXDNA_TOPOLOGY_FILE_KEY = "topology"
 
 BIN_PATH_ENV_VAR = "OXDNA_BIN_PATH"
 ERR_BIN_PATH_NOT_SET = "OXDNA_BIN_PATH environment variable not set"
+BUILD_PATH_ENV_VAR = "OXDNA_BUILD_PATH"
+ERR_BUILD_PATH_NOT_SET = "OXDNA_BUILD_PATH environment variable not set"
+ERR_BUILD_SETUP_FAILED = "OXDNA build setup failed wiht return code: {}"
 
 
-@chex.dataclass(frozen=True)
-class oxDNASimulator:  # noqa: N801 oxDNA is a special word
+@chex.dataclass
+class oxDNASimulator(jd_base.BaseSimulation):  # noqa: N801 oxDNA is a special word
     """A sampler base on running an oxDNA simulation."""
 
+    sim_type: jd_types.oxDNASimulatorType
+    energy_configs: list[jd_energy.BaseConfiguration]
     input_dir: str
+    n_build_threads: int = 4
 
     def run(
         self,
@@ -75,3 +85,38 @@ class oxDNASimulator:  # noqa: N801 oxDNA is a special word
         return jd_sio.SimulatorTrajectory(
             rigid_body=trajectory.state_rigid_body,
         )
+
+    def update(self, *, new_params: list[dict], **kwargs) -> None:
+        """Update the simulation.
+
+        This function will recompile the oxDNA binary with the new parameters.
+        """
+        if BUILD_PATH_ENV_VAR not in os.environ:
+            raise ValueError(ERR_BUILD_PATH_NOT_SET)
+
+        build_dir = Path(os.environ[BUILD_PATH_ENV_VAR])
+        if not build_dir.exists():
+            # setup build
+            completed_proc = subprocess.run(["cmake", ".."], cwd=build_dir, check=True)
+            if completed_proc.returncode != 0:
+                raise ValueError(ERR_BUILD_SETUP_FAILED.format(completed_proc.returncode))
+
+        updated_params = [(ec | np).init_params() for ec, np in zip(self.energy_configs, new_params, strict=True)]
+
+        # check for existing src/model.h file
+        old_model_h = build_dir.parent.joinpath("src/model.h.old")
+        model_h = build_dir.parent.joinpath("src/model.h")
+        orig_text = model_h.read_text()
+        if not old_model_h.exists():
+            # copy the original, so we can restore it later
+            old_model_h.write_text(orig_text)
+
+        # update the values in the src/model.h
+        oxdna_utils.update_params(model_h, updated_params)
+
+        # rebuild the binary
+        completed_proc = subprocess.run(["make", f"-j{self.n_build_threads}"], cwd=build_dir, check=True)
+        if completed_proc.returncode != 0:
+            # restore the original src/model.h
+            model_h.write_text(orig_text)
+            raise ValueError(ERR_BUILD_SETUP_FAILED.format(completed_proc.returncode))
