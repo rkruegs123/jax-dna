@@ -81,8 +81,6 @@ class Optimization:
         # some objectives might use difftre and not actually need something rerun
         # so check which objectives have observables that need to be run
         ready_objectives, not_ready_objectives = split_by_ready(self.objectives)
-        print("ready_objectives", ready_objectives)
-        print("not_ready_objectives", not_ready_objectives)
         grad_refs = [objective.calculate.remote() for objective in ready_objectives]
 
         need_observables = list(

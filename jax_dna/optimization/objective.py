@@ -190,7 +190,7 @@ def compute_loss(
         new_energies,
         ref_energies,
     )
-    loss, measured_value = loss_fn(ref_states, weights, energy_fn)
+    loss, (measured_value, meta) = loss_fn(ref_states, weights, energy_fn)
     return loss, (neff, measured_value, new_energies)
 
 

@@ -292,6 +292,8 @@ def write_src_h(src_h: Path, params: dict[str, tuple[oxDNAModelHType, int | floa
                 parsed_value = value[1]
 
             f.write(f"#define {key} {parsed_value}\n")
+            if key == "FENE_DELTA":
+                f.write(f"#define FENE_DELTA2 {value[1]**2}f\n")
 
         f.write("#endif /* MODEL_H_ */\n")
 
