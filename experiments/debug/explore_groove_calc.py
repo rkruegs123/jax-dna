@@ -282,49 +282,6 @@ def single_jax(body, offset, petrs_way=True):
 
         return small_groove, big_groove, small_groove_is_valid, big_groove_is_valid
 
-
-
-    """
-    all_small_grooves = list()
-    all_big_grooves = list()
-
-    valid_small_grooves = list()
-    valid_big_grooves = list()
-
-    for j in range(offset, n_bp-offset-2):
-
-        small_groove, big_groove, small_groove_is_valid, big_groove_is_valid = get_major_minor_grooves(j)
-
-        all_small_grooves.append(small_groove)
-        all_big_grooves.append(big_groove)
-
-        valid_small_grooves.append(int(small_groove_is_valid))
-        valid_big_grooves.append(int(big_groove_is_valid))
-
-    return onp.array(all_small_grooves), onp.array(all_big_grooves), \
-        onp.array(valid_small_grooves), onp.array(valid_big_grooves)
-    """
-
-
-    """
-    all_small_grooves = list()
-    all_big_grooves = list()
-    for j in range(offset, n_bp-offset-2):
-
-        small_groove, big_groove = get_major_minor_grooves(j)
-
-        grooves = [small_groove, big_groove]
-
-        gr = deepcopy(grooves)
-        if(gr[0] > 0): # TODO: can mask for this
-            all_small_grooves.append(gr[0])
-        if(gr[1] > 0): # TODO: can mask for this
-            all_big_grooves.append(gr[1])
-
-    return all_small_grooves, all_big_grooves
-    """
-
-
     all_small_grooves, all_big_grooves, valid_small_grooves, valid_big_grooves = vmap(get_major_minor_grooves)(jnp.arange(offset, n_bp-offset-2))
     return all_small_grooves, all_big_grooves, valid_small_grooves.astype(jnp.int32), valid_big_grooves.astype(jnp.int32)
 
