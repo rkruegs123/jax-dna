@@ -188,6 +188,14 @@ def single(body, offset):
         if len(local_mins) > 2:
             grooves[0] = grooves[1] = 0
 
+
+        """
+        The below isn't perfect, but it raises a point about what should really be going on -- you shoulud count the number of major and minor groove mins, and each one is only valid if there is one min. Just becaues there are two total mins doesn't mean that one is a minor groove and the other is a major groove.
+        """
+        # RK ADDED. Optional.
+        # if len(local_mins) == 2 and (grooves[0] == 0 or grooves[1] == 0):
+        #    grooves = [0, 0]
+
         gr = deepcopy(grooves)
         if(gr[0] > 0): # TODO: can mask for this
             all_small_grooves.append(gr[0])
@@ -210,22 +218,16 @@ def single_jax(body, offset):
     small_groove_sm = 0.0
     big_groove_sm = 0.0
 
-
-    for j in range(offset, n_bp-offset-2):
-
+    @jit
+    def get_major_minor_grooves(j):
         # Compute mmgrooves_for_nuc(body, j, 0)
         A_bpos = back_sites[j]
 
         a_dist_fn = lambda strand2_idx: space.distance(displacement_fn(A_bpos, back_sites[strand2_idx]))
         distances = vmap(a_dist_fn)(jnp.arange(n_bp, 2*n_bp))
-        distances = onp.array(distances)
 
         opposite = n_bp - j - 1
 
-
-        # PARITY WITH ORIGINAL IN JAX
-
-        distances = jnp.array(distances)
         n_distances = distances.shape[0]
 
         def detect_grooves(carry, i):
@@ -255,39 +257,14 @@ def single_jax(body, offset):
 
             return (small_groove, big_groove, n_local_mins), None
         (small_groove, big_groove, n_local_mins), _ = lax.scan(detect_grooves, (0, 0, 0), jnp.arange(n_distances-2))
+        return small_groove, big_groove
+
+
+    for j in range(offset, n_bp-offset-2):
+
+        small_groove, big_groove = get_major_minor_grooves(j)
+
         grooves = [small_groove, big_groove]
-
-
-
-        # ORIGINAL
-        """
-        n_local_mins = 0
-        better_l_mins = list()
-
-        for i in range(len(distances)-2):
-            if distances[i+1] < distances[i] and distances[i+1] < distances[i+2]:
-                n_local_mins += 1
-                better_l_mins.append([i+1, calculate_groove_distance_jax(back_sites, j, i+1)])
-
-
-
-        grooves = [0, 0]
-        for i, val in better_l_mins:
-            if i < opposite:
-                grooves[0] = val
-            else:
-                grooves[1] = val
-
-        # RK ADDED. Optional.
-        # if n_local_mins == 2 and (grooves[0] == 0 or grooves[1] == 0):
-        #     grooves = [0, 0]
-
-        if n_local_mins > 2:
-            print('Detected more than 2 local mins....?')
-            grooves[0] = grooves[1] = 0
-        """
-
-
 
         gr = deepcopy(grooves)
         if(gr[0] > 0): # TODO: can mask for this
