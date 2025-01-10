@@ -102,43 +102,51 @@ def calculate_groove_distance_jax(back_sites, nucA_id, nucB_id):
     n = back_sites.shape[0]
     n_bp = n // 2
     pos_back_A = back_sites[nucA_id]
-    if nucB_id - 1 >= 0:
-        pos_back_B_left = back_sites[n_bp+nucB_id-1]
-    else:
-        pos_back_B_left = None
-    if nucB_id + 1 < n_bp:
-        pos_back_B_right = back_sites[n_bp+nucB_id+1]
-    else:
-        pos_back_B_right = None
-
     pos_back_B1 = back_sites[n_bp+nucB_id]
 
-    candidate_distance = []
+    candidate_distance = list()
 
-    if not (pos_back_B_left is None):
-        plane_norm = pos_back_B1 - pos_back_B_left
-        plane_norm = plane_norm / onp.linalg.norm(plane_norm)
-        val_B = onp.dot(plane_norm, pos_back_A)
-        t = val_B - onp.dot(pos_back_B1,plane_norm)
-        if t > 0 or abs(t) > onp.linalg.norm(pos_back_B1 - pos_back_B_left):
-            t = 0
-            intersection_point = pos_back_B1
-        else:
-            intersection_point = pos_back_B1 + t * plane_norm
-        candidate_distance.append(onp.linalg.norm(intersection_point - pos_back_A))
-    if not (pos_back_B_right is None):
-        plane_norm = pos_back_B1 - pos_back_B_right
-        plane_norm = plane_norm / onp.linalg.norm(plane_norm)
-        val_B = onp.dot(plane_norm, pos_back_A)
-        t = val_B - onp.dot(pos_back_B1, plane_norm)
-        if t > 0 or abs(t) > onp.linalg.norm(pos_back_B1 - pos_back_B_right):
-            t = 0
-            intersection_point = pos_back_B1
-        else:
-            intersection_point = pos_back_B1 + t * plane_norm
-        candidate_distance.append(onp.linalg.norm(intersection_point - pos_back_A))
+    valid_left_pos = (nucB_id - 1 >= 0)
+    pos_back_B_left = back_sites[n_bp+nucB_id-1]
+
+    plane_norm = pos_back_B1 - pos_back_B_left
+    plane_norm = plane_norm / onp.linalg.norm(plane_norm)
+    val_B = onp.dot(plane_norm, pos_back_A)
+    t = val_B - onp.dot(pos_back_B1,plane_norm)
+    if t > 0 or abs(t) > onp.linalg.norm(pos_back_B1 - pos_back_B_left):
+        t = 0
+        intersection_point = pos_back_B1
+    else:
+        intersection_point = pos_back_B1 + t * plane_norm
+
+    left_distance = onp.linalg.norm(intersection_point - pos_back_A)
+    MAX = 1e6
+    if valid_left_pos:
+        candidate_distance.append(left_distance)
+    else:
+        candidate_distance.append(MAX)
+
+    valid_right_pos = (nucB_id + 1 < n_bp)
+    pos_back_B_right = back_sites[n_bp+nucB_id+1]
+    plane_norm = pos_back_B1 - pos_back_B_right
+    plane_norm = plane_norm / onp.linalg.norm(plane_norm)
+    val_B = onp.dot(plane_norm, pos_back_A)
+    t = val_B - onp.dot(pos_back_B1, plane_norm)
+    if t > 0 or abs(t) > onp.linalg.norm(pos_back_B1 - pos_back_B_right):
+        t = 0
+        intersection_point = pos_back_B1
+    else:
+        intersection_point = pos_back_B1 + t * plane_norm
+
+    right_distance = onp.linalg.norm(intersection_point - pos_back_A)
+
+    if valid_right_pos:
+        candidate_distance.append(right_distance)
+    else:
+        candidate_distance.append(MAX)
 
     return min(candidate_distance)
+
 
 def single(body, offset):
     n_bp = body.center.shape[0] // 2
