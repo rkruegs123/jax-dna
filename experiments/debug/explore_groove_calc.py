@@ -210,9 +210,6 @@ def single_jax(body, offset, petrs_way=True):
     n_bp = body.center.shape[0] // 2
     back_sites, stack_sites, base_sites = get_site_positions(body)
 
-    all_small_grooves = list()
-    all_big_grooves = list()
-
 
     @jit
     def get_major_minor_grooves(j):
@@ -281,6 +278,34 @@ def single_jax(body, offset, petrs_way=True):
         return small_groove, big_groove
 
 
+
+    all_small_grooves = list()
+    all_big_grooves = list()
+
+    valid_small_grooves = list()
+    valid_big_grooves = list()
+
+    for j in range(offset, n_bp-offset-2):
+
+        small_groove, big_groove = get_major_minor_grooves(j)
+
+        small_groove_is_valid = (small_groove != 0)
+        big_groove_is_valid = (big_groove != 0)
+
+        all_small_grooves.append(small_groove)
+        all_big_grooves.append(big_groove)
+
+        valid_small_grooves.append(int(small_groove_is_valid))
+        valid_big_grooves.append(int(big_groove_is_valid))
+
+    return onp.array(all_small_grooves), onp.array(all_big_grooves), \
+        onp.array(valid_small_grooves), onp.array(valid_big_grooves)
+
+
+
+    """
+    all_small_grooves = list()
+    all_big_grooves = list()
     for j in range(offset, n_bp-offset-2):
 
         small_groove, big_groove = get_major_minor_grooves(j)
@@ -294,6 +319,7 @@ def single_jax(body, offset, petrs_way=True):
             all_big_grooves.append(gr[1])
 
     return all_small_grooves, all_big_grooves
+    """
 
 
 
@@ -332,9 +358,10 @@ def run():
         # all_big_grooves.append(idx_big_grooves)
         all_big_grooves += idx_big_grooves
 
-        idx_small_grooves_jax, idx_big_grooves_jax = single_jax(body, offset)
-        all_small_grooves_jax += idx_small_grooves_jax
-        all_big_grooves_jax += idx_big_grooves_jax
+        idx_small_grooves_jax, idx_big_grooves_jax, idx_small_grooves_valid, idx_big_grooves_valid = single_jax(body, offset)
+
+        all_small_grooves_jax += list(idx_small_grooves_jax[idx_small_grooves_valid.nonzero()[0]])
+        all_big_grooves_jax += list(idx_big_grooves_jax[idx_big_grooves_valid.nonzero()[0]])
 
 
     print('#Small_groove (+/- std) big_groove (+/- std)')
