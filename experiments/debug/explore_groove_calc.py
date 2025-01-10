@@ -97,7 +97,7 @@ def calculate_groove_distance(back_sites, nucA_id, nucB_id):
     return min(candidate_distance)
 
 
-
+@jit
 def calculate_groove_distance_jax(back_sites, nucA_id, nucB_id):
     n = back_sites.shape[0]
     n_bp = n // 2
@@ -110,42 +110,41 @@ def calculate_groove_distance_jax(back_sites, nucA_id, nucB_id):
     pos_back_B_left = back_sites[n_bp+nucB_id-1]
 
     plane_norm = pos_back_B1 - pos_back_B_left
-    plane_norm = plane_norm / onp.linalg.norm(plane_norm)
-    val_B = onp.dot(plane_norm, pos_back_A)
-    t = val_B - onp.dot(pos_back_B1,plane_norm)
-    if t > 0 or abs(t) > onp.linalg.norm(pos_back_B1 - pos_back_B_left):
-        t = 0
-        intersection_point = pos_back_B1
-    else:
-        intersection_point = pos_back_B1 + t * plane_norm
+    plane_norm = plane_norm / jnp.linalg.norm(plane_norm)
+    val_B = jnp.dot(plane_norm, pos_back_A)
+    t = val_B - jnp.dot(pos_back_B1, plane_norm)
 
-    left_distance = onp.linalg.norm(intersection_point - pos_back_A)
+    intersection_point = jnp.where(
+        (t > 0) | (jnp.abs(t) > jnp.linalg.norm(pos_back_B1 - pos_back_B_left)),
+        pos_back_B1,
+        pos_back_B1 + t * plane_norm
+    )
+
+    left_distance = jnp.linalg.norm(intersection_point - pos_back_A)
     MAX = 1e6
-    if valid_left_pos:
-        candidate_distance.append(left_distance)
-    else:
-        candidate_distance.append(MAX)
+    left_distance = jnp.where(valid_left_pos, left_distance, MAX)
+    # candidate_distance.append(left_distance)
+
 
     valid_right_pos = (nucB_id + 1 < n_bp)
     pos_back_B_right = back_sites[n_bp+nucB_id+1]
     plane_norm = pos_back_B1 - pos_back_B_right
-    plane_norm = plane_norm / onp.linalg.norm(plane_norm)
-    val_B = onp.dot(plane_norm, pos_back_A)
-    t = val_B - onp.dot(pos_back_B1, plane_norm)
-    if t > 0 or abs(t) > onp.linalg.norm(pos_back_B1 - pos_back_B_right):
-        t = 0
-        intersection_point = pos_back_B1
-    else:
-        intersection_point = pos_back_B1 + t * plane_norm
+    plane_norm = plane_norm / jnp.linalg.norm(plane_norm)
+    val_B = jnp.dot(plane_norm, pos_back_A)
+    t = val_B - jnp.dot(pos_back_B1, plane_norm)
+    intersection_point = jnp.where(
+        (t > 0) | (jnp.abs(t) > jnp.linalg.norm(pos_back_B1 - pos_back_B_right)),
+        pos_back_B1,
+        pos_back_B1 + t * plane_norm
+    )
 
-    right_distance = onp.linalg.norm(intersection_point - pos_back_A)
+    right_distance = jnp.linalg.norm(intersection_point - pos_back_A)
+    right_distance = jnp.where(valid_right_pos, right_distance, MAX)
+    # candidate_distance.append(right_distance)
 
-    if valid_right_pos:
-        candidate_distance.append(right_distance)
-    else:
-        candidate_distance.append(MAX)
+    candidate_distances = jnp.array([left_distance, right_distance])
 
-    return min(candidate_distance)
+    return jnp.min(candidate_distances)
 
 
 def single(body, offset):
