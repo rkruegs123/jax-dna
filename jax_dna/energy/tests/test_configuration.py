@@ -17,6 +17,7 @@ class MockConfig(configuration.BaseConfiguration):
     d: float | None = None
     required_params: tuple[str] = ("a", "b", "c")
     non_optimizable_required_params: tuple[str] = ("c",)
+    dependent_params: tuple[str] = ("d",)
 
 
 def test_BaseConfiguration_init_raises_missing_required_params() -> None:
@@ -96,5 +97,21 @@ def test_BaseConfiguration_or(merged_object: Any, expected: dict, raises: bool) 
         assert all(out_config[k] == expected[k] for k in expected)
 
 
-if __name__ == "__main__":
-    test_BaseConfiguration_opt_params()
+def test_BaseConfiguration_to_dictionary() -> None:
+    """Tests the to_dictionary method of BaseConfiguration."""
+
+    test_config = MockConfig(a=1, b=2, c=3, d=4)
+    assert test_config.to_dictionary(
+        include_dependent=False,
+        exclude_non_optimizable=True,
+    ) == {"a": 1, "b": 2}
+
+    assert test_config.to_dictionary(
+        include_dependent=True,
+        exclude_non_optimizable=True,
+    ) == {"a": 1, "b": 2, "d": 4}
+
+    assert test_config.to_dictionary(
+        include_dependent=True,
+        exclude_non_optimizable=False,
+    ) == {"a": 1, "b": 2, "c": 3, "d": 4}
