@@ -263,7 +263,7 @@ def test_compute_loss(
 ) -> None:
     """Test the loss calculation in for a Difftre Objective."""
     expected_aux = (np.array(1.0), expected_measured_value, np.array([1, 2, 3]))
-    loss_fn = mock_return_function((expected_loss, expected_measured_value))
+    loss_fn = mock_return_function((expected_loss, (expected_measured_value, {})))
 
     loss, aux = o.compute_loss(opt_params, energy_fn_builder, beta, loss_fn, ref_states, ref_energies)
 
@@ -324,7 +324,7 @@ def test_difftreobjective_calculate() -> None:
         required_observables=["test"],
         needed_observables=["test"],
         logging_observables=[],
-        grad_or_loss_fn=mock_return_function((1.0, 0.0)),
+        grad_or_loss_fn=mock_return_function((1.0, (("test", 1.0), {}))),
         energy_fn_builder=lambda _: mock_return_function(np.ones(100)),
         opt_params={"test": 1.0},
         trajectory_key="test",

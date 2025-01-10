@@ -38,7 +38,7 @@ DEFAULT_OXDNA_VARIABLE_MAPPER = {
     "dr_c_back_base": "EXCL_RC3",
     "dr_c_base_back": "EXCL_RC4",
     # stacking
-    # f1(dr_stack)
+    # func f1(dr_stack)
     "eps_stack_base": "STCK_BASE_EPS_OXDNA",
     "eps_stack_kt_coeff": "STCK_FACT_EPS_OXDNA",
     "a_stack": "STCK_A",
@@ -50,36 +50,36 @@ DEFAULT_OXDNA_VARIABLE_MAPPER = {
     "b_high_stack": "STCK_BHIGH",
     "dr_c_low_stack": "STCK_RCLOW",
     "dr_c_high_stack": "STCK_RCHIGH",
-    # f4(theta_4)
+    # func f4(theta_4)
     "a_stack_4": "STCK_THETA4_A",
     "theta0_stack_4": "STCK_THETA4_T0",
     "delta_theta_star_stack_4": "STCK_THETA4_TS",
     "b_stack_4": "STCK_THETA4_B",
     "delta_theta_stack_4_c": "STCK_THETA4_TC",
-    # f4(theta_5p)
+    # func f4(theta_5p)
     "a_stack_5": "STCK_THETA5_A",
     "theta0_stack_5": "STCK_THETA5_T0",
     "delta_theta_star_stack_5": "STCK_THETA5_TS",
     "b_stack_5": "STCK_THETA5_B",
     "delta_theta_stack_5_c": "STCK_THETA5_TC",
-    # f4(theta_6p)
+    # func f4(theta_6p)
     "a_stack_6": "STCK_THETA6_A",
     "theta0_stack_6": "STCK_THETA6_T0",
     "delta_theta_star_stack_6": "STCK_THETA6_TS",
     "b_stack_6": "STCK_THETA6_B",
     "delta_theta_stack_6_c": "STCK_THETA6_TC",
-    # f5(-cos(phi1))
+    # func f5(-cos(phi1))
     "a_stack_1": "STCK_PHI1_A",
     "neg_cos_phi1_star_stack": "STCK_PHI1_XS",
     "b_neg_cos_phi1_stack": "STCK_PHI1_B",
     "neg_cos_phi1_c_stack": "STCK_PHI1_XC",
-    # f5(-cos(phi2))
+    # func f5(-cos(phi2))
     "a_stack_2": "STCK_PHI2_A",
     "neg_cos_phi2_star_stack": "STCK_PHI2_XS",
     "b_neg_cos_phi2_stack": "STCK_PHI2_B",
     "neg_cos_phi2_c_stack": "STCK_PHI2_XC",
     # hydrogen_bonding
-    # f1(dr_hb)
+    # func f1(dr_hb)
     "eps_hb": "HYDR_EPS_OXDNA",
     "a_hb": "HYDR_A",
     "dr0_hb": "HYDR_R0",
@@ -90,44 +90,44 @@ DEFAULT_OXDNA_VARIABLE_MAPPER = {
     "dr_c_low_hb": "HYDR_RCLOW",
     "b_high_hb": "HYDR_BHIGH",
     "dr_c_high_hb": "HYDR_RCHIGH",
-    # f4(theta_1)
+    # func f4(theta_1)
     "a_hb_1": "HYDR_THETA1_A",
     "theta0_hb_1": "HYDR_THETA1_T0",
     "delta_theta_star_hb_1": "HYDR_THETA1_TS",
     "b_hb_1": "HYDR_THETA1_B",
     "delta_theta_hb_1_c": "HYDR_THETA1_TC",
-    # f4(theta_2)
+    # func f4(theta_2)
     "a_hb_2": "HYDR_THETA2_A",
     "theta0_hb_2": "HYDR_THETA2_T0",
     "delta_theta_star_hb_2": "HYDR_THETA2_TS",
     "b_hb_2": "HYDR_THETA2_B",
     "delta_theta_hb_2_c": "HYDR_THETA2_TC",
-    # f4(theta_3)
+    # func f4(theta_3)
     "a_hb_3": "HYDR_THETA3_A",
     "theta0_hb_3": "HYDR_THETA3_T0",
     "delta_theta_star_hb_3": "HYDR_THETA3_TS",
     "b_hb_3": "HYDR_THETA3_B",
     "delta_theta_hb_3_c": "HYDR_THETA3_TC",
-    # f4(theta_4)
+    # func f4(theta_4)
     "a_hb_4": "HYDR_THETA4_A",
     "theta0_hb_4": "HYDR_THETA4_T0",
     "delta_theta_star_hb_4": "HYDR_THETA4_TS",
     "b_hb_4": "HYDR_THETA4_B",
     "delta_theta_hb_4_c": "HYDR_THETA4_TC",
-    # f4(theta_7)
+    # func f4(theta_7)
     "a_hb_7": "HYDR_THETA7_A",
     "theta0_hb_7": "HYDR_THETA7_T0",
     "delta_theta_star_hb_7": "HYDR_THETA7_TS",
     "b_hb_7": "HYDR_THETA7_B",
     "delta_theta_hb_7_c": "HYDR_THETA7_TC",
-    # f4(theta_8)
+    # func f4(theta_8)
     "a_hb_8": "HYDR_THETA8_A",
     "theta0_hb_8": "HYDR_THETA8_T0",
     "delta_theta_star_hb_8": "HYDR_THETA8_TS",
     "b_hb_8": "HYDR_THETA8_B",
     "delta_theta_hb_8_c": "HYDR_THETA8_TC",
     # cross_stacking
-    # f2(dr_cross)
+    # func f2(dr_cross)
     "k_cross": "CRST_K",
     "r0_cross": "CRST_R0",
     "dr_c_cross": "CRST_RC",
@@ -137,44 +137,44 @@ DEFAULT_OXDNA_VARIABLE_MAPPER = {
     "dr_c_low_cross": "CRST_RCLOW",
     "b_high_cross": "CRST_BHIGH",
     "dr_c_high_cross": "CRST_RCHIGH",
-    # f4(theta_1)
+    # func f4(theta_1)
     "a_cross_1": "CRST_THETA1_A",
     "theta0_cross_1": "CRST_THETA1_T0",
     "delta_theta_star_cross_1": "CRST_THETA1_TS",
     "b_cross_1": "CRST_THETA1_B",
     "delta_theta_cross_1_c": "CRST_THETA1_TC",
-    # f4(theta_2)
+    # func f4(theta_2)
     "a_cross_2": "CRST_THETA2_A",
     "theta0_cross_2": "CRST_THETA2_T0",
     "delta_theta_star_cross_2": "CRST_THETA2_TS",
     "b_cross_2": "CRST_THETA2_B",
     "delta_theta_cross_2_c": "CRST_THETA2_TC",
-    # f4(theta_3)
+    # func f4(theta_3)
     "a_cross_3": "CRST_THETA3_A",
     "theta0_cross_3": "CRST_THETA3_T0",
     "delta_theta_star_cross_3": "CRST_THETA3_TS",
     "b_cross_3": "CRST_THETA3_B",
     "delta_theta_cross_3_c": "CRST_THETA3_TC",
-    # f4(theta_4) + f4(pi - theta_4)
+    # func f4(theta_4) + f4(pi - theta_4)
     "a_cross_4": "CRST_THETA4_A",
     "theta0_cross_4": "CRST_THETA4_T0",
     "delta_theta_star_cross_4": "CRST_THETA4_TS",
     "b_cross_4": "CRST_THETA4_B",
     "delta_theta_cross_4_c": "CRST_THETA4_TC",
-    # f4(theta_7) + f4(pi - theta_7)
+    # func f4(theta_7) + f4(pi - theta_7)
     "a_cross_7": "CRST_THETA7_A",
     "theta0_cross_7": "CRST_THETA7_T0",
     "delta_theta_star_cross_7": "CRST_THETA7_TS",
     "b_cross_7": "CRST_THETA7_B",
     "delta_theta_cross_7_c": "CRST_THETA7_TC",
-    # f4(theta_8) + f4(pi - theta_8)
+    # func f4(theta_8) + f4(pi - theta_8)
     "a_cross_8": "CRST_THETA8_A",
     "theta0_cross_8": "CRST_THETA8_T0",
     "delta_theta_star_cross_8": "CRST_THETA8_TS",
     "b_cross_8": "CRST_THETA8_B",
     "delta_theta_cross_8_c": "CRST_THETA8_TC",
     # coaxial_stacking
-    # f2(dr_coax)
+    # func f2(dr_coax)
     "k_coax": "CXST_K_OXDNA",
     "dr0_coax": "CXST_R0",
     "dr_c_coax": "CXST_RC",
@@ -184,41 +184,43 @@ DEFAULT_OXDNA_VARIABLE_MAPPER = {
     "dr_c_low_coax": "CXST_RCLOW",
     "b_high_coax": "CXST_BHIGH",
     "dr_c_high_coax": "CXST_RCHIGH",
-    # f4(theta_1) + f4(2*pi - theta_1)
+    # func f4(theta_1) + f4(2*pi - theta_1)
     "a_coax_1": "CXST_THETA1_A",
     "theta0_coax_1": "CXST_THETA1_T0_OXDNA",
     "delta_theta_star_coax_1": "CXST_THETA1_TS",
     "b_coax_1": "CXST_THETA1_B",
     "delta_theta_coax_1_c": "CXST_THETA1_TC",
-    # f4(theta_4)
+    # func f4(theta_4)
     "a_coax_4": "CXST_THETA4_A",
     "theta0_coax_4": "CXST_THETA4_T0",
     "delta_theta_star_coax_4": "CXST_THETA4_TS",
     "b_coax_4": "CXST_THETA4_B",
     "delta_theta_coax_4_c": "CXST_THETA4_TC",
-    # f4(theta_5) + f4(pi - theta_5)
+    # func f4(theta_5) + f4(pi - theta_5)
     "a_coax_5": "CXST_THETA5_A",
     "theta0_coax_5": "CXST_THETA5_T0",
     "delta_theta_star_coax_5": "CXST_THETA5_TS",
     "b_coax_5": "CXST_THETA5_B",
     "delta_theta_coax_5_c": "CXST_THETA5_TC",
-    # f4(theta_6) + f4(pi - theta_6)
+    # func f4(theta_6) + f4(pi - theta_6)
     "a_coax_6": "CXST_THETA6_A",
     "theta0_coax_6": "CXST_THETA6_T0",
     "delta_theta_star_coax_6": "CXST_THETA6_TS",
     "b_coax_6": "CXST_THETA6_B",
     "delta_theta_coax_6_c": "CXST_THETA6_TC",
-    # f5(cos(phi3))
+    # func f5(cos(phi3))
     "a_coax_3p": "CXST_PHI3_A",
     "cos_phi3_star_coax": "CXST_PHI3_XS",
     "b_cos_phi3_coax": "CXST_PHI3_B",
     "cos_phi3_c_coax": "CXST_PHI3_XC",
-    # f5(cos(phi4))
+    # func f5(cos(phi4))
     "a_coax_4p": "CXST_PHI4_A",
     "cos_phi4_star_coax": "CXST_PHI4_XS",
     "b_cos_phi4_coax": "CXST_PHI4_B",
     "cos_phi4_c_coax": "CXST_PHI4_XC",
 }
+
+MIN_VALID_HEADER_TOKEN_COUNT = 3
 
 
 def read_src_h(src_h: Path) -> dict[str, tuple[oxDNAModelHType, int | float | str]]:
@@ -238,12 +240,12 @@ def read_src_h(src_h: Path) -> dict[str, tuple[oxDNAModelHType, int | float | st
                 # #define CXST_T5_MESH_POINTS 6   // perfetto
 
                 parts = line.split()
-                if len(parts) >= 3:
+                if len(parts) >= MIN_VALID_HEADER_TOKEN_COUNT:
                     var_name = parts[1]
                     # some values are mutipart and some have comments
                     var_value = " ".join(parts[2:]).split("//")[0].strip()
 
-                    for t, e in zip(ts, es):
+                    for t, e in zip(ts, es, strict=True):
                         try:
                             if t is float:
                                 tmp_value = var_value.replace("f", "").lower()
@@ -272,7 +274,7 @@ def write_src_h(src_h: Path, params: dict[str, tuple[oxDNAModelHType, int | floa
                 [
                     "/**",
                     " * @file model.h",
-                    f" * @date {datetime.datetime.now().strftime('%b %d, %Y')}",
+                    f" * @date {datetime.datetime.now(tz=datetime.UTC).strftime('%b %d, %Y')}",
                     " * @author fromano -- modified by jax_dna",
                     " */",
                     "",

@@ -101,15 +101,15 @@ def from_oxdna_file(path: typ.PathOrStr) -> Topology:
     return parse_f(lines)
 
 
-def _determine_oxdna_format(first_line: str) -> tuple[typ.OxdnaFormat, Callable[[list[str]], Topology]]:
+def _determine_oxdna_format(first_line: str) -> tuple[typ.oxDNAFormat, Callable[[list[str]], Topology]]:
     """Determine the format of an oxDNA file from the first line of the file."""
     tokens = first_line.strip().split()
 
     if len(tokens) == N_1ST_LINE_OXDNA_CLASSIC:
-        fmt = typ.OxdnaFormat.CLASSIC
+        fmt = typ.oxDNAFormat.CLASSIC
         func = _from_file_oxdna_classic
     elif len(tokens) == N_1ST_LINE_OXDNA_NEW:
-        fmt = typ.OxdnaFormat.NEW
+        fmt = typ.oxDNAFormat.NEW
         func = _from_file_oxdna_new
     else:
         raise ValueError(ERR_INVALID_OXDNA_FORMAT)

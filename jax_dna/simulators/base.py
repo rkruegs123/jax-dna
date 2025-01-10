@@ -1,7 +1,5 @@
 """Base class for a simulation."""
 
-import chex
-
 import jax_dna.simulators.io as jd_sio
 
 

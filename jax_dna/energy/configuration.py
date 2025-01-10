@@ -83,7 +83,6 @@ class BaseConfiguration:
         exclude_non_optimizable: bool,
     ) -> dict[str, jdt.ARR_OR_SCALAR]:
         """Converts the configuration to a dictionary."""
-
         params = {k: getattr(self, k) for k in self.required_params}
 
         if include_dependent:

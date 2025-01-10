@@ -1,5 +1,6 @@
 
 import functools
+import logging
 import os
 from pathlib import Path
 import typing
@@ -8,6 +9,7 @@ import jax.numpy as jnp
 import jax_md
 import optax
 import ray
+from tqdm import tqdm
 
 import jax_dna.energy as jdna_energy
 import jax_dna.energy.dna1 as dna1_energy
@@ -24,6 +26,15 @@ from jax_dna.input import topology, trajectory
 
 jax.config.update("jax_enable_x64", True)
 
+logging.basicConfig(level=logging.DEBUG, filename="opt.log", filemode="w")
+
+objective_logging_config = {
+    "level":logging.DEBUG,
+    "filename":"objective.log",
+    "filemode":"w",
+}
+simulator_logging_config = objective_logging_config | {"filename": "simulator.log"}
+
 class MockLogger:
     def log_metric(self, name:str, value:float, step:int):
         with open("loss.txt", "a") as f:
@@ -39,7 +50,7 @@ def tree_mean(trees:tuple[jdna_types.PyTree]) -> jdna_types.PyTree:
 
 
 def main():
-    logger = MockLogger()
+    mock_logger = MockLogger()
 
     ray.init(
         ignore_reinit_error=True,
@@ -48,7 +59,6 @@ def main():
             "env_vars": {
                 "JAX_ENABLE_X64": "True",
                 "JAX_PLATFORM_NAME": "cpu",
-                # "RAY_DEBUG": "legacy",
             }
         }
     )
@@ -100,6 +110,7 @@ def main():
         sim_type=jdna_types.oxDNASimulatorType.DNA1,
         energy_configs=energy_configs,
         n_build_threads=4,
+        logger_config=simulator_logging_config,
     )
 
     cwd = Path(os.getcwd())
@@ -154,7 +165,7 @@ def main():
     propeller_twist_objective = jdna_objective.DiffTReObjectiveActor.remote(
         required_observables = [obs_trajectory],
         needed_observables = [obs_trajectory],
-        logging_observables = ["loss", "prop_twist"],
+        logging_observables = ["loss", "prop_twist", "neff"],
         grad_or_loss_fn = prop_twist_loss_fn,
         energy_fn_builder = energy_fn_builder,
         opt_params = opt_params,
@@ -175,20 +186,18 @@ def main():
     )
 
 
-    for i in range(optimization_config["n_steps"]):
-        print("Step", i, "Starting")
+    for i in tqdm(range(optimization_config["n_steps"]), desc="Optimizing"):
         opt_state, opt_params = opt.step(opt_params)
 
         for objective in opt.objectives:
             log_values = ray.get(objective.logging_observables.remote())
             for (name, value) in log_values:
-                logger.log_metric(name, value, step=i)
+                mock_logger.log_metric(name, value, step=i)
 
         opt = opt.post_step(
             optimizer_state=opt_state,
             opt_params=opt_params,
         )
-        print("Step", i, "Completed")
 
 
 if __name__ == "__main__":

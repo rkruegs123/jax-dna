@@ -5,6 +5,7 @@ import shutil
 import uuid
 from pathlib import Path
 
+import jax_dna.utils.types as typ
 import pytest
 from jax_dna.simulators import oxdna
 
@@ -41,7 +42,11 @@ def tear_down_test_dir(test_dir: str):
 def test_oxdna_init():
     """Test the oxDNA simulator initialization."""
     test_dir = setup_test_dir()
-    sim = oxdna.oxDNASimulator(input_dir=test_dir)
+    sim = oxdna.oxDNASimulator(
+        input_dir=test_dir,
+        sim_type=typ.oxDNASimulatorType.DNA1,
+        energy_configs=[],
+    )
     tear_down_test_dir(test_dir)
     assert str(sim["input_dir"]) == str(test_dir)
 
@@ -49,7 +54,11 @@ def test_oxdna_init():
 def test_oxdna_run_raises_fnf():
     """Test that the oxDNA simulator raises FileNotFoundError."""
     test_dir = setup_test_dir(add_input=False)
-    sim = oxdna.oxDNASimulator(input_dir=test_dir)
+    sim = oxdna.oxDNASimulator(
+        input_dir=test_dir,
+        sim_type=typ.oxDNASimulatorType.DNA1,
+        energy_configs=[],
+    )
     with pytest.raises(FileNotFoundError, match=oxdna.ERR_INPUT_FILE_NOT_FOUND[:10]):
         sim.run()
     tear_down_test_dir(test_dir)
@@ -58,7 +67,11 @@ def test_oxdna_run_raises_fnf():
 def test_oxdna_run_raises_bin_path_not_set():
     """Test that the oxDNA simulator raises ValueError."""
     test_dir = setup_test_dir()
-    sim = oxdna.oxDNASimulator(input_dir=test_dir)
+    sim = oxdna.oxDNASimulator(
+        input_dir=test_dir,
+        sim_type=typ.oxDNASimulatorType.DNA1,
+        energy_configs=[],
+    )
     with pytest.raises(ValueError, match=oxdna.ERR_BIN_PATH_NOT_SET[:10]):
         sim.run()
     tear_down_test_dir(test_dir)
@@ -68,9 +81,13 @@ def test_oxdna_run():
     """Test the oxDNA simulator run function."""
     os.environ[oxdna.BIN_PATH_ENV_VAR] = "echo"
     test_dir = setup_test_dir()
-    sim = oxdna.oxDNASimulator(input_dir=test_dir)
+    sim = oxdna.oxDNASimulator(
+        input_dir=test_dir,
+        sim_type=typ.oxDNASimulatorType.DNA1,
+        energy_configs=[],
+    )
     sim.run()
-    with (test_dir / "oxdna.log").open() as f:
+    with (test_dir / "oxdna.out.log").open() as f:
         assert f.read() == "input\n"
     tear_down_test_dir(test_dir)
     del os.environ[oxdna.BIN_PATH_ENV_VAR]

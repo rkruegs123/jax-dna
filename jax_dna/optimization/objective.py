@@ -1,5 +1,7 @@
 """Objectives implemented as ray actors."""
 
+import logging
+import types
 import typing
 from collections.abc import Callable
 
@@ -18,6 +20,7 @@ ERR_MISSING_ARG = "Missing required argument: {missing_arg}."
 ERR_OBJECTIVE_NOT_READY = "Not all required observables have been obtained."
 
 EnergyFn = jdna_energy.base.BaseEnergyFunction | jdna_energy.base.ComposedEnergyFunction
+empty_dict = types.MappingProxyType({})
 
 
 class Objective:
@@ -29,6 +32,7 @@ class Objective:
         needed_observables: list[str],
         logging_observables: list[str],
         grad_or_loss_fn: typing.Callable[[tuple[str, ...]], jdna_types.Grads],
+        logger_config: dict[str, typing.Any] = empty_dict,
     ) -> "Objective":
         """Initialize the objective.
 
@@ -41,6 +45,7 @@ class Objective:
                 logging.
             grad_or_loss_fn (typing.Callable[[tuple[str, ...]], jdna_types.Grads]):
                 The function that calculates the loss of the objective
+            logger_config (dict[str, typing.Any]): The configuration for the logger.
         """
         if required_observables is None:
             raise ValueError(ERR_MISSING_ARG.format(missing_arg="required_observables"))
@@ -56,6 +61,8 @@ class Objective:
         self._grad_or_loss_fn = grad_or_loss_fn
         self._obtained_observables = []
         self._logging_observables = logging_observables
+        logging.basicConfig(**logger_config)
+        self._logger = logging.getLogger(__name__)
 
     def required_observables(self) -> list[str]:
         """Return the observables that are required to calculate the gradients."""
@@ -168,9 +175,6 @@ def compute_loss(
 ) -> tuple[float, tuple[float, jnp.ndarray]]:
     """Compute the grads, loss, and auxiliary values.
 
-    Note this function is decorated with jax.value_and_grad to compute the
-    gradients of the loss function.
-
     Args:
         opt_params: The optimization parameters.
         energy_fn_builder: A function that builds the energy function.
@@ -212,6 +216,7 @@ class DiffTReObjective(Objective):
         beta: float,
         n_equilibration_steps: int,
         min_n_eff_factor: float = 0.95,
+        logging_config: dict[str, typing.Any] = empty_dict,
     ) -> "DiffTReObjective":
         """Initialize the DiffTRe objective.
 
@@ -226,12 +231,14 @@ class DiffTReObjective(Objective):
             beta: The inverse temperature.
             n_equilibration_steps: The number of equilibration steps.
             min_n_eff_factor: The minimum normalized effective sample size.
+            logging_config: The configuration for the logger.
         """
         super().__init__(
             required_observables,
             needed_observables,
             logging_observables,
             grad_or_loss_fn,
+            logger_config=logging_config,
         )
         if energy_fn_builder is None:
             raise ValueError(ERR_MISSING_ARG.format(missing_arg="energy_fn_builder"))
@@ -259,8 +266,9 @@ class DiffTReObjective(Objective):
         if not self.is_ready():
             raise ValueError(ERR_OBJECTIVE_NOT_READY)
 
+        # want the required observables in the order they are requested
         sorted_obtained_observables = sorted(
-            self._obtained_observables,
+            filter(lambda x: x[0] in self._required_observables, self._obtained_observables),
             key=lambda x: self._required_observables.index(x[0]),
         )
         sorted_obs = [x[1] for x in sorted_obtained_observables]
@@ -275,8 +283,10 @@ class DiffTReObjective(Objective):
         )
         self._reference_energies = new_energies
 
+        latest_neff = next(obs for obs in self._obtained_observables if obs[0] == "neff")
         self._obtained_observables = [
             ("loss", loss),
+            latest_neff,
             measured_value,
             *list(zip(self._required_observables, sorted_obs, strict=True)),
         ]
@@ -287,12 +297,7 @@ class DiffTReObjective(Objective):
     def is_ready(self) -> bool:
         have_trajectory = super().is_ready()
         if have_trajectory:
-            sorted_obtained_observables = sorted(
-                self._obtained_observables,
-                key=lambda x: self._required_observables.index(x[0]),
-            )
-            sorted_obs = [x[1] for x in sorted_obtained_observables]
-            new_trajectory = sorted_obs[0]
+            new_trajectory = next(filter(lambda x: x[0] == self._trajectory_key, self._obtained_observables))[1]
 
             if self._reference_states is None:
                 self._reference_states = new_trajectory.slice(
@@ -305,8 +310,13 @@ class DiffTReObjective(Objective):
                 new_energies=self._energy_fn_builder(self._opt_params)(self._reference_states),
                 ref_energies=self._reference_energies,
             )
-            with open("neff.txt", "a") as f:
-                print("Neff", neff, file=f)
+
+            if any(obs[0] == "neff" for obs in self._obtained_observables):
+                self._obtained_observables = [
+                    (obs[0], neff) if obs[0] == "neff" else obs for obs in self._obtained_observables
+                ]
+            else:
+                self._obtained_observables.append(("neff", neff))
 
             # if the trajectory is no longer valid remove it form obtained
             # and add it to needed so that a new trajectory is run.
@@ -325,6 +335,8 @@ class DiffTReObjective(Objective):
         self,
         opt_params: jdna_types.Params,
     ) -> None:
+        # DiffTre objectives may not need to update the trajectory depending on neff
+        # the need for a new trajectory is checked in `is_ready`
         self._obtained_observables = list(filter(lambda x: x[0] == self._trajectory_key, self._obtained_observables))
         self._opt_params = opt_params
 

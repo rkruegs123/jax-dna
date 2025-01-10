@@ -86,6 +86,7 @@ class Optimization:
         need_observables = list(
             itertools.chain.from_iterable(get_fn([co.needed_observables.remote() for co in not_ready_objectives]))
         )
+
         needed_simulators = [
             sim for sim in self.simulators if set(get_fn(sim.exposes.remote())) & set(need_observables)
         ]
