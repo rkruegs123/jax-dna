@@ -11,6 +11,7 @@ import jax_dna.utils.types as jd_types
 from jax_dna.utils.types import oxDNAModelHType
 
 ERR_CANNOT_PROCESS_SRC_H = "Cannot process src/model.h file. Failed parsing: {}"
+ERR_INVALID_HEADER_TYPE = "Invalid header value variable {} with value {}."
 
 SYMPY_EVAL_N: int = 32
 
@@ -223,11 +224,37 @@ DEFAULT_OXDNA_VARIABLE_MAPPER = {
 MIN_VALID_HEADER_TOKEN_COUNT = 3
 
 
-def read_src_h(src_h: Path) -> dict[str, tuple[oxDNAModelHType, int | float | str]]:
+def _parse_value_in(value: str) -> int | float | str:
+    for t in (int, float):
+        try:
+            if t is float:
+                tmp_value = value.replace("f", "").lower()
+                parsed = float(sympy.parse_expr(tmp_value).evalf(n=SYMPY_EVAL_N))
+            else:
+                parsed = t(value)
+        except (AttributeError, ValueError, SyntaxError, TypeError):
+            continue
+        else:
+            return parsed
+
+    return value
+
+
+def _parse_value_out(value: int | float | str) -> str:  # noqa: PYI041 -- this is documentation specific
+    if isinstance(value, int):
+        parsed_value = str(value)
+    elif isinstance(value, float):
+        parsed_value = f"{value}f"
+    elif isinstance(value, str):
+        parsed_value = value
+    else:
+        raise TypeError(ERR_INVALID_HEADER_TYPE.format("value", value))
+    return parsed_value
+
+
+def read_src_h(src_h: Path) -> dict[str, int | float | str]:
     """Parse the src/model.h file to get the parameters."""
     params = {}
-    ts = (int, float, str)
-    es = (oxDNAModelHType.INTEGER, oxDNAModelHType.FLOAT, oxDNAModelHType.STRING)
     with src_h.open("r") as f:
         for line in f:
             # this is a variable
@@ -240,26 +267,11 @@ def read_src_h(src_h: Path) -> dict[str, tuple[oxDNAModelHType, int | float | st
                 # #define CXST_T5_MESH_POINTS 6   // perfetto
 
                 parts = line.split()
-                if len(parts) >= MIN_VALID_HEADER_TOKEN_COUNT:
-                    var_name = parts[1]
-                    # some values are mutipart and some have comments
-                    var_value = " ".join(parts[2:]).split("//")[0].strip()
-
-                    for t, e in zip(ts, es, strict=True):
-                        try:
-                            if t is float:
-                                tmp_value = var_value.replace("f", "").lower()
-                                value = float(sympy.parse_expr(tmp_value).evalf(n=SYMPY_EVAL_N))
-                            else:
-                                value = t(var_value)
-                        except (ValueError, SyntaxError, TypeError):
-                            continue
-                        else:
-                            params[var_name] = (e, value)
-                            break
-                    else:
-                        raise ValueError(ERR_CANNOT_PROCESS_SRC_H.format(line))
-
+                if (
+                    len(parts) >= MIN_VALID_HEADER_TOKEN_COUNT
+                    and (var_value := _parse_value_in(" ".join(parts[2:]).split("//")[0].strip())) is not None
+                ):
+                    params[parts[1]] = var_value
                 else:
                     raise ValueError(ERR_CANNOT_PROCESS_SRC_H.format(line))
 
@@ -285,17 +297,11 @@ def write_src_h(src_h: Path, params: dict[str, tuple[oxDNAModelHType, int | floa
         )
 
         for key, value in params.items():
-            if value[0] == oxDNAModelHType.INTEGER:
-                # Need to check with rkrueger if this is correct
-                parsed_value = round(value[1])
-            elif value[0] == oxDNAModelHType.FLOAT:
-                parsed_value = f"{value[1]}f"
-            elif value[0] == oxDNAModelHType.STRING:
-                parsed_value = value[1]
+            parsed_value = _parse_value_out(value)
 
             f.write(f"#define {key} {parsed_value}\n")
             if key == "FENE_DELTA":
-                f.write(f"#define FENE_DELTA2 {value[1]**2}f\n")
+                f.write(f"#define FENE_DELTA2 {value**2}f\n")
 
         f.write("#endif /* MODEL_H_ */\n")
 
@@ -307,8 +313,7 @@ def update_params(src_h: Path, new_params: list[jd_types.Params]) -> None:
     for np in filter(lambda k: k in DEFAULT_OXDNA_VARIABLE_MAPPER, flattened_params):
         mapped_name = DEFAULT_OXDNA_VARIABLE_MAPPER[np]
         if mapped_name in params:
-            # preserve the enum and get the new value
-            params[mapped_name] = (params[mapped_name][0], flattened_params[np])
+            params[mapped_name] = flattened_params[np]
         else:
             raise ValueError(f"Parameter {np} not found in src/model.h")
 
