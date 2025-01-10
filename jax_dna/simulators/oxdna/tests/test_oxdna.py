@@ -15,7 +15,7 @@ file_dir = Path(os.path.realpath(__file__)).parent
 def test_guess_binary_location() -> None:
     """tests the guess_binary_location function."""
 
-    assert oxdna._guess_binary_location("echo", "OXDNA_BIN_PATH") is not None
+    assert oxdna._guess_binary_location("bash", "OXDNA_BIN_PATH") is not None
     assert oxdna._guess_binary_location("zamboomafoo", "MAKE_BIN_PATH") is None
 
 
