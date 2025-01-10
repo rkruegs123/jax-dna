@@ -275,10 +275,15 @@ def single_jax(body, offset, petrs_way=True):
 
             return (small_groove, big_groove, n_local_s1_mins, n_local_s2_mins), None
         (small_groove, big_groove, _, _), _ = lax.scan(detect_grooves, (0, 0, 0, 0), jnp.arange(n_distances-2))
-        return small_groove, big_groove
+
+        small_groove_is_valid = (small_groove != 0)
+        big_groove_is_valid = (big_groove != 0)
+
+        return small_groove, big_groove, small_groove_is_valid, big_groove_is_valid
 
 
 
+    """
     all_small_grooves = list()
     all_big_grooves = list()
 
@@ -287,10 +292,7 @@ def single_jax(body, offset, petrs_way=True):
 
     for j in range(offset, n_bp-offset-2):
 
-        small_groove, big_groove = get_major_minor_grooves(j)
-
-        small_groove_is_valid = (small_groove != 0)
-        big_groove_is_valid = (big_groove != 0)
+        small_groove, big_groove, small_groove_is_valid, big_groove_is_valid = get_major_minor_grooves(j)
 
         all_small_grooves.append(small_groove)
         all_big_grooves.append(big_groove)
@@ -300,7 +302,7 @@ def single_jax(body, offset, petrs_way=True):
 
     return onp.array(all_small_grooves), onp.array(all_big_grooves), \
         onp.array(valid_small_grooves), onp.array(valid_big_grooves)
-
+    """
 
 
     """
@@ -320,6 +322,10 @@ def single_jax(body, offset, petrs_way=True):
 
     return all_small_grooves, all_big_grooves
     """
+
+
+    all_small_grooves, all_big_grooves, valid_small_grooves, valid_big_grooves = vmap(get_major_minor_grooves)(jnp.arange(offset, n_bp-offset-2))
+    return all_small_grooves, all_big_grooves, valid_small_grooves.astype(jnp.int32), valid_big_grooves.astype(jnp.int32)
 
 
 
