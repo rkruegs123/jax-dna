@@ -97,6 +97,49 @@ def calculate_groove_distance(back_sites, nucA_id, nucB_id):
     return min(candidate_distance)
 
 
+
+def calculate_groove_distance_jax(back_sites, nucA_id, nucB_id):
+    n = back_sites.shape[0]
+    n_bp = n // 2
+    pos_back_A = back_sites[nucA_id]
+    if nucB_id - 1 >= 0:
+        pos_back_B_left = back_sites[n_bp+nucB_id-1]
+    else:
+        pos_back_B_left = None
+    if nucB_id + 1 < n_bp:
+        pos_back_B_right = back_sites[n_bp+nucB_id+1]
+    else:
+        pos_back_B_right = None
+
+    pos_back_B1 = back_sites[n_bp+nucB_id]
+
+    candidate_distance = []
+
+    if not (pos_back_B_left is None):
+        plane_norm = pos_back_B1 - pos_back_B_left
+        plane_norm = plane_norm / onp.linalg.norm(plane_norm)
+        val_B = onp.dot(plane_norm, pos_back_A)
+        t = val_B - onp.dot(pos_back_B1,plane_norm)
+        if t > 0 or abs(t) > onp.linalg.norm(pos_back_B1 - pos_back_B_left):
+            t = 0
+            intersection_point = pos_back_B1
+        else:
+            intersection_point = pos_back_B1 + t * plane_norm
+        candidate_distance.append(onp.linalg.norm(intersection_point - pos_back_A))
+    if not (pos_back_B_right is None):
+        plane_norm = pos_back_B1 - pos_back_B_right
+        plane_norm = plane_norm / onp.linalg.norm(plane_norm)
+        val_B = onp.dot(plane_norm, pos_back_A)
+        t = val_B - onp.dot(pos_back_B1, plane_norm)
+        if t > 0 or abs(t) > onp.linalg.norm(pos_back_B1 - pos_back_B_right):
+            t = 0
+            intersection_point = pos_back_B1
+        else:
+            intersection_point = pos_back_B1 + t * plane_norm
+        candidate_distance.append(onp.linalg.norm(intersection_point - pos_back_A))
+
+    return min(candidate_distance)
+
 def single(body, offset):
     n_bp = body.center.shape[0] // 2
     back_sites, stack_sites, base_sites = get_site_positions(body)
@@ -148,6 +191,83 @@ def single(body, offset):
 
 
 
+def single_jax(body, offset):
+    n_bp = body.center.shape[0] // 2
+    back_sites, stack_sites, base_sites = get_site_positions(body)
+
+    all_small_grooves = list()
+    all_big_grooves = list()
+
+    n_valid_small_grooves = 0
+    n_valid_big_grooves = 0
+    small_groove_sm = 0.0
+    big_groove_sm = 0.0
+
+
+    for j in range(offset, n_bp-offset-2):
+
+        # Compute mmgrooves_for_nuc(body, j, 0)
+        A_bpos = back_sites[j]
+
+        a_dist_fn = lambda strand2_idx: space.distance(displacement_fn(A_bpos, back_sites[strand2_idx]))
+        distances = vmap(a_dist_fn)(jnp.arange(n_bp, 2*n_bp))
+        distances = onp.array(distances)
+
+        """
+        distances = list()
+        for strand2_idx in range(n_bp, 2*n_bp):
+            B_bpos = back_sites[strand2_idx]
+            dist = space.distance(displacement_fn(A_bpos, B_bpos))
+            distances.append(dist)
+        """
+
+        local_max = list()
+        local_mins = list()
+        better_l_mins = list()
+
+        for i in range(len(distances)-2):
+            if distances[i+1] < distances[i] and distances[i+1] < distances[i+2]:
+                local_mins.append([i+1, distances[i+1]])
+                better_l_mins.append([i+1, calculate_groove_distance_jax(back_sites, j, i+1)])
+            elif distances[i+1] > distances[i] and distances[i+1] > distances[i+2]:
+                local_max.append([i+1, distances[i+1]])
+
+        opposite = -j - 1 + n_bp
+
+
+        grooves = [0, 0]
+        for i, val in better_l_mins:
+            if i < opposite:
+                grooves[0] = val
+            else:
+                grooves[1] = val
+        if len(local_mins) > 2:
+            print('Detected more than 2 local mins....?')
+            grooves[0] = grooves[1] = 0
+
+        gr = deepcopy(grooves)
+        if(gr[0] > 0): # TODO: can mask for this
+            all_small_grooves.append(gr[0])
+        if(gr[1] > 0): # TODO: can mask for this
+            all_big_grooves.append(gr[1])
+
+        """
+        gr = jnp.array(gr)
+        n_valid_small_grooves += jnp.where(gr[0] > 0, 1, 0)
+        small_groove_sm += jnp.where(gr[0] > 0, gr[0], 0)
+
+        n_valid_big_grooves += jnp.where(gr[1] > 0, 1, 0)
+        big_groove_sm += jnp.where(gr[1] > 0, gr[1], 0)
+        """
+
+
+    # avg_small_groove = small_groove_sm / n_valid_small_grooves
+    # avg_big_groove = big_groove_sm / n_valid_big_grooves
+
+    # return avg_small_groove, avg_big_groove
+    return all_small_grooves, all_big_grooves
+
+
 
 
 def run():
@@ -174,6 +294,7 @@ def run():
     n_traj_states = len(traj_states)
 
     all_small_grooves, all_big_grooves = list(), list()
+    all_small_grooves_jax, all_big_grooves_jax = list(), list()
     for idx in tqdm(range(n_traj_states)):
         body = traj_states[idx]
         idx_small_grooves, idx_big_grooves = single(body, offset)
@@ -182,6 +303,10 @@ def run():
         all_small_grooves += idx_small_grooves
         # all_big_grooves.append(idx_big_grooves)
         all_big_grooves += idx_big_grooves
+
+        idx_small_grooves_jax, idx_big_grooves_jax = single_jax(body, offset)
+        all_small_grooves_jax += idx_small_grooves_jax
+        all_big_grooves_jax += idx_big_grooves_jax
 
 
     print('#Small_groove (+/- std) big_groove (+/- std)')
@@ -192,6 +317,15 @@ def run():
     print(f"{small_mean} {small_std} {big_mean} {big_std}")
     scale = 8.518
     print(f"{scale*(small_mean-0.7)} {scale*small_std} {scale*(big_mean-0.7)} {scale*big_std}")
+
+
+    small_mean_jax = onp.mean(all_small_grooves_jax)
+    small_std_jax = onp.std(all_small_grooves_jax)
+    big_mean_jax = onp.mean(all_big_grooves_jax)
+    big_std_jax = onp.std(all_big_grooves_jax)
+    print(f"{scale*(small_mean_jax-0.7)} {scale*small_std_jax} {scale*(big_mean_jax-0.7)} {scale*big_std_jax}")
+
+
 
 
 
