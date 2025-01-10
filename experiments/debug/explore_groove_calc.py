@@ -220,24 +220,14 @@ def single_jax(body, offset):
         distances = vmap(a_dist_fn)(jnp.arange(n_bp, 2*n_bp))
         distances = onp.array(distances)
 
-        """
-        distances = list()
-        for strand2_idx in range(n_bp, 2*n_bp):
-            B_bpos = back_sites[strand2_idx]
-            dist = space.distance(displacement_fn(A_bpos, B_bpos))
-            distances.append(dist)
-        """
 
-        local_max = list()
-        local_mins = list()
+        n_local_mins = 0
         better_l_mins = list()
 
         for i in range(len(distances)-2):
             if distances[i+1] < distances[i] and distances[i+1] < distances[i+2]:
-                local_mins.append([i+1, distances[i+1]])
+                n_local_mins += 1
                 better_l_mins.append([i+1, calculate_groove_distance_jax(back_sites, j, i+1)])
-            elif distances[i+1] > distances[i] and distances[i+1] > distances[i+2]:
-                local_max.append([i+1, distances[i+1]])
 
         opposite = -j - 1 + n_bp
 
@@ -248,7 +238,7 @@ def single_jax(body, offset):
                 grooves[0] = val
             else:
                 grooves[1] = val
-        if len(local_mins) > 2:
+        if n_local_mins > 2:
             print('Detected more than 2 local mins....?')
             grooves[0] = grooves[1] = 0
 
