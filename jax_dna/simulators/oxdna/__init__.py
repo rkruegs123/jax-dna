@@ -8,6 +8,7 @@ from jax_dna.simulators.oxdna.oxdna import (
     ERR_BUILD_SETUP_FAILED,
     ERR_INPUT_FILE_NOT_FOUND,
     ERR_MISSING_REQUIRED_KEYS,
+    _guess_binary_location,
     oxDNASimulator,
 )
 
@@ -20,4 +21,5 @@ __all__ = [
     "ERR_BUILD_SETUP_FAILED",
     "ERR_INPUT_FILE_NOT_FOUND",
     "ERR_MISSING_REQUIRED_KEYS",
+    "_guess_binary_location",
 ]

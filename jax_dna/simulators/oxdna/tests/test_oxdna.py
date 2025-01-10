@@ -12,6 +12,13 @@ from jax_dna.simulators import oxdna
 file_dir = Path(os.path.realpath(__file__)).parent
 
 
+def test_guess_binary_location() -> None:
+    """tests the guess_binary_location function."""
+
+    assert oxdna._guess_binary_location("echo", "OXDNA_BIN_PATH") is not None
+    assert oxdna._guess_binary_location("zamboomafoo", "MAKE_BIN_PATH") is None
+
+
 def setup_test_dir(add_input: bool = True):  # noqa: FBT001,FBT002
     """Setup the test directory."""
     test_dir = file_dir / f"test_data/{uuid.uuid4()}"
@@ -91,3 +98,7 @@ def test_oxdna_run():
         assert f.read() == "input\n"
     tear_down_test_dir(test_dir)
     del os.environ[oxdna.BIN_PATH_ENV_VAR]
+
+
+if __name__ == "__main__":
+    test_guess_binary_location()

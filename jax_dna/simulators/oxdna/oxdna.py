@@ -56,7 +56,7 @@ logger = logging.getLogger(__name__)
 
 
 # We do not force the user the set this because they may not be recompiling oxDNA
-def guess_binary_location(bin_name: str, env_var: str) -> Path | None:
+def _guess_binary_location(bin_name: str, env_var: str) -> Path | None:
     """Guess the location of a binary."""
     for guess in CMAKE_MAKE_BIN_LOC_GUESSES:
         path = Path(guess.format(bin_name))
@@ -68,8 +68,8 @@ def guess_binary_location(bin_name: str, env_var: str) -> Path | None:
     return os.environ.get(env_var, None)
 
 
-cmake_bin = guess_binary_location("cmake", CMAKE_BIN_ENV_VAR)
-make_bin = guess_binary_location("make", MAKE_BIN_ENV_VAR)
+cmake_bin = _guess_binary_location("cmake", CMAKE_BIN_ENV_VAR)
+make_bin = _guess_binary_location("make", MAKE_BIN_ENV_VAR)
 
 logger.debug("cmake_bin: %s", cmake_bin)
 logger.debug("make_bin: %s", make_bin)
