@@ -205,9 +205,10 @@ def single(body, offset):
     return all_small_grooves, all_big_grooves
 
 
-
+@partial(jit, static_argnums=1)
 def single_jax(body, offset, petrs_way=True):
     n_bp = body.center.shape[0] // 2
+    # n_bp = 40
     back_sites, stack_sites, base_sites = get_site_positions(body)
 
 
