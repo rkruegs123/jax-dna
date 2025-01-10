@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import jax
 jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
-from jax import vmap, jit
+from jax import vmap, jit, lax
 from jax_md import space
 
 from jax_dna.common import utils, topology, trajectory
@@ -220,7 +220,47 @@ def single_jax(body, offset):
         distances = vmap(a_dist_fn)(jnp.arange(n_bp, 2*n_bp))
         distances = onp.array(distances)
 
+        opposite = n_bp - j - 1
 
+
+        # PARITY WITH ORIGINAL IN JAX
+
+        distances = jnp.array(distances)
+        n_distances = distances.shape[0]
+
+        def detect_grooves(carry, i):
+            small_groove, big_groove, n_local_mins = carry
+
+            strand_cond = (i+1 < opposite)
+            local_min_cond = (distances[i+1] < distances[i]) & (distances[i+1] < distances[i+2])
+            val = calculate_groove_distance_jax(back_sites, j, i+1)
+
+            n_local_mins += jnp.where(local_min_cond, 1, 0)
+
+            small_groove = jnp.where(
+                n_local_mins > 2, 0,
+                jnp.where(
+                    strand_cond & local_min_cond,
+                    val, small_groove
+                )
+            )
+
+            big_groove = jnp.where(
+                n_local_mins > 2, 0,
+                jnp.where(
+                    jnp.logical_not(strand_cond) & local_min_cond,
+                    val, big_groove
+                )
+            )
+
+            return (small_groove, big_groove, n_local_mins), None
+        (small_groove, big_groove, n_local_mins), _ = lax.scan(detect_grooves, (0, 0, 0), jnp.arange(n_distances-2))
+        grooves = [small_groove, big_groove]
+
+
+
+        # ORIGINAL
+        """
         n_local_mins = 0
         better_l_mins = list()
 
@@ -229,7 +269,6 @@ def single_jax(body, offset):
                 n_local_mins += 1
                 better_l_mins.append([i+1, calculate_groove_distance_jax(back_sites, j, i+1)])
 
-        opposite = -j - 1 + n_bp
 
 
         grooves = [0, 0]
@@ -238,9 +277,17 @@ def single_jax(body, offset):
                 grooves[0] = val
             else:
                 grooves[1] = val
+
+        # RK ADDED. Optional.
+        # if n_local_mins == 2 and (grooves[0] == 0 or grooves[1] == 0):
+        #     grooves = [0, 0]
+
         if n_local_mins > 2:
             print('Detected more than 2 local mins....?')
             grooves[0] = grooves[1] = 0
+        """
+
+
 
         gr = deepcopy(grooves)
         if(gr[0] > 0): # TODO: can mask for this
@@ -248,20 +295,6 @@ def single_jax(body, offset):
         if(gr[1] > 0): # TODO: can mask for this
             all_big_grooves.append(gr[1])
 
-        """
-        gr = jnp.array(gr)
-        n_valid_small_grooves += jnp.where(gr[0] > 0, 1, 0)
-        small_groove_sm += jnp.where(gr[0] > 0, gr[0], 0)
-
-        n_valid_big_grooves += jnp.where(gr[1] > 0, 1, 0)
-        big_groove_sm += jnp.where(gr[1] > 0, gr[1], 0)
-        """
-
-
-    # avg_small_groove = small_groove_sm / n_valid_small_grooves
-    # avg_big_groove = big_groove_sm / n_valid_big_grooves
-
-    # return avg_small_groove, avg_big_groove
     return all_small_grooves, all_big_grooves
 
 
