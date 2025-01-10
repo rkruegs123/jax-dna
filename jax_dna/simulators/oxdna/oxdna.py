@@ -47,6 +47,7 @@ MAKE_BIN_ENV_VAR = "MAKE_BIN_PATH"
 CMAKE_BIN_ENV_VAR = "CMAKE_BIN_PATH"
 
 CMAKE_MAKE_BIN_LOC_GUESSES = [
+    "/bin/{}"
     "/usr/bin/{}",
     "/snap/bin/{}",
     r"C:\Program Files (x86)\GnuWin32\bin\{}.exe",
