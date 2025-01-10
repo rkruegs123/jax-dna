@@ -206,7 +206,7 @@ def single(body, offset):
 
 
 
-def single_jax(body, offset, petrs_way=True):
+def single_jax(body, offset, petrs_way=False):
     n_bp = body.center.shape[0] // 2
     back_sites, stack_sites, base_sites = get_site_positions(body)
 
@@ -247,22 +247,38 @@ def single_jax(body, offset, petrs_way=True):
 
             n_local_mins = n_local_s1_mins + n_local_s2_mins
 
-
-            small_groove = jnp.where(
-                n_local_mins > 2, 0,
-                jnp.where(
-                    local_min_s1_cond,
-                    val, small_groove
+            if petrs_way:
+                small_groove = jnp.where(
+                    n_local_mins > 2, 0,
+                    jnp.where(
+                        local_min_s1_cond,
+                        val, small_groove
+                    )
                 )
-            )
 
-            big_groove = jnp.where(
-                n_local_mins > 2, 0,
-                jnp.where(
-                    local_min_s2_cond,
-                    val, big_groove
+                big_groove = jnp.where(
+                    n_local_mins > 2, 0,
+                    jnp.where(
+                        local_min_s2_cond,
+                        val, big_groove
+                    )
                 )
-            )
+            else:
+                small_groove = jnp.where(
+                    n_local_s1_mins > 1, 0, # Note the inequality
+                    jnp.where(
+                        local_min_s1_cond,
+                        val, small_groove
+                    )
+                )
+
+                big_groove = jnp.where(
+                    n_local_s2_mins > 1, 0, # Note the inequality
+                    jnp.where(
+                        local_min_s2_cond,
+                        val, big_groove
+                    )
+                )
 
             return (small_groove, big_groove, n_local_s1_mins, n_local_s2_mins), None
         (small_groove, big_groove, _, _), _ = lax.scan(detect_grooves, (0, 0, 0, 0), jnp.arange(n_distances-2))
