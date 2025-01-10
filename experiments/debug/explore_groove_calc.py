@@ -206,17 +206,13 @@ def single(body, offset):
 
 
 
-def single_jax(body, offset, petrs_way=False):
+def single_jax(body, offset, petrs_way=True):
     n_bp = body.center.shape[0] // 2
     back_sites, stack_sites, base_sites = get_site_positions(body)
 
     all_small_grooves = list()
     all_big_grooves = list()
 
-    n_valid_small_grooves = 0
-    n_valid_big_grooves = 0
-    small_groove_sm = 0.0
-    big_groove_sm = 0.0
 
     @jit
     def get_major_minor_grooves(j):
