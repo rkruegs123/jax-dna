@@ -206,7 +206,7 @@ def single(body, offset):
 
 
 
-def single_jax(body, offset):
+def single_jax(body, offset, petrs_way=True):
     n_bp = body.center.shape[0] // 2
     back_sites, stack_sites, base_sites = get_site_positions(body)
 
@@ -231,18 +231,27 @@ def single_jax(body, offset):
         n_distances = distances.shape[0]
 
         def detect_grooves(carry, i):
-            small_groove, big_groove, n_local_mins = carry
+            # small_groove, big_groove, n_local_mins = carry
+            small_groove, big_groove, n_local_s1_mins, n_local_s2_mins = carry
 
             strand_cond = (i+1 < opposite)
             local_min_cond = (distances[i+1] < distances[i]) & (distances[i+1] < distances[i+2])
             val = calculate_groove_distance_jax(back_sites, j, i+1)
 
-            n_local_mins += jnp.where(local_min_cond, 1, 0)
+
+            # n_local_mins += jnp.where(local_min_cond, 1, 0)
+            local_min_s1_cond = local_min_cond & strand_cond
+            n_local_s1_mins += jnp.where(local_min_s1_cond, 1, 0)
+            local_min_s2_cond = local_min_cond & jnp.logical_not(strand_cond)
+            n_local_s2_mins += jnp.where(local_min_s2_cond, 1, 0)
+
+            n_local_mins = n_local_s1_mins + n_local_s2_mins
+
 
             small_groove = jnp.where(
                 n_local_mins > 2, 0,
                 jnp.where(
-                    strand_cond & local_min_cond,
+                    local_min_s1_cond,
                     val, small_groove
                 )
             )
@@ -250,13 +259,13 @@ def single_jax(body, offset):
             big_groove = jnp.where(
                 n_local_mins > 2, 0,
                 jnp.where(
-                    jnp.logical_not(strand_cond) & local_min_cond,
+                    local_min_s2_cond,
                     val, big_groove
                 )
             )
 
-            return (small_groove, big_groove, n_local_mins), None
-        (small_groove, big_groove, n_local_mins), _ = lax.scan(detect_grooves, (0, 0, 0), jnp.arange(n_distances-2))
+            return (small_groove, big_groove, n_local_s1_mins, n_local_s2_mins), None
+        (small_groove, big_groove, _, _), _ = lax.scan(detect_grooves, (0, 0, 0, 0), jnp.arange(n_distances-2))
         return small_groove, big_groove
 
 
