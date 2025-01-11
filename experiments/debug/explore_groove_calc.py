@@ -5,6 +5,7 @@ from copy import deepcopy
 from tqdm import tqdm
 from functools import partial
 import matplotlib.pyplot as plt
+import random
 
 import jax
 jax.config.update("jax_enable_x64", True)
@@ -314,13 +315,16 @@ def run():
     all_small_grooves, all_big_grooves = list(), list()
     all_small_grooves_jax, all_big_grooves_jax = list(), list()
 
+    all_idx_small_grooves_jax, all_idx_big_grooves_jax, all_idx_small_grooves_valid, all_idx_big_grooves_valid = list(), list(), list(), list()
+
     all_avg_small_groove_per_state = list()
     all_avg_big_groove_per_state = list()
 
-    MAX_TRAJ_STATES = 10
+    MAX_TRAJ_STATES = 1000
+    n_eval_states = min(n_traj_states, MAX_TRAJ_STATES)
 
     # for idx in tqdm(range(n_traj_states)):
-    for idx in tqdm(range(min(n_traj_states, MAX_TRAJ_STATES))):
+    for idx in tqdm(range(n_eval_states)):
         body = traj_states[idx]
         idx_small_grooves, idx_big_grooves = single(body, offset)
 
@@ -328,6 +332,10 @@ def run():
         all_big_grooves += idx_big_grooves
 
         idx_small_grooves_jax, idx_big_grooves_jax, idx_small_grooves_valid, idx_big_grooves_valid = single_jax(body, offset)
+        all_idx_small_grooves_jax.append(idx_small_grooves_jax)
+        all_idx_big_grooves_jax.append(idx_big_grooves_jax)
+        all_idx_small_grooves_valid.append(idx_small_grooves_valid)
+        all_idx_big_grooves_valid.append(idx_big_grooves_valid)
 
         all_small_grooves_jax += list(idx_small_grooves_jax[idx_small_grooves_valid.nonzero()[0]])
         all_big_grooves_jax += list(idx_big_grooves_jax[idx_big_grooves_valid.nonzero()[0]])
@@ -368,6 +376,40 @@ def run():
     print(f"\nComputed (state averages, scaled):")
     print(f"- {scale*(onp.mean(all_avg_small_groove_per_state)-0.7)}\tNA\t\t\t{scale*(onp.mean(all_avg_big_groove_per_state)-0.7)}\tNA")
 
+    # Reconstruct as expected value
+    all_idx_small_grooves_jax = jnp.array(all_idx_small_grooves_jax)
+    all_idx_big_grooves_jax = jnp.array(all_idx_big_grooves_jax)
+    all_idx_small_grooves_valid = jnp.array(all_idx_small_grooves_valid)
+    all_idx_big_grooves_valid = jnp.array(all_idx_big_grooves_valid)
+    mock_energies = jnp.array([random.uniform(-20.0, -10.0) for _ in range(n_eval_states)])
+
+    def compute_boltz(energy):
+        new_energy = energy
+        ref_energy = energy
+        kt = 1.0
+        beta = 1 / kt
+        return jnp.exp(-beta * new_energy) / jnp.exp(-beta * ref_energy)
+    state_boltzs = vmap(compute_boltz)(mock_energies)
+
+    def get_extended_state_boltzs(state_boltz, state_grooves_valid):
+        return state_boltz*state_grooves_valid
+
+    ## Small groove
+    extended_state_boltzs = vmap(get_extended_state_boltzs)(state_boltzs, all_idx_small_grooves_valid)
+    denom = extended_state_boltzs.sum()
+    extended_state_weights = extended_state_boltzs / denom
+
+    small_mean_jax = jnp.multiply(extended_state_weights, all_idx_small_grooves_jax).sum()
+
+    ## Big groove
+    extended_state_boltzs = vmap(get_extended_state_boltzs)(state_boltzs, all_idx_big_grooves_valid)
+    denom = extended_state_boltzs.sum()
+    extended_state_weights = extended_state_boltzs / denom
+
+    big_mean_jax = jnp.multiply(extended_state_weights, all_idx_big_grooves_jax).sum()
+
+    print(f"\nComputed (reconstructed via expectation, scaled):")
+    print(f"- {scale*(small_mean_jax-0.7)}\tNA\t\t\t{scale*(big_mean_jax-0.7)}\tNA")
 
 
 
