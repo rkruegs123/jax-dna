@@ -304,7 +304,8 @@ def run():
 
     ## Practice computing the local helical axis
     offset = 4
-    scale = 1
+    # scale = 1 # this isn't used, so just using this variable name for the angstrom scale.
+    scale = 8.518
 
     body = traj_states[0]
     n = body.center.shape[0]
@@ -324,6 +325,10 @@ def run():
     n_eval_states = min(n_traj_states, MAX_TRAJ_STATES)
 
     # for idx in tqdm(range(n_traj_states)):
+    compute_mean_every = 10
+    running_avg_small = list()
+    running_avg_big = list()
+    running_avg_idxs = list()
     for idx in tqdm(range(n_eval_states)):
         body = traj_states[idx]
         idx_small_grooves, idx_big_grooves = single(body, offset)
@@ -353,6 +358,22 @@ def run():
             state_mean_big_groove = idx_big_grooves_jax[idx_big_grooves_valid.nonzero()[0]].mean()
             all_avg_big_groove_per_state.append(state_mean_big_groove)
 
+        if idx % compute_mean_every == 0 and idx:
+            running_avg_idxs.append(idx)
+
+            small_mean_scaled = scale*(onp.mean(all_small_grooves)-0.7)
+            running_avg_small.append(small_mean_scaled)
+            big_mean_scaled = scale*(onp.mean(all_big_grooves)-0.7)
+            running_avg_big.append(big_mean_scaled)
+
+    plt.plot(running_avg_idxs, running_avg_small, label="Minor")
+    plt.plot(running_avg_idxs, running_avg_big, label="Major")
+    plt.xlabel("State Index")
+    plt.ylabel("Groove Width (A)")
+    plt.legend()
+    plt.show()
+    plt.close()
+
 
     print('\nSmall_groove\t(+/- std)\tbig_groove\t(+/- std)')
     small_mean = onp.mean(all_small_grooves)
@@ -361,7 +382,7 @@ def run():
     big_std = onp.std(all_big_grooves)
     print(f"\nReference (unscaled):")
     print(f"- {small_mean}\t{small_std}\t{big_mean}\t{big_std}")
-    scale = 8.518
+
     print(f"\nReference (scaled):")
     print(f"- {scale*(small_mean-0.7)}\t{scale*small_std}\t{scale*(big_mean-0.7)}\t{scale*big_std}")
 
