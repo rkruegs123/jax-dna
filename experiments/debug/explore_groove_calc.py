@@ -433,7 +433,9 @@ def run():
     print(f"- {scale*(small_mean_jax-0.7)}\tNA\t\t\t{scale*(big_mean_jax-0.7)}\tNA")
 
 
-
+    """
+    Note: the philosophy here is that we treat each valid sample as it's own "state", but assign identical weights to all valid samples that are from the same state where that weight is the weight correpsonding to the state it comes from
+    """
 
 
 if __name__ == "__main__":
