@@ -363,6 +363,7 @@ class TestRna2(unittest.TestCase):
         print(utils.bcolors.WARNING + "\nWARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file\n" + utils.bcolors.ENDC)
 
         subterm_tests = [
+            (self.test_data_basedir / "simple-helix-rna2-12bp-half-charged-ends", "sys.top", "output.dat", 296.15, 1.0, True, True),
             (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 1.0, True, False),
             (self.test_data_basedir / "simple-helix-rna2-12bp-ss", "sys.top", "output.dat", 296.15, 1.0, False, False),
             (self.test_data_basedir / "simple-coax-rna2", "generated.top", "output.dat", 296.15, 1.0, True, False),
