@@ -75,13 +75,20 @@ class EnergyModel:
         self.pos_stack_5_a2 = self.params["geometry"]["pos_stack_5_a2"]
 
 
-    def compute_subterms(self, body, seq, bonded_nbrs, unbonded_nbrs):
+    def compute_subterms(self, body, seq, bonded_nbrs, unbonded_nbrs, is_end=None):
         nn_i = bonded_nbrs[:, 0]
         nn_j = bonded_nbrs[:, 1]
 
         op_i = unbonded_nbrs[0]
         op_j = unbonded_nbrs[1]
         mask = jnp.array(op_i < body.center.shape[0], dtype=jnp.int32)
+
+        if is_end is None:
+            dh_mults = jnp.ones(op_i.shape[0])
+        else:
+            dh_mults_op_i = jnp.where(is_end[op_i], 0.5, 1.0)
+            dh_mults_op_j = jnp.where(is_end[op_j], 0.5, 1.0)
+            dh_mults = jnp.multiply(dh_mults_op_i, dh_mults_op_j)
 
         # Compute relevant variables for our potential
         Q = body.orientation
@@ -223,14 +230,16 @@ class EnergyModel:
             cond = r < self.params['debye']['r_high']
             energy = jnp.where(cond, energy_full, energy_smooth)
             return jnp.where(r < self.params['debye']['rcut'], energy, 0.0)
-        db_dg = vmap(db_term)(r_back_op)
-        db_dg = jnp.where(mask, db_dg, 0.0).sum()
+        db_dgs = vmap(db_term)(r_back_op)
+        db_dgs = jnp.where(mask, db_dgs, 0.0)
+        db_dg = jnp.dot(db_dgs, dh_mults)
+
 
         return fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg
 
 
-    def energy_fn(self, body, seq, bonded_nbrs, unbonded_nbrs):
-        dgs = self.compute_subterms(body, seq, bonded_nbrs, unbonded_nbrs)
+    def energy_fn(self, body, seq, bonded_nbrs, unbonded_nbrs, is_end=None):
+        dgs = self.compute_subterms(body, seq, bonded_nbrs, unbonded_nbrs, is_end)
         fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg = dgs
         val = fene_dg + stack_dg + exc_vol_unbonded_dg + hb_dg + cr_stack_dg + cx_stack_dg + db_dg
         return val
@@ -239,12 +248,14 @@ class TestRna2(unittest.TestCase):
     test_data_basedir = Path("data/test-data")
 
 
-    def check_energy_subterms(self, basedir, top_fname, traj_fname,
-                              t_kelvin, salt_conc,
-                              r_cutoff=10.0, dr_threshold=0.2,
-                              tol_places=4, verbose=True, avg_seq=True,
-                              hb_tol_places=3, params=None,
-                              use_neighbors=False):
+    def check_energy_subterms(
+            self, basedir, top_fname, traj_fname,
+            t_kelvin, salt_conc,
+            r_cutoff=10.0, dr_threshold=0.2,
+            tol_places=4, verbose=True, avg_seq=True,
+            hb_tol_places=3, params=None,
+            use_neighbors=False, half_charged_ends=False
+    ):
 
 
         if avg_seq:
@@ -281,6 +292,10 @@ class TestRna2(unittest.TestCase):
 
         ## note: we don't reverse direction to keep ordering the same
         top_info = topology.TopologyInfo(top_path, reverse_direction=False, is_rna=True)
+        if half_charged_ends:
+            is_end = top_info.is_end
+        else:
+            is_end = None
         seq_oh = jnp.array(utils.get_one_hot(top_info.seq, is_rna=True), dtype=jnp.float64)
         traj_info = trajectory.TrajectoryInfo(
             top_info, read_from_file=True, traj_path=traj_path, reverse_direction=False)
@@ -312,7 +327,8 @@ class TestRna2(unittest.TestCase):
                 neighbors_idx = neighbors.idx
 
             dgs = compute_subterms_fn(
-                state, seq_oh, top_info.bonded_nbrs, neighbors_idx)
+                state, seq_oh, top_info.bonded_nbrs, neighbors_idx, is_end
+            )
             avg_subterms = onp.array(dgs) / top_info.n # average per nucleotide
             computed_subterms.append(avg_subterms)
             # computed_subterms.append(avg_subterms[:-1])
@@ -347,25 +363,26 @@ class TestRna2(unittest.TestCase):
         print(utils.bcolors.WARNING + "\nWARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file\n" + utils.bcolors.ENDC)
 
         subterm_tests = [
-            (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 1.0, True),
-            (self.test_data_basedir / "simple-helix-rna2-12bp-ss", "sys.top", "output.dat", 296.15, 1.0, False),
-            (self.test_data_basedir / "simple-coax-rna2", "generated.top", "output.dat", 296.15, 1.0, True),
-            (self.test_data_basedir / "simple-helix-rna2-12bp-ss-290.15", "sys.top", "output.dat", 290.15, 1.0, False),
-            (self.test_data_basedir / "regr-rna2-2ht-293.15-ss", "sys.top", "output.dat", 293.15, 1.0, False),
-            (self.test_data_basedir / "regr-rna2-2ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True),
-            (self.test_data_basedir / "regr-rna2-2ht-296.15-ss", "sys.top", "output.dat", 296.15, 1.0, False),
-            (self.test_data_basedir / "regr-rna2-2ht-296.15-sa", "sys.top", "output.dat", 296.15, 1.0, True),
+            (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 1.0, True, False),
+            (self.test_data_basedir / "simple-helix-rna2-12bp-ss", "sys.top", "output.dat", 296.15, 1.0, False, False),
+            (self.test_data_basedir / "simple-coax-rna2", "generated.top", "output.dat", 296.15, 1.0, True, False),
+            (self.test_data_basedir / "simple-helix-rna2-12bp-ss-290.15", "sys.top", "output.dat", 290.15, 1.0, False, False),
+            (self.test_data_basedir / "regr-rna2-2ht-293.15-ss", "sys.top", "output.dat", 293.15, 1.0, False, False),
+            (self.test_data_basedir / "regr-rna2-2ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True, False),
+            (self.test_data_basedir / "regr-rna2-2ht-296.15-ss", "sys.top", "output.dat", 296.15, 1.0, False, False),
+            (self.test_data_basedir / "regr-rna2-2ht-296.15-sa", "sys.top", "output.dat", 296.15, 1.0, True, False),
 
-
-
-            # (self.test_data_basedir / "regr-rna2-5ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True)
+            # (self.test_data_basedir / "regr-rna2-5ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True, False)
         ]
 
 
-        for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq in subterm_tests:
+        for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq, half_charged_ends in subterm_tests:
             for use_neighbors in [False, True]:
-                self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin, salt_conc,
-                                           avg_seq=avg_seq, params=None, use_neighbors=use_neighbors)
+                self.check_energy_subterms(
+                    basedir, top_fname, traj_fname, t_kelvin, salt_conc,
+                    avg_seq=avg_seq, params=None, use_neighbors=use_neighbors,
+                    half_charged_ends=half_charged_ends
+                )
 
 
 if __name__ == "__main__":
