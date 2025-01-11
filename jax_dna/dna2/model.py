@@ -255,8 +255,8 @@ class EnergyModel:
             energy = jnp.where(cond, energy_full, energy_smooth)
             return jnp.where(r < self.params['debye']['rcut'], energy, 0.0)
         db_dgs = vmap(db_term)(r_back_op)
+        db_dgs = jnp.where(mask, db_dgs, 0.0)
         db_dg = jnp.dot(db_dgs, dh_mults)
-        # db_dg = vmap(db_term)(r_back_op).sum()
 
         return fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg
 
@@ -399,11 +399,14 @@ class TestDna2(unittest.TestCase):
         # basedir = Path("data/test-data/lammps-oxdna2-40bp-sa/")
         # self.check_subterms_lammps(basedir, t_kelvin, salt_conc, True, tol_places)
 
-    def check_energy_subterms(self, basedir, top_fname, traj_fname,
-                              t_kelvin, salt_conc,
-                              r_cutoff=10.0, dr_threshold=0.2,
-                              tol_places=4, verbose=True, avg_seq=True,
-                              half_charged_ends=False, is_circle=False):
+    def check_energy_subterms(
+            self, basedir, top_fname, traj_fname,
+            t_kelvin, salt_conc,
+            r_cutoff=10.0, dr_threshold=0.2,
+            tol_places=4, verbose=True, avg_seq=True,
+            half_charged_ends=False, is_circle=False,
+            use_neighbors=False
+    ):
 
 
         if avg_seq:
@@ -467,11 +470,21 @@ class TestDna2(unittest.TestCase):
                             seq_avg=avg_seq)
 
         ## setup neighbors, if necessary
-        neighbors_idx = top_info.unbonded_nbrs.T
+        if use_neighbors:
+            neighbor_fn = top_info.get_neighbor_list_fn(
+                displacement_fn, traj_info.box_size, r_cutoff, dr_threshold)
+            neighbor_fn = jit(neighbor_fn)
+            neighbors = neighbor_fn.allocate(traj_states[0].center) # We use the COMs
+        else:
+            neighbors_idx = top_info.unbonded_nbrs.T
 
         compute_subterms_fn = jit(model.compute_subterms)
         computed_subterms = list()
         for state in tqdm(traj_states):
+
+            if use_neighbors:
+                neighbors = neighbors.update(state.center)
+                neighbors_idx = neighbors.idx
 
             dgs = compute_subterms_fn(
                 state, seq_oh, top_info.bonded_nbrs, neighbors_idx, is_end)
@@ -515,8 +528,12 @@ class TestDna2(unittest.TestCase):
         ]
 
         for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq, half_charged_ends, is_circle in subterm_tests:
-            self.check_energy_subterms(basedir, top_fname, traj_fname, t_kelvin, salt_conc,
-                                       avg_seq=avg_seq, half_charged_ends=half_charged_ends, is_circle=is_circle)
+            for use_neighbors in [False, True]:
+                self.check_energy_subterms(
+                    basedir, top_fname, traj_fname, t_kelvin, salt_conc,
+                    avg_seq=avg_seq, half_charged_ends=half_charged_ends,
+                    is_circle=is_circle, use_neighbors=use_neighbors
+                )
 
 
 if __name__ == "__main__":
