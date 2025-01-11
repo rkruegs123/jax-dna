@@ -317,13 +317,14 @@ def run():
     all_avg_small_groove_per_state = list()
     all_avg_big_groove_per_state = list()
 
-    for idx in tqdm(range(n_traj_states)):
+    MAX_TRAJ_STATES = 10
+
+    # for idx in tqdm(range(n_traj_states)):
+    for idx in tqdm(range(min(n_traj_states, MAX_TRAJ_STATES))):
         body = traj_states[idx]
         idx_small_grooves, idx_big_grooves = single(body, offset)
 
-        # all_small_grooves.append(idx_small_grooves)
         all_small_grooves += idx_small_grooves
-        # all_big_grooves.append(idx_big_grooves)
         all_big_grooves += idx_big_grooves
 
         idx_small_grooves_jax, idx_big_grooves_jax, idx_small_grooves_valid, idx_big_grooves_valid = single_jax(body, offset)
@@ -345,23 +346,27 @@ def run():
             all_avg_big_groove_per_state.append(state_mean_big_groove)
 
 
-    print('#Small_groove (+/- std) big_groove (+/- std)')
+    print('\nSmall_groove\t(+/- std)\tbig_groove\t(+/- std)')
     small_mean = onp.mean(all_small_grooves)
     small_std = onp.std(all_small_grooves)
     big_mean = onp.mean(all_big_grooves)
     big_std = onp.std(all_big_grooves)
-    print(f"{small_mean} {small_std} {big_mean} {big_std}")
+    print(f"\nReference (unscaled):")
+    print(f"- {small_mean}\t{small_std}\t{big_mean}\t{big_std}")
     scale = 8.518
-    print(f"{scale*(small_mean-0.7)} {scale*small_std} {scale*(big_mean-0.7)} {scale*big_std}")
+    print(f"\nReference (scaled):")
+    print(f"- {scale*(small_mean-0.7)}\t{scale*small_std}\t{scale*(big_mean-0.7)}\t{scale*big_std}")
 
 
     small_mean_jax = onp.mean(all_small_grooves_jax)
     small_std_jax = onp.std(all_small_grooves_jax)
     big_mean_jax = onp.mean(all_big_grooves_jax)
     big_std_jax = onp.std(all_big_grooves_jax)
-    print(f"{scale*(small_mean_jax-0.7)} {scale*small_std_jax} {scale*(big_mean_jax-0.7)} {scale*big_std_jax}")
+    print(f"\nComputed (scaled):")
+    print(f"- {scale*(small_mean_jax-0.7)}\t{scale*small_std_jax}\t{scale*(big_mean_jax-0.7)}\t{scale*big_std_jax}")
 
-    print(f"{scale*(onp.mean(all_avg_small_groove_per_state)-0.7)} {scale*(onp.mean(all_avg_big_groove_per_state)-0.7)}")
+    print(f"\nComputed (state averages, scaled):")
+    print(f"- {scale*(onp.mean(all_avg_small_groove_per_state)-0.7)}\tNA\t\t\t{scale*(onp.mean(all_avg_big_groove_per_state)-0.7)}\tNA")
 
 
 
