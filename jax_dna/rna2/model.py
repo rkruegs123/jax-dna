@@ -254,7 +254,8 @@ class TestRna2(unittest.TestCase):
             r_cutoff=10.0, dr_threshold=0.2,
             tol_places=4, verbose=True, avg_seq=True,
             hb_tol_places=3, params=None,
-            use_neighbors=False, half_charged_ends=False
+            use_neighbors=False, half_charged_ends=False,
+            is_circle=False
     ):
 
 
@@ -291,7 +292,7 @@ class TestRna2(unittest.TestCase):
             raise RuntimeError(f"No trajectory file at location: {traj_path}")
 
         ## note: we don't reverse direction to keep ordering the same
-        top_info = topology.TopologyInfo(top_path, reverse_direction=False, is_rna=True)
+        top_info = topology.TopologyInfo(top_path, reverse_direction=False, is_rna=True, allow_circle=is_circle)
         if half_charged_ends:
             is_end = top_info.is_end
         else:
@@ -363,26 +364,27 @@ class TestRna2(unittest.TestCase):
         print(utils.bcolors.WARNING + "\nWARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file\n" + utils.bcolors.ENDC)
 
         subterm_tests = [
-            (self.test_data_basedir / "simple-helix-rna2-12bp-half-charged-ends", "sys.top", "output.dat", 296.15, 1.0, True, True),
-            (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 1.0, True, False),
-            (self.test_data_basedir / "simple-helix-rna2-12bp-ss", "sys.top", "output.dat", 296.15, 1.0, False, False),
-            (self.test_data_basedir / "simple-coax-rna2", "generated.top", "output.dat", 296.15, 1.0, True, False),
-            (self.test_data_basedir / "simple-helix-rna2-12bp-ss-290.15", "sys.top", "output.dat", 290.15, 1.0, False, False),
-            (self.test_data_basedir / "regr-rna2-2ht-293.15-ss", "sys.top", "output.dat", 293.15, 1.0, False, False),
-            (self.test_data_basedir / "regr-rna2-2ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True, False),
-            (self.test_data_basedir / "regr-rna2-2ht-296.15-ss", "sys.top", "output.dat", 296.15, 1.0, False, False),
-            (self.test_data_basedir / "regr-rna2-2ht-296.15-sa", "sys.top", "output.dat", 296.15, 1.0, True, False),
+            (self.test_data_basedir / "simple-helix-rna2-12bp-half-charged-ends", "sys.top", "output.dat", 296.15, 1.0, True, True, False),
+            (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 1.0, True, False, False),
+            (self.test_data_basedir / "simple-helix-rna2-12bp-ss", "sys.top", "output.dat", 296.15, 1.0, False, False, False),
+            (self.test_data_basedir / "simple-coax-rna2", "generated.top", "output.dat", 296.15, 1.0, True, False, False),
+            (self.test_data_basedir / "simple-helix-rna2-12bp-ss-290.15", "sys.top", "output.dat", 290.15, 1.0, False, False, False),
+            (self.test_data_basedir / "regr-rna2-2ht-293.15-ss", "sys.top", "output.dat", 293.15, 1.0, False, False, False),
+            (self.test_data_basedir / "regr-rna2-2ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True, False, False),
+            (self.test_data_basedir / "regr-rna2-2ht-296.15-ss", "sys.top", "output.dat", 296.15, 1.0, False, False, False),
+            (self.test_data_basedir / "regr-rna2-2ht-296.15-sa", "sys.top", "output.dat", 296.15, 1.0, True, False, False),
+            (self.test_data_basedir / "regr-circle-rna", "sys.top", "output.dat", 296.15, 1.0, True, True, True),
 
             # (self.test_data_basedir / "regr-rna2-5ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True, False)
         ]
 
 
-        for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq, half_charged_ends in subterm_tests:
+        for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq, half_charged_ends, is_circle in subterm_tests:
             for use_neighbors in [False, True]:
                 self.check_energy_subterms(
                     basedir, top_fname, traj_fname, t_kelvin, salt_conc,
                     avg_seq=avg_seq, params=None, use_neighbors=use_neighbors,
-                    half_charged_ends=half_charged_ends
+                    half_charged_ends=half_charged_ends, is_circle=is_circle
                 )
 
 
