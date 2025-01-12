@@ -11,6 +11,7 @@ import jax_dna.energy.dna1 as jd_energy
 import jax_dna.input.toml as jd_toml
 import jax_dna.input.topology as jd_top
 import jax_dna.input.trajectory as jd_traj
+import jax_dna.utils.neighbors as jd_nb
 
 jax.config.update("jax_enable_x64", True)  # noqa: FBT003 - ignore boolean positional value
 # this is a common jax practice
@@ -51,7 +52,7 @@ def get_trajectory(base_dir: str, topology: jd_top.Topology) -> jd_traj.Trajecto
     )
 
 
-def get_setup_data(base_dir: str):
+def get_setup_data(base_dir: str, box_size: float = 20.0):
     topology = get_topology(base_dir)
     trajectory = get_trajectory(base_dir, topology)
     default_params = jd_toml.parse_toml("jax_dna/input/dna1/default_energy.toml")
@@ -63,7 +64,7 @@ def get_setup_data(base_dir: str):
         com_to_stacking=default_params["geometry"]["com_to_stacking"],
     )
 
-    displacement_fn, _ = jax_md.space.periodic(20.0)
+    displacement_fn, _ = jax_md.space.periodic(box_size)
 
     return (
         topology,
@@ -289,16 +290,25 @@ def test_unbonded_excluded_volume(base_dir: str):
 
     np.testing.assert_allclose(energy, terms, atol=1e-6)
 
-
-def test_total_energy():
-    base_dir = "data/test-data/simple-helix"
+@pytest.mark.parametrize(
+    (
+        "base_dir",
+        "use_neighbors"
+    ),
+    [
+        # ("data/test-data/simple-helix", False, 296.15),
+        ("data/test-data/simple-helix", True, 296.15),
+    ]
+)
+def test_total_energy(base_dir: str, use_neighbors: bool, t_kelvin: float):
+    box_size = 20.0
     (
         topology,
         trajectory,
         default_params,
         transform_fn,
         displacement_fn,
-    ) = get_setup_data(base_dir)
+    ) = get_setup_data(base_dir, box_size=box_size)
     states = trajectory.state_rigid_body
 
     terms = get_potential_energy(base_dir)
@@ -312,7 +322,7 @@ def test_total_energy():
         params=b_exc_energy_config.init_params()
     )
 
-    stk_energy_config = jd_energy.StackingConfiguration(**(default_params["stacking"] | {"kt": 296.15 * 0.1 / 300.0}))
+    stk_energy_config = jd_energy.StackingConfiguration(**(default_params["stacking"] | {"kt": t_kelvin * 0.1 / 300.0}))
     stk_energy_fn = jd_energy.Stacking(displacement_fn=displacement_fn, params=(stk_energy_config).init_params())
 
     hb_energy_config = jd_energy.HydrogenBondingConfiguration(**default_params["hydrogen_bonding"])
@@ -350,19 +360,47 @@ def test_total_energy():
         ],
         rigid_body_transform_fn=transform_fn
     )
+    # energy_fn = jax.jit(energy_fn)
 
-    energy = jax.vmap(
-        lambda s: energy_fn(
-            transform_fn(s),
-            topology.seq,
+    if use_neighbors:
+        neighbor_fn = jd_nb.get_neighbor_list_fn(
             topology.bonded_neighbors,
-            topology.unbonded_neighbors.T,
+            topology.n_nucleotides,
+            displacement_fn,
+            box_size
         )
-    )(states)
+        neighbor_fn = jax.jit(neighbor_fn)
+        neighbors = neighbor_fn.allocate(states[0].center) # We use the COMs to allocate neighbors
 
-    energy = np.around(energy / topology.n_nucleotides, 6)
+        n_states = states[0].center.shape[0]
+        energies = []
+        for s_idx in range(n_states):
+            state = states[s_idx]
+            neighbors = neighbors.update(state.center)
+            neighbors_idx = neighbors.idx
+            import pdb; pdb.set_trace()
+            energy = energy_fn(
+                transform_fn(state),
+                topology.seq,
+                topology.bonded_neighbors,
+                neighbors_idx
+            )
+            energies.append(energy)
+        energies = jnp.array(energies)
 
-    np.testing.assert_allclose(energy, terms, rtol=1e-5, atol=1e-6)
+    else:
+        energies = jax.vmap(
+            lambda s: energy_fn(
+                transform_fn(s),
+                topology.seq,
+                topology.bonded_neighbors,
+                topology.unbonded_neighbors.T,
+            )
+        )(states)
+
+    energies = np.around(energies / topology.n_nucleotides, 6)
+
+    np.testing.assert_allclose(energies, terms, rtol=1e-5, atol=1e-6)
 
 if __name__ == "__main__":
     pytest.main()
