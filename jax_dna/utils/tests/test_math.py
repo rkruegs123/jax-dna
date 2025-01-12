@@ -1,7 +1,8 @@
-import jax_dna.utils.math as jdm
 import numpy as np
 import pytest
-import symbolic_math as sm
+
+import jax_dna.utils.math as jdm
+import jax_dna.utils.tests.symbolic_math as sm
 
 
 @pytest.mark.parametrize(

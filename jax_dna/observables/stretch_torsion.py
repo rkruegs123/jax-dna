@@ -92,7 +92,6 @@ def single_extension_z(
     # Compute the extension between the two base pairs in the Z-direction
     return jnp.abs(bp1_midp[2] - bp2_midp[2])
 
-
 @chex.dataclass(frozen=True, kw_only=True)
 class ExtensionZ(jd_obs.BaseObservable):
     """Computes the total extension of a duplex in the Z-direction in simulation units.
@@ -129,7 +128,7 @@ class ExtensionZ(jd_obs.BaseObservable):
 
         center = nucleotides.center
 
-        # return the extension
+        # return the extensions
         return jax.vmap(single_extension_z, (None, 0, 0, None))(center, self.bp1, self.bp2, self.displacement_fn)
 
 

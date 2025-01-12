@@ -1,5 +1,7 @@
 """Hydrogen bonding energy function for DNA1 model."""
 
+import dataclasses as dc
+
 import chex
 import jax.numpy as jnp
 import numpy as np
@@ -10,11 +12,10 @@ import jax_dna.energy.configuration as config
 import jax_dna.energy.dna1.base_smoothing_functions as bsf
 import jax_dna.energy.dna1.interactions as dna1_interactions
 import jax_dna.energy.dna1.nucleotide as dna1_nucleotide
-import jax_dna.energy.utils as je_utils
 import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as typ
 
-HB_WEIGHTS_SA = np.array(
+HB_WEIGHTS_SA = jnp.array(
     [
         [0.0, 0.0, 0.0, 1.0],  # AX
         [0.0, 0.0, 1.0, 0.0],  # CX
@@ -68,7 +69,7 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
     delta_theta_star_hb_8: float | None = None
 
     # required but not optimizable
-    ss_hb_weights: np.ndarray | None = None
+    ss_hb_weights: np.ndarray | None = dc.field(default_factory=lambda:HB_WEIGHTS_SA)
 
     # dependent parameters =====================================================
     b_low_hb: float | None = None
@@ -90,6 +91,7 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
 
     # override
     required_params: tuple[str] = (
+        # Sequence-independence
         "eps_hb",
         "a_hb",
         "dr0_hb",
@@ -114,6 +116,8 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
         "a_hb_8",
         "theta0_hb_8",
         "delta_theta_star_hb_8",
+        # Sequence-dependence
+        "ss_hb_weights",
     )
 
     @override
@@ -195,22 +199,15 @@ class HydrogenBonding(je_base.BaseEnergyFunction):
 
     params: HydrogenBondingConfiguration
 
-    @override
-    def __call__(
+    def compute_v_hb(
         self,
         body: dna1_nucleotide.Nucleotide,
-        seq: jnp.ndarray,
-        bonded_neighbors: typ.Arr_Bonded_Neighbors,
         unbonded_neighbors: typ.Arr_Unbonded_Neighbors,
-    ) -> typ.Scalar:
+    ) -> typ.Arr_Unbonded_Neighbors:
+        """Computes the sequence-independent energy for each unbonded pair."""
         op_i = unbonded_neighbors[0]
         op_j = unbonded_neighbors[1]
         mask = jnp.array(op_i < body.center.shape[0], dtype=jnp.float64)
-
-        hb_probs = je_utils.get_pair_probs(
-            seq, op_i, op_j
-        )  # get the probabilities of all possibile hydrogen bonds for all neighbors
-        hb_weights = jnp.dot(hb_probs, HB_WEIGHTS_SA.flatten())
 
         dr_base_op = self.displacement_mapped(body.base_sites[op_j], body.base_sites[op_i])  # Note the flip here
         r_base_op = jnp.linalg.norm(dr_base_op, axis=1)
@@ -273,5 +270,23 @@ class HydrogenBonding(je_base.BaseEnergyFunction):
             self.params.b_hb_8,
         )
 
-        v_hb = jnp.where(mask, v_hb, 0.0)  # Mask for neighbors
+        return jnp.where(mask, v_hb, 0.0)  # Mask for neighbors
+
+    @override
+    def __call__(
+        self,
+        body: dna1_nucleotide.Nucleotide,
+        seq: typ.Discrete_Sequence,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
+    ) -> typ.Scalar:
+        # Compute sequence-independent energy for each unbonded pair
+        v_hb = self.compute_v_hb(body, unbonded_neighbors)
+
+        # Compute sequence-dependent weight for each unbonded pair
+        op_i = unbonded_neighbors[0]
+        op_j = unbonded_neighbors[1]
+        hb_weights = self.params.ss_hb_weights[seq[op_i], seq[op_j]]
+
+        # Return the weighted sum
         return jnp.dot(hb_weights, v_hb)

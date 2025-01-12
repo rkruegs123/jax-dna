@@ -39,9 +39,9 @@ class Fene(je_base.BaseEnergyFunction):
     def __call__(
         self,
         body: dna1_nucleotide.Nucleotide,
-        seq: jnp.ndarray,
-        bonded_neighbors: typ.Arr_Bonded_Neighbors,
-        unbounded_neighbors: typ.Arr_Unbonded_Neighbors,
+        seq: typ.Sequence,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        unbounded_neighbors: typ.Arr_Unbonded_Neighbors_2,
     ) -> typ.Scalar:
         nn_i = bonded_neighbors[:, 0]
         nn_j = bonded_neighbors[:, 1]

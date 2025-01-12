@@ -89,3 +89,4 @@ class Diameter(jd_obs.BaseObservable):
             self.h_bonded_base_pairs, back_sites, self.displacement_fn, sigma_backbone
         )
         return jnp.mean(diameters, axis=1)
+

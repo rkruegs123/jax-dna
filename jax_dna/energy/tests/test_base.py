@@ -9,6 +9,7 @@ import jax_md
 import numpy as np
 import pytest
 
+import jax_dna.utils.types as typ
 from jax_dna.energy import base
 
 NOT_IMPLEMENTED_ERR = re.compile("unsupported operand type\(s\) for")  # noqa: W605 - Ignore the regex warning
@@ -235,7 +236,7 @@ class MockEnergyFunction(base.BaseEnergyFunction):
     def __call__(
         self,
         body: jax_md.rigid_body.RigidBody,
-        seq: jnp.ndarray,  # noqa: ARG002
+        seq: typ.Sequence,  # noqa: ARG002
         bonded_neighbors: jnp.ndarray,  # noqa: ARG002
         unbonded_neighbors: jnp.ndarray,  # noqa: ARG002
     ) -> float:

@@ -70,7 +70,6 @@ def compute_l_vector(base_sites: jnp.ndarray, quartet: jnp.ndarray) -> tuple[jnp
     # Return vector and its norm
     return midpoint_diff, l0
 
-
 get_all_l_vectors = vmap(compute_l_vector, in_axes=(None, 0))
 
 
@@ -175,7 +174,7 @@ if __name__ == "__main__":
     )
 
     sim_traj = jd_sio.SimulatorTrajectory(
-        seq_oh=jnp.array(top.seq_one_hot),
+        seq=jnp.array(top.seq_idx),
         strand_lengths=top.strand_counts,
         rigid_body=test_traj.state_rigid_body,
     )

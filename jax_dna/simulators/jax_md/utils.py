@@ -11,6 +11,7 @@ import numpy as np
 from typing_extensions import override
 
 import jax_dna.input.topology as jdna_top
+import jax_dna.utils.types as typ
 
 ERR_CHKPNT_SCN = "`checkpoint_every` must evenly divide the length of `xs`. Got {} and {}."
 
@@ -130,7 +131,7 @@ class StaticSimulatorParams:
     """Static parameters for the simulator."""
 
     # this is commonly referred to as `init_body` in the code, but the argument is named `R` in jax_md
-    seq: jnp.ndarray
+    seq: typ.Arr_Nucleotide
     mass: jax_md.rigid_body.RigidBody
     gamma: jax_md.rigid_body.RigidBody
     bonded_neighbors: jnp.ndarray
@@ -167,14 +168,14 @@ class StaticSimulatorParams:
 
 def split_and_stack(x: jnp.ndarray, n: int) -> jnp.ndarray:
     """Split `xs` into `n` pieces and stack them."""
-    return jax.tree_map(lambda y: jnp.stack(jnp.split(y, n)), x)
+    return jax.tree.map(lambda y: jnp.stack(jnp.split(y, n)), x)
 
 
 def flatten_n(x: jnp.ndarray, n: int) -> jnp.ndarray:
     """Flatten `x` by `n` levels."""
     # setting n <= 1 does not achieve the desired effect
     chex.assert_scalar_positive(n - 1)
-    return jax.tree_map(lambda y: jnp.reshape(y, (-1,) + y.shape[n:]), x)
+    return jax.tree.map(lambda y: jnp.reshape(y, (-1,) + y.shape[n:]), x)
 
 
 def checkpoint_scan(

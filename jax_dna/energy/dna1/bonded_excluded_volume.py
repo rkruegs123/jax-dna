@@ -1,7 +1,6 @@
 """Bonded excluded volume energy for DNA1 model."""
 
 import chex
-import jax.numpy as jnp
 from typing_extensions import override
 
 import jax_dna.energy.base as je_base
@@ -77,9 +76,9 @@ class BondedExcludedVolume(je_base.BaseEnergyFunction):
     def __call__(
         self,
         body: dna1_nucleotide.Nucleotide,
-        seq: jnp.ndarray,
-        bonded_neighbors: typ.Arr_Bonded_Neighbors,
-        unbonded_neighbors: typ.Arr_Unbonded_Neighbors,
+        seq: typ.Sequence,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
     ) -> typ.Scalar:
         nn_i = bonded_neighbors[:, 0]
         nn_j = bonded_neighbors[:, 1]

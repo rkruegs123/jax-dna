@@ -22,7 +22,7 @@ def build_energy_function(
     energy_fns: tuple[jd_energy_fn.BaseEnergyFunction],
     energy_configs: tuple[jd_energy_cnfg.BaseConfiguration],
     rigid_body_transform_fn: Callable,
-    seq_one_hot: jnp.ndarray,  # make sure this is jax
+    seq: jd_types.Sequence,  # make sure this is jax
     bonded_neighbors: jnp.ndarray,
     unbonded_neighbors: jnp.ndarray,
 ) -> jd_energy_fn.ComposedEnergyFunction:
@@ -47,7 +47,7 @@ def build_energy_function(
     return jax.vmap(
         lambda rigid_body: energy_fn(
             rigid_body,
-            seq=seq_one_hot,
+            seq=seq,
             bonded_neighbors=bonded_neighbors,
             unbonded_neighbors=unbonded_neighbors,
         )

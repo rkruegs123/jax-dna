@@ -15,7 +15,7 @@ import jax_dna.input.trajectory as jd_traj
 import jax_dna.simulators.io as jd_sio
 
 REQUIRED_KEYS = {
-    "oxnda_bin",
+    "oxdna_bin",
     "input_directory",
 }
 

@@ -163,9 +163,9 @@ class CoaxialStacking(je_base.BaseEnergyFunction):
     def __call__(
         self,
         body: dna1_nucleotide.Nucleotide,
-        seq: jnp.ndarray,
-        bonded_neighbors: typ.Arr_Bonded_Neighbors,
-        unbonded_neighbors: typ.Arr_Unbonded_Neighbors,
+        seq: typ.Sequence,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
     ) -> typ.Scalar:
         op_i = unbonded_neighbors[0]
         op_j = unbonded_neighbors[1]
