@@ -6,6 +6,7 @@ import jax_md
 import numpy as np
 import pytest
 
+import jax_dna.energy.base as jd_energy_base
 import jax_dna.energy.dna1 as jd_energy
 import jax_dna.input.toml as jd_toml
 import jax_dna.input.topology as jd_top
@@ -30,6 +31,12 @@ COLUMN_NAMES = [
 def get_energy_terms(base_dir: str, term: str) -> np.ndarray:
     energy_terms = np.loadtxt(base_dir + "/split_energy.dat", skiprows=1)
     return energy_terms[:, COLUMN_NAMES.index(term)]
+
+def get_potential_energy(base_dir: str) -> np.ndarray:
+    # Columns are: time, potential_energy, kinetic_energy, total_energy
+    energies = np.loadtxt(base_dir + "/energy.dat")
+    potential_energies = energies[:, 1]
+    return potential_energies[1:] # ignore the initial state
 
 
 def get_topology(base_dir: str) -> jd_top.Topology:
@@ -282,6 +289,80 @@ def test_unbonded_excluded_volume(base_dir: str):
 
     np.testing.assert_allclose(energy, terms, atol=1e-6)
 
+
+def test_total_energy():
+    base_dir = "data/test-data/simple-helix"
+    (
+        topology,
+        trajectory,
+        default_params,
+        transform_fn,
+        displacement_fn,
+    ) = get_setup_data(base_dir)
+    states = trajectory.state_rigid_body
+
+    terms = get_potential_energy(base_dir)
+
+    fene_energy_config = jd_energy.FeneConfiguration(**default_params["fene"])
+    fene_energy_fn = jd_energy.Fene(displacement_fn=displacement_fn, params=fene_energy_config.init_params())
+
+    b_exc_energy_config = jd_energy.BondedExcludedVolumeConfiguration(**default_params["bonded_excluded_volume"])
+    b_exc_energy_fn = jd_energy.BondedExcludedVolume(
+        displacement_fn=displacement_fn,
+        params=b_exc_energy_config.init_params()
+    )
+
+    stk_energy_config = jd_energy.StackingConfiguration(**(default_params["stacking"] | {"kt": 296.15 * 0.1 / 300.0}))
+    stk_energy_fn = jd_energy.Stacking(displacement_fn=displacement_fn, params=(stk_energy_config).init_params())
+
+    hb_energy_config = jd_energy.HydrogenBondingConfiguration(**default_params["hydrogen_bonding"])
+    hb_energy_fn = jd_energy.HydrogenBonding(displacement_fn=displacement_fn, params=hb_energy_config.init_params())
+
+    cr_stk_energy_config = jd_energy.CrossStackingConfiguration(**default_params["cross_stacking"])
+    cr_stk_energy_fn = jd_energy.CrossStacking(
+        displacement_fn=displacement_fn,
+        params=cr_stk_energy_config.init_params()
+    )
+
+    cx_stk_energy_config = jd_energy.CoaxialStackingConfiguration(**default_params["coaxial_stacking"])
+    cx_stk_energy_fn = jd_energy.CoaxialStacking(
+        displacement_fn=displacement_fn,
+        params=cx_stk_energy_config.init_params()
+    )
+
+    ub_exc_energy_config = jd_energy.UnbondedExcludedVolumeConfiguration(**default_params["unbonded_excluded_volume"])
+    ub_exc_energy_fn = jd_energy.UnbondedExcludedVolume(
+        displacement_fn=displacement_fn,
+        params=ub_exc_energy_config.init_params()
+    )
+
+    transform_fn = functools.partial(
+        jd_energy.Nucleotide.from_rigid_body,
+        com_to_backbone=default_params["geometry"]["com_to_backbone"],
+        com_to_hb=default_params["geometry"]["com_to_hb"],
+        com_to_stacking=default_params["geometry"]["com_to_stacking"],
+    )
+
+    energy_fn = jd_energy_base.ComposedEnergyFunction(
+        energy_fns=[
+            fene_energy_fn, b_exc_energy_fn, stk_energy_fn,
+            hb_energy_fn, cr_stk_energy_fn, cx_stk_energy_fn, ub_exc_energy_fn
+        ],
+        rigid_body_transform_fn=transform_fn
+    )
+
+    energy = jax.vmap(
+        lambda s: energy_fn(
+            transform_fn(s),
+            topology.seq,
+            topology.bonded_neighbors,
+            topology.unbonded_neighbors.T,
+        )
+    )(states)
+
+    energy = np.around(energy / topology.n_nucleotides, 6)
+
+    np.testing.assert_allclose(energy, terms, rtol=1e-5, atol=1e-6)
 
 if __name__ == "__main__":
     pytest.main()
