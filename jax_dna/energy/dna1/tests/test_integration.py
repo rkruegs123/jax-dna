@@ -293,14 +293,15 @@ def test_unbonded_excluded_volume(base_dir: str):
 @pytest.mark.parametrize(
     (
         "base_dir",
+        "t_kelvin",
         "use_neighbors"
     ),
     [
-        # ("data/test-data/simple-helix", False, 296.15),
-        ("data/test-data/simple-helix", True, 296.15),
+        ("data/test-data/simple-helix", 296.15, False),
+        ("data/test-data/simple-helix", 296.15, True),
     ]
 )
-def test_total_energy(base_dir: str, use_neighbors: bool, t_kelvin: float):
+def test_total_energy(base_dir: str, t_kelvin: float, *, use_neighbors: bool):
     box_size = 20.0
     (
         topology,
@@ -313,38 +314,39 @@ def test_total_energy(base_dir: str, use_neighbors: bool, t_kelvin: float):
 
     terms = get_potential_energy(base_dir)
 
-    fene_energy_config = jd_energy.FeneConfiguration(**default_params["fene"])
-    fene_energy_fn = jd_energy.Fene(displacement_fn=displacement_fn, params=fene_energy_config.init_params())
 
-    b_exc_energy_config = jd_energy.BondedExcludedVolumeConfiguration(**default_params["bonded_excluded_volume"])
-    b_exc_energy_fn = jd_energy.BondedExcludedVolume(
-        displacement_fn=displacement_fn,
-        params=b_exc_energy_config.init_params()
-    )
+    kt = t_kelvin * 0.1 / 300.0
 
-    stk_energy_config = jd_energy.StackingConfiguration(**(default_params["stacking"] | {"kt": t_kelvin * 0.1 / 300.0}))
-    stk_energy_fn = jd_energy.Stacking(displacement_fn=displacement_fn, params=(stk_energy_config).init_params())
+    configs = [
+        jd_energy.FeneConfiguration.from_dict(default_params["fene"], ("eps_backbone",)),
+        jd_energy.BondedExcludedVolumeConfiguration.from_dict(
+            default_params["bonded_excluded_volume"],
+            ("eps_exc","dr_star_base")
+        ),
+        jd_energy.StackingConfiguration.from_dict(default_params["stacking"] | {"kt": kt}, ("*",)),
+        jd_energy.UnbondedExcludedVolumeConfiguration.from_dict(default_params["unbonded_excluded_volume"]),
+        jd_energy.HydrogenBondingConfiguration.from_dict(default_params["hydrogen_bonding"]),
+        jd_energy.CrossStackingConfiguration.from_dict(default_params["cross_stacking"]),
+        jd_energy.CoaxialStackingConfiguration.from_dict(default_params["coaxial_stacking"]),
+    ]
 
-    hb_energy_config = jd_energy.HydrogenBondingConfiguration(**default_params["hydrogen_bonding"])
-    hb_energy_fn = jd_energy.HydrogenBonding(displacement_fn=displacement_fn, params=hb_energy_config.init_params())
+    energy_fns = [
+        jd_energy.Fene,
+        jd_energy.BondedExcludedVolume,
+        jd_energy.Stacking,
+        jd_energy.UnbondedExcludedVolume,
+        jd_energy.HydrogenBonding,
+        jd_energy.CrossStacking,
+        jd_energy.CoaxialStacking,
+    ]
 
-    cr_stk_energy_config = jd_energy.CrossStackingConfiguration(**default_params["cross_stacking"])
-    cr_stk_energy_fn = jd_energy.CrossStacking(
-        displacement_fn=displacement_fn,
-        params=cr_stk_energy_config.init_params()
-    )
-
-    cx_stk_energy_config = jd_energy.CoaxialStackingConfiguration(**default_params["coaxial_stacking"])
-    cx_stk_energy_fn = jd_energy.CoaxialStacking(
-        displacement_fn=displacement_fn,
-        params=cx_stk_energy_config.init_params()
-    )
-
-    ub_exc_energy_config = jd_energy.UnbondedExcludedVolumeConfiguration(**default_params["unbonded_excluded_volume"])
-    ub_exc_energy_fn = jd_energy.UnbondedExcludedVolume(
-        displacement_fn=displacement_fn,
-        params=ub_exc_energy_config.init_params()
-    )
+    transformed_fns = [
+        energy_fn(
+            displacement_fn=displacement_fn,
+            params=config.init_params(),
+        )
+        for config, energy_fn in zip(configs, energy_fns, strict=True)
+    ]
 
     transform_fn = functools.partial(
         jd_energy.Nucleotide.from_rigid_body,
@@ -354,13 +356,9 @@ def test_total_energy(base_dir: str, use_neighbors: bool, t_kelvin: float):
     )
 
     energy_fn = jd_energy_base.ComposedEnergyFunction(
-        energy_fns=[
-            fene_energy_fn, b_exc_energy_fn, stk_energy_fn,
-            hb_energy_fn, cr_stk_energy_fn, cx_stk_energy_fn, ub_exc_energy_fn
-        ],
-        rigid_body_transform_fn=transform_fn
+        energy_fns=transformed_fns,
+        rigid_body_transform_fn=transform_fn,
     )
-    # energy_fn = jax.jit(energy_fn)
 
     if use_neighbors:
         neighbor_fn = jd_nb.get_neighbor_list_fn(
@@ -372,19 +370,22 @@ def test_total_energy(base_dir: str, use_neighbors: bool, t_kelvin: float):
         neighbor_fn = jax.jit(neighbor_fn)
         neighbors = neighbor_fn.allocate(states[0].center) # We use the COMs to allocate neighbors
 
-        n_states = states[0].center.shape[0]
-        energies = []
-        for s_idx in range(n_states):
-            state = states[s_idx]
-            neighbors = neighbors.update(state.center)
-            neighbors_idx = neighbors.idx
-            import pdb; pdb.set_trace()
-            energy = energy_fn(
+        @jax.jit
+        def state_energy_fn(state, neighbors_idx):
+            return energy_fn(
                 transform_fn(state),
                 topology.seq,
                 topology.bonded_neighbors,
                 neighbors_idx
             )
+
+        n_states = states.center.shape[0]
+        energies = []
+        for s_idx in range(n_states):
+            state = states[s_idx]
+            neighbors = neighbors.update(state.center)
+            neighbors_idx = neighbors.idx
+            energy = state_energy_fn(state, neighbors_idx)
             energies.append(energy)
         energies = jnp.array(energies)
 
