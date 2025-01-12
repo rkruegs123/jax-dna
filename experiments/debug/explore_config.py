@@ -60,8 +60,11 @@ grad_f1_flat = jit(value_and_grad(f1_flat))
 
 @jit
 def f2_flat(args_flat):
-    args = ravel_fn(args_flat)
-    return f2(args)
+    # args = ravel_fn(args_flat)
+    # val = f2(args)
+    val = jnp.linalg.norm(args_flat)
+    return val
+
 grad_f2_flat = jit(value_and_grad(f2_flat))
 
 
@@ -87,7 +90,23 @@ g_config = proj_dists.sum() * gu_norm
 
 # Compare g_config with the following!
 my_fn = lambda args_flat: f1_flat(args_flat) + f2_flat(args_flat)
-grad(my_fn)(my_args_flattened)
+vanilla_grads = grad(my_fn)(my_args_flattened)
+
+@jit
+def get_config_grad(all_grads):
+    m = all_grads.shape[0]
+
+    all_grads_norm = vmap(normalize)(all_grads)
+
+    all_grads_norm_pinv = jnp.linalg.pinv(all_grads_norm)
+    gu_unnorm = all_grads_norm_pinv @ jnp.ones(m)
+    gu_norm = normalize(gu_unnorm)
+
+
+    proj_dists = vmap(lambda gi: jnp.dot(gi, gu_norm))(all_grads) # Note we use the unnormalized gradients
+    g_config = proj_dists.sum() * gu_norm
+    return g_config
+
 
 
 
@@ -97,32 +116,58 @@ grad(my_fn)(my_args_flattened)
 lr = 1e-3
 
 def combined_fn_flat(args_flat):
-    args = ravel_fn(args_flat)
-    f1_val = f1(args)
-    f2_val = f2(args)
+    f1_val = f1_flat(args_flat)
+    f2_val = f2_flat(args_flat)
     return f1_val + f2_val, (f1_val, f2_val)
-vanilla_grad_fn = value_and_grad(combined_fn_flat, has_aux=True)
+vanilla_grad_fn = jit(value_and_grad(combined_fn_flat, has_aux=True))
 
-optimizer = optax.adam(learning_rate=lr)
-params = my_args_flattened
-opt_state = optimizer.init(params)
+optimizer_vanilla = optax.adam(learning_rate=lr)
+params_vanilla = my_args_flattened
+opt_state_vanilla = optimizer_vanilla.init(params_vanilla)
 
-n_epochs = 100
-f1_vals = list()
-f2_vals = list()
-loss_vals = list()
+optimizer_cfg = optax.adam(learning_rate=lr)
+params_cfg = my_args_flattened
+opt_state_cfg = optimizer_cfg.init(params_cfg)
+
+n_epochs = 1000
+
+f1_vals_vanilla = list()
+f2_vals_vanilla = list()
+loss_vals_vanilla = list()
+
+f1_vals_cfg = list()
+f2_vals_cfg = list()
+loss_vals_cfg = list()
+
 for i in tqdm(range(n_epochs)):
-    (loss, (f1_val, f2_val)), vanilla_grads = vanilla_grad_fn(params)
-    f1_vals.append(f1_val)
-    f2_vals.append(f2_val)
-    loss_vals.append(loss)
+    (loss, (f1_val, f2_val)), vanilla_grads = vanilla_grad_fn(params_vanilla)
+    f1_vals_vanilla.append(f1_val)
+    f2_vals_vanilla.append(f2_val)
+    loss_vals_vanilla.append(loss)
 
-    updates, opt_state = optimizer.update(vanilla_grads, opt_state, params)
-    params = optax.apply_updates(params, updates)
+    updates, opt_state_vanilla = optimizer_vanilla.update(vanilla_grads, opt_state_vanilla, params_vanilla)
+    params_vanilla = optax.apply_updates(params_vanilla, updates)
 
-plt.plot(f1_vals, label="F1", linestyle="--", color="red")
-plt.plot(f2_vals, label="F2", linestyle="--", color="blue")
-plt.plot(loss_vals, label="total", linestyle="--", color="black")
+    val1_cfg, g1_cfg = grad_f1_flat(params_cfg)
+    val2_cfg, g2_cfg = grad_f2_flat(params_cfg)
+    all_grads_cfg = jnp.array([g1_cfg, g2_cfg])
+    cfg_grads = get_config_grad(all_grads_cfg)
+
+    f1_vals_cfg.append(val1_cfg)
+    f2_vals_cfg.append(val2_cfg)
+    loss_vals_cfg.append(val1_cfg + val2_cfg)
+
+    updates, opt_state_cfg = optimizer_cfg.update(cfg_grads, opt_state_cfg, params_cfg)
+    params_cfg = optax.apply_updates(params_cfg, updates)
+
+
+plt.plot(f1_vals_vanilla, label="F1", linestyle="--", color="red")
+plt.plot(f2_vals_vanilla, label="F2", linestyle="--", color="blue")
+plt.plot(loss_vals_vanilla, label="total", linestyle="--", color="black")
+
+plt.plot(f1_vals_cfg, label="F1", linestyle="-", color="red")
+plt.plot(f2_vals_cfg, label="F2", linestyle="-", color="blue")
+plt.plot(loss_vals_cfg, label="total", linestyle="-", color="black")
 
 plt.ylabel("Loss Value")
 plt.xlabel("Iteration")
