@@ -128,5 +128,82 @@ def test_oxdna_restore_params() -> None:
     tear_down_test_dir(test_dir)
 
 
+def test_oxdna_update_params_raises() -> None:
+    """Test for oxdna _update_params, fails for missing build dir"""
+
+    test_dir = setup_test_dir()
+
+    if os.environ.get(oxdna.BUILD_PATH_ENV_VAR):
+        del os.environ[oxdna.BUILD_PATH_ENV_VAR]
+
+    sim = oxdna.oxDNASimulator(
+        input_dir=test_dir,
+        sim_type=typ.oxDNASimulatorType.DNA1,
+        energy_configs=[],
+    )
+
+    with pytest.raises(ValueError, match=oxdna.ERR_BUILD_PATH_NOT_SET[:10]):
+        sim._update_params(new_params=[{}])
+
+    tear_down_test_dir(test_dir)
+
+
+def test_oxdna_update_params() -> None:
+    """Test for oxdna _update_params, fails for missing build dir"""
+
+    test_dir = setup_test_dir()
+    build_dir = Path(test_dir) / "build"
+    build_dir.mkdir()
+    src_dir = Path(test_dir) / "src"
+    src_dir.mkdir()
+
+    model_h = test_dir.parent.parent / "test_data/test.model.h"
+
+    (src_dir / "model.h").write_text(model_h.read_text())
+
+    os.environ[oxdna.BUILD_PATH_ENV_VAR] = str(build_dir)
+    os.environ[oxdna.CMAKE_BIN_ENV_VAR] = "echo"
+    os.environ[oxdna.MAKE_BIN_ENV_VAR] = "echo"
+
+    class MockEnergyConfig:
+        def __init__(self, params):
+            self.params = params
+
+        def init_params(self) -> "MockEnergyConfig":
+            return self
+
+        def to_dictionary(self, include_dependent, exclude_non_optimizable) -> dict:  # noqa: ARG002
+            return self.params
+
+        def __or__(self, other: dict):
+            return MockEnergyConfig(self.params | other)
+
+    oxdna.oxDNASimulator(
+        input_dir=test_dir,
+        sim_type=typ.oxDNASimulatorType.DNA1,
+        energy_configs=[MockEnergyConfig({}), MockEnergyConfig({})],
+    )._update_params(
+        new_params=[
+            {
+                "FENE_DELTA": 5.0,
+                "HYDR_THETA8_T0": 1.5707963267948966,
+                "HYDR_T3_MESH_POINTS": "HYDR_T2_MESH_POINTS",
+                "CXST_T5_MESH_POINTS": 6,
+            },
+            {},
+        ]
+    )
+
+    assert (src_dir / "model.h.old").read_text().splitlines()[-10:] == model_h.read_text().splitlines()[-10:]
+    assert (src_dir / "model.h").read_text().splitlines()[-10:] != (
+        test_dir.parent / "expected.model.h"
+    ).read_text().splitlines()[-10:]
+
+    for env_var in [oxdna.BUILD_PATH_ENV_VAR, oxdna.CMAKE_BIN_ENV_VAR, oxdna.MAKE_BIN_ENV_VAR]:
+        del os.environ[env_var]
+
+    tear_down_test_dir(test_dir)
+
+
 if __name__ == "__main__":
-    test_guess_binary_location()
+    test_oxdna_update_params()

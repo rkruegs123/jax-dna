@@ -59,21 +59,17 @@ logger = logging.getLogger(__name__)
 # We do not force the user the set this because they may not be recompiling oxDNA
 def _guess_binary_location(bin_name: str, env_var: str) -> Path | None:
     """Guess the location of a binary."""
+    guessed_path = None
     for guess in CMAKE_MAKE_BIN_LOC_GUESSES:
-        path = Path(guess.format(bin_name))
-        if path.exists():
-            return path
+        pth = Path(guess.format(bin_name))
+        if pth.exists():
+            guessed_path = pth
+            break
 
-    warnings.warn(WARN_CANT_GUESS_BIN_LOC.format(bin_name, env_var), stacklevel=2)
-    logger.debug(WARN_CANT_GUESS_BIN_LOC.format(bin_name, env_var))
-    return os.environ.get(env_var, None)
-
-
-cmake_bin = _guess_binary_location("cmake", CMAKE_BIN_ENV_VAR)
-make_bin = _guess_binary_location("make", MAKE_BIN_ENV_VAR)
-
-logger.debug("cmake_bin: %s", cmake_bin)
-logger.debug("make_bin: %s", make_bin)
+    if guessed_path is None:
+        warnings.warn(WARN_CANT_GUESS_BIN_LOC.format(bin_name, env_var), stacklevel=2)
+        logger.debug(WARN_CANT_GUESS_BIN_LOC.format(bin_name, env_var))
+    return os.environ.get(env_var, None) or guessed_path
 
 
 @chex.dataclass
@@ -180,6 +176,11 @@ class oxDNASimulator(jd_base.BaseSimulation):  # noqa: N801 oxDNA is a special w
         """
         if BUILD_PATH_ENV_VAR not in os.environ:
             raise ValueError(ERR_BUILD_PATH_NOT_SET)
+        _cmake_bin = _guess_binary_location("cmake", CMAKE_BIN_ENV_VAR)
+        _make_bin = _guess_binary_location("make", MAKE_BIN_ENV_VAR)
+
+        logger.debug("cmake_bin: %s", _cmake_bin)
+        logger.debug("make_bin: %s", _make_bin)
 
         self._logger.info("Updating oxDNA parameters")
 
@@ -194,11 +195,11 @@ class oxDNASimulator(jd_base.BaseSimulation):  # noqa: N801 oxDNA is a special w
             std_err,
         )
         with std_out.open("w") as f_std, std_err.open("w") as f_err:
-            if cmake_bin is None:
+            if _cmake_bin is None:
                 raise FileNotFoundError(ERR_OXDNA_NOT_FOUND.format("cmake"))
 
             completed_proc = subprocess.run(
-                [cmake_bin, ".."],
+                [_cmake_bin, ".."],
                 shell=False,  # noqa: S603 false positive
                 cwd=build_dir,
                 stdout=f_std,
@@ -236,7 +237,7 @@ class oxDNASimulator(jd_base.BaseSimulation):  # noqa: N801 oxDNA is a special w
         )
         with std_out.open("w") as f_std, std_err.open("w") as f_err:
             completed_proc = subprocess.run(
-                [make_bin, f"-j{self.n_build_threads}"],
+                [_make_bin, f"-j{self.n_build_threads}"],
                 shell=False,  # noqa: S603 false positive
                 cwd=build_dir,
                 check=True,
