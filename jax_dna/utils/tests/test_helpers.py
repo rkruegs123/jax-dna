@@ -1,5 +1,6 @@
-import jax_dna.utils.helpers as jdh
 import pytest
+
+import jax_dna.utils.helpers as jdh
 
 
 @pytest.mark.parametrize(

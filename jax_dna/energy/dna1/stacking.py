@@ -1,5 +1,7 @@
 """Stacking energy function for DNA1 model."""
 
+import dataclasses as dc
+
 import chex
 import jax.numpy as jnp
 import numpy as np
@@ -10,11 +12,10 @@ import jax_dna.energy.configuration as config
 import jax_dna.energy.dna1.base_smoothing_functions as bsf
 import jax_dna.energy.dna1.interactions as dna1_interactions
 import jax_dna.energy.dna1.nucleotide as dna1_nucleotide
-import jax_dna.energy.utils as je_utils
 import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as typ
 
-STACK_WEIGHTS_SA = np.array(
+STACK_WEIGHTS_SA = jnp.array(
     [
         [1.0, 1.0, 1.0, 1.0],  # AX
         [1.0, 1.0, 1.0, 1.0],  # CX
@@ -49,8 +50,9 @@ class StackingConfiguration(config.BaseConfiguration):
     a_stack_1: float | None = None
     neg_cos_phi2_star_stack: float | None = None
     a_stack_2: float | None = None
-    # required but non optimizable
+
     kt: float | None = None
+    ss_stack_weights: np.ndarray | None = dc.field(default_factory=lambda: STACK_WEIGHTS_SA)
 
     # dependent parameters
     b_low_stack: float | None = None
@@ -91,28 +93,10 @@ class StackingConfiguration(config.BaseConfiguration):
         "neg_cos_phi2_star_stack",
         "a_stack_2",
         "kt",
+        "ss_stack_weights",
     )
 
-    non_optimizable_required_params: tuple[str] = ("kt",)
-
-    dependent_params: tuple[str] = (
-        "b_low_stack",
-        "dr_c_low_stack",
-        "b_high_stack",
-        "dr_c_high_stack",
-        "b_stack_4",
-        "delta_theta_stack_4_c",
-        "b_stack_5",
-        "delta_theta_stack_5_c",
-        "b_stack_6",
-        "delta_theta_stack_6_c",
-        "b_neg_cos_phi1_stack",
-        "neg_cos_phi1_c_stack",
-        "b_neg_cos_phi2_stack",
-        "neg_cos_phi2_c_stack",
-        "eps_stack",
-    )
-
+     
     @override
     def init_params(self) -> "StackingConfiguration":
         eps_stack = self.eps_stack_base + self.eps_stack_kt_coeff * self.kt
@@ -178,14 +162,12 @@ class Stacking(je_base.BaseEnergyFunction):
 
     params: StackingConfiguration
 
-    @override
-    def __call__(
+    def compute_v_stack(
         self,
         body: dna1_nucleotide.Nucleotide,
-        seq: jnp.ndarray,
-        bonded_neighbors: typ.Arr_Bonded_Neighbors,
-        unbonded_neighbors: typ.Arr_Unbonded_Neighbors,
-    ) -> typ.Scalar:
+        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+    ) -> typ.Arr_Bonded_Neighbors:
+        """Computes the sequence-independent energy for each bonded pair."""
         nn_i = bonded_neighbors[:, 0]
         nn_j = bonded_neighbors[:, 1]
 
@@ -205,7 +187,7 @@ class Stacking(je_base.BaseEnergyFunction):
         cosphi1 = -jnp.einsum("ij, ij->i", body.cross_prods[nn_i], dr_back_nn) / r_back_nn
         cosphi2 = -jnp.einsum("ij, ij->i", body.cross_prods[nn_j], dr_back_nn) / r_back_nn
 
-        v_stack = dna1_interactions.stacking(
+        return dna1_interactions.stacking(
             r_stack_nn,
             theta4,
             theta5,
@@ -247,7 +229,21 @@ class Stacking(je_base.BaseEnergyFunction):
             self.params.b_neg_cos_phi2_stack,
         )
 
-        stack_probs = je_utils.get_pair_probs(seq, nn_i, nn_j)
-        stack_weights = jnp.dot(stack_probs, STACK_WEIGHTS_SA.flatten())
+    @override
+    def __call__(
+        self,
+        body: dna1_nucleotide.Nucleotide,
+        seq: typ.Discrete_Sequence,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
+    ) -> typ.Scalar:
+        # Compute sequence-independent energy for each bonded pair
+        v_stack = self.compute_v_stack(body, bonded_neighbors)
 
+        # Compute sequence-dependent weight for each bonded pair
+        nn_i = bonded_neighbors[:, 0]
+        nn_j = bonded_neighbors[:, 1]
+        stack_weights = self.params.ss_stack_weights[seq[nn_i], seq[nn_j]]
+
+        # Return the weighted sum
         return jnp.dot(stack_weights, v_stack)

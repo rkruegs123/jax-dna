@@ -5,17 +5,11 @@ import itertools
 from collections.abc import Callable
 from pathlib import Path
 
+import jax.numpy as jnp
 import numpy as np
 
+import jax_dna.utils.constants as jd_const
 import jax_dna.utils.types as typ
-
-NUCLEOTIDES_ONEHOT: dict[str, typ.Vector4D] = {
-    "A": np.array([1, 0, 0, 0], dtype=np.float64),
-    "C": np.array([0, 1, 0, 0], dtype=np.float64),
-    "G": np.array([0, 0, 1, 0], dtype=np.float64),
-    "T": np.array([0, 0, 0, 1], dtype=np.float64),
-    "U": np.array([0, 0, 0, 1], dtype=np.float64),
-}
 
 N_1ST_LINE_OXDNA_CLASSIC = 2
 N_1ST_LINE_OXDNA_NEW = 3
@@ -29,14 +23,51 @@ ERR_TOPOLOGY_BONDED_NEIGHBORS_INVALID_SHAPE = "Invalid bonded neighbors shape"
 ERR_TOPOLOGY_UNBONDED_NEIGHBORS_INVALID_SHAPE = "Invalid unbonded neighbors shape"
 ERR_TOPOLOGY_INVALID_SEQUENCE_LENGTH = "Invalid sequence length"
 ERR_TOPOLOGY_INVALID_SEQUENCE_NUCLEOTIDES = "Invalid sequence nucleotides"
-ERR_TOPOLOGY_INVALID_ONE_HOT_SEQUENCE_SHAPE = "Invalid one-hot sequence shape"
-ERR_TOPOLOGY_INVALID_ONE_HOT_SEQUENCE_VALUES = "Invalid one-hot sequence values, must be 0 or 1 and sum to 1"
+ERR_TOPOLOGY_INVALID_DISCRETE_SEQUENCE_SHAPE = "Invalid discrete sequence shape"
+ERR_TOPOLOGY_INVALID_UNPAIRED_PSEQ_SHAPE = "Invalid unpaired probabilistic sequence shape"
+ERR_TOPOLOGY_MISMATCH_PSEQ_SHAPE_NUM_NUCLEOTIDES = "Pseq shape does not match number of nucleotides"
+ERR_TOPOLOGY_INVALID_BP_PSEQ_SHAPE = "Invalid base-paired probabilistic sequence shape"
+ERR_TOPOLOGY_INVALID_PROBABILITIES = "Probabilities must be > 0"
+ERR_TOPOLOGY_PSEQ_NOT_NORMALIZED = "Probabilities must be normalized"
 ERR_INVALID_OXDNA_FORMAT = (
     "Invalid oxDNA topology format. See "
     "https://lorenzo-rovigatti.github.io/oxDNA/configurations.html#topology-file for more information."
 )
 ERR_STRAND_COUNTS_CIRCULAR_MISMATCH = "Strand counts and cicularity do not match"
 ERR_FILE_NOT_FOUND = "Topology file not found"
+ERR_TOPOLOGY_INVALID_SEQUENCE_TYPE = "Invalid sequence type. Must be discrete or probabilistic"
+
+
+
+def check_valid_seq(seq: typ.Sequence, n_nucleotides: int) -> None:
+    """Checks if a sequence is well-formed."""
+    if isinstance(seq, typ.Discrete_Sequence):
+        if len(set(np.array(seq)) - {0, 1, 2, 3}) > 0:
+            raise ValueError(ERR_TOPOLOGY_INVALID_SEQUENCE_NUCLEOTIDES)
+
+        if seq.shape != (n_nucleotides,):
+            raise ValueError(ERR_TOPOLOGY_INVALID_DISCRETE_SEQUENCE_SHAPE)
+    elif isinstance(seq, tuple) and len(seq) == jd_const.TWO_DIMENSIONS:  # typ.Probabilistic_Sequence
+        up_pseq, bp_pseq = seq
+
+        if len(up_pseq.shape) != jd_const.TWO_DIMENSIONS or up_pseq.shape[1] != jd_const.N_NT:
+            raise ValueError(ERR_TOPOLOGY_INVALID_UNPAIRED_PSEQ_SHAPE)
+        if len(bp_pseq.shape) != jd_const.TWO_DIMENSIONS or bp_pseq.shape[1] != jd_const.N_BP_TYPES:
+            raise ValueError(ERR_TOPOLOGY_INVALID_BP_PSEQ_SHAPE)
+
+        n_unpaired = up_pseq.shape[0]
+        n_bp = bp_pseq.shape[0]
+        if n_unpaired + jd_const.N_NT_PER_BP * n_bp != n_nucleotides:
+            raise ValueError(ERR_TOPOLOGY_MISMATCH_PSEQ_SHAPE_NUM_NUCLEOTIDES)
+
+        if (up_pseq < 0).any() or (bp_pseq < 0).any():
+            raise ValueError(ERR_TOPOLOGY_INVALID_PROBABILITIES)
+
+        if (not np.allclose(np.sum(up_pseq, axis=1), 1)) or (not np.allclose(np.sum(bp_pseq, axis=1), 1)):
+            raise ValueError(ERR_TOPOLOGY_PSEQ_NOT_NORMALIZED)
+
+    else:
+        raise ValueError(ERR_TOPOLOGY_INVALID_SEQUENCE_TYPE)
 
 
 @dc.dataclass(frozen=True)
@@ -47,16 +78,12 @@ class Topology:
     strand_counts: np.ndarray
     bonded_neighbors: np.ndarray
     unbonded_neighbors: np.ndarray
-    seq: str
-    seq_one_hot: np.ndarray
+    seq: typ.Sequence
 
     def __post_init__(self) -> None:
         """Check that the topology is valid."""
         if self.n_nucleotides < 1:
             raise ValueError(ERR_TOPOLOGY_INVALID_NUMBER_NUCLEOTIDES)
-
-        if self.n_nucleotides != len(self.seq):
-            raise ValueError(ERR_TOPOLOGY_SEQ_NOT_MATCH_NUCLEOTIDES)
 
         if len(self.strand_counts) == 0 or sum(self.strand_counts) == 0:
             raise ValueError(ERR_TOPOLOGY_INVALID_STRAND_COUNTS)
@@ -76,14 +103,7 @@ class Topology:
         ):
             raise ValueError(ERR_TOPOLOGY_UNBONDED_NEIGHBORS_INVALID_SHAPE)
 
-        if len(set(self.seq) - set("AGCTU")) > 0:
-            raise ValueError(ERR_TOPOLOGY_INVALID_SEQUENCE_NUCLEOTIDES)
-
-        if self.seq_one_hot.shape != (self.n_nucleotides, 4):
-            raise ValueError(ERR_TOPOLOGY_INVALID_ONE_HOT_SEQUENCE_SHAPE)
-
-        if self.seq_one_hot.astype(int).sum() != self.n_nucleotides:
-            raise ValueError(ERR_TOPOLOGY_INVALID_ONE_HOT_SEQUENCE_VALUES)
+        check_valid_seq(self.seq, self.n_nucleotides)
 
 
 def from_oxdna_file(path: typ.PathOrStr) -> Topology:
@@ -199,8 +219,7 @@ def _from_file_oxdna_classic(lines: list[str]) -> Topology:
         strand_counts=strand_counts,
         bonded_neighbors=np.array(list(bonded_neighbors)),
         unbonded_neighbors=np.array(list(unbonded_neighbors)),
-        seq=sequence,
-        seq_one_hot=np.array([NUCLEOTIDES_ONEHOT[s] for s in sequence], dtype=np.float64),
+        seq=jnp.array([jd_const.NUCLEOTIDES_IDX[s] for s in sequence], dtype=jnp.int32),
     )
 
 
@@ -236,6 +255,5 @@ def _from_file_oxdna_new(lines: list[str]) -> Topology:
         strand_counts=np.array(strand_counts),
         bonded_neighbors=np.array(bonded_neighbors),
         unbonded_neighbors=np.array(unbonded_neighbors),
-        seq=sequence,
-        seq_one_hot=np.array([NUCLEOTIDES_ONEHOT[s] for s in sequence], dtype=np.float64),
+        seq=jnp.array([jd_const.NUCLEOTIDES_IDX[s] for s in sequence], dtype=jnp.int32),
     )

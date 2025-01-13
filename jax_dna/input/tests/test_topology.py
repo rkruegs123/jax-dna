@@ -2,10 +2,12 @@ import dataclasses as dc
 from collections.abc import Callable
 from pathlib import Path
 
+import jax.numpy as jnp
 import numpy as np
 import pytest
 
 import jax_dna.input.topology as jdt
+import jax_dna.utils.constants as jd_const
 import jax_dna.utils.types as typ
 
 TEST_FILES_DIR = Path(__file__).parent / "test_files"
@@ -18,7 +20,6 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
         "bonded_neighbors",
         "unbonded_neighbors",
         "seq",
-        "seq_one_hot",
         "expected_error",
     ),
     [
@@ -28,33 +29,17 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([8, 8]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
-            "AAAAGGGGTTTTCCCC",
-            np.concatenate(
-                [
-                    np.tile([[1, 0, 0, 0]], (4, 1)),
-                    np.tile([[0, 1, 0, 0]], (4, 1)),
-                    np.tile([[0, 0, 0, 1]], (4, 1)),
-                    np.tile([[0, 0, 1, 0]], (4, 1)),
-                ]
-            ),
+            jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], dtype=jnp.int32),
             jdt.ERR_TOPOLOGY_INVALID_NUMBER_NUCLEOTIDES,
         ),
         # number of nucleotides does not match sequence length
         (
-            8,  # should be 16
+            16,
             np.array([8, 8]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
-            "AAAAGGGGTTTTCCCC",
-            np.concatenate(
-                [
-                    np.tile([[1, 0, 0, 0]], (4, 1)),
-                    np.tile([[0, 1, 0, 0]], (4, 1)),
-                    np.tile([[0, 0, 0, 1]], (4, 1)),
-                    np.tile([[0, 0, 1, 0]], (4, 1)),
-                ]
-            ),
-            jdt.ERR_TOPOLOGY_SEQ_NOT_MATCH_NUCLEOTIDES,
+            jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3], dtype=jnp.int32),  # only has 15 nucleotides
+            jdt.ERR_TOPOLOGY_INVALID_DISCRETE_SEQUENCE_SHAPE,
         ),
         # number of nucleotides does not match sum of strand counts
         (
@@ -62,15 +47,7 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([8, 8]),  # should be 8
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
-            "AAAAGGGG",
-            np.concatenate(
-                [
-                    np.tile([[1, 0, 0, 0]], (4, 1)),
-                    np.tile([[0, 1, 0, 0]], (4, 1)),
-                    np.tile([[0, 0, 0, 1]], (4, 1)),
-                    np.tile([[0, 0, 1, 0]], (4, 1)),
-                ]
-            ),
+            jnp.array([0, 0, 0, 0, 1, 1, 1, 1], dtype=jnp.int32),
             jdt.ERR_TOPOLOGY_STRAND_COUNTS_NOT_MATCH,
         ),
         # strand counts is zeros
@@ -79,15 +56,7 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([0, 0]),  # should be non-zero and 16
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
-            "AAAAGGGGTTTTCCCC",
-            np.concatenate(
-                [
-                    np.tile([[1, 0, 0, 0]], (4, 1)),
-                    np.tile([[0, 1, 0, 0]], (4, 1)),
-                    np.tile([[0, 0, 0, 1]], (4, 1)),
-                    np.tile([[0, 0, 1, 0]], (4, 1)),
-                ]
-            ),
+            jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], dtype=jnp.int32),
             jdt.ERR_TOPOLOGY_INVALID_STRAND_COUNTS,
         ),
         # bonded neighbors is not 2d
@@ -96,15 +65,7 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([8, 8]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]).flatten(),  # not 2d
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
-            "AAAAGGGGTTTTCCCC",
-            np.concatenate(
-                [
-                    np.tile([[1, 0, 0, 0]], (4, 1)),
-                    np.tile([[0, 1, 0, 0]], (4, 1)),
-                    np.tile([[0, 0, 0, 1]], (4, 1)),
-                    np.tile([[0, 0, 1, 0]], (4, 1)),
-                ]
-            ),
+            jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], dtype=jnp.int32),
             jdt.ERR_TOPOLOGY_BONDED_NEIGHBORS_INVALID_SHAPE,
         ),
         # bonded neighbors second dimension is not 2
@@ -115,15 +76,7 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
                 -1, 4
             ),  # not (n, 2)
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
-            "AAAAGGGGTTTTCCCC",
-            np.concatenate(
-                [
-                    np.tile([[1, 0, 0, 0]], (4, 1)),
-                    np.tile([[0, 1, 0, 0]], (4, 1)),
-                    np.tile([[0, 0, 0, 1]], (4, 1)),
-                    np.tile([[0, 0, 1, 0]], (4, 1)),
-                ]
-            ),
+            jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], dtype=jnp.int32),
             jdt.ERR_TOPOLOGY_BONDED_NEIGHBORS_INVALID_SHAPE,
         ),
         # unbonded neighbors is not 2d
@@ -132,15 +85,7 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([8, 8]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]).flatten(),  # not 2d
-            "AAAAGGGGTTTTCCCC",
-            np.concatenate(
-                [
-                    np.tile([[1, 0, 0, 0]], (4, 1)),
-                    np.tile([[0, 1, 0, 0]], (4, 1)),
-                    np.tile([[0, 0, 0, 1]], (4, 1)),
-                    np.tile([[0, 0, 1, 0]], (4, 1)),
-                ]
-            ),
+            jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], dtype=jnp.int32),
             jdt.ERR_TOPOLOGY_UNBONDED_NEIGHBORS_INVALID_SHAPE,
         ),
         # unbonded neighbors second dimension is not 2
@@ -151,15 +96,7 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]).reshape(
                 -1, 4
             ),  # not (n, 2)
-            "AAAAGGGGTTTTCCCC",
-            np.concatenate(
-                [
-                    np.tile([[1, 0, 0, 0]], (4, 1)),
-                    np.tile([[0, 1, 0, 0]], (4, 1)),
-                    np.tile([[0, 0, 0, 1]], (4, 1)),
-                    np.tile([[0, 0, 1, 0]], (4, 1)),
-                ]
-            ),
+            jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], dtype=jnp.int32),
             jdt.ERR_TOPOLOGY_UNBONDED_NEIGHBORS_INVALID_SHAPE,
         ),
         # invalid sequence character
@@ -168,67 +105,151 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([8, 8]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
-            "AAAAGGGGDDDDCCCC",  # D is not allowed
-            np.concatenate(
-                [
-                    np.tile([[1, 0, 0, 0]], (4, 1)),
-                    np.tile([[0, 1, 0, 0]], (4, 1)),
-                    np.tile([[0, 0, 0, 1]], (4, 1)),
-                    np.tile([[0, 0, 1, 0]], (4, 1)),
-                ]
-            ),
+            jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4], dtype=jnp.int32),
             jdt.ERR_TOPOLOGY_INVALID_SEQUENCE_NUCLEOTIDES,
         ),
-        # second dimension of one-hot sequence is not 4
+        # invalid unpaired probabilistic sequence shape (1)
         (
-            16,
-            np.array([8, 8]),
-            np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
-            np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
-            "AAAAGGGGTTTTCCCC",
-            np.concatenate(
-                [
-                    np.tile([[1, 0, 0, 0]], (4, 1)),
-                    np.tile([[0, 1, 0, 0]], (4, 1)),
-                    np.tile([[0, 0, 0, 1]], (4, 1)),
-                    np.tile([[0, 0, 1, 0]], (4, 1)),
-                ]
-            ).reshape(-1, 2),  # not (n, 4)
-            jdt.ERR_TOPOLOGY_INVALID_ONE_HOT_SEQUENCE_SHAPE,
-        ),
-        # number of one hot sequence values does not match number of nucleotides
-        (
-            16,
-            np.array([8, 8]),
-            np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
-            np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
-            "AAAAGGGGTTTTCCCC",
-            np.concatenate(
-                [
-                    np.tile([[1, 0, 0, 0]], (3, 1)),
-                    np.tile([[0, 1, 0, 0]], (4, 1)),
-                    np.tile([[0, 0, 0, 1]], (4, 1)),
-                    np.tile([[0, 0, 1, 0]], (4, 1)),
-                ]
+            8,
+            np.array([4, 4]),
+            np.array([[1, 2], [3, 4], [5, 6], [0, 7]]),
+            np.array([[1, 2], [3, 4], [5, 6], [0, 7]]),
+            (
+                np.array(
+                    [  # unpaired pseq is (n_unpaired, 5)
+                        [0, 1, 0, 0, 0],
+                        [0, 0, 1, 0, 0],
+                        [1, 0, 0, 0, 0],
+                        [0, 0, 0, 1, 0],
+                    ]
+                ),
+                np.array(
+                    [
+                        [1, 0, 0, 0],
+                        [0, 1, 0, 0],
+                    ]
+                ),
             ),
-            jdt.ERR_TOPOLOGY_INVALID_ONE_HOT_SEQUENCE_SHAPE,
+            jdt.ERR_TOPOLOGY_INVALID_UNPAIRED_PSEQ_SHAPE,
         ),
-        # number of one hot sequence values does not match number of nucleotides
+        # invalid unpaired probabilistic sequence shape (2)
         (
-            16,
-            np.array([8, 8]),
-            np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
-            np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
-            "AAAAGGGGTTTTCCCC",
-            np.concatenate(
-                [
-                    np.tile([[2, 0, 0, 0]], (4, 1)),
-                    np.tile([[0, 1, 0, 0]], (4, 1)),
-                    np.tile([[0, 0, 0, 1]], (4, 1)),
-                    np.tile([[0, 0, 1, 0]], (4, 1)),
-                ]
+            8,
+            np.array([4, 4]),
+            np.array([[1, 2], [3, 4], [5, 6], [0, 7]]),
+            np.array([[1, 2], [3, 4], [5, 6], [0, 7]]),
+            (
+                np.array([0, 0, 0]),  # unpaired pseq has only one dimension
+                np.array(
+                    [
+                        [1, 0, 0, 0],
+                        [0, 1, 0, 0],
+                    ]
+                ),
             ),
-            jdt.ERR_TOPOLOGY_INVALID_ONE_HOT_SEQUENCE_VALUES,
+            jdt.ERR_TOPOLOGY_INVALID_UNPAIRED_PSEQ_SHAPE,
+        ),
+        # invalid bp probabilistic sequence shape (1)
+        (
+            8,
+            np.array([4, 4]),
+            np.array([[1, 2], [3, 4], [5, 6], [0, 7]]),
+            np.array([[1, 2], [3, 4], [5, 6], [0, 7]]),
+            (
+                np.array([[0, 1, 0, 0], [0, 0, 1, 0], [1, 0, 0, 0], [0, 0, 0, 1]]),
+                np.array(
+                    [  # bp pseq is (n_bp, 5)
+                        [1, 0, 0, 0, 0],
+                        [0, 1, 0, 0, 0],
+                    ]
+                ),
+            ),
+            jdt.ERR_TOPOLOGY_INVALID_BP_PSEQ_SHAPE,
+        ),
+        # invalid bp probabilistic sequence shape (2)
+        (
+            8,
+            np.array([4, 4]),
+            np.array([[1, 2], [3, 4], [5, 6], [0, 7]]),
+            np.array([[1, 2], [3, 4], [5, 6], [0, 7]]),
+            (
+                np.array([[0, 1, 0, 0], [0, 0, 1, 0], [1, 0, 0, 0], [0, 0, 0, 1]]),
+                np.array([0, 0, 0]),  # bp pseq is one-dimensional
+            ),
+            jdt.ERR_TOPOLOGY_INVALID_BP_PSEQ_SHAPE,
+        ),
+        # invalid number of implicit nucleotides
+        (
+            8,
+            np.array([4, 4]),
+            np.array([[1, 2], [3, 4], [5, 6], [0, 7]]),
+            np.array([[1, 2], [3, 4], [5, 6], [0, 7]]),
+            (
+                np.array(
+                    [
+                        [0, 1, 0, 0],
+                        [0, 0, 1, 0],
+                        [1, 0, 0, 0],
+                        [0, 0, 0, 1],
+                        [1, 0, 0, 0],  # extra nucleotide
+                    ]
+                ),
+                np.array(
+                    [
+                        [1, 0, 0, 0],
+                        [0, 1, 0, 0],
+                    ]
+                ),
+            ),
+            jdt.ERR_TOPOLOGY_MISMATCH_PSEQ_SHAPE_NUM_NUCLEOTIDES,
+        ),
+        # invalid probabilities
+        (
+            8,
+            np.array([4, 4]),
+            np.array([[1, 2], [3, 4], [5, 6], [0, 7]]),
+            np.array([[1, 2], [3, 4], [5, 6], [0, 7]]),
+            (
+                np.array(
+                    [
+                        [0, 1, 0, 0],
+                        [0, 0, 1, 0],
+                        [1, 0, 0, 0],
+                        [0, 0, 0, 1],
+                    ]
+                ),
+                np.array(
+                    [
+                        [1, 0, 0, 0],
+                        [0, 1, 0, -1],  # Invalid probability
+                    ]
+                ),
+            ),
+            jdt.ERR_TOPOLOGY_INVALID_PROBABILITIES,
+        ),
+        # probabilities not normalized
+        (
+            8,
+            np.array([4, 4]),
+            np.array([[1, 2], [3, 4], [5, 6], [0, 7]]),
+            np.array([[1, 2], [3, 4], [5, 6], [0, 7]]),
+            (
+                np.array(
+                    [
+                        [0, 1, 0, 0],
+                        [0, 0, 1, 0],
+                        [1, 0, 0, 0],
+                        [0, 0, 0, 1],
+                    ]
+                ),
+                np.array(
+                    [
+                        [1, 0, 0, 0],
+                        [0, 1, 0, 1],  # Invalid probability
+                    ]
+                ),
+            ),
+            jdt.ERR_TOPOLOGY_PSEQ_NOT_NORMALIZED,
         ),
     ],
 )
@@ -237,8 +258,7 @@ def test_topology_class_validation_raises_value_error(
     strand_counts: np.ndarray,
     bonded_neighbors: np.ndarray,
     unbonded_neighbors: np.ndarray,
-    seq: str,
-    seq_one_hot: np.ndarray,
+    seq: typ.Sequence,
     expected_error: str,
 ):
     with pytest.raises(ValueError, match=expected_error):
@@ -248,7 +268,6 @@ def test_topology_class_validation_raises_value_error(
             bonded_neighbors=bonded_neighbors,
             unbonded_neighbors=unbonded_neighbors,
             seq=seq,
-            seq_one_hot=seq_one_hot,
         )
 
 
@@ -334,8 +353,7 @@ def test_from_oxdna_file_raises_file_not_found_error():
                         (2, 5),
                     ]
                 ),
-                seq="GCATGC",
-                seq_one_hot=np.array([jdt.NUCLEOTIDES_ONEHOT[s] for s in "GCATGC"], dtype=np.float64),
+                seq=jnp.array([jd_const.NUCLEOTIDES_IDX[s] for s in "GCATGC"], dtype=jnp.int32),
             ),
         ),
         (
@@ -357,8 +375,7 @@ def test_from_oxdna_file_raises_file_not_found_error():
                         (2, 5),
                     ]
                 ),
-                seq="GCATGC",
-                seq_one_hot=np.array([jdt.NUCLEOTIDES_ONEHOT[s] for s in "GCATGC"], dtype=np.float64),
+                seq=jnp.array([jd_const.NUCLEOTIDES_IDX[s] for s in "GCATGC"], dtype=jnp.int32),
             ),
         ),
         (
@@ -382,8 +399,7 @@ def test_from_oxdna_file_raises_file_not_found_error():
                         (3, 5),
                     ]
                 ),
-                seq="GCATGC",
-                seq_one_hot=np.array([jdt.NUCLEOTIDES_ONEHOT[s] for s in "GCATGC"], dtype=np.float64),
+                seq=jnp.array([jd_const.NUCLEOTIDES_IDX[s] for s in "GCATGC"], dtype=jnp.int32),
             ),
         ),
         (
@@ -407,8 +423,7 @@ def test_from_oxdna_file_raises_file_not_found_error():
                         (3, 5),
                     ]
                 ),
-                seq="GCATGC",
-                seq_one_hot=np.array([jdt.NUCLEOTIDES_ONEHOT[s] for s in "GCATGC"], dtype=np.float64),
+                seq=jnp.array([jd_const.NUCLEOTIDES_IDX[s] for s in "GCATGC"], dtype=jnp.int32),
             ),
         ),
     ],
@@ -421,7 +436,7 @@ def test_from_oxdna_file(file_path: str, expected: jdt.Topology):
         if key in ["bonded_neighbors", "unbonded_neighbors"]:
             to_set = lambda x: {tuple(y) for y in x}
             assert to_set(actual[key].tolist()) == to_set(expected[key].tolist()), key
-        elif key in ["strand_counts", "seq_one_hot"]:
+        elif key in ["strand_counts", "seq"]:
             np.testing.assert_allclose(actual[key], expected[key])
         else:
             assert actual[key] == expected[key]

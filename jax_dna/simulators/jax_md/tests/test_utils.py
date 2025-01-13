@@ -1,9 +1,10 @@
 """Tests for the jax_md.utils module."""
 
 import jax.numpy as jnp
-import jax_dna.simulators.jax_md.utils as jdna_utils
 import numpy as np
 import pytest
+
+import jax_dna.simulators.jax_md.utils as jdna_utils
 
 
 def test_NoNeighborList_init():  # noqa: N802 - class name

@@ -52,9 +52,9 @@ class BaseEnergyFunction:
     def __call__(
         self,
         body: jax_md.rigid_body.RigidBody,
-        seq: jnp.ndarray,
-        bonded_neighbors: typ.Arr_Bonded_Neighbors,
-        unbounded_neighbors: typ.Arr_Unbonded_Neighbors,
+        seq: typ.Sequence,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        unbounded_neighbors: typ.Arr_Unbonded_Neighbors_2,
     ) -> float:
         """Calculate the energy of the system."""
         raise NotImplementedError(ERR_CALL_NOT_IMPLEMENTED)
@@ -88,9 +88,9 @@ class ComposedEnergyFunction:
     def compute_terms(
         self,
         body: jax_md.rigid_body.RigidBody,
-        seq: jnp.ndarray,
-        bonded_neighbors: typ.Arr_Bonded_Neighbors,
-        unbonded_neighbors: typ.Arr_Unbonded_Neighbors,
+        seq: typ.Sequence,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
     ) -> jnp.ndarray:
         """Compute each of the energy terms in the energy function."""
         if self.rigid_body_transform_fn:
@@ -101,17 +101,17 @@ class ComposedEnergyFunction:
     def __call__(
         self,
         body: jax_md.rigid_body.RigidBody,
-        seq: jnp.ndarray,
-        bonded_neighbors: typ.Arr_Bonded_Neighbors,
-        unbonded_neighbors: typ.Arr_Unbonded_Neighbors,
+        seq: typ.Sequence,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
     ) -> float:
         """Calculates the energy of the system using the all of the function in `energy_fns`.
 
         Args:
             body (jax_md.rigid_body.RigidBody): The rigid body(ies) of the system
-            seq (jnp.ndarray): the sequence of the system
-            bonded_neighbors (typ.Arr_Bonded_Neighbors): the bonded neighbors
-            unbonded_neighbors (typ.Arr_Unbonded_Neighbors): the unbonded neighbors
+            seq (typ.Sequence): the sequence of the system
+            bonded_neighbors (typ.Arr_Bonded_Neighbors_2): the bonded neighbors
+            unbonded_neighbors (typ.Arr_Unbonded_Neighbors_2): the unbonded neighbors
 
         Returns:
             float: the energy of the system

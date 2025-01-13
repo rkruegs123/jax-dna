@@ -27,6 +27,7 @@ def svd_align(ref_coords: jnp.ndarray, coords: jnp.ndarray) -> tuple[jnp.ndarray
     # Calculate centroids of the reference and input structures
     av1 = ref_center
     av2 = jnp.mean(coords[0][indexes], axis=0)
+
     # Shift the first input structure to be centered
     coords = coords.at[0].set(coords[0] - av2)  # noqa: PD008 -- Not a pandas operation
 
@@ -41,6 +42,7 @@ def svd_align(ref_coords: jnp.ndarray, coords: jnp.ndarray) -> tuple[jnp.ndarray
 
     # Check for a reflection
     found_reflection = jnp.linalg.det(rot) < 0
+
     vt = jnp.where(found_reflection, vt.at[2].set(-vt[2]), vt)  # noqa: PD008 -- Not a pandas operation
     rot = jnp.where(found_reflection, jnp.transpose(jnp.dot(jnp.transpose(vt), jnp.transpose(u))), rot)
 
@@ -70,7 +72,6 @@ ERR_TARGET_STATE_DIM = "the target state must have center positions in (x, y, z)
 
 THREE_DIMENSIONS = 3
 N_DIMS_NUCLEOTIDES_POSITION = 2
-
 
 @chex.dataclass(frozen=True, kw_only=True)
 class RMSE(jd_obs.BaseObservable):
@@ -132,7 +133,7 @@ if __name__ == "__main__":
     )
 
     sim_traj = jd_sio.SimulatorTrajectory(
-        seq_oh=jnp.array(top.seq_one_hot),
+        seq=jnp.array(top.seq_idx),
         strand_lengths=top.strand_counts,
         rigid_body=test_traj.state_rigid_body,
     )

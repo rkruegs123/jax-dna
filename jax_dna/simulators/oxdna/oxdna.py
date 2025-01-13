@@ -22,7 +22,7 @@ import jax_dna.simulators.oxdna.utils as oxdna_utils
 import jax_dna.utils.types as jd_types
 
 REQUIRED_KEYS = {
-    "oxnda_bin",
+    "oxdna_bin",
     "input_directory",
 }
 

@@ -100,3 +100,4 @@ class PitchAngle(jd_obs.BaseObservable):
             self.quartets, base_sites, back_sites, self.displacement_fn
         )
         return jnp.mean(angles, axis=1)
+
