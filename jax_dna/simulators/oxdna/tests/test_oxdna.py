@@ -100,5 +100,33 @@ def test_oxdna_run():
     del os.environ[oxdna.BIN_PATH_ENV_VAR]
 
 
+def test_oxdna_restore_params() -> None:
+    """Tests oxdna restore params"""
+
+    test_dir = setup_test_dir()
+    tmp_build_dir = test_dir / "build"
+
+    expected_text = "Testing text"
+    tmp_src = test_dir / "src"
+    tmp_src.mkdir()
+
+    (tmp_src / "model.h.old").write_text(expected_text)
+    (tmp_src / "model.h").write_text("Will be removed")
+
+    os.environ[oxdna.BUILD_PATH_ENV_VAR] = str(tmp_build_dir)
+
+    sim = oxdna.oxDNASimulator(
+        input_dir=test_dir,
+        sim_type=typ.oxDNASimulatorType.DNA1,
+        energy_configs=[],
+    )
+    sim._restore_params()
+
+    assert (tmp_src / "model.h").read_text() == expected_text
+    assert not (tmp_src / "model.h.old").exists()
+
+    tear_down_test_dir(test_dir)
+
+
 if __name__ == "__main__":
     test_guess_binary_location()

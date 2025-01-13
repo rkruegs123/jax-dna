@@ -41,7 +41,7 @@ ERR_BUILD_SETUP_FAILED = "OXDNA build setup failed wiht return code: {}"
 WARN_CANT_GUESS_BIN_LOC = (
     "Could not guess the location of the {} binary, be sure {} is set to its location for oxDNA recompilation."
 )
-ERR_ORIG_MODEL_H_NOT_FOUND = "Original model.h file not found"
+ERR_ORIG_MODEL_H_NOT_FOUND = "Original model.h file not found, looked at {}"
 
 MAKE_BIN_ENV_VAR = "MAKE_BIN_PATH"
 CMAKE_BIN_ENV_VAR = "CMAKE_BIN_PATH"
@@ -261,4 +261,4 @@ class oxDNASimulator(jd_base.BaseSimulation):  # noqa: N801 oxDNA is a special w
             # restore the original src/model.h
             old_model_h.replace(model_h)
         else:
-            raise FileNotFoundError(ERR_ORIG_MODEL_H_NOT_FOUND)
+            raise FileNotFoundError(ERR_ORIG_MODEL_H_NOT_FOUND.format(old_model_h))
