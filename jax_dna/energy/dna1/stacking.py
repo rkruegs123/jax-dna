@@ -96,7 +96,6 @@ class StackingConfiguration(config.BaseConfiguration):
         "ss_stack_weights",
     )
 
-     
     @override
     def init_params(self) -> "StackingConfiguration":
         eps_stack = self.eps_stack_base + self.eps_stack_kt_coeff * self.kt

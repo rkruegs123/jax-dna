@@ -78,7 +78,6 @@ def loss(
     return extensions - extensions_calc
 
 
-
 def fit_wlc(
     extensions: jnp.ndarray,
     forces: jnp.ndarray,

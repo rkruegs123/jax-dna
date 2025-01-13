@@ -38,7 +38,6 @@ ERR_FILE_NOT_FOUND = "Topology file not found"
 ERR_TOPOLOGY_INVALID_SEQUENCE_TYPE = "Invalid sequence type. Must be discrete or probabilistic"
 
 
-
 def check_valid_seq(seq: typ.Sequence, n_nucleotides: int) -> None:
     """Checks if a sequence is well-formed."""
     if isinstance(seq, typ.Discrete_Sequence):

@@ -69,7 +69,7 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
     delta_theta_star_hb_8: float | None = None
 
     # required but not optimizable
-    ss_hb_weights: np.ndarray | None = dc.field(default_factory=lambda:HB_WEIGHTS_SA)
+    ss_hb_weights: np.ndarray | None = dc.field(default_factory=lambda: HB_WEIGHTS_SA)
 
     # dependent parameters =====================================================
     b_low_hb: float | None = None
