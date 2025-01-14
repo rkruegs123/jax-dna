@@ -361,6 +361,18 @@ def test_total_energy(base_dir: str, t_kelvin: float, *, use_neighbors: bool):
     )
 
     if use_neighbors:
+
+        @jax.jit
+        def state_energy_fn(state, neighbors):
+            neighbors = neighbors.update(state.center)
+            neighbors_idx = neighbors.idx
+            return energy_fn(
+                transform_fn(state),
+                topology.seq,
+                topology.bonded_neighbors,
+                neighbors_idx
+            )
+
         neighbor_fn = jd_nb.get_neighbor_list_fn(
             topology.bonded_neighbors,
             topology.n_nucleotides,
@@ -370,24 +382,7 @@ def test_total_energy(base_dir: str, t_kelvin: float, *, use_neighbors: bool):
         neighbor_fn = jax.jit(neighbor_fn)
         neighbors = neighbor_fn.allocate(states[0].center) # We use the COMs to allocate neighbors
 
-        @jax.jit
-        def state_energy_fn(state, neighbors_idx):
-            return energy_fn(
-                transform_fn(state),
-                topology.seq,
-                topology.bonded_neighbors,
-                neighbors_idx
-            )
-
-        n_states = states.center.shape[0]
-        energies = []
-        for s_idx in range(n_states):
-            state = states[s_idx]
-            neighbors = neighbors.update(state.center)
-            neighbors_idx = neighbors.idx
-            energy = state_energy_fn(state, neighbors_idx)
-            energies.append(energy)
-        energies = jnp.array(energies)
+        energies = jax.vmap(state_energy_fn, (0, None))(states, neighbors)
 
     else:
         energies = jax.vmap(
