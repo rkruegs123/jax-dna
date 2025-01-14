@@ -69,4 +69,3 @@ class PropellerTwist(jd_obs.BaseObservable):
         base_normals = nucleotides.base_normals
         ptwist = jax.vmap(lambda bn: 180.0 - (propeller_twist_rad(self.h_bonded_base_pairs, bn) * 180.0 / jnp.pi))
         return jnp.mean(ptwist(base_normals), axis=1)
-

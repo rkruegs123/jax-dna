@@ -7,11 +7,26 @@ from typing import Any
 import jaxtyping as jaxtyp
 
 
-class OxdnaFormat(Enum):
-    """OxDNA file format."""
+class oxDNAFormat(Enum):  # noqa: N801 - ocDNA is a special word
+    """oxDNA file format."""
 
     CLASSIC = 1
     NEW = 2
+
+
+class oxDNASimulatorType(Enum):  # noqa: N801 - ocDNA is a special word
+    """oxDNA simulator type."""
+
+    DNA1 = 1
+    DNA2 = 2
+
+
+class oxDNAModelHType(Enum):  # noqa: N801 - ocDNA is a special word
+    """oxDNA model.h file type."""
+
+    INTEGER = 1
+    FLOAT = 2
+    STRING = 3
 
 
 PathOrStr = Path | str

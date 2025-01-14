@@ -81,12 +81,12 @@ class Optimization:
         # some objectives might use difftre and not actually need something rerun
         # so check which objectives have observables that need to be run
         ready_objectives, not_ready_objectives = split_by_ready(self.objectives)
-
         grad_refs = [objective.calculate.remote() for objective in ready_objectives]
 
         need_observables = list(
             itertools.chain.from_iterable(get_fn([co.needed_observables.remote() for co in not_ready_objectives]))
         )
+
         needed_simulators = [
             sim for sim in self.simulators if set(get_fn(sim.exposes.remote())) & set(need_observables)
         ]

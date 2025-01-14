@@ -52,6 +52,18 @@ class UnbondedExcludedVolumeConfiguration(config.BaseConfiguration):
         "sigma_backbone",
     )
 
+    # override
+    dependent_params: tuple[str] = (
+        "b_base",
+        "dr_c_base",
+        "b_back_base",
+        "dr_c_back_base",
+        "b_base_back",
+        "dr_c_base_back",
+        "b_backbone",
+        "dr_c_backbone",
+    )
+
     @override
     def init_params(self) -> "UnbondedExcludedVolumeConfiguration":
         # reference to f3(dr_base)

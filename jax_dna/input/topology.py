@@ -38,7 +38,6 @@ ERR_FILE_NOT_FOUND = "Topology file not found"
 ERR_TOPOLOGY_INVALID_SEQUENCE_TYPE = "Invalid sequence type. Must be discrete or probabilistic"
 
 
-
 def check_valid_seq(seq: typ.Sequence, n_nucleotides: int) -> None:
     """Checks if a sequence is well-formed."""
     if isinstance(seq, typ.Discrete_Sequence):
@@ -121,15 +120,15 @@ def from_oxdna_file(path: typ.PathOrStr) -> Topology:
     return parse_f(lines)
 
 
-def _determine_oxdna_format(first_line: str) -> tuple[typ.OxdnaFormat, Callable[[list[str]], Topology]]:
+def _determine_oxdna_format(first_line: str) -> tuple[typ.oxDNAFormat, Callable[[list[str]], Topology]]:
     """Determine the format of an oxDNA file from the first line of the file."""
     tokens = first_line.strip().split()
 
     if len(tokens) == N_1ST_LINE_OXDNA_CLASSIC:
-        fmt = typ.OxdnaFormat.CLASSIC
+        fmt = typ.oxDNAFormat.CLASSIC
         func = _from_file_oxdna_classic
     elif len(tokens) == N_1ST_LINE_OXDNA_NEW:
-        fmt = typ.OxdnaFormat.NEW
+        fmt = typ.oxDNAFormat.NEW
         func = _from_file_oxdna_new
     else:
         raise ValueError(ERR_INVALID_OXDNA_FORMAT)

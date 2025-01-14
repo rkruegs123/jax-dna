@@ -83,6 +83,26 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
         "a_coax_4p",
     )
 
+    # override
+    dependent_params: tuple[str] = (
+        "b_low_coax",
+        "dr_c_low_coax",
+        "b_high_coax",
+        "dr_c_high_coax",
+        "b_coax_4",
+        "delta_theta_coax_4_c",
+        "b_coax_1",
+        "delta_theta_coax_1_c",
+        "b_coax_5",
+        "delta_theta_coax_5_c",
+        "b_coax_6",
+        "delta_theta_coax_6_c",
+        "b_cos_phi3_coax",
+        "cos_phi3_c_coax",
+        "b_cos_phi4_coax",
+        "cos_phi4_c_coax",
+    )
+
     @override
     def init_params(self) -> "CoaxialStackingConfiguration":
         # reference to f2(dr_coax)

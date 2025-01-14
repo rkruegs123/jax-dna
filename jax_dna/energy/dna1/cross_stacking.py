@@ -87,6 +87,26 @@ class CrossStackingConfiguration(config.BaseConfiguration):
         "a_cross_8",
     )
 
+    # override
+    dependent_params: tuple[str] = (
+        "b_low_cross",
+        "dr_c_low_cross",
+        "b_high_cross",
+        "dr_c_high_cross",
+        "b_cross_1",
+        "delta_theta_cross_1_c",
+        "b_cross_2",
+        "delta_theta_cross_2_c",
+        "b_cross_3",
+        "delta_theta_cross_3_c",
+        "b_cross_4",
+        "delta_theta_cross_4_c",
+        "b_cross_7",
+        "delta_theta_cross_7_c",
+        "b_cross_8",
+        "delta_theta_cross_8_c",
+    )
+
     @override
     def init_params(self) -> "CrossStackingConfiguration":
         # reference to f2(dr_hb)

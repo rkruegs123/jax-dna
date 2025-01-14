@@ -69,7 +69,7 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
     delta_theta_star_hb_8: float | None = None
 
     # required but not optimizable
-    ss_hb_weights: np.ndarray | None = dc.field(default_factory=lambda:HB_WEIGHTS_SA)
+    ss_hb_weights: np.ndarray | None = dc.field(default_factory=lambda: HB_WEIGHTS_SA)
 
     # dependent parameters =====================================================
     b_low_hb: float | None = None
@@ -118,6 +118,26 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
         "delta_theta_star_hb_8",
         # Sequence-dependence
         "ss_hb_weights",
+    )
+
+    # override
+    dependent_params: tuple[str] = (
+        "b_low_hb",
+        "dr_c_low_hb",
+        "b_high_hb",
+        "dr_c_high_hb",
+        "b_hb_1",
+        "delta_theta_hb_1_c",
+        "b_hb_2",
+        "delta_theta_hb_2_c",
+        "b_hb_3",
+        "delta_theta_hb_3_c",
+        "b_hb_4",
+        "delta_theta_hb_4_c",
+        "b_hb_7",
+        "delta_theta_hb_7_c",
+        "b_hb_8",
+        "delta_theta_hb_8_c",
     )
 
     @override

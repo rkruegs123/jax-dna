@@ -274,11 +274,11 @@ def test_topology_class_validation_raises_value_error(
 @pytest.mark.parametrize(
     ("in_str", "expected_format", "expected_func"),
     [
-        ("16 2", typ.OxdnaFormat.CLASSIC, jdt._from_file_oxdna_classic),
-        ("16 2 5->3", typ.OxdnaFormat.NEW, jdt._from_file_oxdna_new),
+        ("16 2", typ.oxDNAFormat.CLASSIC, jdt._from_file_oxdna_classic),
+        ("16 2 5->3", typ.oxDNAFormat.NEW, jdt._from_file_oxdna_new),
     ],
 )
-def test_determine_oxdna_format(in_str: str, expected_format: typ.OxdnaFormat, expected_func: Callable):
+def test_determine_oxdna_format(in_str: str, expected_format: typ.oxDNAFormat, expected_func: Callable):
     actual_format, actual_func = jdt._determine_oxdna_format(in_str)
     assert actual_format == expected_format
     assert actual_func == expected_func

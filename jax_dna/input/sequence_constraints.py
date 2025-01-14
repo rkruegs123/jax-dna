@@ -1,6 +1,5 @@
 """Sequence constraint information for DNA/RNA."""
 
-
 import chex
 import jax.numpy as jnp
 import numpy as np
@@ -42,7 +41,7 @@ def check_consistent_constraints(
     n_bp: int,
     unpaired: typ.Arr_Unpaired,
     idx_to_unpaired_idx: typ.Arr_Nucleotide_Int,
-    idx_to_bp_idx: typ.Arr_Nucleotide_2_Int
+    idx_to_bp_idx: typ.Arr_Nucleotide_2_Int,
 ) -> None:
     """Checks for consistency between specified nucleotide constraints and index mappers."""
     unpaired_mapped_idxs = []
@@ -66,13 +65,7 @@ def check_consistent_constraints(
         raise ValueError(ERR_SEQ_CONSTRAINTS_INCOMPLETE_BP_MAPPED_IDXS)
 
 
-def check_cover(
-    n_nucleotides: int,
-    n_unpaired: int,
-    n_bp: int,
-    unpaired: typ.Arr_Unpaired,
-    bps: typ.Arr_Bp
-) -> None:
+def check_cover(n_nucleotides: int, n_unpaired: int, n_bp: int, unpaired: typ.Arr_Unpaired, bps: typ.Arr_Bp) -> None:
     """Checks if unpaired and paired nucleotides cover the entire set of nucleotides."""
     if n_unpaired + 2 * n_bp != n_nucleotides:
         raise ValueError(ERR_SEQ_CONSTRAINTS_MISMATCH_NUM_TYPES)
@@ -125,7 +118,6 @@ class SequenceConstraints:
             if not valid:
                 raise ValueError(ERR_SEQ_CONSTRAINTS_INVALID_IS_UNPAIRED)
 
-
         check_consistent_constraints(
             self.n_unpaired,
             self.n_bp,
@@ -138,8 +130,11 @@ class SequenceConstraints:
 def from_bps(n_nucleotides: int, bps: typ.Arr_Bp) -> SequenceConstraints:
     """Construct a SequenceConstraints object from a set of base pairs."""
     # Check format of base pairs
-    if len(bps.shape) != jd_const.TWO_DIMENSIONS or bps.shape[1] != jd_const.N_NT_PER_BP \
-       or jd_const.N_NT_PER_BP * bps.shape[0] > n_nucleotides:
+    if (
+        len(bps.shape) != jd_const.TWO_DIMENSIONS
+        or bps.shape[1] != jd_const.N_NT_PER_BP
+        or jd_const.N_NT_PER_BP * bps.shape[0] > n_nucleotides
+    ):
         raise ValueError(ERR_INVALID_BP_SHAPE)
 
     paired_nucleotides = bps.flatten()

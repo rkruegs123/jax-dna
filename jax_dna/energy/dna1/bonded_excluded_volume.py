@@ -43,6 +43,16 @@ class BondedExcludedVolumeConfiguration(config.BaseConfiguration):
         "dr_star_base_back",
     )
 
+    # override
+    dependent_params: tuple[str] = (
+        "b_base",
+        "dr_c_base",
+        "b_back_base",
+        "dr_c_back_base",
+        "b_base_back",
+        "dr_c_base_back",
+    )
+
     @override
     def init_params(self) -> "BondedExcludedVolumeConfiguration":
         b_base, dr_c_base = bsf.get_f3_smoothing_params(self.dr_star_base, self.sigma_base)

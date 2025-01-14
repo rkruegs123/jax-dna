@@ -73,6 +73,7 @@ ERR_TARGET_STATE_DIM = "the target state must have center positions in (x, y, z)
 THREE_DIMENSIONS = 3
 N_DIMS_NUCLEOTIDES_POSITION = 2
 
+
 @chex.dataclass(frozen=True, kw_only=True)
 class RMSE(jd_obs.BaseObservable):
     """Computes the RMSE with respect to a target configuration for each state.

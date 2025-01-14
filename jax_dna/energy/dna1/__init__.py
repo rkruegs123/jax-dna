@@ -86,12 +86,10 @@ __all__ = [
     "BondedExcludedVolumeConfiguration",
     "UnbondedExcludedVolume",
     "UnbondedExcludedVolumeConfiguration",
-
     "ExpectedHydrogenBondingConfiguration",
     "ExpectedHydrogenBonding",
     "ExpectedStackingConfiguration",
     "ExpectedStacking",
-
     "default_configs",
     "default_energy_fns",
 ]
