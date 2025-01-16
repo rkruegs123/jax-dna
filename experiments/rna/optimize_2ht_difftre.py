@@ -60,6 +60,7 @@ def run(args):
     opt_seq_dep_stacking = args['opt_seq_dep_stacking']
 
     full_system = args['full_system']
+    init_custom_params = args['init_custom_params']
 
     # t_kelvin = utils.DEFAULT_TEMP
     t_kelvin = 293.15
@@ -322,17 +323,99 @@ def run(args):
     grad_fn = jit(grad_fn)
 
     # Initialize parameters
-    seq_avg_params = deepcopy(EMPTY_BASE_PARAMS)
-    for opt_key in seq_avg_opt_keys:
-        seq_avg_params[opt_key] = deepcopy(DEFAULT_BASE_PARAMS[opt_key])
-    params = {"seq_avg": seq_avg_params, "seq_dep": dict()}
-    if opt_seq_dep_stacking:
-        params["seq_dep"]["stacking"] = jnp.array(ss_stack_weights)
+    if init_custom_params:
+        params = {
+            'seq_avg': {
+                'coaxial_stacking': {
+                    'a_coax_1': 1.96262908,
+                    'a_coax_3p': 1.99296538,
+                    'a_coax_4': 1.31547434,
+                    'a_coax_4p': 1.98005975,
+                    'a_coax_5': 0.90579923,
+                    'a_coax_6': 0.9,
+                    'cos_phi3_star_coax': -0.65744625,
+                    'cos_phi4_star_coax': -0.6536279,
+                    'delta_theta_star_coax_1': 0.6176235,
+                    'delta_theta_star_coax_4': 0.80430099,
+                    'delta_theta_star_coax_5': 0.96948441,
+                    'delta_theta_star_coax_6': 0.95,
+                    'dr0_coax': 0.49690238,
+                    'dr_c_coax': 0.62009351,
+                    'dr_high_coax': 0.55889348,
+                    'dr_low_coax': 0.43296995,
+                    'k_coax': 80.01199268,
+                    'theta0_coax_1': 2.63764088,
+                    'theta0_coax_1_bonus': 0.3126271,
+                    'theta0_coax_4': 0.1342195,
+                    'theta0_coax_5': 0.66137077,
+                    'theta0_coax_6': 0.685},
+                'cross_stacking': {
+                    'a_cross_1': 2.26508263,
+                    'a_cross_2': 1.69865942,
+                    'a_cross_3': 1.7,
+                    'a_cross_7': 1.7048074,
+                    'a_cross_8': 1.7,
+                    'delta_theta_star_cross_1': 0.58282376,
+                    'delta_theta_star_cross_2': 0.66958152,
+                    'delta_theta_star_cross_3': 0.68,
+                    'delta_theta_star_cross_7': 0.66579311,
+                    'delta_theta_star_cross_8': 0.68,
+                    'dr_c_cross': 0.61531136,
+                    'dr_high_cross': 0.57318886,
+                    'dr_low_cross': 0.4077584,
+                    'k_cross': 59.98943963,
+                    'r0_cross': 0.5045946,
+                    'theta0_cross_1': 0.52710691,
+                    'theta0_cross_2': 1.3033864,
+                    'theta0_cross_3': 1.266,
+                    'theta0_cross_7': 0.27459227,
+                    'theta0_cross_8': 0.309},
+                'debye': {},
+                'excluded_volume': {},
+                'fene': {},
+                'geometry': {},
+                'hydrogen_bonding': {},
+                'stacking': {
+                    'a_stack': 5.99374692,
+                    'a_stack_1': 2.,
+                    'a_stack_10': 1.296035,
+                    'a_stack_2': 1.99130353,
+                    'a_stack_5': 0.93388113,
+                    'a_stack_6': 0.9,
+                    'a_stack_9': 1.31621372,
+                    'delta_theta_star_stack_10': 0.80477338,
+                    'delta_theta_star_stack_5': 0.9414867,
+                    'delta_theta_star_stack_6': 0.95,
+                    'delta_theta_star_stack_9': 0.80666125,
+                    'dr0_stack': 0.47092052,
+                    'dr_c_stack': 0.92984975,
+                    'dr_high_stack': 0.78532626,
+                    'dr_low_stack': 0.35526074,
+                    'eps_stack_base': 1.39927407,
+                    'eps_stack_kt_coeff': 2.76721407,
+                    'neg_cos_phi1_star_stack': -0.65,
+                    'neg_cos_phi2_star_stack': -0.65,
+                    'theta0_stack_10': 0.0007097,
+                    'theta0_stack_5': -0.03309463,
+                    'theta0_stack_6': 0.,
+                    'theta0_stack_9': -0.01325876
+                }
+            },
+            'seq_dep': {}
+        }
+    else:
+        seq_avg_params = deepcopy(EMPTY_BASE_PARAMS)
+        for opt_key in seq_avg_opt_keys:
+            seq_avg_params[opt_key] = deepcopy(DEFAULT_BASE_PARAMS[opt_key])
+        params = {"seq_avg": seq_avg_params, "seq_dep": dict()}
+        if opt_seq_dep_stacking:
+            params["seq_dep"]["stacking"] = jnp.array(ss_stack_weights)
 
-    if use_symm_coax:
-        assert("coaxial_stacking" in seq_avg_opt_keys)
+        if use_symm_coax:
+            assert("coaxial_stacking" in seq_avg_opt_keys)
 
-        params["seq_avg"]["coaxial_stacking"]["theta0_coax_1_bonus"] = 0.35
+            params["seq_avg"]["coaxial_stacking"]["theta0_coax_1_bonus"] = 0.35
+    
 
     init_params = deepcopy(params)
 
@@ -450,6 +533,8 @@ def get_parser():
     parser.add_argument('--opt-seq-dep-stacking', action='store_true')
 
     parser.add_argument('--use-symm-coax', action='store_true')
+
+    parser.add_argument('--init-custom-params', action='store_true')
 
 
     return parser
