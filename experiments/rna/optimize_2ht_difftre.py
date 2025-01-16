@@ -19,6 +19,8 @@ import optax
 import jax.numpy as jnp
 from jax import jit, vmap, grad, value_and_grad, lax, tree_util, random
 from jax_md import space, rigid_body, simulate
+import orbax.checkpoint
+from flax.training import orbax_utils
 
 from jax_dna.loss import rmse
 from jax_dna.common import utils, topology, trajectory, center_configuration, checkpoint
@@ -61,6 +63,10 @@ def run(args):
 
     full_system = args['full_system']
     init_custom_params = args['init_custom_params']
+
+    orbax_ckpt_path = args['orbax_ckpt_path']
+    ckpt_freq = args['ckpt_freq']
+
 
     # t_kelvin = utils.DEFAULT_TEMP
     t_kelvin = 293.15
@@ -503,10 +509,36 @@ def run(args):
             params["seq_avg"]["coaxial_stacking"]["theta0_coax_1_bonus"] = 0.35
 
 
-    init_params = deepcopy(params)
 
+    # Setup optimizer
     optimizer = optax.adam(learning_rate=lr)
     opt_state = optimizer.init(params)
+
+
+    # Setup checkpointer
+    ex_params = deepcopy(params)
+    ex_ckpt = {"params": ex_params, "optimizer": optimizer, "opt_state": opt_state}
+    save_args = orbax_utils.save_args_from_target(ex_ckpt)
+
+    ckpt_dir = run_dir / "ckpt/orbax/managed/"
+    ckpt_dir.mkdir(parents=True, exist_ok=False)
+
+    orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
+    options = orbax.checkpoint.CheckpointManagerOptions(max_to_keep=3, create=True)
+    checkpoint_manager = orbax.checkpoint.CheckpointManager(str(ckpt_dir.resolve()), orbax_checkpointer, options) # note: checkpoint directory has to be an absoltue path
+
+    ## Load orbax checkpoint if necessary
+    if orbax_ckpt_path is not None:
+        state_restored = orbax_checkpointer.restore(orbax_ckpt_path, item=ex_ckpt)
+        params = state_restored["params"]
+        # optimizer = state_restored["optimizer"]
+        opt_state = state_restored["opt_state"]
+
+
+
+    # Optimize!
+
+    init_params = deepcopy(params)
 
     min_n_eff = int(n_ref_states * min_neff_factor)
     all_rmses = list()
@@ -573,6 +605,13 @@ def run(args):
         all_n_effs.append(n_eff)
         all_rmses.append(curr_rmse)
 
+
+        # Save a checkpoint
+        if i % ckpt_freq == 0:
+            ckpt = {"params": params, "optimizer": optimizer, "opt_state": opt_state}
+            checkpoint_manager.save(i, ckpt, save_kwargs={'save_args': save_args})
+
+
         updates, opt_state = optimizer.update(grads, opt_state, params)
         params = optax.apply_updates(params, updates)
 
@@ -621,6 +660,11 @@ def get_parser():
     parser.add_argument('--use-symm-coax', action='store_true')
 
     parser.add_argument('--init-custom-params', action='store_true')
+
+    parser.add_argument('--orbax-ckpt-path', type=str, required=False,
+                        help='Optional path to orbax checkpoint directory')
+    parser.add_argument('--ckpt-freq', type=int, default=3,
+                        help='Checkpointing frequency')
 
 
     return parser
