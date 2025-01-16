@@ -414,7 +414,7 @@ def run(args):
         """
 
         # new-theta1-coax-term-5ht-n6-s500k-nbrs-lr0.001-longer
-        {
+        params = {
             'seq_avg': {
                 'coaxial_stacking': {
                     'a_coax_1': 1.95861459,
