@@ -176,7 +176,8 @@ class TopologyInfo:
         top_df = pd.read_csv(
             StringIO('\n'.join(top_lines[1:])),
             names=input_col_names,
-            delim_whitespace=True)
+            delim_whitespace=True
+        )
 
         check_valid_top_df(top_df, self.n_strands, self.n, self.alphabet)
 

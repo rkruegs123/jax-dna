@@ -1,0 +1,53 @@
+{
+type = mutual_trap
+particle = 201
+ref_particle = 702
+stiff = 69.87
+r0 = 0.35
+PBC = 1
+}
+
+{
+type = mutual_trap
+particle = 702
+ref_particle = 201
+stiff = 69.87
+r0 = 0.35
+PBC = 1
+}
+
+{
+type = mutual_trap
+particle = 898
+ref_particle = 403
+stiff = 69.87
+r0 = 0.35
+PBC = 1
+}
+
+{
+type = mutual_trap
+particle = 403
+ref_particle = 898
+stiff = 69.87
+r0 = 0.35
+PBC = 1
+}
+
+{
+type = mutual_trap
+particle = 800
+ref_particle = 604
+stiff = 69.87
+r0 = 0.35
+PBC = 1
+}
+
+{
+type = mutual_trap
+particle = 604
+ref_particle = 800
+stiff = 69.87
+r0 = 0.35
+PBC = 1
+}

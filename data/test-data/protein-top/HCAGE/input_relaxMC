@@ -1,0 +1,46 @@
+##############################
+####  PROGRAM PARAMETERS  ####
+##############################
+interaction_type=DNANM
+#relax_type=harmonic_force
+salt_concentration=1.0
+sim_type = MC
+backend = CPU
+backend_precision = double
+#debug = 1
+#seed = 42
+
+##############################
+####    SIM PARAMETERS    ####
+##############################
+steps = 10000
+
+ensemble = nvt
+delta_translation = 0.1
+delta_rotation = 0.15
+
+thermostat = john
+T = 0C
+dt = 0.002
+verlet_skin = 0.4
+maxclust = 63
+diff_coeff = 2.5
+newtonian_steps = 103
+
+##############################
+####    INPUT / OUTPUT    ####
+##############################
+parfile = hcage.par
+topology = hcage.top
+conf_file = hcage.dat
+trajectory_file = trajectory.dat
+refresh_vel = 1
+log_file = log.dat
+no_stdout_energy = 0
+restart_step_counter = 1
+energy_file = energy.dat
+print_conf_interval = 1000
+print_energy_every = 1000
+time_scale = linear
+external_forces = 1
+external_forces_file = trap.txt
