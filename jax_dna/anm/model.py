@@ -180,8 +180,8 @@ class TestANM(unittest.TestCase):
             print(f"\t\toxDNA subterms: {ith_oxdna_subterms}")
             print(f"\t\t|Difference|: {onp.abs(ith_computed_subterms - ith_oxdna_subterms)}")
 
-            # for oxdna_subterm, computed_subterm in zip(ith_oxdna_subterms, ith_computed_subterms):
-            #     self.assertAlmostEqual(oxdna_subterm, computed_subterm, places=tol_places)
+            for oxdna_subterm, computed_subterm in zip(ith_oxdna_subterms, ith_computed_subterms):
+                self.assertAlmostEqual(oxdna_subterm, computed_subterm, places=tol_places)
 
     def test_subterms(self):
 
