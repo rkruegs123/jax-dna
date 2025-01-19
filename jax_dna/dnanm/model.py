@@ -19,6 +19,7 @@ from jax_dna.common import utils, topology_protein_na, trajectory
 from jax_dna.dna2 import model as model_dna2
 from jax_dna.anm import model as model_anm
 from jax_dna.common.read_seq_specific import read_ss_oxdna
+from jax_dna.common.utils import Q_to_back_base, Q_to_base_normal, Q_to_cross_prod
 
 
 
@@ -67,10 +68,11 @@ class EnergyModel:
         nt_seq_oh,
         bonded_nbrs,
         unbonded_nbrs_nt,
+        unbonded_nbrs_protein_nt,
         is_end=None
     ):
 
-        spring_dg, _ = model_anm.compute_subterms(
+        spring_dg, prot_exc_vol_dg = model_anm.compute_subterms(
             body,
             aa_seq,
             self.network,
@@ -79,15 +81,50 @@ class EnergyModel:
             self.displacement_fn,
             t_kelvin=self.t_kelvin,
         )
-        prot_exc_vol_dg = 0.0 # FIXME: calculate using only the relevant indices
 
         dna2_dgs = self.dna2_energy_model.compute_subterms(
             body, nt_seq_oh, bonded_nbrs, unbonded_nbrs_nt.T, is_end
         )
         fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg = dna2_dgs
 
-        # FIXME: do protein dna excluded volume
-        prot_nt_excl_vol_dg = 0.0
+        # protein/dna excluded volume
+        ## Note: recomputing all this for now
+        Q = body.orientation
+        back_base_vectors = Q_to_back_base(Q) # space frame, normalized
+        base_normals = Q_to_base_normal(Q) # space frame, normalized
+        cross_prods = Q_to_cross_prod(Q) # space frame, normalized
+
+        back_sites = body.center + model_dna2.com_to_backbone_x*back_base_vectors + model_dna2.com_to_backbone_y*cross_prods
+        base_sites = body.center + model_dna2.com_to_hb * back_base_vectors
+
+        def protein_na_pair_exc_vol_fn(p_idx, nt_idx):
+            dr_back = self.displacement_fn(body.center[p_idx], back_sites[nt_idx])
+            r_back = space.distance(dr_back)
+            val_back = model_anm.excluded_volume(
+                r_back,
+                eps=2.0,
+                sigma=0.570,
+                r_c=0.573,
+                r_star=0.569,
+                b=17.9*10**7,
+            )
+            val_back = jnp.nan_to_num(jnp.where(p_idx == nt_idx, 0.0, val_back))
+
+            dr_base = self.displacement_fn(body.center[p_idx], base_sites[nt_idx])
+            r_base = space.distance(dr_base)
+            val_base = model_anm.excluded_volume(
+                r_base,
+                eps=2.0,
+                sigma=0.360,
+                r_c=0.363,
+                r_star=0.359,
+                b=29.6*10**7,
+            )
+            val_base = jnp.nan_to_num(jnp.where(p_idx == nt_idx, 0.0, val_base))
+
+            return val_back + val_base
+        prot_nt_excl_vol_dgs = jax.vmap(protein_na_pair_exc_vol_fn)(unbonded_nbrs_protein_nt[:, 0], unbonded_nbrs_protein_nt[:, 1])
+        prot_nt_excl_vol_dg = prot_nt_excl_vol_dgs.sum()
 
         return fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, \
             hb_dg, cr_stack_dg, cx_stack_dg, db_dg, spring_dg, prot_exc_vol_dg, prot_nt_excl_vol_dg
@@ -99,9 +136,10 @@ class EnergyModel:
         nt_seq_oh,
         bonded_nbrs,
         unbonded_nbrs_nt,
+        unbonded_nbrs_protein_nt,
         is_end=None
     ):
-        all_dgs = compute_subterms(body, aa_seq, nt_seq_oh, bonded_nbrs, unbonded_nbrs_nt, is_end)
+        all_dgs = compute_subterms(body, aa_seq, nt_seq_oh, bonded_nbrs, unbonded_nbrs_nt, unbonded_nbrs_nt, is_end)
         fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg, spring_dg, prot_exc_vol_dg, prot_nt_excl_vol_dg = dgs
         return prot_exc_vol_dg + spring_dg + prot_nt_excl_vol_dg + fene_dg + exc_vol_bonded_dg \
             + stack_dg + exc_vol_unbonded_dg + hb_dg + cr_stack_dg + cx_stack_dg + db_dg
@@ -206,7 +244,7 @@ class TestDNANM(unittest.TestCase):
             seq_avg=seq_avg
         )
         compute_subterms_fn = model.compute_subterms
-        # compute_subterms_fn = jit(compute_subterms_fn)
+        compute_subterms_fn = jit(compute_subterms_fn)
 
         computed_subterms = list()
         for state in tqdm(traj_states):
@@ -217,6 +255,7 @@ class TestDNANM(unittest.TestCase):
                 jnp.array(utils.get_one_hot(top_info.nt_seq), dtype=jnp.float64),
                 jnp.array(top_info.bonded_nbrs),
                 jnp.array(top_info.unbonded_nbrs_nt),
+                jnp.array(top_info.unbonded_nbrs_protein_nt),
                 is_end
             )
 
@@ -241,8 +280,8 @@ class TestDNANM(unittest.TestCase):
             print(f"\t\toxDNA subterms: {ith_oxdna_subterms}")
             print(f"\t\t|Difference|: {onp.abs(ith_computed_subterms - ith_oxdna_subterms)}")
 
-            # for oxdna_subterm, computed_subterm in zip(ith_oxdna_subterms, ith_computed_subterms):
-            #     self.assertAlmostEqual(oxdna_subterm, computed_subterm, places=tol_places)
+            for oxdna_subterm, computed_subterm in zip(ith_oxdna_subterms, ith_computed_subterms):
+                self.assertAlmostEqual(oxdna_subterm, computed_subterm, places=tol_places)
 
     def test_subterms(self):
 

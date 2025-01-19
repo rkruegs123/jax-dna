@@ -223,7 +223,7 @@ class ProteinNucAcidTopology:
         na_protein_unbonded_nbrs = onp.array(na_protein_unbonded_nbrs)
 
         self.unbonded_nbrs_nt = unbonded_nbrs_nt
-        self.unbonded_nbrs_nt_protein = na_protein_unbonded_nbrs
+        self.unbonded_nbrs_protein_nt = na_protein_unbonded_nbrs
         self.unbonded_nbrs = onp.concatenate([unbonded_nbrs_nt, na_protein_unbonded_nbrs])
 
 

@@ -67,7 +67,8 @@ def compute_subterms(
         r = space.distance(dr)
         val = jnp.where(i == j, 0.0, excluded_volume(r))
         return jnp.nan_to_num(val) # Note: I think we could actually get away without this
-    exc_vol_dgs = jax.vmap(pair_exc_vol_fn)(jnp.arange(n), jnp.arange(n)) # FIXME: compute over all n?
+    # exc_vol_dgs = jax.vmap(pair_exc_vol_fn)(jnp.arange(n), jnp.arange(n)) # FIXME: compute over all n?
+    exc_vol_dgs = jax.vmap(pair_exc_vol_fn)(network_i, network_j) # FIXME: compute over all n?
     exc_vol_dg = exc_vol_dgs.sum()
 
     return spring_dg, exc_vol_dg
