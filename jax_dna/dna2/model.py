@@ -487,7 +487,8 @@ class TestDna2(unittest.TestCase):
                 neighbors_idx = neighbors.idx
 
             dgs = compute_subterms_fn(
-                state, seq_oh, top_info.bonded_nbrs, neighbors_idx, is_end)
+                state, seq_oh, top_info.bonded_nbrs, neighbors_idx, is_end
+            )
             avg_subterms = onp.array(dgs) / top_info.n # average per nucleotide
             computed_subterms.append(avg_subterms)
 

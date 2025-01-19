@@ -43,14 +43,14 @@ class ProteinNucAcidTopology:
         sys_info = top_lines[0].strip().split()
         assert(len(sys_info) == 5)
 
-        self.n_total = int(sys_info[0])
+        self.n = int(sys_info[0])
         self.n_strands_total = int(sys_info[1])
         self.n_na = int(sys_info[2])
         self.n_protein = int(sys_info[3])
         self.n_na_strands = int(sys_info[4])
         self.n_protein_strands = self.n_strands_total - self.n_na_strands
 
-        assert(self.n_total == self.n_na + self.n_protein)
+        assert(self.n == self.n_na + self.n_protein)
 
         # Read the input file into a dataframe, regardless of orientation
 
@@ -69,6 +69,7 @@ class ProteinNucAcidTopology:
         strand_counts = list()
         n_protein_strand_count = 0
         n_na_strand_count = 0
+        is_end = list()
         for curr_idx, line in enumerate(top_lines[1:]):
             tokens = line.strip().split()
             strand_idx = int(tokens[0])
@@ -115,6 +116,11 @@ class ProteinNucAcidTopology:
                     if nbr_idx != -1:
                         network.append((curr_idx, nbr_idx))
 
+                if n_term_nbr == -1 or c_term_nbr == -1:
+                    is_end.append(1)
+                else:
+                    is_end.append(0)
+
             else:
                 # Nucleic Acids
                 if not started_na:
@@ -136,14 +142,23 @@ class ProteinNucAcidTopology:
                 if nbr_5p != -1:
                     bonded_nbrs.append((curr_idx, nbr_5p))
 
+                if nbr_5p == -1 or nbr_3p == -1:
+                    is_end.append(1)
+                else:
+                    is_end.append(0)
+        self.network = onp.array(network)
+        self.is_end = onp.array(is_end).astype(onp.int32)
+
 
         assert(self.n_protein_strands == n_protein_strand_count)
         assert(self.n_na_strands == n_na_strand_count)
 
         self.bonded_nbrs = onp.array(bonded_nbrs)
         strand_bounds = list(itertools.pairwise([0, *itertools.accumulate(strand_counts)]))
-        nt_types_rev = itertools.chain.from_iterable([nt_types[s:e] for s, e in strand_bounds])
+        nt_types_rev = list(itertools.chain.from_iterable([nt_types[s:e] for s, e in strand_bounds]))
         self.nt_seq_idx = onp.array([-1]*self.n_protein + [DNA_ALPHA.index(nt) for nt in nt_types_rev])
+        dummy_protein_nt = "A"
+        self.nt_seq = dummy_protein_nt*self.n_protein + ''.join(nt_types_rev)
 
         network_set = set(network)
         self.anm_network = onp.array(network)
@@ -155,10 +170,10 @@ class ProteinNucAcidTopology:
 
         sys_info_par = par_lines[0].strip().split()
         assert(len(sys_info_par) == 1)
-        assert(int(sys_info[0]) == self.n_total)
+        assert(int(sys_info[0]) == self.n)
 
-        spring_constants = onp.zeros((self.n_total, self.n_total)).astype(onp.float64)
-        eq_distances = onp.zeros((self.n_total, self.n_total)).astype(onp.float64)
+        spring_constants = onp.zeros((self.n, self.n)).astype(onp.float64)
+        eq_distances = onp.zeros((self.n, self.n)).astype(onp.float64)
         for par_line in par_lines[1:]:
             tokens = par_line.strip().split()
             assert(len(tokens) == 5)
@@ -184,7 +199,7 @@ class ProteinNucAcidTopology:
         ## Get NA unbonded pairs
 
         ### First, set to all neighbors
-        unbonded_nbrs_nt = set(combinations(range(self.n_protein, self.n_total), 2))
+        unbonded_nbrs_nt = set(combinations(range(self.n_protein, self.n), 2))
 
         ### Then, remove all bonded neighbors
         unbonded_nbrs_nt -= set(bonded_nbrs)
@@ -194,19 +209,21 @@ class ProteinNucAcidTopology:
         unbonded_nbrs_nt -= rev_bonded_nbrs
 
         ### Finally, remove identities (which shouldn't be in there in the first place)
-        unbonded_nbrs_nt -= set([(i, i) for i in range(self.n_protein, self.n_total)])
+        unbonded_nbrs_nt -= set([(i, i) for i in range(self.n_protein, self.n)])
 
         unbonded_nbrs_nt = list(unbonded_nbrs_nt)
 
         ## Get NA/Protein hybrids pairs
         protein_idxs = onp.arange(self.n_protein)
-        nt_idxs = onp.arange(self.n_protein, self.n_total)
+        nt_idxs = onp.arange(self.n_protein, self.n)
         na_protein_unbonded_nbrs = list()
         for p_idx in protein_idxs:
             for nt_idx in nt_idxs:
                 na_protein_unbonded_nbrs.append((p_idx, nt_idx))
         na_protein_unbonded_nbrs = onp.array(na_protein_unbonded_nbrs)
 
+        self.unbonded_nbrs_nt = unbonded_nbrs_nt
+        self.unbonded_nbrs_nt_protein = na_protein_unbonded_nbrs
         self.unbonded_nbrs = onp.concatenate([unbonded_nbrs_nt, na_protein_unbonded_nbrs])
 
 
@@ -221,3 +238,4 @@ if __name__ == "__main__":
     # FIXME
     # 1. neighbor list support for proteins will be tough without being too inefficient. just shouldn't do it for now.
     # 2. Should all inter-protein pairs from unbonded neighbors. Maybe do it by construction rather than by omission
+    # 3. well, all unbonded neighbors have excluded volume... so we actually don't have to check types for that. BUT, DNA2 unbonded should be filtered based on type... should maybe do what we do in SSEC repo where we return have a member function that e.g. returns db_dgs and hb_dgs instead of db_dg, and then we can compute them all and mask... if we do this we have to make sure to test

@@ -60,6 +60,9 @@ DEFAULT_TEMP = 296.15 # Kelvin
 def get_kt(t_kelvin):
     return 0.1 * t_kelvin / 300.0
 
+def get_t_kelvin(kt):
+    return (300.0 * kt) / 0.1
+
 # oxDNA unit conversions
 
 ## Tom's thesis, page 23, bottom
