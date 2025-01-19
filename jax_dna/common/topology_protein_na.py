@@ -70,6 +70,8 @@ class ProteinNucAcidTopology:
         n_protein_strand_count = 0
         n_na_strand_count = 0
         is_end = list()
+        is_nt_idx = list()
+        is_protein_idx = list()
         for curr_idx, line in enumerate(top_lines[1:]):
             tokens = line.strip().split()
             strand_idx = int(tokens[0])
@@ -121,6 +123,9 @@ class ProteinNucAcidTopology:
                 else:
                     is_end.append(0)
 
+                is_nt_idx.append(0)
+                is_protein_idx.append(1)
+
             else:
                 # Nucleic Acids
                 if not started_na:
@@ -146,8 +151,14 @@ class ProteinNucAcidTopology:
                     is_end.append(1)
                 else:
                     is_end.append(0)
+
+                is_nt_idx.append(1)
+                is_protein_idx.append(0)
+
         self.network = onp.array(network)
         self.is_end = onp.array(is_end).astype(onp.int32)
+        self.is_nt_idx = onp.array(is_nt_idx).astype(onp.int32)
+        self.is_protein_idx = onp.array(is_protein_idx).astype(onp.int32)
 
 
         assert(self.n_protein_strands == n_protein_strand_count)

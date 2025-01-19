@@ -131,7 +131,7 @@ class EnergyModel:
         self.base_params = get_full_base_params(override_base_params, seq_avg)
         self.params = _process(self.base_params, self.t_kelvin, self.salt_conc)
 
-    def compute_subterms(self, body, seq, bonded_nbrs, unbonded_nbrs, is_end=None):
+    def compute_pairwise_dgs(self, body, seq, bonded_nbrs, unbonded_nbrs, is_end=None):
         nn_i = bonded_nbrs[:, 0]
         nn_j = bonded_nbrs[:, 1]
 
@@ -210,20 +210,20 @@ class EnergyModel:
 
 
         # Compute the contributions from each interaction
-        fene_dg = v_fene_smooth(r_back_nn, **self.params["fene"]).sum()
-        exc_vol_bonded_dg = exc_vol_bonded(dr_base_nn, dr_back_base_nn, dr_base_back_nn,
-                                           **self.params["excluded_volume_bonded"]).sum()
+        fene_dgs = v_fene_smooth(r_back_nn, **self.params["fene"])
+        exc_vol_bonded_dgs = exc_vol_bonded(dr_base_nn, dr_back_base_nn, dr_base_back_nn,
+                                            **self.params["excluded_volume_bonded"])
 
         v_stack = stacking(r_stack_nn, theta4, theta5, theta6, cosphi1, cosphi2, **self.params["stacking"])
         stack_probs = utils.get_pair_probs(seq, nn_i, nn_j)
         stack_weights = jnp.dot(stack_probs, self.ss_stack_weights_flat)
-        stack_dg = jnp.dot(stack_weights, v_stack)
+        stack_dgs = jnp.multiply(stack_weights, v_stack)
 
         exc_vol_unbonded_dg = exc_vol_unbonded(
             dr_base_op, dr_backbone_op, dr_back_base_op, dr_base_back_op,
             **self.params["excluded_volume"]
         )
-        exc_vol_unbonded_dg = jnp.where(mask, exc_vol_unbonded_dg, 0.0).sum() # Mask for neighbors
+        exc_vol_unbonded_dgs = jnp.where(mask, exc_vol_unbonded_dg, 0.0)
 
         v_hb = hydrogen_bonding(
             dr_base_op, theta1_op, theta2_op, theta3_op, theta4_op,
@@ -231,17 +231,17 @@ class EnergyModel:
         v_hb = jnp.where(mask, v_hb, 0.0) # Mask for neighbors
         hb_probs = utils.get_pair_probs(seq, op_i, op_j) # get the probabilities of all possibile hydrogen bonds for all neighbors
         hb_weights = jnp.dot(hb_probs, self.ss_hb_weights_flat)
-        hb_dg = jnp.dot(hb_weights, v_hb)
+        hb_dgs = jnp.multiply(hb_weights, v_hb)
 
         cr_stack_dg = cross_stacking(
             r_base_op, theta1_op, theta2_op, theta3_op,
             theta4_op, theta7_op, theta8_op, **self.params["cross_stacking"])
-        cr_stack_dg = jnp.where(mask, cr_stack_dg, 0.0).sum() # Mask for neighbors
+        cr_stack_dgs = jnp.where(mask, cr_stack_dg, 0.0)
 
         cx_stack_dg = coaxial_stacking2(
             dr_stack_op, theta4_op, theta1_op, theta5_op,
             theta6_op, **self.params["coaxial_stacking"])
-        cx_stack_dg = jnp.where(mask, cx_stack_dg, 0.0).sum() # Mask for neighbors
+        cx_stack_dgs = jnp.where(mask, cx_stack_dg, 0.0)
 
 
         # Compute debye_dg
@@ -256,9 +256,20 @@ class EnergyModel:
             return jnp.where(r < self.params['debye']['rcut'], energy, 0.0)
         db_dgs = vmap(db_term)(r_back_op)
         db_dgs = jnp.where(mask, db_dgs, 0.0)
-        db_dg = jnp.dot(db_dgs, dh_mults)
+        db_dgs = jnp.multiply(db_dgs, dh_mults)
 
-        return fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg
+
+        metadata = (back_sites, back_sites_dna1, stack_sites, base_sites)
+        return fene_dgs, exc_vol_bonded_dgs, stack_dgs, exc_vol_unbonded_dgs, hb_dgs, cr_stack_dgs, cx_stack_dgs, db_dgs, metadata
+
+
+    def compute_subterms(self, body, seq, bonded_nbrs, unbonded_nbrs, is_end=None):
+
+        all_dgs = self.compute_pairwise_dgs(body, seq, bonded_nbrs, unbonded_nbrs, is_end)
+        fene_dgs, exc_vol_bonded_dgs, stack_dgs, exc_vol_unbonded_dgs, hb_dgs, cr_stack_dgs, cx_stack_dgs, db_dgs, _ = all_dgs
+
+        return fene_dgs.sum(), exc_vol_bonded_dgs.sum(), stack_dgs.sum(), exc_vol_unbonded_dgs.sum(), \
+            hb_dgs.sum(), cr_stack_dgs.sum(), cx_stack_dgs.sum(), db_dgs.sum()
 
 
     def energy_fn(self, body, seq, bonded_nbrs, unbonded_nbrs, is_end=None):
