@@ -215,6 +215,18 @@ class EnergyModel:
 
 
 
+def get_init_morse_tables(default_alpha=10.0, default_epsilon=0.1):
+    dna_base_protein_sigma = jnp.full((20, 4), 0.75)
+    dna_base_protein_epsilon = jnp.full((20, 4), default_epsilon)
+    dna_base_protein_alpha = jnp.full((20, 4), default_alpha)
+
+    dna_back_protein_sigma = jnp.full((20, 4), 0.5)
+    dna_back_protein_epsilon = jnp.full((20, 4), default_epsilon)
+    dna_back_protein_alpha = jnp.full((20, 4), default_alpha)
+
+    return dna_base_protein_sigma, dna_base_protein_epsilon, dna_base_protein_alpha, \
+        dna_back_protein_sigma, dna_back_protein_epsilon, dna_back_protein_alpha
+
 
 class TestDNANM(unittest.TestCase):
     test_data_basedir = Path("data/test-data")
@@ -229,6 +241,9 @@ class TestDNANM(unittest.TestCase):
         salt_conc,
         seq_avg,
         half_charged_ends,
+        use_neighbors,
+        r_cutoff=10.0,
+        dr_threshold=0.2,
         tol_places=4,
     ):
 
@@ -319,13 +334,25 @@ class TestDNANM(unittest.TestCase):
         compute_subterms_fn = model.compute_subterms
         compute_subterms_fn = jit(compute_subterms_fn)
 
+        if use_neighbors:
+            neighbor_fn = top_info.get_neighbor_list_fn(
+                displacement_fn, traj_info.box_size, r_cutoff, dr_threshold)
+            neighbor_fn = jit(neighbor_fn)
+            neighbors = neighbor_fn.allocate(traj_states[0].center) # We use the COMs
+        else:
+            neighbors_idx = jnp.array(top_info.unbonded_nbrs.T)
+
         computed_subterms = list()
         for state in tqdm(traj_states):
+
+            if use_neighbors:
+                neighbors = neighbors.update(state.center)
+                neighbors_idx = neighbors.idx
 
             dgs = compute_subterms_fn(
                 state,
                 jnp.array(top_info.bonded_nbrs),
-                jnp.array(top_info.unbonded_nbrs),
+                neighbors_idx.T,
                 is_end
             )
 
@@ -360,9 +387,10 @@ class TestDNANM(unittest.TestCase):
         ]
 
         for basedir, t_kelvin, salt_conc, traj_fname, par_fname, top_fname, seq_avg, half_charged_ends in subterm_tests:
-            self.check_energy_subterms(
-                basedir, top_fname, traj_fname, par_fname, t_kelvin, salt_conc, seq_avg, half_charged_ends
-            )
+            for use_neighbors in [False, True]:
+                self.check_energy_subterms(
+                    basedir, top_fname, traj_fname, par_fname, t_kelvin, salt_conc, seq_avg, half_charged_ends, use_neighbors
+                )
 
     def test_sim(self):
         # Simulate a zinc finger (1AAY)
@@ -419,24 +447,13 @@ class TestDNANM(unittest.TestCase):
         # Define a dummy set of parameters to override
         params = deepcopy(model_dna2.EMPTY_BASE_PARAMS)
 
-        include_dna_protein_morse = False
+        include_dna_protein_morse = True
         if include_dna_protein_morse:
             default_alpha = 10.0
             default_epsilon = 0.1
 
-            # dna_base_protein_sigma = jnp.ones((20, 4), dtype=jnp.float64)
-            dna_base_protein_sigma = jnp.full((20, 4), 0.75)
-            # dna_base_protein_epsilon = jnp.ones((20, 4), dtype=jnp.float64)
-            dna_base_protein_epsilon = jnp.full((20, 4), default_epsilon)
-            # dna_base_protein_alpha = jnp.ones((20, 4), dtype=jnp.float64)
-            dna_base_protein_alpha = jnp.full((20, 4), default_alpha)
+            dna_base_protein_sigma, dna_base_protein_epsilon, dna_base_protein_alpha, dna_back_protein_sigma, dna_back_protein_epsilon, dna_back_protein_alpha = get_init_morse_tables()
 
-            # dna_back_protein_sigma = jnp.ones((20, 4), dtype=jnp.float64)
-            dna_back_protein_sigma = jnp.full((20, 4), 0.5)
-            # dna_back_protein_epsilon = jnp.ones((20, 4), dtype=jnp.float64)
-            dna_back_protein_epsilon = jnp.full((20, 4), default_epsilon)
-            # dna_back_protein_alpha = jnp.ones((20, 4), dtype=jnp.float64)
-            dna_back_protein_alpha = jnp.full((20, 4), default_alpha)
         else:
             dna_base_protein_sigma = None
             dna_base_protein_epsilon = None

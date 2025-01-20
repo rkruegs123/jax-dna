@@ -251,6 +251,39 @@ class ProteinNucAcidTopology:
         self.unbonded_nbrs_protein_nt = na_protein_unbonded_nbrs
         self.unbonded_nbrs = onp.concatenate([unbonded_nbrs_nt, na_protein_unbonded_nbrs])
 
+    # FIXME: doesn't mask out pairs in the network. Have to change the mask function i think a bit for that when more than two neighbors, as the ANMnetwork has
+    def get_neighbor_list_fn(self, displacement_fn, box_size, r_cutoff, dr_threshold):
+
+        # Construct nx2 mask
+        dense_mask = onp.full((self.n, 2), self.n, dtype=onp.int32)
+        counter = onp.zeros(self.n, dtype=onp.int32)
+        for bp1, bp2 in self.bonded_nbrs:
+            dense_mask[bp1, counter[bp1]] = bp2
+            counter[bp1] += 1
+
+            dense_mask[bp2, counter[bp2]] = bp1
+            counter[bp2] += 1
+        dense_mask = jnp.array(dense_mask, dtype=jnp.int32)
+
+        def bonded_nbrs_mask_fn(dense_idx):
+            nbr_mask1 = (dense_idx == dense_mask[:, 0].reshape(self.n, 1))
+            dense_idx = jnp.where(nbr_mask1, self.n, dense_idx)
+
+            nbr_mask2 = (dense_idx == dense_mask[:, 1].reshape(self.n, 1))
+            dense_idx = jnp.where(nbr_mask2, self.n, dense_idx)
+            return dense_idx
+
+        neighbor_list_fn = neighbor_list(
+            displacement_fn,
+            box=box_size,
+            r_cutoff=r_cutoff,
+            dr_threshold=dr_threshold,
+            custom_mask_function=bonded_nbrs_mask_fn,
+            format=NeighborListFormat.OrderedSparse,
+            disable_cell_list=True
+        )
+
+        return neighbor_list_fn
 
 
 if __name__ == "__main__":
