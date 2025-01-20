@@ -12,7 +12,7 @@ import jax
 jax.config.update("jax_enable_x64", True)
 from jax import jit, random, lax, grad, value_and_grad
 import jax.numpy as jnp
-from jax_md import space, rigid_body, simulate
+from jax_md import space, rigid_body, simulate, energy
 
 from jax_dna.common.utils import DEFAULT_TEMP
 from jax_dna.common import utils, topology_protein_na, trajectory
@@ -29,6 +29,8 @@ class EnergyModel:
         displacement_fn,
         is_protein_idx,
         is_nt_idx,
+        aa_seq,
+        nt_seq,
         # ANM
         network,
         eq_distances,
@@ -41,8 +43,29 @@ class EnergyModel:
         salt_conc=0.5,
         q_eff=0.815,
         seq_avg=True,
-        ignore_exc_vol_bonded=False
+        ignore_exc_vol_bonded=False,
+        # DNA/Protein interactions
+        include_dna_protein_morse=False,
+        dna_base_protein_sigma=None,
+        dna_base_protein_epsilon=None,
+        dna_base_protein_alpha=None,
+        dna_back_protein_sigma=None,
+        dna_back_protein_epsilon=None,
+        dna_back_protein_alpha=None,
     ):
+
+        self.include_dna_protein_morse = include_dna_protein_morse
+        self.dna_base_protein_sigma = dna_base_protein_sigma
+        self.dna_base_protein_epsilon = dna_base_protein_epsilon
+        self.dna_base_protein_alpha = dna_base_protein_alpha
+        self.dna_back_protein_sigma = dna_back_protein_sigma
+        self.dna_back_protein_epsilon = dna_back_protein_epsilon
+        self.dna_back_protein_alpha = dna_back_protein_alpha
+
+        self.aa_seq = aa_seq
+        self.nt_seq = nt_seq
+        self.nt_seq_oh = jax.nn.one_hot(self.nt_seq, num_classes=4, dtype=jnp.int32)
+
         self.t_kelvin = t_kelvin
         self.displacement_fn = displacement_fn
         self.displacement_mapped = jit(space.map_bond(partial(displacement_fn)))
@@ -69,8 +92,6 @@ class EnergyModel:
     def compute_subterms(
         self,
         body,
-        aa_seq,
-        nt_seq_oh,
         bonded_nbrs_nt,
         unbonded_nbrs,
         # unbonded_nbrs_nt,
@@ -80,7 +101,7 @@ class EnergyModel:
 
         spring_dg, prot_exc_vol_dg = model_anm.compute_subterms(
             body,
-            aa_seq,
+            self.aa_seq,
             self.network,
             self.eq_distances,
             self.spring_constants,
@@ -89,7 +110,7 @@ class EnergyModel:
         )
 
         dna2_dgs = self.dna2_energy_model.compute_pairwise_dgs(
-            body, nt_seq_oh, bonded_nbrs_nt, unbonded_nbrs.T, is_end
+            body, self.nt_seq_oh, bonded_nbrs_nt, unbonded_nbrs.T, is_end
         )
         fene_dgs, exc_vol_bonded_dgs, stack_dgs, exc_vol_unbonded_dgs, hb_dgs, cr_stack_dgs, cx_stack_dgs, db_dgs, metadata = dna2_dgs
         fene_dg = fene_dgs.sum()
@@ -107,17 +128,8 @@ class EnergyModel:
         # protein/dna excluded volume
         back_sites, _, _, base_sites = metadata
 
-        def protein_na_pair_exc_vol_fn(i, j):
+        def protein_na_pair_exc_vol_fn(r_back, r_base):
 
-            # Get p_idx and nt_idx
-            ## note: assumes that theere is one protein index and one nt index. Will 0 out at the end
-            p_idx = jnp.where(self.is_protein_idx[i], i, j)
-            nt_idx = jnp.where(self.is_protein_idx[i], j, i)
-            is_protein_nt_pair = jnp.logical_and(self.is_protein_idx[p_idx], self.is_nt_idx[nt_idx])
-
-
-            dr_back = self.displacement_fn(body.center[p_idx], back_sites[nt_idx])
-            r_back = space.distance(dr_back)
             val_back = model_anm.excluded_volume(
                 r_back,
                 eps=2.0,
@@ -126,10 +138,7 @@ class EnergyModel:
                 r_star=0.569,
                 b=17.9*10**7,
             )
-            val_back = jnp.nan_to_num(jnp.where(p_idx == nt_idx, 0.0, val_back))
 
-            dr_base = self.displacement_fn(body.center[p_idx], base_sites[nt_idx])
-            r_base = space.distance(dr_base)
             val_base = model_anm.excluded_volume(
                 r_base,
                 eps=2.0,
@@ -138,30 +147,70 @@ class EnergyModel:
                 r_star=0.359,
                 b=29.6*10**7,
             )
-            val_base = jnp.nan_to_num(jnp.where(p_idx == nt_idx, 0.0, val_base))
 
-            return jnp.where(is_protein_nt_pair, val_back + val_base, 0.0)
-        prot_nt_excl_vol_dgs = jax.vmap(protein_na_pair_exc_vol_fn)(unbonded_nbrs[:, 0], unbonded_nbrs[:, 1])
-        prot_nt_excl_vol_dg = prot_nt_excl_vol_dgs.sum()
+            return val_back + val_base
+
+        def protein_na_pair_morse_fn(r_back, r_base, aa_type, nt_type):
+            val_back = energy.morse(
+                r_back,
+                sigma=self.dna_back_protein_sigma[aa_type, nt_type],
+                epsilon=self.dna_back_protein_epsilon[aa_type, nt_type],
+                alpha=self.dna_back_protein_alpha[aa_type, nt_type],
+            )
+
+            val_base = energy.morse(
+                r_back,
+                sigma=self.dna_base_protein_sigma[aa_type, nt_type],
+                epsilon=self.dna_base_protein_epsilon[aa_type, nt_type],
+                alpha=self.dna_base_protein_alpha[aa_type, nt_type],
+            )
+
+            return val_base + val_back
+
+        def protein_na_unbonded_fn(i, j):
+
+            # Get p_idx and nt_idx
+            ## note: assumes that theere is one protein index and one nt index. Will 0 out at the end
+            p_idx = jnp.where(self.is_protein_idx[i], i, j)
+            nt_idx = jnp.where(self.is_protein_idx[i], j, i)
+            is_protein_nt_pair = jnp.logical_and(self.is_protein_idx[p_idx], self.is_nt_idx[nt_idx])
+
+            dr_back = self.displacement_fn(body.center[p_idx], back_sites[nt_idx])
+            r_back = space.distance(dr_back)
+
+            dr_base = self.displacement_fn(body.center[p_idx], base_sites[nt_idx])
+            r_base = space.distance(dr_base)
+
+            exc_vol_dg = protein_na_pair_exc_vol_fn(r_back, r_base)
+            val = exc_vol_dg
+
+            if self.include_dna_protein_morse:
+                aa_type = self.aa_seq[p_idx]
+                nt_type = self.nt_seq[nt_idx]
+                morse_dg = protein_na_pair_morse_fn(r_back, r_base, aa_type, nt_type)
+                val += morse_dg
+
+            val = jnp.nan_to_num(jnp.where(p_idx == nt_idx, 0.0, val))
+            return jnp.where(is_protein_nt_pair, val, 0.0)
+        prot_nt_unbonded_dgs = jax.vmap(protein_na_unbonded_fn)(unbonded_nbrs[:, 0], unbonded_nbrs[:, 1])
+        prot_nt_unbonded_dg = prot_nt_unbonded_dgs.sum()
 
         return fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, \
-            hb_dg, cr_stack_dg, cx_stack_dg, db_dg, spring_dg, prot_exc_vol_dg, prot_nt_excl_vol_dg
+            hb_dg, cr_stack_dg, cx_stack_dg, db_dg, spring_dg, prot_exc_vol_dg, prot_nt_unbonded_dg
 
 
     def energy_fn(
         self,
         body,
-        aa_seq,
-        nt_seq_oh,
         bonded_nbrs_nt,
         unbonded_nbrs,
         # unbonded_nbrs_nt,
         # unbonded_nbrs_protein_nt,
         is_end=None
     ):
-        all_dgs = self.compute_subterms(body, aa_seq, nt_seq_oh, bonded_nbrs_nt, unbonded_nbrs, is_end)
-        fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg, spring_dg, prot_exc_vol_dg, prot_nt_excl_vol_dg = all_dgs
-        return prot_exc_vol_dg + spring_dg + prot_nt_excl_vol_dg + fene_dg + exc_vol_bonded_dg \
+        all_dgs = self.compute_subterms(body, bonded_nbrs_nt, unbonded_nbrs, is_end)
+        fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg, spring_dg, prot_exc_vol_dg, prot_nt_unbonded_dgs = all_dgs
+        return prot_exc_vol_dg + spring_dg + prot_nt_unbonded_dgs + fene_dg + exc_vol_bonded_dg \
             + stack_dg + exc_vol_unbonded_dg + hb_dg + cr_stack_dg + cx_stack_dg + db_dg
 
 
@@ -253,6 +302,8 @@ class TestDNANM(unittest.TestCase):
             displacement_fn,
             is_nt_idx=jnp.array(top_info.is_nt_idx),
             is_protein_idx=jnp.array(top_info.is_protein_idx),
+            aa_seq=jnp.array(top_info.aa_seq_idx),
+            nt_seq=jnp.array(top_info.nt_seq_idx),
             # ANM
             network=jnp.array(top_info.network),
             eq_distances=jnp.array(top_info.eq_distances),
@@ -273,8 +324,6 @@ class TestDNANM(unittest.TestCase):
 
             dgs = compute_subterms_fn(
                 state,
-                jnp.array(top_info.aa_seq_idx),
-                jnp.array(utils.get_one_hot(top_info.nt_seq), dtype=jnp.float64),
                 jnp.array(top_info.bonded_nbrs),
                 jnp.array(top_info.unbonded_nbrs),
                 is_end
@@ -340,7 +389,7 @@ class TestDNANM(unittest.TestCase):
         )
         init_body = conf_info.get_states()[0]
 
-        n_steps = 10000
+        n_steps = 100000
         key = random.PRNGKey(0)
         salt_conc = 0.5
 
@@ -370,10 +419,40 @@ class TestDNANM(unittest.TestCase):
         # Define a dummy set of parameters to override
         params = deepcopy(model_dna2.EMPTY_BASE_PARAMS)
 
+        include_dna_protein_morse = False
+        if include_dna_protein_morse:
+            default_alpha = 10.0
+            default_epsilon = 0.1
+
+            # dna_base_protein_sigma = jnp.ones((20, 4), dtype=jnp.float64)
+            dna_base_protein_sigma = jnp.full((20, 4), 0.75)
+            # dna_base_protein_epsilon = jnp.ones((20, 4), dtype=jnp.float64)
+            dna_base_protein_epsilon = jnp.full((20, 4), default_epsilon)
+            # dna_base_protein_alpha = jnp.ones((20, 4), dtype=jnp.float64)
+            dna_base_protein_alpha = jnp.full((20, 4), default_alpha)
+
+            # dna_back_protein_sigma = jnp.ones((20, 4), dtype=jnp.float64)
+            dna_back_protein_sigma = jnp.full((20, 4), 0.5)
+            # dna_back_protein_epsilon = jnp.ones((20, 4), dtype=jnp.float64)
+            dna_back_protein_epsilon = jnp.full((20, 4), default_epsilon)
+            # dna_back_protein_alpha = jnp.ones((20, 4), dtype=jnp.float64)
+            dna_back_protein_alpha = jnp.full((20, 4), default_alpha)
+        else:
+            dna_base_protein_sigma = None
+            dna_base_protein_epsilon = None
+            dna_base_protein_alpha = None
+
+            dna_back_protein_sigma = None
+            dna_back_protein_epsilon = None
+            dna_back_protein_alpha = None
+
+
         model = EnergyModel(
             displacement_fn,
             is_nt_idx=jnp.array(top_info.is_nt_idx),
             is_protein_idx=jnp.array(top_info.is_protein_idx),
+            aa_seq=jnp.array(top_info.aa_seq_idx),
+            nt_seq=jnp.array(top_info.nt_seq_idx),
             # ANM
             network=jnp.array(top_info.network),
             eq_distances=jnp.array(top_info.eq_distances),
@@ -384,13 +463,26 @@ class TestDNANM(unittest.TestCase):
             salt_conc=salt_conc,
             ss_hb_weights=ss_hb_weights,
             ss_stack_weights=ss_stack_weights,
-            seq_avg=seq_avg
+            seq_avg=seq_avg,
+            # DNA/Protein interaction
+            include_dna_protein_morse=include_dna_protein_morse,
+            dna_base_protein_sigma=dna_base_protein_sigma,
+            dna_base_protein_epsilon=dna_base_protein_epsilon,
+            dna_base_protein_alpha=dna_base_protein_alpha,
+            dna_back_protein_sigma=dna_back_protein_sigma,
+            dna_back_protein_epsilon=dna_back_protein_epsilon,
+            dna_back_protein_alpha=dna_back_protein_alpha,
         )
 
         energy_fn = partial(
             model.energy_fn,
-            aa_seq=jnp.array(top_info.aa_seq_idx),
-            nt_seq_oh=jnp.array(utils.get_one_hot(top_info.nt_seq), dtype=jnp.float64),
+            bonded_nbrs_nt=jnp.array(top_info.bonded_nbrs),
+            unbonded_nbrs=jnp.array(top_info.unbonded_nbrs),
+            is_end=is_end
+        )
+
+        compute_subterms_fn = partial(
+            model.compute_subterms,
             bonded_nbrs_nt=jnp.array(top_info.bonded_nbrs),
             unbonded_nbrs=jnp.array(top_info.unbonded_nbrs),
             is_end=is_end
