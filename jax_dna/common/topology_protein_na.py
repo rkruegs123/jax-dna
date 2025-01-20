@@ -19,9 +19,10 @@ RES_ALPHA = "MGKTRADEYVLQWFSHNPCI"
 
 
 class ProteinNucAcidTopology:
-    def __init__(self, top_path, par_path):
+    def __init__(self, top_path, par_path, reverse=False):
         self.top_path = Path(top_path)
         self.par_path = Path(par_path)
+        self.reverse = reverse
 
         self.load()
 
@@ -92,7 +93,7 @@ class ProteinNucAcidTopology:
                 else:
                     assert(strand_idx > curr_strand_idx)
                 strand_counts.append(curr_strand_count)
-                curr_strand_count = 0
+                curr_strand_count = 1
                 curr_strand_idx = strand_idx
 
                 if strand_idx < 0:
@@ -154,6 +155,7 @@ class ProteinNucAcidTopology:
 
                 is_nt_idx.append(1)
                 is_protein_idx.append(0)
+        strand_counts.append(curr_strand_count)
 
         self.network = onp.array(network)
         self.is_end = onp.array(is_end).astype(onp.int32)
@@ -166,10 +168,22 @@ class ProteinNucAcidTopology:
 
         self.bonded_nbrs = onp.array(bonded_nbrs)
         strand_bounds = list(itertools.pairwise([0, *itertools.accumulate(strand_counts)]))
-        nt_types_rev = list(itertools.chain.from_iterable([nt_types[s:e] for s, e in strand_bounds]))
-        self.nt_seq_idx = onp.array([-1]*self.n_protein + [DNA_ALPHA.index(nt) for nt in nt_types_rev])
         dummy_protein_nt = "A"
-        self.nt_seq = dummy_protein_nt*self.n_protein + ''.join(nt_types_rev)
+        if self.reverse:
+            nt_types_rev = list(itertools.chain.from_iterable([nt_types[s:e][::-1] for s, e in strand_bounds[self.n_protein_strands:]]))
+            self.nt_seq_idx = onp.array([-1]*self.n_protein + [DNA_ALPHA.index(nt) for nt in nt_types_rev])
+            self.nt_seq = dummy_protein_nt*self.n_protein + ''.join(nt_types_rev)
+        else:
+            self.nt_seq_idx = onp.array([-1]*self.n_protein + [DNA_ALPHA.index(nt) for nt in nt_types])
+            self.nt_seq = dummy_protein_nt*self.n_protein + ''.join(nt_types)
+
+
+
+        idxs_nt = onp.arange(self.n)
+        rev_idxs_nt = list(itertools.chain.from_iterable([idxs_nt[s:e][::-1] for s, e in strand_bounds[self.n_protein_strands:]]))
+        idxs = onp.arange(self.n)
+        rev_idxs = list(onp.arange(self.n_protein)) + rev_idxs_nt
+        self.rev_orientation_mapper = dict(zip(idxs, rev_idxs))
 
         network_set = set(network)
         self.anm_network = onp.array(network)

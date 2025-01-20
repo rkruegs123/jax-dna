@@ -12,7 +12,7 @@ import jax
 jax.config.update("jax_enable_x64", True)
 from jax import jit, random, lax, grad, value_and_grad
 import jax.numpy as jnp
-from jax_md import space
+from jax_md import space, rigid_body, simulate
 
 from jax_dna.common.utils import DEFAULT_TEMP
 from jax_dna.common import utils, topology_protein_na, trajectory
@@ -149,6 +149,7 @@ class EnergyModel:
 
 
     def energy_fn(
+        self,
         body,
         aa_seq,
         nt_seq_oh,
@@ -158,8 +159,8 @@ class EnergyModel:
         # unbonded_nbrs_protein_nt,
         is_end=None
     ):
-        all_dgs = compute_subterms(body, aa_seq, nt_seq_oh, bonded_nbrs_nt, unbonded_nbrs, is_end)
-        fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg, spring_dg, prot_exc_vol_dg, prot_nt_excl_vol_dg = dgs
+        all_dgs = self.compute_subterms(body, aa_seq, nt_seq_oh, bonded_nbrs_nt, unbonded_nbrs, is_end)
+        fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg, spring_dg, prot_exc_vol_dg, prot_nt_excl_vol_dg = all_dgs
         return prot_exc_vol_dg + spring_dg + prot_nt_excl_vol_dg + fene_dg + exc_vol_bonded_dg \
             + stack_dg + exc_vol_unbonded_dg + hb_dg + cr_stack_dg + cx_stack_dg + db_dg
 
@@ -313,6 +314,108 @@ class TestDNANM(unittest.TestCase):
             self.check_energy_subterms(
                 basedir, top_fname, traj_fname, par_fname, t_kelvin, salt_conc, seq_avg, half_charged_ends
             )
+
+    def test_sim(self):
+        # Simulate a zinc finger (1AAY)
+        box_size = 30.0
+        displacement_fn, shift_fn = space.periodic(box_size)
+        dt = 1e-3
+        t_kelvin = DEFAULT_TEMP
+        kT = utils.get_kt(t_kelvin)
+
+        gamma = rigid_body.RigidBody(center=jnp.array([kT/2.5], dtype=jnp.float64),
+                                     orientation=jnp.array([kT/7.5], dtype=jnp.float64))
+        mass = rigid_body.RigidBody(center=jnp.array([utils.nucleotide_mass], dtype=jnp.float64),
+                                    orientation=jnp.array([utils.moment_of_inertia], dtype=jnp.float64))
+
+        basedir = Path("data/templates/1AAY")
+        top_path = basedir / "complex.top"
+        par_path = basedir / "protein.par"
+        top_info = topology_protein_na.ProteinNucAcidTopology(top_path, par_path)
+        # conf_path = basedir / "complex.conf"
+        conf_path = basedir / "relaxed.dat"
+        conf_info = trajectory.TrajectoryInfo(
+            top_info,
+            read_from_file=True, traj_path=conf_path, reverse_direction=False
+        )
+        init_body = conf_info.get_states()[0]
+
+        n_steps = 10000
+        key = random.PRNGKey(0)
+        salt_conc = 0.5
+
+        seq_avg = False
+        if seq_avg:
+            ss_hb_weights = utils.HB_WEIGHTS_SA
+            ss_stack_weights = utils.STACK_WEIGHTS_SA
+        else:
+
+            ss_path = "data/seq-specific/seq_oxdna2.txt"
+            ss_hb_weights, ss_stack_weights = read_ss_oxdna(
+                ss_path,
+                model_dna2.default_base_params_seq_dep['hydrogen_bonding']['eps_hb'],
+                model_dna2.default_base_params_seq_dep['stacking']['eps_stack_base'],
+                model_dna2.default_base_params_seq_dep['stacking']['eps_stack_kt_coeff'],
+                enforce_symmetry=False,
+                t_kelvin=t_kelvin
+            )
+
+
+        half_charged_ends = True
+        if half_charged_ends:
+            is_end = jnp.array(top_info.is_end)
+        else:
+            is_end = None
+
+        # Define a dummy set of parameters to override
+        params = deepcopy(model_dna2.EMPTY_BASE_PARAMS)
+
+        model = EnergyModel(
+            displacement_fn,
+            is_nt_idx=jnp.array(top_info.is_nt_idx),
+            is_protein_idx=jnp.array(top_info.is_protein_idx),
+            # ANM
+            network=jnp.array(top_info.network),
+            eq_distances=jnp.array(top_info.eq_distances),
+            spring_constants=jnp.array(top_info.spring_constants),
+            # DNA2
+            override_base_params=params,
+            t_kelvin=t_kelvin,
+            salt_conc=salt_conc,
+            ss_hb_weights=ss_hb_weights,
+            ss_stack_weights=ss_stack_weights,
+            seq_avg=seq_avg
+        )
+
+        energy_fn = partial(
+            model.energy_fn,
+            aa_seq=jnp.array(top_info.aa_seq_idx),
+            nt_seq_oh=jnp.array(utils.get_one_hot(top_info.nt_seq), dtype=jnp.float64),
+            bonded_nbrs_nt=jnp.array(top_info.bonded_nbrs),
+            unbonded_nbrs=jnp.array(top_info.unbonded_nbrs),
+            is_end=is_end
+        )
+
+        init_fn, step_fn = simulate.nvt_langevin(energy_fn, shift_fn, dt, kT, gamma)
+        step_fn = jit(step_fn)
+        state = init_fn(key, init_body, mass=mass)
+
+        traj = list()
+        for _ in tqdm(range(n_steps)):
+            state = step_fn(state)
+            traj.append(state.position)
+        traj = utils.tree_stack(traj)
+
+        write_traj = True
+        if write_traj:
+            traj_to_write = traj[::100]
+            traj_info = trajectory.TrajectoryInfo(
+                top_info, read_from_states=True, states=traj_to_write, box_size=box_size)
+            traj_info.write("dnanm_sanity.dat", reverse=False)
+
+        # (pos_sum, traj), pos_sum_grad = jit(value_and_grad(sim_fn, has_aux=True))(test_param_dict)
+
+        # self.assertNotEqual(pos_sum_grad, 0.0)
 
 
 if __name__ == "__main__":
