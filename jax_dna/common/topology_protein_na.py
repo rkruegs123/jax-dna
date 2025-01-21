@@ -292,8 +292,3 @@ if __name__ == "__main__":
     top_path = test_data_basedir / "protein-top" / "HCAGE" / "hcage.top"
     par_path = test_data_basedir / "protein-top" / "HCAGE" / "hcage.par"
     top_info = ProteinNucAcidTopology(top_path, par_path)
-
-    # FIXME
-    # 1. neighbor list support for proteins will be tough without being too inefficient. just shouldn't do it for now.
-    # 2. Should all inter-protein pairs from unbonded neighbors. Maybe do it by construction rather than by omission
-    # 3. well, all unbonded neighbors have excluded volume... so we actually don't have to check types for that. BUT, DNA2 unbonded should be filtered based on type... should maybe do what we do in SSEC repo where we return have a member function that e.g. returns db_dgs and hb_dgs instead of db_dg, and then we can compute them all and mask... if we do this we have to make sure to test
