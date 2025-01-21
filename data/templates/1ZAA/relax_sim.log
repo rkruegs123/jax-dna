@@ -1,0 +1,29 @@
+INFO: seeding the RNG with 1307948007
+INFO: Initializing backend 
+INFO: Backend precision: double
+INFO: Simulation type: MC
+INFO: The generator will try to take into account bonded interactions by choosing distances between bonded neighbours no larger than 2.000000
+INFO: Running Debye-Huckel at salt concentration =  0.5
+INFO: Using different widths for major and minor grooves
+INFO: pid: 35596
+DEBUG: Debye-Huckel parameters: Q=0.054300, lambda_0=0.361646, lambda=0.488020, r_high=1.464061, cutoff=3.158889
+DEBUG: Debye-Huckel parameters: debye_huckel_RC=2.196092e+00, debye_huckel_B=3.445867e-03
+INFO: The Debye length at this temperature and salt concentration is 0.488020
+INFO: (Cells.cpp) N_cells_side: 3, 3, 3; rcut=3.95889, IS_MC: 1
+INFO: N: 107
+INFO: SVN CODE VERSION: SVN_NOT_FOUND
+INFO: COMPILED ON: 17/01/25
+
+INFO: Total Running Time: 0.748923 s, per step: 0.748923 ms
+INFO: Timings, in seconds, by Timer (total, own, spent in children)
+> SimBackend                          0.749 (100.0%)        0.014 (  1.9%)        0.735 ( 98.1%)
+***> Rotations+Translations           0.735 ( 98.1%)        0.735 ( 98.1%)        0.000 (  0.0%)
+> Lists                               0.002 (  0.2%)        0.002 (  0.2%)        0.000 (  0.0%)
+
+INFO: END OF THE SIMULATION, everything went OK!
+INFO: Lists updated 9 times (every ~111.111111 steps)
+INFO: Aggregated I/O statistics (set debug=1 for file-wise information)
+	713.763 KB written to files
+	1017.000  B written to stdout/stderr
+	For a total of    0.932 MB/s
+

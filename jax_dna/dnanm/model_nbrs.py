@@ -405,7 +405,9 @@ class TestDNANM(unittest.TestCase):
         mass = rigid_body.RigidBody(center=jnp.array([utils.nucleotide_mass], dtype=jnp.float64),
                                     orientation=jnp.array([utils.moment_of_inertia], dtype=jnp.float64))
 
-        basedir = Path("data/templates/1AAY")
+        # basedir = Path("data/templates/1AAY")
+        # basedir = Path("data/templates/1A1L")
+        basedir = Path("data/templates/1ZAA")
         top_path = basedir / "complex.top"
         par_path = basedir / "protein.par"
         top_info = topology_protein_na.ProteinNucAcidTopology(top_path, par_path)
@@ -417,7 +419,7 @@ class TestDNANM(unittest.TestCase):
         )
         init_body = conf_info.get_states()[0]
 
-        n_steps = 100000
+        n_steps = 10000
         key = random.PRNGKey(0)
         salt_conc = 0.5
 
