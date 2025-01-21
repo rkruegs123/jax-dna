@@ -115,7 +115,8 @@ def run(args):
     os.system(f"nvidia-smi >> {nvidia_smi_path}")
 
     # Load the system
-    sys_basedir = Path("data/templates/1AAY")
+    pdb_id = args['pdb_id']
+    sys_basedir = Path("data/templates/") / pdb_id
     ss_path = sys_basedir / "rna_sequence_dependent_parameters.txt"
 
     top_path = sys_basedir / "complex.top"
@@ -623,6 +624,9 @@ def get_parser():
     parser.add_argument('--t-kelvin', type=float, default=293.15, help="Temperature in Kelvin")
     parser.add_argument('--dt', type=float, default=1e-3, help="Timestep")
     parser.add_argument('--salt-conc', type=float, default=0.5, help="Salt concentration")
+
+    parser.add_argument('--pdb-id', type=str, default="1AAY",
+                        help='PDB ID that we have a template for')
 
 
     return parser
