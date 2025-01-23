@@ -5,6 +5,10 @@ import sys
 from collections.abc import Iterable
 from typing import Any
 
+import jax
+import jax.numpy as jnp
+import jaxtyping as jaxtyp
+
 ERR_BATCHED_N = "n must be at least one"
 
 
@@ -31,3 +35,12 @@ def batched(iterable: Iterable[Any], n: int) -> Iterable[Any]:
                 yield batch
 
     return batch_f(iterable, n)
+
+
+def tree_stack(trees: list[jaxtyp.PyTree]) -> jaxtyp.PyTree:
+    """Stacks corresponding leaves of PyTrees into arrays along a new axis."""
+    return jax.tree.map(lambda *v: jnp.stack(v), *trees)
+
+def tree_concatenate(trees: list[jaxtyp.PyTree]) -> jaxtyp.PyTree:
+    """Concatenates corresponding leaves of PyTrees along the first axis."""
+    return jax.tree.map(lambda *v: jnp.concatenate(v), *trees)

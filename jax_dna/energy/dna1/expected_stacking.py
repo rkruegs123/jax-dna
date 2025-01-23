@@ -5,7 +5,7 @@ import jax.numpy as jnp
 from jax import vmap
 from typing_extensions import override
 
-import jax_dna.energy.dna1.nucleotide as dna1_nucleotide
+import jax_dna.energy.base as je_base
 import jax_dna.energy.utils as je_utils
 import jax_dna.utils.types as typ
 from jax_dna.energy.dna1 import stacking as jd_stk
@@ -42,13 +42,19 @@ class ExpectedStacking(jd_stk.Stacking):
     @override
     def __call__(
         self,
-        body: dna1_nucleotide.Nucleotide,
+        body: je_base.BaseNucleotide,
         seq: typ.Probabilistic_Sequence,
         bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
         unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
     ) -> typ.Scalar:
         # Compute sequence-independent energy for each bonded pair
-        v_stack = self.compute_v_stack(body, bonded_neighbors)
+        v_stack = self.compute_v_stack(
+            body.stack_sites,
+            body.back_sites,
+            body.base_normals,
+            body.cross_prods,
+            bonded_neighbors
+        )
 
         # Compute sequence-dependent weight for each bonded pair
         nn_i = bonded_neighbors[:, 0]

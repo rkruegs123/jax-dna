@@ -3,12 +3,13 @@
 import chex
 import jax_md
 
+import jax_dna.energy.base as je_base
 import jax_dna.energy.utils as je_utils
 import jax_dna.utils.types as typ
 
 
 @chex.dataclass(frozen=True)
-class Nucleotide(jax_md.rigid_body.RigidBody):
+class Nucleotide(je_base.BaseNucleotide):
     """Nucleotide rigid body with additional sites for DNA1.
 
     This class is inteneded to be used as a dataclass for a nucleotide rigid body

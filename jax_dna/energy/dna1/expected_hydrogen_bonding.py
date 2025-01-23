@@ -5,7 +5,7 @@ import jax.numpy as jnp
 from jax import vmap
 from typing_extensions import override
 
-import jax_dna.energy.dna1.nucleotide as dna1_nucleotide
+import jax_dna.energy.base as je_base
 import jax_dna.energy.utils as je_utils
 import jax_dna.utils.types as typ
 from jax_dna.energy.dna1 import hydrogen_bonding as jd_hb
@@ -43,13 +43,13 @@ class ExpectedHydrogenBonding(jd_hb.HydrogenBonding):
     @override
     def __call__(
         self,
-        body: dna1_nucleotide.Nucleotide,
+        body: je_base.BaseNucleotide,
         seq: typ.Probabilistic_Sequence,
         bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
         unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
     ) -> typ.Scalar:
         # Compute sequence-independent energy for each unbonded pair
-        v_hb = self.compute_v_hb(body, unbonded_neighbors)
+        v_hb = self.compute_v_hb(body, body, unbonded_neighbors)
 
         # Compute sequence-dependent weight for each unbonded pair
         op_i = unbonded_neighbors[0]

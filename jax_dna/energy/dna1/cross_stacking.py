@@ -8,7 +8,6 @@ import jax_dna.energy.base as je_base
 import jax_dna.energy.configuration as config
 import jax_dna.energy.dna1.base_smoothing_functions as bsf
 import jax_dna.energy.dna1.interactions as dna1_interactions
-import jax_dna.energy.dna1.nucleotide as dna1_nucleotide
 import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as typ
 
@@ -190,29 +189,30 @@ class CrossStacking(je_base.BaseEnergyFunction):
 
     params: CrossStackingConfiguration
 
-    @override
-    def __call__(
+    def pairwise_energies(
         self,
-        body: dna1_nucleotide.Nucleotide,
-        seq: typ.Sequence,
-        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        body_i: je_base.BaseNucleotide,
+        body_j: je_base.BaseNucleotide,
         unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
-    ) -> typ.Scalar:
+    ) -> typ.Arr_Unbonded_Neighbors:
+        """Computes the cross stacking energy for each unbonded pair."""
         op_i = unbonded_neighbors[0]
         op_j = unbonded_neighbors[1]
 
-        mask = jnp.array(op_i < body.center.shape[0], dtype=jnp.float32)
+        mask = jnp.array(op_i < body_i.center.shape[0], dtype=jnp.float32)
 
-        dr_base_op = self.displacement_mapped(body.base_sites[op_j], body.base_sites[op_i])  # Note the flip here
+        dr_base_op = self.displacement_mapped(body_j.base_sites[op_j], body_i.base_sites[op_i])
         r_base_op = jnp.linalg.norm(dr_base_op, axis=1)
 
-        theta1_op = jnp.arccos(jd_math.clamp(jd_math.mult(-body.back_base_vectors[op_i], body.back_base_vectors[op_j])))
-        theta2_op = jnp.arccos(jd_math.clamp(jd_math.mult(-body.back_base_vectors[op_j], dr_base_op) / r_base_op))
-        theta3_op = jnp.arccos(jd_math.clamp(jd_math.mult(body.back_base_vectors[op_i], dr_base_op) / r_base_op))
-        theta4_op = jnp.arccos(jd_math.clamp(jd_math.mult(body.base_normals[op_i], body.base_normals[op_j])))
+        theta1_op = jnp.arccos(
+            jd_math.clamp(jd_math.mult(-body_i.back_base_vectors[op_i], body_j.back_base_vectors[op_j]))
+        )
+        theta2_op = jnp.arccos(jd_math.clamp(jd_math.mult(-body_j.back_base_vectors[op_j], dr_base_op) / r_base_op))
+        theta3_op = jnp.arccos(jd_math.clamp(jd_math.mult(body_i.back_base_vectors[op_i], dr_base_op) / r_base_op))
+        theta4_op = jnp.arccos(jd_math.clamp(jd_math.mult(body_i.base_normals[op_i], body_j.base_normals[op_j])))
         # note: are these swapped in Lorenzo's code?
-        theta7_op = jnp.arccos(jd_math.clamp(jd_math.mult(-body.base_normals[op_j], dr_base_op) / r_base_op))
-        theta8_op = jnp.pi - jnp.arccos(jd_math.clamp(jd_math.mult(body.base_normals[op_i], dr_base_op) / r_base_op))
+        theta7_op = jnp.arccos(jd_math.clamp(jd_math.mult(-body_j.base_normals[op_j], dr_base_op) / r_base_op))
+        theta8_op = jnp.pi - jnp.arccos(jd_math.clamp(jd_math.mult(body_i.base_normals[op_i], dr_base_op) / r_base_op))
 
         cr_stack_dg = dna1_interactions.cross_stacking(
             r_base_op,
@@ -263,4 +263,15 @@ class CrossStacking(je_base.BaseEnergyFunction):
             self.params.b_cross_8,
         )
 
-        return jnp.where(mask, cr_stack_dg, 0.0).sum()  # Mask for neighbors
+        return jnp.where(mask, cr_stack_dg, 0.0)  # Mask for neighbors
+
+    @override
+    def __call__(
+        self,
+        body: je_base.BaseNucleotide,
+        seq: typ.Sequence,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
+    ) -> typ.Scalar:
+        dgs = self.pairwise_energies(body, body, unbonded_neighbors)
+        return dgs.sum()

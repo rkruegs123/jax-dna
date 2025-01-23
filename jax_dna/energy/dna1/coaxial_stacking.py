@@ -8,7 +8,6 @@ import jax_dna.energy.base as je_base
 import jax_dna.energy.configuration as config
 import jax_dna.energy.dna1.base_smoothing_functions as bsf
 import jax_dna.energy.dna1.interactions as dna1_interactions
-import jax_dna.energy.dna1.nucleotide as dna1_nucleotide
 import jax_dna.utils.math as jd_math
 import jax_dna.utils.types as typ
 
@@ -179,35 +178,36 @@ class CoaxialStacking(je_base.BaseEnergyFunction):
 
     params: CoaxialStackingConfiguration
 
-    @override
-    def __call__(
+    def pairwise_energies(
         self,
-        body: dna1_nucleotide.Nucleotide,
-        seq: typ.Sequence,
-        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        body_i: je_base.BaseNucleotide,
+        body_j: je_base.BaseNucleotide,
         unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
-    ) -> typ.Scalar:
+    ) -> typ.Arr_Unbonded_Neighbors:
+        """Computes the coaxial stacking energy for each unbonded pair."""
         op_i = unbonded_neighbors[0]
         op_j = unbonded_neighbors[1]
-        mask = jnp.array(op_i < body.center.shape[0], dtype=jnp.float32)
+        mask = jnp.array(op_i < body_i.center.shape[0], dtype=jnp.float32)
 
-        dr_stack_op = self.displacement_mapped(body.stack_sites[op_j], body.stack_sites[op_i])  # note: reversed
+        dr_stack_op = self.displacement_mapped(body_j.stack_sites[op_j], body_i.stack_sites[op_i])
         dr_stack_norm_op = dr_stack_op / jnp.linalg.norm(dr_stack_op, axis=1, keepdims=True)
-        dr_backbone_op = self.displacement_mapped(body.back_sites[op_j], body.back_sites[op_i])  # Note the flip here
+        dr_backbone_op = self.displacement_mapped(body_j.back_sites[op_j], body_i.back_sites[op_i])
         dr_backbone_norm_op = dr_backbone_op / jnp.linalg.norm(dr_backbone_op, axis=1, keepdims=True)
 
-        theta4_op = jnp.arccos(jd_math.clamp(jnp.einsum("ij, ij->i", body.base_normals[op_i], body.base_normals[op_j])))
+        theta4_op = jnp.arccos(
+            jd_math.clamp(jnp.einsum("ij, ij->i", body_i.base_normals[op_i], body_j.base_normals[op_j]))
+        )
         theta1_op = jnp.arccos(
-            jd_math.clamp(jnp.einsum("ij, ij->i", -body.back_base_vectors[op_i], body.back_base_vectors[op_j]))
+            jd_math.clamp(jnp.einsum("ij, ij->i", -body_i.back_base_vectors[op_i], body_j.back_base_vectors[op_j]))
         )
 
-        theta5_op = jnp.arccos(jd_math.clamp(jnp.einsum("ij, ij->i", body.base_normals[op_i], dr_stack_norm_op)))
-        theta6_op = jnp.arccos(jd_math.clamp(jnp.einsum("ij, ij->i", -body.base_normals[op_j], dr_stack_norm_op)))
+        theta5_op = jnp.arccos(jd_math.clamp(jnp.einsum("ij, ij->i", body_i.base_normals[op_i], dr_stack_norm_op)))
+        theta6_op = jnp.arccos(jd_math.clamp(jnp.einsum("ij, ij->i", -body_j.base_normals[op_j], dr_stack_norm_op)))
         cosphi3_op = jnp.einsum(
-            "ij, ij->i", dr_stack_norm_op, jnp.cross(dr_backbone_norm_op, body.back_base_vectors[op_j])
+            "ij, ij->i", dr_stack_norm_op, jnp.cross(dr_backbone_norm_op, body_j.back_base_vectors[op_j])
         )
         cosphi4_op = jnp.einsum(
-            "ij, ij->i", dr_stack_norm_op, jnp.cross(dr_backbone_norm_op, body.back_base_vectors[op_i])
+            "ij, ij->i", dr_stack_norm_op, jnp.cross(dr_backbone_norm_op, body_i.back_base_vectors[op_i])
         )
 
         cx_stack_dg = dna1_interactions.coaxial_stacking(
@@ -257,4 +257,15 @@ class CoaxialStacking(je_base.BaseEnergyFunction):
             self.params.b_cos_phi4_coax,
         )
 
-        return jnp.where(mask, cx_stack_dg, 0.0).sum()
+        return jnp.where(mask, cx_stack_dg, 0.0)
+
+    @override
+    def __call__(
+        self,
+        body: je_base.BaseNucleotide,
+        seq: typ.Sequence,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
+    ) -> typ.Scalar:
+        dgs = self.pairwise_energies(body, body, unbonded_neighbors)
+        return dgs.sum()

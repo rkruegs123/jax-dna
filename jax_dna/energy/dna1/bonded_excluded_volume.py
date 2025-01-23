@@ -7,7 +7,6 @@ import jax_dna.energy.base as je_base
 import jax_dna.energy.configuration as config
 import jax_dna.energy.dna1.base_smoothing_functions as bsf
 import jax_dna.energy.dna1.interactions as dna1_interactions
-import jax_dna.energy.dna1.nucleotide as dna1_nucleotide
 import jax_dna.utils.types as typ
 
 
@@ -82,14 +81,12 @@ class BondedExcludedVolume(je_base.BaseEnergyFunction):
 
     params: BondedExcludedVolumeConfiguration
 
-    @override
-    def __call__(
+    def pairwise_energies(
         self,
-        body: dna1_nucleotide.Nucleotide,
-        seq: typ.Sequence,
+        body: je_base.BaseNucleotide,
         bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
-        unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
-    ) -> typ.Scalar:
+    ) -> typ.Arr_Bonded_Neighbors:
+        """Computes the excluded volume energy for each bonded pair."""
         nn_i = bonded_neighbors[:, 0]
         nn_j = bonded_neighbors[:, 1]
 
@@ -114,4 +111,16 @@ class BondedExcludedVolume(je_base.BaseEnergyFunction):
             self.params.sigma_base_back,
             self.params.b_base_back,
             self.params.dr_c_base_back,
-        ).sum()
+        )
+
+
+    @override
+    def __call__(
+        self,
+        body: je_base.BaseNucleotide,
+        seq: typ.Sequence,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
+    ) -> typ.Scalar:
+        dgs = self.pairwise_energies(body, bonded_neighbors)
+        return dgs.sum()

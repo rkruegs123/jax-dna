@@ -67,7 +67,7 @@ def get_setup_data(base_dir: str):
     )
 
 
-@pytest.mark.parametrize("base_dir", ["data/test-data/simple-helix"])
+@pytest.mark.parametrize("base_dir", ["data/test-data/dna1/simple-helix"])
 def test_bonded_excluded_volume(base_dir: str):
     (
         topology,
@@ -97,7 +97,13 @@ def test_bonded_excluded_volume(base_dir: str):
     np.testing.assert_allclose(energy, terms, atol=1e-6)
 
 
-@pytest.mark.parametrize("base_dir", ["data/test-data/simple-helix"])
+@pytest.mark.parametrize(
+    "base_dir",
+    [
+        "data/test-data/dna1/simple-helix",
+        "data/test-data/dna1/simple-coax",
+    ]
+)
 def test_coaxial_stacking(base_dir: str):
     (
         topology,
@@ -127,7 +133,7 @@ def test_coaxial_stacking(base_dir: str):
     np.testing.assert_allclose(energy, terms, atol=1e-6)
 
 
-@pytest.mark.parametrize("base_dir", ["data/test-data/simple-helix"])
+@pytest.mark.parametrize("base_dir", ["data/test-data/dna1/simple-helix"])
 def test_cross_stacking(base_dir: str):
     (
         topology,
@@ -160,7 +166,7 @@ def test_cross_stacking(base_dir: str):
     np.testing.assert_allclose(energy, terms, atol=1e-3)
 
 
-@pytest.mark.parametrize("base_dir", ["data/test-data/simple-helix"])
+@pytest.mark.parametrize("base_dir", ["data/test-data/dna1/simple-helix"])
 def test_fene(base_dir: str):
     (
         topology,
@@ -190,7 +196,7 @@ def test_fene(base_dir: str):
     np.testing.assert_allclose(energy, terms, atol=1e-6)
 
 
-@pytest.mark.parametrize("base_dir", ["data/test-data/simple-helix"])
+@pytest.mark.parametrize("base_dir", ["data/test-data/dna1/simple-helix"])
 def test_hydrogen_bonding(base_dir: str):
     (
         topology,
@@ -221,7 +227,7 @@ def test_hydrogen_bonding(base_dir: str):
 
 
 # mismatch 1/100
-@pytest.mark.parametrize("base_dir", ["data/test-data/simple-helix"])
+@pytest.mark.parametrize("base_dir", ["data/test-data/dna1/simple-helix"])
 def test_stacking(base_dir: str):
     (
         topology,
@@ -252,7 +258,7 @@ def test_stacking(base_dir: str):
     np.testing.assert_allclose(energy, terms, atol=1e-6)
 
 
-@pytest.mark.parametrize("base_dir", ["data/test-data/simple-helix"])
+@pytest.mark.parametrize("base_dir", ["data/test-data/dna1/simple-helix"])
 def test_unbonded_excluded_volume(base_dir: str):
     (
         topology,

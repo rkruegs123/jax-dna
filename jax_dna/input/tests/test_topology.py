@@ -20,6 +20,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
         "bonded_neighbors",
         "unbonded_neighbors",
         "seq",
+        "is_end",
+        "nt_type",
         "expected_error",
     ),
     [
@@ -30,6 +32,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], dtype=jnp.int32),
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 16),
             jdt.ERR_TOPOLOGY_INVALID_NUMBER_NUCLEOTIDES,
         ),
         # number of nucleotides does not match sequence length
@@ -39,6 +43,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3], dtype=jnp.int32),  # only has 15 nucleotides
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 16),
             jdt.ERR_TOPOLOGY_INVALID_DISCRETE_SEQUENCE_SHAPE,
         ),
         # number of nucleotides does not match sum of strand counts
@@ -48,6 +54,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             jnp.array([0, 0, 0, 0, 1, 1, 1, 1], dtype=jnp.int32),
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 16),
             jdt.ERR_TOPOLOGY_STRAND_COUNTS_NOT_MATCH,
         ),
         # strand counts is zeros
@@ -57,6 +65,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], dtype=jnp.int32),
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 16),
             jdt.ERR_TOPOLOGY_INVALID_STRAND_COUNTS,
         ),
         # bonded neighbors is not 2d
@@ -66,6 +76,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]).flatten(),  # not 2d
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], dtype=jnp.int32),
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 16),
             jdt.ERR_TOPOLOGY_BONDED_NEIGHBORS_INVALID_SHAPE,
         ),
         # bonded neighbors second dimension is not 2
@@ -77,6 +89,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             ),  # not (n, 2)
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], dtype=jnp.int32),
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 16),
             jdt.ERR_TOPOLOGY_BONDED_NEIGHBORS_INVALID_SHAPE,
         ),
         # unbonded neighbors is not 2d
@@ -86,6 +100,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]).flatten(),  # not 2d
             jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], dtype=jnp.int32),
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 16),
             jdt.ERR_TOPOLOGY_UNBONDED_NEIGHBORS_INVALID_SHAPE,
         ),
         # unbonded neighbors second dimension is not 2
@@ -97,6 +113,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
                 -1, 4
             ),  # not (n, 2)
             jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], dtype=jnp.int32),
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 16),
             jdt.ERR_TOPOLOGY_UNBONDED_NEIGHBORS_INVALID_SHAPE,
         ),
         # invalid sequence character
@@ -106,6 +124,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             np.array([[1, 2], [3, 4], [5, 6], [7, 8], [0, 9], [10, 11], [12, 13], [14, 15]]),
             jnp.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4], dtype=jnp.int32),
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 16),
             jdt.ERR_TOPOLOGY_INVALID_SEQUENCE_NUCLEOTIDES,
         ),
         # invalid unpaired probabilistic sequence shape (1)
@@ -130,6 +150,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
                     ]
                 ),
             ),
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 8),
             jdt.ERR_TOPOLOGY_INVALID_UNPAIRED_PSEQ_SHAPE,
         ),
         # invalid unpaired probabilistic sequence shape (2)
@@ -147,6 +169,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
                     ]
                 ),
             ),
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 8),
             jdt.ERR_TOPOLOGY_INVALID_UNPAIRED_PSEQ_SHAPE,
         ),
         # invalid bp probabilistic sequence shape (1)
@@ -164,6 +188,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
                     ]
                 ),
             ),
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 8),
             jdt.ERR_TOPOLOGY_INVALID_BP_PSEQ_SHAPE,
         ),
         # invalid bp probabilistic sequence shape (2)
@@ -176,6 +202,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
                 np.array([[0, 1, 0, 0], [0, 0, 1, 0], [1, 0, 0, 0], [0, 0, 0, 1]]),
                 np.array([0, 0, 0]),  # bp pseq is one-dimensional
             ),
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 8),
             jdt.ERR_TOPOLOGY_INVALID_BP_PSEQ_SHAPE,
         ),
         # invalid number of implicit nucleotides
@@ -201,6 +229,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
                     ]
                 ),
             ),
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 8),
             jdt.ERR_TOPOLOGY_MISMATCH_PSEQ_SHAPE_NUM_NUCLEOTIDES,
         ),
         # invalid probabilities
@@ -225,6 +255,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
                     ]
                 ),
             ),
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 8),
             jdt.ERR_TOPOLOGY_INVALID_PROBABILITIES,
         ),
         # probabilities not normalized
@@ -249,6 +281,8 @@ TEST_FILES_DIR = Path(__file__).parent / "test_files"
                     ]
                 ),
             ),
+            jnp.array([1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]),
+            jnp.array([jdt.NucleotideType.UNSPECIFIED] * 8),
             jdt.ERR_TOPOLOGY_PSEQ_NOT_NORMALIZED,
         ),
     ],
@@ -259,6 +293,8 @@ def test_topology_class_validation_raises_value_error(
     bonded_neighbors: np.ndarray,
     unbonded_neighbors: np.ndarray,
     seq: typ.Sequence,
+    is_end: np.ndarray,
+    nt_type: np.ndarray,
     expected_error: str,
 ):
     with pytest.raises(ValueError, match=expected_error):
@@ -268,6 +304,8 @@ def test_topology_class_validation_raises_value_error(
             bonded_neighbors=bonded_neighbors,
             unbonded_neighbors=unbonded_neighbors,
             seq=seq,
+            is_end=is_end,
+            nt_type=nt_type,
         )
 
 
@@ -354,6 +392,8 @@ def test_from_oxdna_file_raises_file_not_found_error():
                     ]
                 ),
                 seq=jnp.array([jd_const.NUCLEOTIDES_IDX[s] for s in "GCATGC"], dtype=jnp.int32),
+                is_end=jnp.array([0, 0, 0, 0, 0, 0]),
+                nt_type=jnp.array([jdt.NucleotideType.UNSPECIFIED] * 3 + [jdt.NucleotideType.DNA] * 3),
             ),
         ),
         (
@@ -376,6 +416,8 @@ def test_from_oxdna_file_raises_file_not_found_error():
                     ]
                 ),
                 seq=jnp.array([jd_const.NUCLEOTIDES_IDX[s] for s in "GCATGC"], dtype=jnp.int32),
+                is_end=jnp.array([0, 0, 0, 0, 0, 0]),
+                nt_type=jnp.array([jdt.NucleotideType.UNSPECIFIED] * 6),
             ),
         ),
         (
@@ -400,6 +442,8 @@ def test_from_oxdna_file_raises_file_not_found_error():
                     ]
                 ),
                 seq=jnp.array([jd_const.NUCLEOTIDES_IDX[s] for s in "GCATGC"], dtype=jnp.int32),
+                is_end=jnp.array([1, 0, 1, 1, 0, 1]),
+                nt_type=jnp.array([jdt.NucleotideType.UNSPECIFIED] * 3 + [jdt.NucleotideType.DNA] * 3),
             ),
         ),
         (
@@ -424,6 +468,8 @@ def test_from_oxdna_file_raises_file_not_found_error():
                     ]
                 ),
                 seq=jnp.array([jd_const.NUCLEOTIDES_IDX[s] for s in "GCATGC"], dtype=jnp.int32),
+                is_end=jnp.array([1, 0, 1, 1, 0, 1]),
+                nt_type=jnp.array([jdt.NucleotideType.UNSPECIFIED] * 6),
             ),
         ),
     ],
@@ -438,5 +484,7 @@ def test_from_oxdna_file(file_path: str, expected: jdt.Topology):
             assert to_set(actual[key].tolist()) == to_set(expected[key].tolist()), key
         elif key in ["strand_counts", "seq"]:
             np.testing.assert_allclose(actual[key], expected[key])
+        elif key in ["is_end", "nt_type"]:
+            assert (actual[key] == expected[key]).all()
         else:
             assert actual[key] == expected[key]

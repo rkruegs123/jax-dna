@@ -39,7 +39,7 @@ jobs:
 
   test:
     name: pytests on Python ${{ matrix.python-version }} and ${{ matrix.os }}
-    timeout-minutes: 5
+    timeout-minutes: 10
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -66,7 +66,7 @@ jobs:
     - name: Test with tox (pytest)
       run: tox -e test
     - name: Archive coverage report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: code-coverage-report-python${{ matrix.python-version }}-${{ matrix.os }}
         path: coverage.xml

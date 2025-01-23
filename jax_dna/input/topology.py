@@ -2,7 +2,9 @@
 
 import dataclasses as dc
 import itertools
+import warnings
 from collections.abc import Callable
+from enum import IntEnum
 from pathlib import Path
 
 import jax.numpy as jnp
@@ -37,6 +39,14 @@ ERR_STRAND_COUNTS_CIRCULAR_MISMATCH = "Strand counts and cicularity do not match
 ERR_FILE_NOT_FOUND = "Topology file not found"
 ERR_TOPOLOGY_INVALID_SEQUENCE_TYPE = "Invalid sequence type. Must be discrete or probabilistic"
 
+WARN_CLASSIC_UNSPECIFIED_NT_TYPE = "Type of strand {strand_idx} not specified, and did not find T/U for autodetect"
+WARN_NEW_UNSPECIFIED_NT_TYPE = "Type of strand {strand_idx} not specified"
+
+class NucleotideType(IntEnum):
+    """Defines nucleotide types as integer enumerations."""
+    UNSPECIFIED = 0
+    DNA = 1
+    RNA = 2
 
 def check_valid_seq(seq: typ.Sequence, n_nucleotides: int) -> None:
     """Checks if a sequence is well-formed."""
@@ -78,6 +88,8 @@ class Topology:
     bonded_neighbors: np.ndarray
     unbonded_neighbors: np.ndarray
     seq: typ.Sequence
+    is_end: np.ndarray
+    nt_type: np.ndarray
 
     def __post_init__(self) -> None:
         """Check that the topology is valid."""
@@ -196,6 +208,8 @@ def _from_file_oxdna_classic(lines: list[str]) -> Topology:
 
     reversed_bases = []
     is_circular = []
+    is_end = []
+    nt_type = []
     for i in range(1, n_strands + 1):
         strand_bases, strand_5p = zip(
             *[
@@ -205,8 +219,26 @@ def _from_file_oxdna_classic(lines: list[str]) -> Topology:
             ],
             strict=True,
         )
-        is_circular.append(strand_5p[-1] != -1)
+        strand_is_circular = (strand_5p[-1] != -1)
+        is_circular.append(strand_is_circular)
         reversed_bases.extend(strand_bases[::-1])
+
+        strand_length = len(strand_bases)
+        strand_is_end = [0 for _ in range(strand_length)]
+        if not strand_is_circular:
+            strand_is_end[0] = 1
+            strand_is_end[-1] = 1
+        is_end.extend(strand_is_end)
+
+        # Classic format doesn't permit type specification
+        if "T" in strand_bases:
+            nt_type.extend([NucleotideType.DNA] * strand_length)
+        elif "U" in strand_bases:
+            nt_type.extend([NucleotideType.RNA] * strand_length)
+        else:
+            warnings.warn(WARN_CLASSIC_UNSPECIFIED_NT_TYPE.format(strand_idx=i), stacklevel=1)
+            nt_type.extend([NucleotideType.UNSPECIFIED] * strand_length)
+
     sequence = "".join(reversed_bases)
 
     bonded_neighbors = _get_bonded_neighbors(strand_counts, is_circular)
@@ -219,6 +251,8 @@ def _from_file_oxdna_classic(lines: list[str]) -> Topology:
         bonded_neighbors=np.array(list(bonded_neighbors)),
         unbonded_neighbors=np.array(list(unbonded_neighbors)),
         seq=jnp.array([jd_const.NUCLEOTIDES_IDX[s] for s in sequence], dtype=jnp.int32),
+        is_end=jnp.array(is_end).astype(jnp.int32),
+        nt_type=jnp.array(nt_type).astype(jnp.int32)
     )
 
 
@@ -238,11 +272,33 @@ def _from_file_oxdna_new(lines: list[str]) -> Topology:
     sequence = []
     strand_counts = []
     is_circular = []
+    is_end = []
+    nt_type = []
     for line in lines[1:]:
         nucleotides = line.strip().split()[0]
         sequence.append(nucleotides)
         strand_counts.append(len(nucleotides))
-        is_circular.append("circular=true" in line)
+        strand_is_circular = ("circular=true" in line)
+        is_circular.append(strand_is_circular)
+
+        strand_length = len(nucleotides)
+        strand_is_end = [0 for _ in range(strand_length)]
+        if not strand_is_circular:
+            strand_is_end[0] = 1
+            strand_is_end[-1] = 1
+        is_end.extend(strand_is_end)
+
+        strand_is_dna = ("type=DNA" in line)
+        strand_is_rna = ("type=RNA" in line)
+        if strand_is_dna:
+            strand_nt_type = [NucleotideType.DNA] * strand_length
+        elif strand_is_rna:
+            strand_nt_type = [NucleotideType.RNA] * strand_length
+        else:
+            warnings.warn(WARN_NEW_UNSPECIFIED_NT_TYPE.format(strand_idx=line), stacklevel=1)
+            strand_nt_type = [NucleotideType.UNSPECIFIED] * strand_length
+        nt_type.extend(strand_nt_type)
+
 
     sequence = "".join(sequence)
 
@@ -255,4 +311,6 @@ def _from_file_oxdna_new(lines: list[str]) -> Topology:
         bonded_neighbors=np.array(bonded_neighbors),
         unbonded_neighbors=np.array(unbonded_neighbors),
         seq=jnp.array([jd_const.NUCLEOTIDES_IDX[s] for s in sequence], dtype=jnp.int32),
+        is_end=jnp.array(is_end).astype(jnp.int32),
+        nt_type=jnp.array(nt_type).astype(jnp.int32)
     )

@@ -106,7 +106,7 @@ def get_setup_data(base_dir: str, top_fname: str = "generated.top"):
     )
 
 
-@pytest.mark.parametrize("base_dir", ["data/test-data/simple-helix"])
+@pytest.mark.parametrize("base_dir", ["data/test-data/dna1/simple-helix"])
 def test_hydrogen_bonding_discrete(base_dir: str):
     (
         topology,
@@ -165,7 +165,7 @@ def sequence_probability(
 
 
 def test_hydrogen_bonding_brute_force():
-    base_dir = "data/test-data/helix-4bp"
+    base_dir = "data/test-data/dna1/helix-4bp"
     (
         topology,
         trajectory,
@@ -271,7 +271,7 @@ def test_expected_stacking_config_raises_value_error(params: dict, expected_erro
 
 
 def test_stacking_brute_force():
-    base_dir = "data/test-data/helix-4bp"
+    base_dir = "data/test-data/dna1/helix-4bp"
     (
         topology,
         trajectory,

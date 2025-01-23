@@ -10,7 +10,6 @@ import jax_dna.energy.base as je_base
 import jax_dna.energy.configuration as config
 import jax_dna.energy.dna1.base_smoothing_functions as bsf
 import jax_dna.energy.dna1.interactions as dna1_interactions
-import jax_dna.energy.dna1.nucleotide as dna1_nucleotide
 import jax_dna.utils.types as typ
 
 
@@ -103,25 +102,24 @@ class UnbondedExcludedVolume(je_base.BaseEnergyFunction):
 
     params: UnbondedExcludedVolumeConfiguration
 
-    @override
-    def __call__(
+    def pairwise_energies(
         self,
-        body: dna1_nucleotide.Nucleotide,
-        seq: typ.Sequence,
-        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        body_i: je_base.BaseNucleotide,
+        body_j: je_base.BaseNucleotide,
         unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
-    ) -> typ.Scalar:
+    ) -> typ.Arr_Bonded_Neighbors:
+        """Computes the excluded volume energy for each unbonded pair."""
         op_i = unbonded_neighbors[0]
         op_j = unbonded_neighbors[1]
 
-        mask = jnp.array(op_i < body.center.shape[0], dtype=jnp.float32)
+        mask = jnp.array(op_i < body_i.center.shape[0], dtype=jnp.float32)
 
-        dr_base_op = self.displacement_mapped(body.base_sites[op_j], body.base_sites[op_i])  # Note the flip here
-        dr_backbone_op = self.displacement_mapped(body.back_sites[op_j], body.back_sites[op_i])  # Note the flip here
+        dr_base_op = self.displacement_mapped(body_j.base_sites[op_j], body_i.base_sites[op_i])
+        dr_backbone_op = self.displacement_mapped(body_j.back_sites[op_j], body_i.back_sites[op_i])
         dr_back_base_op = self.displacement_mapped(
-            body.back_sites[op_i], body.base_sites[op_j]
-        )  # Note: didn't flip this one (and others) because no need, but should look into at some point
-        dr_base_back_op = self.displacement_mapped(body.base_sites[op_i], body.back_sites[op_j])
+            body_i.back_sites[op_i], body_j.base_sites[op_j]
+        )
+        dr_base_back_op = self.displacement_mapped(body_i.base_sites[op_i], body_j.back_sites[op_j])
 
         exc_vol_unbonded_dg = dna1_interactions.exc_vol_unbonded(
             dr_base_op,
@@ -147,4 +145,16 @@ class UnbondedExcludedVolume(je_base.BaseEnergyFunction):
             self.params.dr_c_backbone,
         )
 
-        return jnp.where(mask, exc_vol_unbonded_dg, 0.0).sum()
+        return jnp.where(mask, exc_vol_unbonded_dg, 0.0)
+
+
+    @override
+    def __call__(
+        self,
+        body: je_base.BaseNucleotide,
+        seq: typ.Sequence,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
+    ) -> typ.Scalar:
+        dgs = self.pairwise_energies(body, body, unbonded_neighbors)
+        return dgs.sum()

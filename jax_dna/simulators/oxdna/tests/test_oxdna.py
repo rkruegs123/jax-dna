@@ -28,11 +28,11 @@ def setup_test_dir(add_input: bool = True):  # noqa: FBT001,FBT002
             f.write("trajectory_file = test.conf\ntopology = test.top\n")
 
         shutil.copyfile(
-            "data/test-data/simple-helix/generated.top",
+            "data/test-data/dna1/simple-helix/generated.top",
             test_dir / "test.top",
         )
         shutil.copyfile(
-            "data/test-data/simple-helix/start.conf",
+            "data/test-data/dna1/simple-helix/start.conf",
             test_dir / "test.conf",
         )
     return test_dir

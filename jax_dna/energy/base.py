@@ -1,5 +1,6 @@
 """Base classes for energy functions."""
 
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any, Union
 
@@ -54,7 +55,7 @@ class BaseEnergyFunction:
         body: jax_md.rigid_body.RigidBody,
         seq: typ.Sequence,
         bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
-        unbounded_neighbors: typ.Arr_Unbonded_Neighbors_2,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
     ) -> float:
         """Calculate the energy of the system."""
         raise NotImplementedError(ERR_CALL_NOT_IMPLEMENTED)
@@ -185,3 +186,22 @@ class ComposedEnergyFunction:
         This is a convenience method for the add_energy_fn and add_composable_energy_fn methods.
         """
         return self.__add__(other)
+
+
+@chex.dataclass(frozen=True)
+class BaseNucleotide(jax_md.rigid_body.RigidBody, ABC):
+    """Base nucleotide class."""
+
+    center: typ.Arr_Nucleotide_3
+    orientation: typ.Arr_Nucleotide_3 | jax_md.rigid_body.Quaternion
+    stack_sites: typ.Arr_Nucleotide_3
+    back_sites: typ.Arr_Nucleotide_3
+    base_sites: typ.Arr_Nucleotide_3
+    back_base_vectors: typ.Arr_Nucleotide_3
+    base_normals: typ.Arr_Nucleotide_3
+    cross_prods: typ.Arr_Nucleotide_3
+
+    @staticmethod
+    @abstractmethod
+    def from_rigid_body(rigid_body: jax_md.rigid_body.RigidBody, **kwargs) -> "BaseNucleotide":
+        """Create an instance of the subclass from a RigidBody.."""

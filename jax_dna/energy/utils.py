@@ -1,4 +1,4 @@
-"""Utility functions for energy calculations for DNA1."""
+"""Utility functions for energy calculations."""
 
 import functools
 
