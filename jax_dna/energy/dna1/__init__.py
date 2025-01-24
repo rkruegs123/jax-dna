@@ -39,8 +39,10 @@ def default_configs(
     def get_param(x: str) -> dict:
         return default_config[x] | overrides.get(x, {})
 
-    def get_opts(x: str) -> tuple[str]:
-        return opts.get(x, ("*",))
+    def get_opts(x: str, defaults: tuple[str] = BaseConfiguration.OPT_ALL) -> tuple[str]:
+        return opts.get(x, defaults)
+
+    default_stacking_opts = tuple(set(default_config["stacking"].keys()) - {"kT", "ss_stack_weights"})
 
     return [
         FeneConfiguration.from_dict(get_param("fene"), get_opts("fene")),
@@ -48,7 +50,8 @@ def default_configs(
             get_param("bonded_excluded_volume"), get_opts("bonded_excluded_volume")
         ),
         StackingConfiguration.from_dict(
-            get_param("stacking") | {"kt": overrides.get("kT", default_sim_config["kT"])}, get_opts("stacking")
+            get_param("stacking") | {"kt": overrides.get("kT", default_sim_config["kT"])},
+            get_opts("stacking", default_stacking_opts),
         ),
         UnbondedExcludedVolumeConfiguration.from_dict(get_param("unbonded_excluded_volume")),
         HydrogenBondingConfiguration.from_dict(get_param("hydrogen_bonding"), get_opts("hydrogen_bonding")),

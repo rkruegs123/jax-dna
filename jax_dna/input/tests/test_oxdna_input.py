@@ -1,5 +1,6 @@
 """Test for oxDNA input file reader."""
 
+import io
 from pathlib import Path
 
 import pytest
@@ -73,3 +74,31 @@ def test_read() -> None:
     }
 
     assert oi.read(TEST_FILES_DIR / "test_oxdna_simple_helix_input_trunc.txt") == expected
+
+
+@pytest.mark.parametrize(
+    ("input_dict", "expected"),
+    [
+        ({"test": 100}, "test = 100\n"),
+        ({"test": "string"}, "test = string\n"),
+        ({"test": 1.5}, "test = 1.5\n"),
+        ({"test": True}, "test = true\n"),
+        ({"test": {"inside": False}}, "test = {\ninside = false\n}\n"),
+    ],
+)
+def test_write_to(input_dict: dict, expected: str) -> None:
+    text_stream = io.StringIO()
+    oi.write_to(input_dict, text_stream)
+    assert text_stream.getvalue() == expected
+
+
+def test_write(tmpdir) -> None:
+    in_config = {"test": 100, "test2": "string", "test3": 1.5, "test4": True, "test5": {"inside": False}}
+
+    expected = "test = 100\ntest2 = string\ntest3 = 1.5\ntest4 = true\ntest5 = {\ninside = false\n}\n"
+
+    with Path(tmpdir / "test.txt").open("w") as f:
+        oi.write_to(in_config, f)
+
+    with Path(tmpdir / "test.txt").open("r") as f:
+        assert f.read() == expected

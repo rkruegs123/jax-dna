@@ -5,13 +5,15 @@ import functools
 import operator
 from pathlib import Path
 
+import jax
+import jax.numpy as jnp
 import sympy
 
 import jax_dna.utils.types as jd_types
 from jax_dna.utils.types import oxDNAModelHType
 
 ERR_CANNOT_PROCESS_SRC_H = "Cannot process src/model.h file. Failed parsing: {}"
-ERR_INVALID_HEADER_TYPE = "Invalid header value variable {} with value {}."
+ERR_INVALID_HEADER_TYPE = "Invalid header value variable {} with value {}"
 
 SYMPY_EVAL_N: int = 32
 
@@ -241,14 +243,14 @@ def _parse_value_in(value: str) -> int | float | str:
 
 
 def _parse_value_out(value: int | float | str) -> str:  # noqa: PYI041 -- this is documentation specific
-    if isinstance(value, int):
+    if isinstance(value, int) or (isinstance(value, jax.Array) and (jnp.issubdtype(value.dtype, jnp.integer))):
         parsed_value = str(value)
-    elif isinstance(value, float):
+    elif isinstance(value, float) or (isinstance(value, jax.Array) and (jnp.issubdtype(value.dtype, jnp.floating))):
         parsed_value = f"{value}f"
     elif isinstance(value, str):
         parsed_value = value
     else:
-        raise TypeError(ERR_INVALID_HEADER_TYPE.format("value", value))
+        raise TypeError(ERR_INVALID_HEADER_TYPE.format(type(value), value))
     return parsed_value
 
 
@@ -297,7 +299,10 @@ def write_src_h(src_h: Path, params: dict[str, tuple[oxDNAModelHType, int | floa
         )
 
         for key, value in params.items():
-            parsed_value = _parse_value_out(value)
+            try:
+                parsed_value = _parse_value_out(value)
+            except ValueError as e:
+                raise ValueError(ERR_INVALID_HEADER_TYPE.format(key, value)) from e
 
             f.write(f"#define {key} {parsed_value}\n")
             if key == "FENE_DELTA":

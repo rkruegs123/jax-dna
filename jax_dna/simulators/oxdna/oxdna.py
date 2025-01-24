@@ -11,6 +11,7 @@ import warnings
 from pathlib import Path
 
 import chex
+import numpy as np
 
 import jax_dna.energy.configuration as jd_energy
 import jax_dna.input.oxdna_input as jd_oxdna
@@ -106,6 +107,7 @@ class oxDNASimulator(jd_base.BaseSimulation):  # noqa: N801 oxDNA is a special w
     def run(
         self,
         opt_params: list[jd_types.Params] | None = None,
+        seed: np.ndarray | None = None,
         **kwargs,  # noqa: ARG002 we want to satisfy the interface
     ) -> jd_traj.Trajectory:
         """Run an oxDNA simulation."""
@@ -124,6 +126,11 @@ class oxDNASimulator(jd_base.BaseSimulation):  # noqa: N801 oxDNA is a special w
 
         if not input_file.exists():
             raise FileNotFoundError(ERR_INPUT_FILE_NOT_FOUND.format(input_file))
+
+        # overwrite the seed
+        input_config = jd_oxdna.read(input_file)
+        input_config["seed"] = seed or np.random.default_rng().integers(0, 2**32)
+        jd_oxdna.write(input_config, input_file)
 
         if BIN_PATH_ENV_VAR not in os.environ:
             raise ValueError(ERR_BIN_PATH_NOT_SET)
@@ -222,9 +229,10 @@ class oxDNASimulator(jd_base.BaseSimulation):  # noqa: N801 oxDNA is a special w
             old_model_h.write_text(orig_text)
 
         # update the values in the src/model.h
-        oxdna_utils.update_params(
-            model_h, [up.to_dictionary(include_dependent=True, exclude_non_optimizable=True) for up in updated_params]
-        )
+
+        new_params = [up.to_dictionary(include_dependent=True, exclude_non_optimizable=True) for up in updated_params]
+
+        oxdna_utils.update_params(model_h, new_params)
 
         # rebuild the binary
         std_out = build_dir / "jax_dna.make.std.log"

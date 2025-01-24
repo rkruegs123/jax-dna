@@ -47,6 +47,7 @@ def test_objective_init_raises(
 
     with pytest.raises(ValueError, match=o.ERR_MISSING_ARG.format(missing_arg=expected_missing)):
         o.Objective(
+            name="test",
             required_observables=required_observables,
             needed_observables=needed_observables,
             logging_observables=logging_observables,
@@ -57,7 +58,11 @@ def test_objective_init_raises(
 def test_objective_required_observables() -> None:
     """Test the required_observables property of Objective."""
     obj = o.Objective(
-        required_observables=["a"], needed_observables=["a"], logging_observables=["c"], grad_or_loss_fn=lambda x: x
+        name="test",
+        required_observables=["a"],
+        needed_observables=["a"],
+        logging_observables=["c"],
+        grad_or_loss_fn=lambda x: x,
     )
 
     assert obj.required_observables() == ["a"]
@@ -66,6 +71,7 @@ def test_objective_required_observables() -> None:
 def test_objective_needed_observables() -> None:
     """Test the needed_observables property of Objective."""
     obj = o.Objective(
+        name="test",
         required_observables=["a", "b"],
         needed_observables=["a"],
         logging_observables=["c"],
@@ -78,6 +84,7 @@ def test_objective_needed_observables() -> None:
 def test_objective_logging_observables() -> None:
     """Test the logging_observables property of Objective."""
     obj = o.Objective(
+        name="test",
         required_observables=["a", "b", "c"],
         needed_observables=[],
         logging_observables=["a", "b"],
@@ -115,6 +122,7 @@ def test_objective_is_ready(
 ) -> None:
     """Test the is_ready method of Objective."""
     obj = o.Objective(
+        name="test",
         required_observables=required_observables,
         needed_observables=[],
         logging_observables=[],
@@ -153,6 +161,7 @@ def test_objective_update(
         jdna_tree.save_pytree(data, data_dir / file_name)
 
     obj = o.Objective(
+        name="test",
         required_observables=required_observables,
         needed_observables=needed_observables,
         logging_observables=[],
@@ -172,6 +181,7 @@ def test_objective_update(
 def test_objective_calculate() -> None:
     """Test the calculate method of Objective."""
     obj = o.Objective(
+        name="test",
         required_observables=["a", "b", "c"],
         needed_observables=["a", "b"],
         logging_observables=[],
@@ -193,6 +203,7 @@ def test_objective_calculate() -> None:
 
 def test_objective_post_step() -> None:
     obj = o.Objective(
+        name="test",
         required_observables=["a", "b", "c"],
         needed_observables=["a", "b"],
         logging_observables=[],
@@ -306,6 +317,7 @@ def test_difftreobjective_init_raises(
 
     with pytest.raises(ValueError, match=o.ERR_MISSING_ARG.format(missing_arg=missing_arg)):
         o.DiffTReObjective(
+            name="test",
             required_observables=required_observables,
             needed_observables=needed_observables,
             logging_observables=logging_observables,
@@ -321,6 +333,7 @@ def test_difftreobjective_init_raises(
 def test_difftreobjective_calculate() -> None:
     """Test the calculate method of DifftreObjective."""
     obj = o.DiffTReObjective(
+        name="test",
         required_observables=["test"],
         needed_observables=["test"],
         logging_observables=[],
@@ -357,6 +370,7 @@ def test_difftreobjective_calculate() -> None:
 def test_difftreobjective_post_step() -> None:
     """test thge post_step method of DiffTReObjective."""
     obj = o.DiffTReObjective(
+        name="test",
         required_observables=["test"],
         needed_observables=["test"],
         logging_observables=[],

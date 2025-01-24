@@ -15,6 +15,7 @@ class BaseSimulator:
 
     def __init__(
         self,
+        name: str,
         fn: typing.Callable[[jdna_types.Params, jdna_types.MetaData], tuple[str, ...]],
         exposes: list[str],
         meta_data: jdna_types.MetaData,
@@ -22,13 +23,19 @@ class BaseSimulator:
         """Initializes a SimulatorActor.
 
         Args:
+            name: The name of the simulation.
             fn: The simulation function to run.
             exposes: The list of observables exposed by the simulation.
             meta_data: The metadata to pass to the simulation function.
         """
+        self._name = name
         self._fn = fn
         self._exposes = exposes
         self._meta_data = meta_data
+
+    def name(self) -> str:
+        """Returns the name of the simulation."""
+        return self._name
 
     def exposes(self) -> list[str]:
         """Returns the list of observables exposed by the simulation."""

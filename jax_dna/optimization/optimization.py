@@ -1,5 +1,6 @@
 """Runs an optimization loop using Ray actors for objectives and simulators."""
 
+import dataclasses as dc
 import itertools
 import typing
 
@@ -10,6 +11,7 @@ import ray
 import jax_dna.optimization.objective as jdna_objective
 import jax_dna.optimization.simulator as jdna_actor
 import jax_dna.utils.types as jdna_types
+from jax_dna.ui.loggers import logger as jdna_logger
 
 ERR_MISSING_OBJECTIVES = "At least one objective is required."
 ERR_MISSING_SIMULATORS = "At least one simulator is required."
@@ -46,6 +48,7 @@ class Optimization:
         aggregate_grad_fn: A function that aggregates the gradients from the objectives.
         optimizer: An optax optimizer.
         optimizer_state: The state of the optimizer.
+        logger: A logger to use for the optimization.
     """
 
     objectives: list[jdna_objective.Objective]
@@ -53,6 +56,7 @@ class Optimization:
     aggregate_grad_fn: typing.Callable[[list[jdna_types.Grads]], jdna_types.Grads]
     optimizer: optax.GradientTransformation
     optimizer_state: optax.OptState | None = None
+    logger: jdna_logger.Logger = dc.field(default_factory=lambda: jdna_logger.Logger())
 
     def __post_init__(self) -> None:
         """Validate the initialization of the Optimization."""
@@ -81,7 +85,22 @@ class Optimization:
         # some objectives might use difftre and not actually need something rerun
         # so check which objectives have observables that need to be run
         ready_objectives, not_ready_objectives = split_by_ready(self.objectives)
+
         grad_refs = [objective.calculate.remote() for objective in ready_objectives]
+
+        ready_names = get_fn([objective.name.remote() for objective in ready_objectives])
+        ready_funcs = itertools.repeat(self.logger.set_objective_running, len(ready_names))
+
+        not_ready_names = get_fn([objective.name.remote() for objective in not_ready_objectives])
+        not_ready_funcs = itertools.repeat(self.logger.set_objective_started, len(not_ready_names))
+
+        sim_names = get_fn([sim.name.remote() for sim in self.simulators])
+        sim_funcs = itertools.repeat(self.logger.set_simulator_started, len(sim_names))
+
+        names = itertools.chain(ready_names, not_ready_names, sim_names)
+        funcs = itertools.chain(ready_funcs, not_ready_funcs, sim_funcs)
+        for name, func in zip(names, funcs, strict=True):
+            func(name)
 
         need_observables = list(
             itertools.chain.from_iterable(get_fn([co.needed_observables.remote() for co in not_ready_objectives]))
@@ -93,9 +112,14 @@ class Optimization:
 
         sim_remotes = [sim.run.remote(params) for sim in needed_simulators]
 
+        for name in get_fn([sim.name.remote() for sim in needed_simulators]):
+            self.logger.set_simulator_running(name)
+
         simid_exposes = {}
+        simid_name = {}
         for sr, sim in zip(sim_remotes, needed_simulators, strict=True):
             simid_exposes[sr.task_id().hex()] = get_fn(sim.exposes.remote())
+            simid_name[sr.task_id().hex()] = get_fn(sim.name.remote())
 
         # wait for the simulators to finish
         while not_ready_objectives:
@@ -110,13 +134,21 @@ class Optimization:
                     exposes = simid_exposes[task_id]
                     result = get_fn(d)
                     captured_results.append((exposes, result))
+                    if self.logger:
+                        self.logger.set_simulator_complete(simid_name[task_id])
 
                 # update the objectives with the new observables and check if they are ready
                 get_fn([objective.update.remote(captured_results) for objective in not_ready_objectives])
                 ready, not_ready_objectives = split_by_ready(not_ready_objectives)
                 grad_refs += [objective.calculate.remote() for objective in ready]
 
+                for name in get_fn([objective.name.remote() for objective in ready_objectives]):
+                    self.logger.set_objective_running(name)
+
         grads_resolved = get_fn(grad_refs)
+
+        for name in get_fn([o.name.remote() for o in self.objectives]):
+            self.logger.set_objective_complete(name)
 
         grads = self.aggregate_grad_fn(grads_resolved)
 
@@ -135,4 +167,52 @@ class Optimization:
     ) -> "Optimization":
         """An update step intended to be called after an optimization step."""
         _ = get_fn([o.post_step.remote(opt_params) for o in self.objectives])
+        return self.replace(optimizer_state=optimizer_state)
+
+
+@chex.dataclass(frozen=True)
+class SimpleOptimizer:
+    """A simple optimizer that uses a single objective and simulator."""
+
+    objective: jdna_objective.Objective
+    simulator: jdna_actor.SimulatorActor
+    optimizer: optax.GradientTransformation
+    optimizer_state: optax.OptState | None = None
+    logger: jdna_logger.Logger = dc.field(default_factory=lambda: jdna_logger.Logger())
+
+    def step(self, params: jdna_types.Params) -> tuple[optax.OptState, list[jdna_types.Grads]]:
+        """Perform a single optimization step.
+
+        Args:
+            params: The current parameters.
+
+        Returns:
+            A tuple containing the updated optimizer state and the gradients.
+        """
+        # get the currently needed observables
+        # some objectives might use difftre and not actually need something rerun
+        # so check which objectives have observables that need to be run
+        if self.objective.is_ready():
+            grads = self.objective.calculate()
+        else:
+            observables = self.simulator.run(params)
+            exposes = self.simulator.exposes()
+            self.objective.update(
+                [
+                    (exposes, observables),
+                ]
+            )
+            grads = self.objective.calculate()
+
+        opt_state = self.optimizer.init(params) if self.optimizer_state is None else self.optimizer_state
+
+        updates, opt_state = self.optimizer.update(grads, opt_state, params)
+
+        new_params = grad_update_fn(params, updates)
+
+        return opt_state, new_params
+
+    def post_step(self, optimizer_state: optax.OptState, opt_params: jdna_types.Params) -> "SimpleOptimizer":
+        """An update step intended to be called after an optimization step."""
+        self.objective.post_step(opt_params)
         return self.replace(optimizer_state=optimizer_state)

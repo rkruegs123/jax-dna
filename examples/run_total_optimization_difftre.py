@@ -1,4 +1,5 @@
 
+from collections.abc import Callable
 import functools
 import os
 from pathlib import Path
@@ -9,7 +10,6 @@ import jax_md
 import optax
 import ray
 
-import examples.simulator_actor as sim_actor
 
 import jax_dna.energy as jdna_energy
 import jax_dna.energy.dna1 as dna1_energy
@@ -17,7 +17,8 @@ import jax_dna.input.toml as toml_reader
 import jax_dna.input.tree as jdna_tree
 import jax_dna.observables as jd_obs
 import jax_dna.optimization.objective as jdna_objective
-import jax_dna.optimization.base as jdna_optimization
+import jax_dna.optimization.optimization as jdna_optimization
+import jax_dna.optimization.simulator as sim_actor
 import jax_dna.simulators.jax_md as jaxmd
 import jax_dna.simulators.io as jdna_sio
 import jax_dna.utils.types as jdna_types
@@ -35,8 +36,6 @@ def tree_mean(trees:tuple[jdna_types.PyTree]) -> jdna_types.PyTree:
         return trees[0]
     summed = jax.tree.map(operator.add, *trees)
     return jax.tree.map(lambda x: x / len(trees), summed)
-
-
 
 def main():
     logger = MockLogger()
@@ -132,7 +131,6 @@ def main():
             seq=seq,
             mass=mass,
             bonded_neighbors=top.bonded_neighbors,
-            n_steps=5_000,
             checkpoint_every=0,
             dt=dt,
             kT=kT,
@@ -156,17 +154,11 @@ def main():
     def simulator_fn(
         params: jdna_types.Params,
         meta: jdna_types.MetaData,
-    ) -> tuple[str, str]:
-        traj, _ = sampler.run(params, init_body, run_steps, key)
-        return traj, meta
-
-    def trajectory_writer_fn(
-        traj: jdna_sio.SimulatorTrajectory,
-        aux: dict[str, typing.Any],
-        meta: jdna_types.MetaData,
-    ) -> list[str]:
+    ) -> tuple[str,]:
+        traj = sampler.run(params, init_body, run_steps, key)
         jdna_tree.save_pytree(traj, trajectory_loc)
-        return [trajectory_loc]
+
+        return tuple([str(trajectory_loc)],)
 
     obs_trajectory = "trajectory"
 
@@ -174,7 +166,6 @@ def main():
         fn=simulator_fn,
         exposes = [obs_trajectory],
         meta_data = {},
-        writer_fn = trajectory_writer_fn,
     )
     # ==========================================================================
 
@@ -188,6 +179,7 @@ def main():
     def prop_twist_loss_fn(
         traj: jax_md.rigid_body.RigidBody,
         weights: jnp.ndarray,
+        energy_fn: Callable,
     ) -> tuple[float, tuple[str, typing.Any]]:
         obs = prop_twist_fn(traj)
         loss = (jnp.dot(weights, obs) - jd_obs.propeller.TARGETS["oxDNA"])**2
@@ -195,7 +187,7 @@ def main():
         return loss, (obs, {})
 
 
-    propeller_twist_objective = jdna_objective.DiffTReObjective.remote(
+    propeller_twist_objective = jdna_objective.DiffTReObjectiveActor.remote(
         required_observables = [obs_trajectory],
         needed_observables = [obs_trajectory],
         logging_observables = ["loss", "prop_twist"],

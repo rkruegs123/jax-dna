@@ -66,7 +66,6 @@ def build_run_fn(
     transform_fn: Callable,
     simulator_init: Callable[[Callable, Callable], jax_md.simulate.Simulator],
     neighbors: jaxmd_utils.NeighborHelper,
-    topology: jd_topology.Topology,
 ) -> Callable[[dict[str, float], jax_md.rigid_body.RigidBody, int, jax.random.PRNGKey], jd_traj.Trajectory]:
     """Builds the run function for the jax_md simulation."""
     displacement_fn, shift_fn = space
@@ -115,13 +114,6 @@ def build_run_fn(
 
         _, trajectory = scan_fn(jax.jit(apply_fn), (init_state, neighbors), jnp.arange(n_steps))
 
-        traj = jd_sio.SimulatorTrajectory(rigid_body=trajectory)
-
-        traj_meta = jd_sio.SimulatorMetaData(
-            seq_oh=topology.seq_one_hot,
-            strand_lengths=topology.strand_counts,
-        )
-
-        return (traj, traj_meta)
+        return jd_sio.SimulatorTrajectory(rigid_body=trajectory)
 
     return run_fn

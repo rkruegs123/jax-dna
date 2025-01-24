@@ -28,13 +28,19 @@ class RemoteFn:
 class MockObjectiveActor:
     def __init__(
         self,
+        name: str,
         ready: bool,  # noqa: FBT001 -- This is just for testing
         calc_value: Any = None,
         needed_observables: list[str] = [],  # noqa: B006 -- This is just for testing
     ):
+        self._name = name
         self.ready = ready
         self.calc_value = calc_value
         self.needed_obs = needed_observables
+
+    @property
+    def name(self):
+        return RemoteFn(self._name)
 
     @property
     def is_ready(self):
@@ -81,13 +87,19 @@ class MockRunningSim:
 class MockSimulatorActor:
     def __init__(
         self,
+        name: str = "test",
         run_value: Any = None,
         hex_id: str = "1234",
         exposes: list[str] = [],  # noqa: B006 -- This is just for testing
     ):
+        self._name = name
         self.run_val = run_value
         self.hex_id = hex_id
         self.expose_values = exposes
+
+    @property
+    def name(self):
+        return RemoteFn(self._name)
 
     @property
     def run(self):
@@ -107,8 +119,8 @@ class MockOptimizer:
 
 
 def test_split_by_ready():
-    ready = MockObjectiveActor(ready=True)
-    not_ready = MockObjectiveActor(ready=False)
+    ready = MockObjectiveActor(name="test", ready=True)
+    not_ready = MockObjectiveActor(name="test", ready=False)
 
     objectives = [ready, not_ready]
 
@@ -125,16 +137,22 @@ def test_split_by_ready():
     ("objectives", "simulators", "aggregate_grad_fn", "optimizer", "expected_err"),
     [
         ([], [MockSimulatorActor()], lambda x: x, MockOptimizer(), jdna_optimization.ERR_MISSING_OBJECTIVES),
-        ([MockObjectiveActor(ready=True)], [], lambda x: x, MockOptimizer(), jdna_optimization.ERR_MISSING_SIMULATORS),
         (
-            [MockObjectiveActor(ready=True)],
+            [MockObjectiveActor(name="test", ready=True)],
+            [],
+            lambda x: x,
+            MockOptimizer(),
+            jdna_optimization.ERR_MISSING_SIMULATORS,
+        ),
+        (
+            [MockObjectiveActor(name="test", ready=True)],
             [MockSimulatorActor()],
             None,
             MockOptimizer(),
             jdna_optimization.ERR_MISSING_AGG_GRAD_FN,
         ),
         (
-            [MockObjectiveActor(ready=True)],
+            [MockObjectiveActor(name="test", ready=True)],
             [MockSimulatorActor()],
             lambda x: x,
             None,
@@ -160,12 +178,12 @@ def test_optimzation_step():
 
     opt = jdna_optimization.Optimization(
         objectives=[
-            MockObjectiveActor(ready=True, calc_value=1, needed_observables=["q_1"]),
-            MockObjectiveActor(ready=False, calc_value=2, needed_observables=["q_2"]),
+            MockObjectiveActor(name="test", ready=True, calc_value=1, needed_observables=["q_1"]),
+            MockObjectiveActor(name="test", ready=False, calc_value=2, needed_observables=["q_2"]),
         ],
         simulators=[
-            MockSimulatorActor(run_value="test-1", exposes=["q_1"], hex_id="abcd"),
-            MockSimulatorActor(run_value="test-2", exposes=["q_2"], hex_id="1234"),
+            MockSimulatorActor(name="test", run_value="test-1", exposes=["q_1"], hex_id="abcd"),
+            MockSimulatorActor(name="test", run_value="test-2", exposes=["q_2"], hex_id="1234"),
         ],
         aggregate_grad_fn=np.mean,
         optimizer=MockOptimizer(),
@@ -179,7 +197,7 @@ def test_optimzation_step():
 def test_optimization_post_step():
     """Test that the optimizer state is updated after a step."""
     opt = jdna_optimization.Optimization(
-        objectives=[MockObjectiveActor(ready=True)],
+        objectives=[MockObjectiveActor(name="test", ready=True)],
         simulators=[MockSimulatorActor()],
         aggregate_grad_fn=lambda x: x,
         optimizer=MockOptimizer(),

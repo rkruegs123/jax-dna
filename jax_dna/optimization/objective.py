@@ -28,6 +28,7 @@ class Objective:
 
     def __init__(
         self,
+        name: str,
         required_observables: list[str],
         needed_observables: list[str],
         logging_observables: list[str],
@@ -37,6 +38,7 @@ class Objective:
         """Initialize the objective.
 
         Args:
+            name (str): The name of the objective.
             required_observables (list[str]): The observables that are required
                 to calculate the gradients.
             needed_observables (list[str]): The observables that are needed to
@@ -47,6 +49,8 @@ class Objective:
                 The function that calculates the loss of the objective
             logger_config (dict[str, typing.Any]): The configuration for the logger.
         """
+        if name is None:
+            raise ValueError(ERR_MISSING_ARG.format(missing_arg="name"))
         if required_observables is None:
             raise ValueError(ERR_MISSING_ARG.format(missing_arg="required_observables"))
         if needed_observables is None:
@@ -56,6 +60,7 @@ class Objective:
         if grad_or_loss_fn is None:
             raise ValueError(ERR_MISSING_ARG.format(missing_arg="grad_or_loss_fn"))
 
+        self._name = name
         self._required_observables = required_observables
         self._needed_observables = needed_observables
         self._grad_or_loss_fn = grad_or_loss_fn
@@ -63,6 +68,10 @@ class Objective:
         self._logging_observables = logging_observables
         logging.basicConfig(**logger_config)
         self._logger = logging.getLogger(__name__)
+
+    def name(self) -> str:
+        """Return the name of the objective."""
+        return self._name
 
     def required_observables(self) -> list[str]:
         """Return the observables that are required to calculate the gradients."""
@@ -206,6 +215,7 @@ class DiffTReObjective(Objective):
 
     def __init__(
         self,
+        name: str,
         required_observables: list[str],
         needed_observables: list[str],
         logging_observables: list[str],
@@ -216,11 +226,13 @@ class DiffTReObjective(Objective):
         beta: float,
         n_equilibration_steps: int,
         min_n_eff_factor: float = 0.95,
+        max_valid_opt_steps: int | None = None,
         logging_config: dict[str, typing.Any] = empty_dict,
     ) -> "DiffTReObjective":
         """Initialize the DiffTRe objective.
 
         Args:
+            name: The name of the objective.
             required_observables: The observables that are required to calculate the gradients.
             needed_observables: The observables that are needed to calculate the gradients.
             logging_observables: The observables that are used for logging.
@@ -231,9 +243,11 @@ class DiffTReObjective(Objective):
             beta: The inverse temperature.
             n_equilibration_steps: The number of equilibration steps.
             min_n_eff_factor: The minimum normalized effective sample size.
+            max_valid_opt_steps: The maximum number of steps a trajectory is valid for.
             logging_config: The configuration for the logger.
         """
         super().__init__(
+            name,
             required_observables,
             needed_observables,
             logging_observables,
@@ -257,6 +271,8 @@ class DiffTReObjective(Objective):
         self._beta = beta
         self._n_eq_steps = n_equilibration_steps
         self._n_eff_factor = min_n_eff_factor
+        self._max_valid_opt_steps = max_valid_opt_steps
+        self._opt_steps = 0
 
         self._reference_states = None
         self._reference_energies = None
@@ -281,7 +297,6 @@ class DiffTReObjective(Objective):
             self._reference_states,
             self._reference_energies,
         )
-        self._reference_energies = new_energies
 
         latest_neff = next(obs for obs in self._obtained_observables if obs[0] == "neff")
         self._obtained_observables = [
@@ -320,7 +335,7 @@ class DiffTReObjective(Objective):
 
             # if the trajectory is no longer valid remove it form obtained
             # and add it to needed so that a new trajectory is run.
-            if neff < self._n_eff_factor:
+            if neff < self._n_eff_factor or self._opt_steps == self._max_valid_opt_steps:
                 self._obtained_observables = list(
                     filter(lambda x: x[0] != self._trajectory_key, self._obtained_observables)
                 )
@@ -339,6 +354,7 @@ class DiffTReObjective(Objective):
         # the need for a new trajectory is checked in `is_ready`
         self._obtained_observables = list(filter(lambda x: x[0] == self._trajectory_key, self._obtained_observables))
         self._opt_params = opt_params
+        self._opt_steps += 1
 
 
 @ray.remote

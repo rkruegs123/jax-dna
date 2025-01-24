@@ -8,8 +8,9 @@ def test_simulator_init():
     fn = lambda x, y: ("a", "b")  # noqa: ARG005 -- This is just for testing
     exposes = ["a", "b"]
     meta_data = {"a": 1, "b": 2}
+    name = "test"
 
-    simulator = jdna_simulator.BaseSimulator(fn, exposes, meta_data)
+    simulator = jdna_simulator.BaseSimulator(name, fn, exposes, meta_data)
 
     assert simulator._fn(None, None) == fn(None, None)
     assert simulator._exposes == exposes
