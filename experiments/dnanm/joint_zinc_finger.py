@@ -130,29 +130,29 @@ def run(args):
         pdb_info[pdb_id]["topology"] = id_top_info
         pdb_info[pdb_id]["top_path"] = id_top_path
 
-        target_path = sys_basedir / "complex.conf"
+        id_target_path = sys_basedir / "complex.conf"
         target_info = trajectory.TrajectoryInfo(
-            top_info,
-            read_from_file=True, traj_path=target_path,
+            id_top_info,
+            read_from_file=True, traj_path=id_target_path,
             reverse_direction=False
         )
         id_target_state = target_info.get_states()[0]
         pdb_info[pdb_id]["target"] = id_target_state
 
-        conf_path = sys_basedir / "relaxed.dat"
+        id_conf_path = sys_basedir / "relaxed.dat"
         conf_info = trajectory.TrajectoryInfo(
-            top_info,
-            read_from_file=True, traj_path=conf_path,
+            id_top_info,
+            read_from_file=True, traj_path=id_conf_path,
             reverse_direction=False
         )
-        id_centered_conf_info = center_configuration.center_conf(top_info, conf_info)
+        id_centered_conf_info = center_configuration.center_conf(id_top_info, conf_info)
         pdb_info[pdb_id]["init_body"] = id_centered_conf_info.get_states()[0]
         id_box_size = conf_info.box_size
         pdb_info[pdb_id]["box_size"] = id_box_size
 
         half_charged_ends = True
         if half_charged_ends:
-            id_is_end = jnp.array(top_info.is_end)
+            id_is_end = jnp.array(id_top_info.is_end)
         else:
             id_is_end = None
         pdb_info[pdb_id]["is_end"] = id_is_end
@@ -161,11 +161,11 @@ def run(args):
         if use_nbrs:
             r_cutoff = 10.0
             dr_threshold = 0.2
-            neighbor_fn = top_info.get_neighbor_list_fn(
-                displacement_fn, box_size, r_cutoff, dr_threshold
+            neighbor_fn = id_top_info.get_neighbor_list_fn(
+                displacement_fn, id_box_size, r_cutoff, dr_threshold
             )
             # Note that we only allocate once
-            neighbors = neighbor_fn.allocate(target_state.center) # We use the COMs.
+            neighbors = neighbor_fn.allocate(id_target_state.center) # We use the COMs.
             id_default_neighbors = deepcopy(neighbors)
         pdb_info[pdb_id]["default_neighbors"] = id_default_neighbors
 
@@ -271,8 +271,6 @@ def run(args):
         pdb_id_dir = iter_dir / pdb_id
         pdb_id_dir.mkdir(parents=False, exist_ok=False)
 
-        body = bodies[pdb_id]
-
         top_info = pdb_info[pdb_id]["topology"]
         top_path = pdb_info[pdb_id]["top_path"]
         box_size = pdb_info[pdb_id]["box_size"]
@@ -283,7 +281,7 @@ def run(args):
         sim_keys = random.split(sim_key, n_sims)
         sim_start = time.time()
         # all_batch_ref_states = vmap(sim_fn, (None, None, 0))(params, init_body, sim_keys)
-        all_batch_ref_states = vmap(lambda params, body, key: sim_fn(params, body, key, pdb_id), (None, None, 0))(params, init_body, sim_keys)
+        all_batch_ref_states = vmap(lambda params, body, key: sim_fn(params, body, key, pdb_id), (None, None, 0))(params, body, sim_keys)
         sim_end = time.time()
         with open(resample_log_path, "a") as f:
             f.write(f"- Simulating took {sim_end - sim_start} seconds\n")
@@ -581,7 +579,7 @@ def run(args):
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
 
-        (mean_rmse, aux), grads = grad_fn(params, all_ref_states, all_ref_energies, all_unweighted_rmses)
+        (mean_rmse, aux), grads = grad_fn(params, all_traj_states, all_calc_energies, all_rmsds)
         all_expected_rmses, all_n_effs = aux
         num_resample_iters += 1
 
@@ -622,7 +620,7 @@ def run(args):
 
         if resampled_atleast_one:
 
-            (mean_rmse, aux), grads = grad_fn(params, all_ref_states, all_ref_energies, all_unweighted_rmses)
+            (mean_rmse, aux), grads = grad_fn(params, all_traj_states, all_calc_energies, all_rmsds)
             all_expected_rmses, all_n_effs = aux
 
             all_ref_times.append(i)
@@ -631,13 +629,13 @@ def run(args):
             for pdb_id in pdb_ids:
                 if did_resample[pdb_id]:
                     pdb_ref_times[pdb_id].append(i)
-                    pdb_ref_rmses[pdb__id].append(all_expected_rmses[pdb_id])
+                    pdb_ref_rmses[pdb_id].append(all_expected_rmses[pdb_id])
 
 
         iter_end = time.time()
 
         with open(neff_path, "a") as f:
-            f.write(f"{all_n_effs}\n")
+            f.write(f"{pprint.pformat(all_n_effs)}\n")
         with open(rmse_path, "a") as f:
             f.write(f"{mean_rmse}\n")
         with open(times_path, "a") as f:
