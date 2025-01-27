@@ -262,160 +262,153 @@ def run(args):
 
         return traj
 
-    def get_ref_states(params, i, iter_key, bodies):
+    def get_ref_states(params, i, iter_key, body, pdb_id):
 
         iter_dir = ref_traj_dir / f"iter{i}"
-        iter_dir.mkdir(parents=False, exist_ok=False)
+        if not iter_dir.exists():
+            iter_dir.mkdir(parents=False, exist_ok=False)
 
-        all_traj_states = dict()
-        all_calc_energies = dict()
-        all_rmsds = dict()
-        for pdb_id in pdb_ids:
-            pdb_id_dir = iter_dir / pdb_id
-            pdb_id_dir.mkdir(parents=False, exist_ok=False)
+        pdb_id_dir = iter_dir / pdb_id
+        pdb_id_dir.mkdir(parents=False, exist_ok=False)
 
-            body = bodies[pdb_id]
+        body = bodies[pdb_id]
 
-            top_info = pdb_info[pdb_id]["topology"]
-            top_path = pdb_info[pdb_id]["top_path"]
-            box_size = pdb_info[pdb_id]["box_size"]
-            is_end = pdb_info[pdb_id]["is_end"]
-            target_state = pdb_info[pdb_id]["target"]
+        top_info = pdb_info[pdb_id]["topology"]
+        top_path = pdb_info[pdb_id]["top_path"]
+        box_size = pdb_info[pdb_id]["box_size"]
+        is_end = pdb_info[pdb_id]["is_end"]
+        target_state = pdb_info[pdb_id]["target"]
 
-            iter_key, sim_key = random.split(iter_key)
-            sim_keys = random.split(sim_key, n_sims)
-            sim_start = time.time()
-            # all_batch_ref_states = vmap(sim_fn, (None, None, 0))(params, init_body, sim_keys)
-            all_batch_ref_states = vmap(lambda params, body, key: sim_fn(params, body, key, pdb_id), (None, None, 0))(params, init_body, sim_keys)
-            sim_end = time.time()
-            with open(resample_log_path, "a") as f:
-                f.write(f"- Simulating took {sim_end - sim_start} seconds\n")
+        iter_key, sim_key = random.split(iter_key)
+        sim_keys = random.split(sim_key, n_sims)
+        sim_start = time.time()
+        # all_batch_ref_states = vmap(sim_fn, (None, None, 0))(params, init_body, sim_keys)
+        all_batch_ref_states = vmap(lambda params, body, key: sim_fn(params, body, key, pdb_id), (None, None, 0))(params, init_body, sim_keys)
+        sim_end = time.time()
+        with open(resample_log_path, "a") as f:
+            f.write(f"- Simulating took {sim_end - sim_start} seconds\n")
 
-            combined_center = all_batch_ref_states.center.reshape(-1, top_info.n, 3)
-            combined_quat_vec = all_batch_ref_states.orientation.vec.reshape(-1, top_info.n, 4)
+        combined_center = all_batch_ref_states.center.reshape(-1, top_info.n, 3)
+        combined_quat_vec = all_batch_ref_states.orientation.vec.reshape(-1, top_info.n, 4)
 
-            traj_states = rigid_body.RigidBody(
-                center=combined_center,
-                orientation=rigid_body.Quaternion(combined_quat_vec)
+        traj_states = rigid_body.RigidBody(
+            center=combined_center,
+            orientation=rigid_body.Quaternion(combined_quat_vec)
+        )
+
+        # n_traj_states = len(ref_states)
+        n_traj_states = traj_states.center.shape[0]
+
+
+        write_traj = True
+        if write_traj:
+
+            shutil.copy(top_path, pdb_id_dir / "sys.top")
+
+            traj_info = trajectory.TrajectoryInfo(
+                top_info,
+                read_from_states=True,
+                states=traj_states,
+                box_size=box_size
             )
-
-            # n_traj_states = len(ref_states)
-            n_traj_states = traj_states.center.shape[0]
+            traj_info.write(pdb_id_dir / "sampled_states.dat", reverse=False)
 
 
-            write_traj = True
-            if write_traj:
+        ## Generate an energy function
 
-                shutil.copy(top_path, pdb_id_dir / "sys.top")
+        dna2_params = params["dna2"]
 
-                traj_info = trajectory.TrajectoryInfo(
-                    top_info,
-                    read_from_states=True,
-                    states=traj_states,
-                    box_size=box_size
-                )
-                traj_info.write(pdb_id_dir / "sampled_states.dat", reverse=False)
+        dnanm_params = params["dnanm"]
+        dna_base_protein_sigma = dnanm_params["base_sigma"]
+        dna_base_protein_epsilon = dnanm_params["base_epsilon"]
+        dna_base_protein_alpha = dnanm_params["base_alpha"]
+        dna_back_protein_sigma = dnanm_params["back_sigma"]
+        dna_back_protein_epsilon = dnanm_params["back_epsilon"]
+        dna_back_protein_alpha = dnanm_params["back_alpha"]
 
+        em = model_nbrs.EnergyModel(
+            displacement_fn,
+            is_nt_idx=jnp.array(top_info.is_nt_idx),
+            is_protein_idx=jnp.array(top_info.is_protein_idx),
+            aa_seq=jnp.array(top_info.aa_seq_idx),
+            nt_seq=jnp.array(top_info.nt_seq_idx),
+            # ANM
+            network=jnp.array(top_info.network),
+            eq_distances=jnp.array(top_info.eq_distances),
+            spring_constants=jnp.array(top_info.spring_constants),
+            # DNA2
+            override_base_params=dna2_params,
+            t_kelvin=t_kelvin,
+            salt_conc=salt_conc,
+            ss_hb_weights=ss_hb_weights,
+            ss_stack_weights=ss_stack_weights,
+            seq_avg=seq_avg,
+            # DNA/Protein interaction
+            include_dna_protein_morse=True,
+            dna_base_protein_sigma=dna_base_protein_sigma,
+            dna_base_protein_epsilon=dna_base_protein_epsilon,
+            dna_base_protein_alpha=dna_base_protein_alpha,
+            dna_back_protein_sigma=dna_back_protein_sigma,
+            dna_back_protein_epsilon=dna_back_protein_epsilon,
+            dna_back_protein_alpha=dna_back_protein_alpha,
+        )
 
-            ## Generate an energy function
+        energy_fn = lambda body: em.energy_fn(
+            body,
+            bonded_nbrs_nt=jnp.array(top_info.bonded_nbrs),
+            unbonded_nbrs=jnp.array(top_info.unbonded_nbrs),
+            is_end=is_end
+        )
+        energy_fn = jit(energy_fn)
 
-            dna2_params = params["dna2"]
+        ## Calculate energies
+        calc_start = time.time()
+        energy_scan_fn = lambda state, ts: (None, energy_fn(ts))
+        _, calc_energies = scan(energy_scan_fn, None, traj_states)
+        calc_end = time.time()
+        with open(resample_log_path, "a") as f:
+            f.write(f"- Calculating energies took {calc_end - calc_start} seconds\n")
 
-            dnanm_params = params["dnanm"]
-            dna_base_protein_sigma = dnanm_params["base_sigma"]
-            dna_base_protein_epsilon = dnanm_params["base_epsilon"]
-            dna_base_protein_alpha = dnanm_params["base_alpha"]
-            dna_back_protein_sigma = dnanm_params["back_sigma"]
-            dna_back_protein_epsilon = dnanm_params["back_epsilon"]
-            dna_back_protein_alpha = dnanm_params["back_alpha"]
+        ## Calculate RMSDs
+        RMSDs, RMSFs = rmse.compute_rmses(traj_states, target_state, top_info)
 
-            em = model_nbrs.EnergyModel(
-                displacement_fn,
-                is_nt_idx=jnp.array(top_info.is_nt_idx),
-                is_protein_idx=jnp.array(top_info.is_protein_idx),
-                aa_seq=jnp.array(top_info.aa_seq_idx),
-                nt_seq=jnp.array(top_info.nt_seq_idx),
-                # ANM
-                network=jnp.array(top_info.network),
-                eq_distances=jnp.array(top_info.eq_distances),
-                spring_constants=jnp.array(top_info.spring_constants),
-                # DNA2
-                override_base_params=dna2_params,
-                t_kelvin=t_kelvin,
-                salt_conc=salt_conc,
-                ss_hb_weights=ss_hb_weights,
-                ss_stack_weights=ss_stack_weights,
-                seq_avg=seq_avg,
-                # DNA/Protein interaction
-                include_dna_protein_morse=True,
-                dna_base_protein_sigma=dna_base_protein_sigma,
-                dna_base_protein_epsilon=dna_base_protein_epsilon,
-                dna_base_protein_alpha=dna_base_protein_alpha,
-                dna_back_protein_sigma=dna_back_protein_sigma,
-                dna_back_protein_epsilon=dna_back_protein_epsilon,
-                dna_back_protein_alpha=dna_back_protein_alpha,
-            )
+        ## Plot logging information
+        analyze_start = time.time()
 
-            energy_fn = lambda body: em.energy_fn(
-                body,
-                bonded_nbrs_nt=jnp.array(top_info.bonded_nbrs),
-                unbonded_nbrs=jnp.array(top_info.unbonded_nbrs),
-                is_end=is_end
-            )
-            energy_fn = jit(energy_fn)
+        sns.histplot(RMSDs)
+        plt.savefig(pdb_id_dir / f"rmsd_hist.png")
+        plt.clf()
 
-            ## Calculate energies
-            calc_start = time.time()
-            energy_scan_fn = lambda state, ts: (None, energy_fn(ts))
-            _, calc_energies = scan(energy_scan_fn, None, traj_states)
-            calc_end = time.time()
-            with open(resample_log_path, "a") as f:
-                f.write(f"- Calculating energies took {calc_end - calc_start} seconds\n")
+        running_avg = onp.cumsum(RMSDs) / onp.arange(1, (n_ref_states)+1)
+        plt.plot(running_avg)
+        plt.savefig(pdb_id_dir / "running_avg_rmsd.png")
+        plt.clf()
 
-            ## Calculate RMSDs
-            RMSDs, RMSFs = rmse.compute_rmses(traj_states, target_state, top_info)
+        last_half = int((n_ref_states) // 2)
+        plt.plot(running_avg[-last_half:])
+        plt.savefig(pdb_id_dir / "running_avg_rmsd_second_half.png")
+        plt.clf()
 
-            ## Plot logging information
-            analyze_start = time.time()
-
-            sns.histplot(RMSDs)
-            plt.savefig(pdb_id_dir / f"rmsd_hist.png")
-            plt.clf()
-
-            running_avg = onp.cumsum(RMSDs) / onp.arange(1, (n_ref_states)+1)
-            plt.plot(running_avg)
-            plt.savefig(pdb_id_dir / "running_avg_rmsd.png")
-            plt.clf()
-
-            last_half = int((n_ref_states) // 2)
-            plt.plot(running_avg[-last_half:])
-            plt.savefig(pdb_id_dir / "running_avg_rmsd_second_half.png")
-            plt.clf()
-
-            sns.distplot(calc_energies, label="Calculated", color="red")
-            plt.legend()
-            plt.savefig(pdb_id_dir / f"energies.png")
-            plt.clf()
+        sns.distplot(calc_energies, label="Calculated", color="red")
+        plt.legend()
+        plt.savefig(pdb_id_dir / f"energies.png")
+        plt.clf()
 
 
-            mean_rmsd = onp.mean(RMSDs)
-            with open(pdb_id_dir / "summary.txt", "w+") as f:
-                f.write(f"Calc. energy var.: {onp.var(calc_energies)}\n")
-                f.write(f"Mean RMSD: {mean_rmsd}\n")
-                f.write(f"# Traj. States: {n_traj_states}\n")
+        mean_rmsd = onp.mean(RMSDs)
+        with open(pdb_id_dir / "summary.txt", "w+") as f:
+            f.write(f"Calc. energy var.: {onp.var(calc_energies)}\n")
+            f.write(f"Mean RMSD: {mean_rmsd}\n")
+            f.write(f"# Traj. States: {n_traj_states}\n")
 
-            with open(pdb_id_dir / "params.txt", "w+") as f:
-                f.write(f"{pprint.pformat(params)}\n")
+        with open(pdb_id_dir / "params.txt", "w+") as f:
+            f.write(f"{pprint.pformat(params)}\n")
 
-            analyze_end = time.time()
-            with open(resample_log_path, "a") as f:
-                f.write(f"- Remaining analysis took {analyze_end - analyze_start} seconds\n")
+        analyze_end = time.time()
+        with open(resample_log_path, "a") as f:
+            f.write(f"- Remaining analysis took {analyze_end - analyze_start} seconds\n")
 
-            all_traj_states[pdb_id] = traj_states
-            all_calc_energies[pdb_id] = calc_energies
-            all_rmsds[pdb_id] = jnp.array(RMSDs)
-
-        return all_traj_states, all_calc_energies, all_rmsds, iter_dir
+        return traj_states, calc_energies, jnp.array(RMSDs)
 
 
     # Construct the loss function
@@ -560,13 +553,26 @@ def run(args):
     all_ref_rmses = list()
     all_ref_times = list()
 
+    pdb_ref_rmses = {pdb_id: list() for pdb_id in pdb_ids}
+    pdb_ref_times = {pdb_id: list() for pdb_id in pdb_ids}
+    pdb_rmses = {pdb_id: list() for pdb_id in pdb_ids}
+
     with open(resample_log_path, "a") as f:
         f.write(f"Generating initial reference states and energies...\n")
 
     key = random.PRNGKey(0)
     init_bodies = {pdb_id: pdb_info[pdb_id]["init_body"] for pdb_id in pdb_ids}
     start = time.time()
-    all_ref_states, all_ref_energies, all_unweighted_rmses, ref_iter_dir = get_ref_states(params, i=0, iter_key=key, bodies=init_bodies)
+
+    all_traj_states = dict()
+    all_calc_energies = dict()
+    all_rmsds = dict()
+    for pdb_id in pdb_ids:
+        pdb_ref_states, pdb_ref_energies, pdb_unweighted_rmses = get_ref_states(params, i=0, iter_key=key, body=init_bodies[pdb_id], pdb_id=pdb_id)
+        all_traj_states[pdb_id] = pdb_ref_states
+        all_calc_energies[pdb_id] = pdb_ref_energies
+        all_rmsds[pdb_id] = pdb_unweighted_rmses
+
     end = time.time()
     with open(resample_log_path, "a") as f:
         f.write(f"Finished generating initial reference states. Took {end - start} seconds.\n\n")
@@ -583,31 +589,50 @@ def run(args):
             all_ref_times.append(i)
             all_ref_rmses.append(mean_rmse)
 
-        resample_atleast_one = any([n_eff < min_n_eff for n_eff in all_n_effs.values()])
-        if resample_atleast_one or num_resample_iters >= max_approx_iters:
-            num_resample_iters = 0
-            with open(resample_log_path, "a") as f:
-                f.write(f"Iteration {i}\n")
-                f.write(f"- n_effs were {all_n_effs}. Resampling...\n")
+            for pdb_id in pdb_ids:
+                pdb_ref_rmses[pdb_id].append(all_expected_rmses[pdb_id])
+                pdb_ref_times[pdb_id].append(i)
 
-            key, split = random.split(key)
-            start = time.time()
-            all_ref_states, all_ref_energies, all_unweighted_rmses, ref_iter_dir = get_ref_states(
-                params,
-                i=i,
-                iter_key=split,
-                # init_body=ref_states[-1]
-                bodies=init_bodies
-            )
-            end = time.time()
-            with open(resample_log_path, "a") as f:
-                f.write(f"- time to resample: {end - start} seconds\n\n")
+        resampled_atleast_one = False
+        did_resample = {pdb_id: False for pdb_id in pdb_ids}
+        for pdb_id in pdb_ids:
+            should_resample = (all_n_effs[pdb_id] < min_n_eff)
+            if should_resample:
+
+                with open(resample_log_path, "a") as f:
+                    f.write(f"Iteration {i}\n")
+                    f.write(f"- n_eff for ID {pdb_id} was {all_n_effs[pdb_id]}. Resampling...\n")
+
+                key, split = random.split(key)
+                pdb_ref_states, pdb_ref_energies, pdb_unweighted_rmses = get_ref_states(
+                    params,
+                    i=i,
+                    iter_key=split,
+                    # body=ref_states[-1],
+                    body=init_bodies[pdb_id],
+                    pdb_id=pdb_id
+                )
+
+                all_traj_states[pdb_id] = pdb_ref_states
+                all_calc_energies[pdb_id] = pdb_ref_energies
+                all_rmsds[pdb_id] = pdb_unweighted_rmses
+
+                resampled_atleast_one = True
+                did_resample[pdb_id] = True
+
+        if resampled_atleast_one:
 
             (mean_rmse, aux), grads = grad_fn(params, all_ref_states, all_ref_energies, all_unweighted_rmses)
             all_expected_rmses, all_n_effs = aux
 
             all_ref_times.append(i)
             all_ref_rmses.append(mean_rmse)
+
+            for pdb_id in pdb_ids:
+                if did_resample[pdb_id]:
+                    pdb_ref_times[pdb_id].append(i)
+                    pdb_ref_rmses[pdb__id].append(all_expected_rmses[pdb_id])
+
 
         iter_end = time.time()
 
@@ -627,6 +652,9 @@ def run(args):
 
         all_rmses.append(mean_rmse)
 
+        for pdb_id in pdb_ids:
+            pdb_rmses[pdb_id].append(all_expected_rmses[pdb_id])
+
         # Save a checkpoint
         if i % ckpt_freq == 0 and save_checkpoints:
             ckpt = {"params": params, "optimizer": optimizer, "opt_state": opt_state}
@@ -644,6 +672,17 @@ def run(args):
         plt.xlabel("Iteration")
         plt.savefig(img_dir / f"rmses_iter{i}.png")
         plt.clf()
+
+
+        for pdb_id in pdb_ids:
+            plt.plot(onp.arange(i+1), pdb_rmses[pdb_id], linestyle="--", color="blue")
+            plt.scatter(pdb_ref_times[pdb_id], pdb_ref_rmses[pdb_id], marker='o', label="Resample points", color="blue")
+            plt.legend()
+            plt.ylabel("RMSE")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"{pdb_id}_rmses_iter{i}.png")
+            plt.clf()
+
 
 def get_parser():
 
