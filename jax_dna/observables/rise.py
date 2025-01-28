@@ -50,9 +50,9 @@ class Rise(jd_obs.BaseObservable):
     is the average rise over all (specified) pairs of adjacent base pairs (i.e. quartets)
 
     Args:
-    - quartets: a (n_bp, 2, 2) array containing the pairs of adjacent base pairs
-      for which to compute the rise
-    - displacement_fn: a function for computing displacements between two positions
+        quartets: a (n_bp, 2, 2) array containing the pairs of adjacent base pairs
+            for which to compute the rise
+        displacement_fn: a function for computing displacements between two positions
     """
 
     quartets: jnp.ndarray = dc.field(hash=False)

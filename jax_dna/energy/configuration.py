@@ -19,7 +19,7 @@ class BaseConfiguration:
 
     This class should not be used directly.
 
-    Attributes:
+    Parameters:
         params_to_optimize (tuple[str]): parameters to optimize
         required_params (tuple[str]): required parameters
         non_optimizable_required_params (tuple[str]): required parameters that are not optimizable

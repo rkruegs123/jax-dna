@@ -3,7 +3,6 @@
 # -- Project information
 from jax_dna import __project__, __version__
 
-
 project = __project__
 copyright = '2024, Ryan Krueger'
 author = 'Ryan Krueger'
@@ -16,18 +15,27 @@ version = __version__
 extensions = [
     'sphinx.ext.duration',
     'sphinx.ext.doctest',
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
+    "autoapi.extension",
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
 ]
 
-autosummary_generate = True
-
-# ignore test modules
-exclude_patterns = ['**/tests/*.py']
-
+autoapi_dirs = ['../../jax_dna']
+autoapi_type = 'python'
+autoapi_template_dir = "_templates/autoapi"
+autodoc_typehints = "signature"
+# if you want to debug uncomment this line
+# autoapi_keep_files = True
+autoapi_options = [
+    'members',
+    'undoc-members',
+    'private-members',
+    'special-members',
+    'show-inheritance',
+    'show-module-summary',
+    'imported-members',
+]
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
@@ -51,7 +59,7 @@ if html_theme == 'sphinx_book_theme':
     html_theme_options.update({
         'logo': {
             'image_light': '../_static/SSEC_logo_horiz_blue_1152x263.png',
-            'image_dark': '../_static/SSEC_logo_vert_white_lg_1184x661.png',
+            'image_dark': '../_staticautoapi/jax_dna/energy/configuration/index/SSEC_logo_vert_white_lg_1184x661.png',
             'text': f'{html_title}',
         },
         'repository_url': 'https://github.com/rkruegs123/jax-dna-dev',
@@ -66,11 +74,18 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../jax_dna'))
 
-def skip_tests(app, what, name, obj, skip, options):
-    # Skip any module or member that is in a 'tests' directory
-    if hasattr(obj, '__module__') and 'tests' in obj.__module__.split('.'):
+def skip_irrelevant(app, what, name, obj, skip, options):
+    if (
+        "test" in name
+        or "jax_dna" not in name
+        or "jax_dna.dna1" in name
+        or "jax_dna.dna2" in name
+        or "jax_dna.rna2" in name
+        or "jax_dna.common" in name
+        or ("jax_dna.loss" in name and "jax_dna.losses" not in name)
+    ):
         return True
     return skip
 
-def setup(app):
-    app.connect('autodoc-skip-member', skip_tests)
+def setup(sphinx):
+    sphinx.connect("autoapi-skip-member", skip_irrelevant)

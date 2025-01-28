@@ -1,7 +1,8 @@
 -r prd.txt
 
 sphinx
-sphinx-automodapi
+# sphinx-automodapi
+sphinx-autoapi
 sphinx-issues
 nbsphinx
 sphinx_book_theme

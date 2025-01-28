@@ -42,7 +42,7 @@ def split_by_ready(
 class Optimization:
     """Optimization of a list of objectives using a list of simulators.
 
-    Attributes:
+    Parameters:
         objectives: A list of objectives to optimize.
         simulators: A list of simulators to use for the optimization.
         aggregate_grad_fn: A function that aggregates the gradients from the objectives.

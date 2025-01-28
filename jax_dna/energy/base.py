@@ -22,7 +22,7 @@ class BaseEnergyFunction:
 
     This class should not be used directly. Subclasses should implement the __call__ method.
 
-    Attributes:
+    Parameters:
         displacement_fn (Callable): an instance of a displacement function from jax_md.space
     """
 
@@ -65,7 +65,7 @@ class BaseEnergyFunction:
 class ComposedEnergyFunction:
     """Represents a linear combination of energy functions.
 
-    Attributes:
+    Parameters:
         energy_fns (list[BaseEnergyFunction]): a list of energy functions
         weights (jnp.ndarray): optional, the weights of the energy functions
         rigid_body_transform_fn (Callable): a function to transform the rigid body
@@ -167,7 +167,7 @@ class ComposedEnergyFunction:
         )
 
     def __add__(self, other: Union[BaseEnergyFunction, "ComposedEnergyFunction"]) -> "ComposedEnergyFunction":
-        """Create a new ComposedEnergyFunction by adding another energy function.
+        """Create a new ComposedEnergyFunction by adding anotheautoapi/jax_dna/energy/configuration/indexr energy function.
 
         This is a convenience method for the add_energy_fn and add_composable_energy_fn methods.
         """

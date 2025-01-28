@@ -4,7 +4,7 @@ Welcome to jax_dna's documentation!
 **jax_dna** is a Python library for DNA energy function parameter and sequence
 optimization
 
-Check out the :doc:`usage` section for further information, including
+Check out the :doc:`basic_usage` section for further information, including
 how to :ref:`installation` the project.
 
 .. note::
@@ -15,7 +15,9 @@ Contents
 --------
 
 .. toctree::
+   :maxdepth: 1
 
-   usage
+   basic_usage
+   advanced_usage
    optimization
-   api
+   autoapi/index
