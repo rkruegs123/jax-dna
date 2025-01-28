@@ -1,1 +1,7 @@
-tox==4.15.0
+-r prd.txt
+
+sphinx
+sphinx-automodapi
+sphinx-issues
+nbsphinx
+sphinx_book_theme

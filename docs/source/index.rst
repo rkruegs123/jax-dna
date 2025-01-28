@@ -1,7 +1,8 @@
-Welcome to <package_name>'s documentation!
+Welcome to jax_dna's documentation!
 ==========================================
 
-**<package_name>** is a Python library for...
+**jax_dna** is a Python library for DNA energy function parameter and sequence
+optimization
 
 Check out the :doc:`usage` section for further information, including
 how to :ref:`installation` the project.
@@ -16,4 +17,5 @@ Contents
 .. toctree::
 
    usage
+   optimization
    api

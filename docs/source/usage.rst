@@ -6,4 +6,4 @@ Usage
 Installation
 ------------
 
-To use <package_name>, first install it using...:
+To use jax_dna, first install it using...:
