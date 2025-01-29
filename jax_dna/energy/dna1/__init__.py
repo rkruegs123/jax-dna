@@ -18,10 +18,8 @@ from jax_dna.energy.dna1.unbonded_excluded_volume import UnbondedExcludedVolume,
 from jax_dna.input import toml
 
 
-def default_configs(
-    overrides: dict = MappingProxyType({}), opts: dict = MappingProxyType({})
-) -> list[BaseConfiguration]:
-    """Return the default configurations for the energy functions."""
+def default_configs() -> list[dict[str, str | float | int]]:
+    """Return the default simulation and energy configuration files for dna1 simulations."""
     config_dir = (
         # jax_dna/energy/dna1/__init__.py
         Path(__file__)
@@ -33,8 +31,17 @@ def default_configs(
         .joinpath("dna1")
     )
 
-    default_sim_config = toml.parse_toml(config_dir.joinpath("default_simulation.toml"))
-    default_config = toml.parse_toml(config_dir.joinpath("default_energy.toml"))
+    return (
+        toml.parse_toml(config_dir.joinpath("default_simulation.toml")),
+        toml.parse_toml(config_dir.joinpath("default_energy.toml")),
+    )
+
+
+def default_energy_configs(
+    overrides: dict = MappingProxyType({}), opts: dict = MappingProxyType({})
+) -> list[BaseConfiguration]:
+    """Return the default configurations for the energy functions."""
+    default_sim_config, default_config = default_configs()
 
     def get_param(x: str) -> dict:
         return default_config[x] | overrides.get(x, {})

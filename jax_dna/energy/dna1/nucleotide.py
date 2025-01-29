@@ -12,7 +12,7 @@ import jax_dna.utils.types as typ
 class Nucleotide(je_base.BaseNucleotide):
     """Nucleotide rigid body with additional sites for DNA1.
 
-    This class is inteneded to be used as a dataclass for a nucleotide rigid body
+    This class is intended to be used as a dataclass for a nucleotide rigid body
     as a `rigid_body_transform_fn` in `jax_md.energy.ComposedEnergyFunction`.
     """
 

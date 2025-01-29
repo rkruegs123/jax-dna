@@ -167,7 +167,7 @@ class ComposedEnergyFunction:
         )
 
     def __add__(self, other: Union[BaseEnergyFunction, "ComposedEnergyFunction"]) -> "ComposedEnergyFunction":
-        """Create a new ComposedEnergyFunction by adding anotheautoapi/jax_dna/energy/configuration/indexr energy function.
+        """Create a new ComposedEnergyFunction by adding another energy function.
 
         This is a convenience method for the add_energy_fn and add_composable_energy_fn methods.
         """
