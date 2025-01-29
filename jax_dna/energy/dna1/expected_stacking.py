@@ -49,11 +49,7 @@ class ExpectedStacking(jd_stk.Stacking):
     ) -> typ.Scalar:
         # Compute sequence-independent energy for each bonded pair
         v_stack = self.compute_v_stack(
-            body.stack_sites,
-            body.back_sites,
-            body.base_normals,
-            body.cross_prods,
-            bonded_neighbors
+            body.stack_sites, body.back_sites, body.base_normals, body.cross_prods, bonded_neighbors
         )
 
         # Compute sequence-dependent weight for each bonded pair

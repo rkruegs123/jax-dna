@@ -1,6 +1,9 @@
 """Objectives implemented as ray actors."""
 
+import functools
 import logging
+import math
+import operator
 import types
 import typing
 from collections.abc import Callable
@@ -136,7 +139,7 @@ class Objective:
 
     def post_step(self, opt_params: dict) -> None:  # noqa: ARG002 - not all objectives need params
         """Reset the needed observables for the next step."""
-        self._needed_observables = self._required_observables
+        self._needed_observables = self._required_observables[:]
         self._obtained_observables = []
 
 
@@ -222,11 +225,10 @@ class DiffTReObjective(Objective):
         grad_or_loss_fn: typing.Callable[[tuple[jdna_types.SimulatorActorOutput]], jdna_types.Grads],
         energy_fn_builder: Callable[[jdna_types.Params], Callable[[jnp.ndarray], jnp.ndarray]],
         opt_params: jdna_types.Params,
-        trajectory_key: str,
         beta: float,
         n_equilibration_steps: int,
         min_n_eff_factor: float = 0.95,
-        max_valid_opt_steps: int | None = None,
+        max_valid_opt_steps: int = math.inf,
         logging_config: dict[str, typing.Any] = empty_dict,
     ) -> "DiffTReObjective":
         """Initialize the DiffTRe objective.
@@ -239,7 +241,6 @@ class DiffTReObjective(Objective):
             grad_or_loss_fn: The function that calculates the loss of the objective.
             energy_fn_builder: A function that builds the energy function.
             opt_params: The optimization parameters.
-            trajectory_key: The key of the trajectory in the observables.
             beta: The inverse temperature.
             n_equilibration_steps: The number of equilibration steps.
             min_n_eff_factor: The minimum normalized effective sample size.
@@ -258,8 +259,6 @@ class DiffTReObjective(Objective):
             raise ValueError(ERR_MISSING_ARG.format(missing_arg="energy_fn_builder"))
         if opt_params is None:
             raise ValueError(ERR_MISSING_ARG.format(missing_arg="opt_params"))
-        if trajectory_key is None:
-            raise ValueError(ERR_MISSING_ARG.format(missing_arg="trajectory_key"))
         if beta is None:
             raise ValueError(ERR_MISSING_ARG.format(missing_arg="beta"))
         if n_equilibration_steps is None:
@@ -267,12 +266,11 @@ class DiffTReObjective(Objective):
 
         self._energy_fn_builder = energy_fn_builder
         self._opt_params = opt_params
-        self._trajectory_key = trajectory_key
         self._beta = beta
         self._n_eq_steps = n_equilibration_steps
         self._n_eff_factor = min_n_eff_factor
         self._max_valid_opt_steps = max_valid_opt_steps
-        self._opt_steps = 0
+        self._opt_steps = 1
 
         self._reference_states = None
         self._reference_energies = None
@@ -310,15 +308,27 @@ class DiffTReObjective(Objective):
 
     @typing_extensions.override
     def is_ready(self) -> bool:
-        have_trajectory = super().is_ready()
-        if have_trajectory:
-            new_trajectory = next(filter(lambda x: x[0] == self._trajectory_key, self._obtained_observables))[1]
+        have_trajectories = super().is_ready()
+        if have_trajectories:
+            sorted_obtained_observables = sorted(
+                self._obtained_observables,
+                key=lambda x: self._required_observables.index(x[0]),
+            )
 
+            new_tracjectories = [oo[1] for oo in sorted_obtained_observables]
             if self._reference_states is None:
-                self._reference_states = new_trajectory.slice(
-                    slice(self._n_eq_steps, len(new_trajectory.rigid_body.center), None)
+
+                def slc_f(n: int) -> slice:
+                    return slice(self._n_eq_steps, n, None)
+
+                self._reference_states = functools.reduce(
+                    operator.add,
+                    [obs.slice(slc_f(len(obs.rigid_body.center))) for obs in new_tracjectories],
                 )
+
                 self._reference_energies = self._energy_fn_builder(self._opt_params)(self._reference_states)
+
+            self._logger.info("trajectory length is %d", len(self._reference_states.rigid_body.center))
 
             _, neff = compute_weights_and_neff(
                 beta=self._beta,
@@ -335,15 +345,16 @@ class DiffTReObjective(Objective):
 
             # if the trajectory is no longer valid remove it form obtained
             # and add it to needed so that a new trajectory is run.
-            if neff < self._n_eff_factor or self._opt_steps == self._max_valid_opt_steps:
-                self._obtained_observables = list(
-                    filter(lambda x: x[0] != self._trajectory_key, self._obtained_observables)
-                )
-                self._needed_observables = [self._trajectory_key]
+            self._logger.info("checking neff %f neff_factory %f", neff, self._n_eff_factor)
+            self._logger.info("checking opt steps %d vs %f", self._opt_steps, float(self._max_valid_opt_steps))
+            if (neff < self._n_eff_factor) or (self._opt_steps == self._max_valid_opt_steps):
+                self._obtained_observables = []
+                self._needed_observables = self._required_observables[:]
                 self._reference_states = None
-                have_trajectory = False
+                self._opt_steps = 1
+                have_trajectories = False
 
-        return have_trajectory
+        return have_trajectories
 
     @typing_extensions.override
     def post_step(
@@ -352,7 +363,7 @@ class DiffTReObjective(Objective):
     ) -> None:
         # DiffTre objectives may not need to update the trajectory depending on neff
         # the need for a new trajectory is checked in `is_ready`
-        self._obtained_observables = list(filter(lambda x: x[0] == self._trajectory_key, self._obtained_observables))
+        self._obtained_observables = [oo for oo in self._obtained_observables if oo[0] not in ("neff", "loss")]
         self._opt_params = opt_params
         self._opt_steps += 1
 

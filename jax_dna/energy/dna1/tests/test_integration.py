@@ -102,7 +102,7 @@ def test_bonded_excluded_volume(base_dir: str):
     [
         "data/test-data/dna1/simple-helix",
         "data/test-data/dna1/simple-coax",
-    ]
+    ],
 )
 def test_coaxial_stacking(base_dir: str):
     (

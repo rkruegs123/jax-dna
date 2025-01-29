@@ -133,7 +133,6 @@ class StackingConfiguration(config.BaseConfiguration):
 
     @override
     def init_params(self) -> "StackingConfiguration":
-
         dna_config = dna1_energy.StackingConfiguration(
             eps_stack_base=self.dna_eps_stack_base,
             eps_stack_kt_coeff=self.dna_eps_stack_kt_coeff,
@@ -207,16 +206,13 @@ class Stacking(je_base.BaseEnergyFunction):
         bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
         unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
     ) -> typ.Scalar:
-
-
         nn_i = bonded_neighbors[:, 0]
         nn_j = bonded_neighbors[:, 1]
 
         is_rna_bond = jax.vmap(je_utils.is_rna_pair, (0, 0, None))(nn_i, nn_j, self.params.nt_type)
 
         dna_dgs = dna2_energy.Stacking(
-            displacement_fn=self.displacement_fn,
-            params=self.params.dna_config
+            displacement_fn=self.displacement_fn, params=self.params.dna_config
         ).pairwise_energies(
             body.dna,
             seq,
@@ -224,8 +220,7 @@ class Stacking(je_base.BaseEnergyFunction):
         )
 
         rna_dgs = rna2_energy.Stacking(
-            displacement_fn=self.displacement_fn,
-            params=self.params.rna_config
+            displacement_fn=self.displacement_fn, params=self.params.rna_config
         ).pairwise_energies(
             body.rna,
             seq,

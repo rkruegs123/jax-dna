@@ -222,7 +222,6 @@ class CrossStacking(je_base.BaseEnergyFunction):
 
         return jnp.where(mask, cr_stack_dg, 0.0)  # Mask for neighbors
 
-
     @override
     def __call__(
         self,

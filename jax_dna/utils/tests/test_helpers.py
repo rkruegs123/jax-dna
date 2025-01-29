@@ -42,13 +42,10 @@ def test_batched_raises_value_error():
     ("trees", "expected_pytree"),
     [
         (
-            [
-                {"a": jnp.array([1, 2]), "b": jnp.array([3, 4])},
-                {"a": jnp.array([5, 6]), "b": jnp.array([7, 8])}
-            ],
+            [{"a": jnp.array([1, 2]), "b": jnp.array([3, 4])}, {"a": jnp.array([5, 6]), "b": jnp.array([7, 8])}],
             {"a": jnp.array([[1, 2], [5, 6]]), "b": jnp.array([[3, 4], [7, 8]])},
         ),
-    ]
+    ],
 )
 def test_tree_stack(trees: list[jaxtyp.PyTree], expected_pytree: jaxtyp.PyTree):
     stacked_pytree = jdh.tree_stack(trees)
@@ -59,13 +56,10 @@ def test_tree_stack(trees: list[jaxtyp.PyTree], expected_pytree: jaxtyp.PyTree):
     ("trees", "expected_pytree"),
     [
         (
-            [
-                {"a": jnp.array([1, 2]), "b": jnp.array([3, 4])},
-                {"a": jnp.array([5, 6]), "b": jnp.array([7, 8])}
-            ],
+            [{"a": jnp.array([1, 2]), "b": jnp.array([3, 4])}, {"a": jnp.array([5, 6]), "b": jnp.array([7, 8])}],
             {"a": jnp.array([1, 2, 5, 6]), "b": jnp.array([3, 4, 7, 8])},
         ),
-    ]
+    ],
 )
 def test_tree_concatenate(trees: list[jaxtyp.PyTree], expected_pytree: jaxtyp.PyTree):
     concatenated_pytree = jdh.tree_concatenate(trees)

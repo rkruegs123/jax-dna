@@ -1,6 +1,5 @@
 """Unbonded excluded volume energy function for DNA1 model."""
 
-
 import chex
 import jax
 import jax.numpy as jnp
@@ -159,10 +158,8 @@ class UnbondedExcludedVolume(je_base.BaseEnergyFunction):
 
         mask = jnp.array(op_i < body.dna.center.shape[0], dtype=jnp.float32)
 
-
         dna_dgs = dna1_energy.UnbondedExcludedVolume(
-            displacement_fn=self.displacement_fn,
-            params=self.params.dna_config
+            displacement_fn=self.displacement_fn, params=self.params.dna_config
         ).pairwise_energies(
             body.dna,
             body.dna,
@@ -170,8 +167,7 @@ class UnbondedExcludedVolume(je_base.BaseEnergyFunction):
         )
 
         rna_dgs = dna1_energy.UnbondedExcludedVolume(
-            displacement_fn=self.displacement_fn,
-            params=self.params.rna_config
+            displacement_fn=self.displacement_fn, params=self.params.rna_config
         ).pairwise_energies(
             body.rna,
             body.rna,
@@ -179,8 +175,7 @@ class UnbondedExcludedVolume(je_base.BaseEnergyFunction):
         )
 
         drh_dgs = dna1_energy.UnbondedExcludedVolume(
-            displacement_fn=self.displacement_fn,
-            params=self.params.drh_config
+            displacement_fn=self.displacement_fn, params=self.params.drh_config
         ).pairwise_energies(
             body.dna,
             body.rna,
@@ -188,18 +183,14 @@ class UnbondedExcludedVolume(je_base.BaseEnergyFunction):
         )
 
         rdh_dgs = dna1_energy.UnbondedExcludedVolume(
-            displacement_fn=self.displacement_fn,
-            params=self.params.drh_config
+            displacement_fn=self.displacement_fn, params=self.params.drh_config
         ).pairwise_energies(
             body.rna,
             body.dna,
             unbonded_neighbors,
         )
 
-
-        dgs = jnp.where(is_rna_bond, rna_dgs,
-                        jnp.where(is_drh_bond, drh_dgs,
-                                  jnp.where(is_rdh_bond, rdh_dgs, dna_dgs)))
+        dgs = jnp.where(is_rna_bond, rna_dgs, jnp.where(is_drh_bond, drh_dgs, jnp.where(is_rdh_bond, rdh_dgs, dna_dgs)))
         dgs = jnp.where(mask, dgs, 0.0)
 
         return dgs.sum()

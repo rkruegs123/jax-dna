@@ -6,12 +6,15 @@ Run an jax_dna simulation using an oxDNA sampler.
 import logging
 import os
 import subprocess
+import time
 import typing
 import warnings
+from collections.abc import Callable
 from pathlib import Path
 
 import chex
 import numpy as np
+import ray
 
 import jax_dna.energy.configuration as jd_energy
 import jax_dna.input.oxdna_input as jd_oxdna
@@ -73,6 +76,35 @@ def _guess_binary_location(bin_name: str, env_var: str) -> Path | None:
     return os.environ.get(env_var, None) or guessed_path
 
 
+def _default_build_ready() -> bool:
+    return True
+
+
+def _default_set_build_ready(_: bool) -> None:  # noqa: FBT001
+    pass
+
+
+class oxDNABinarySemaphore:  # noqa: N801 oxDNA is a special word
+    """A semaphore for the oxDNA binary."""
+
+    def __init__(self) -> None:
+        """Initialize the semaphore, defaults to False."""
+        self._ready = False
+
+    def check(self) -> bool:
+        """Check if the semaphore is ready."""
+        return self._ready
+
+    def set(self, *, ready: bool) -> None:
+        """Set the value of the semaphore."""
+        self._ready = ready
+
+
+@ray.remote
+class oxDNABinarySemaphoreActor(oxDNABinarySemaphore):  # noqa: N801 oxDNA is a special word
+    """A ray actor wrapped oxDNA binary semaphore."""
+
+
 @chex.dataclass
 class oxDNASimulator(jd_base.BaseSimulation):  # noqa: N801 oxDNA is a special word
     """A sampler base on running an oxDNA simulation."""
@@ -82,6 +114,10 @@ class oxDNASimulator(jd_base.BaseSimulation):  # noqa: N801 oxDNA is a special w
     energy_configs: list[jd_energy.BaseConfiguration]
     n_build_threads: int = 4
     logger_config: dict[str, typing.Any] | None = None
+    disable_build: bool = False
+    check_build_ready: Callable[[None], bool] = _default_build_ready
+    set_build_ready: Callable[[bool], None] = _default_set_build_ready
+    build_wait_interval: int = 15
 
     def __post_init__(self, *args, **kwds) -> None:
         """Check the validity of the configuration."""
@@ -100,7 +136,7 @@ class oxDNASimulator(jd_base.BaseSimulation):  # noqa: N801 oxDNA is a special w
             handler = logging.StreamHandler()
             handler.setLevel(level)
 
-        handler.setFormatter(logging.Formatter("%(levelname)s:%(name)s:%(message)s"))
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s:%(name)s:%(message)s"))
         logger.addHandler(handler)
         self._logger = logger
 
@@ -116,8 +152,23 @@ class oxDNASimulator(jd_base.BaseSimulation):  # noqa: N801 oxDNA is a special w
         if not self._logger.handlers:
             self._initialize_logger()
 
-        if opt_params is not None:
+        # It's possible that there are multiple oxDNA simulators sharing the same
+        # binary per step. We need to ensure that all of the other simulators
+        # that aren't responsible for building the binary wait for the
+        # recompilation to finish before running.
+        while not self.check_build_ready() and self.disable_build:
+            self._logger.debug("Waiting for build to be ready")
+            time.sleep(self.build_wait_interval)
+
+        # if we are the building simulator, we need to update the src/model.h file
+
+        if opt_params is not None and not self.disable_build:
             self._update_params(new_params=opt_params)
+            # after building the binary, put the original model file back.
+            self._restore_params()
+            # let the other simulators know that the binary is ready
+            self._logger.debug("Setting build ready")
+            self.set_build_ready(True)
 
         init_dir = Path(self.input_dir)
         input_file = init_dir / "input"
@@ -163,10 +214,6 @@ class oxDNASimulator(jd_base.BaseSimulation):  # noqa: N801 oxDNA is a special w
         topology = jd_top.from_oxdna_file(init_dir / oxdna_config["topology"])
         # return the trajectory
         trajectory = jd_traj.from_file(output_file, topology.strand_counts, is_oxdna=True)
-
-        # if we have changed things in oxDNA, restore the files to the way they were
-        if opt_params:
-            self._restore_params()
 
         self._logger.debug(
             "oxDNA trajectory com size: %s",

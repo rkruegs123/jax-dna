@@ -52,15 +52,15 @@ class Nucleotide(je_base.BaseNucleotide):
         base_normals = je_utils.q_to_base_normal(rigid_body.orientation)
         cross_prods = je_utils.q_to_cross_prod(rigid_body.orientation)
 
-        back_sites = rigid_body.center + com_to_backbone_x*back_base_vectors + com_to_backbone_y*base_normals
+        back_sites = rigid_body.center + com_to_backbone_x * back_base_vectors + com_to_backbone_y * base_normals
         stack_sites = rigid_body.center + com_to_stacking * back_base_vectors
         base_sites = rigid_body.center + com_to_hb * back_base_vectors
 
-        bb_p3_sites = p3_x*back_base_vectors + p3_y*cross_prods + p3_z*base_normals
-        bb_p5_sites = p5_x*back_base_vectors + p5_y*cross_prods + p5_z*base_normals
+        bb_p3_sites = p3_x * back_base_vectors + p3_y * cross_prods + p3_z * base_normals
+        bb_p5_sites = p5_x * back_base_vectors + p5_y * cross_prods + p5_z * base_normals
 
-        stack3_sites = rigid_body.center + pos_stack_3_a1*back_base_vectors + pos_stack_3_a2*cross_prods
-        stack5_sites = rigid_body.center + pos_stack_5_a1*back_base_vectors + pos_stack_5_a2*cross_prods
+        stack3_sites = rigid_body.center + pos_stack_3_a1 * back_base_vectors + pos_stack_3_a2 * cross_prods
+        stack5_sites = rigid_body.center + pos_stack_5_a1 * back_base_vectors + pos_stack_5_a2 * cross_prods
 
         return Nucleotide(
             center=rigid_body.center,

@@ -11,10 +11,14 @@ from jax_dna.simulators.oxdna.oxdna import (
     ERR_MISSING_REQUIRED_KEYS,
     MAKE_BIN_ENV_VAR,
     _guess_binary_location,
+    oxDNABinarySemaphore,
+    oxDNABinarySemaphoreActor,
     oxDNASimulator,
 )
 
 __all__ = [
+    "oxDNABinarySemaphore",
+    "oxDNABinarySemaphoreActor",
     "oxDNASimulator",
     "BIN_PATH_ENV_VAR",
     "BUILD_PATH_ENV_VAR",

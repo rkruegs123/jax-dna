@@ -1,6 +1,5 @@
 """Stacking energy function for DNA1 model."""
 
-
 import chex
 import jax.numpy as jnp
 from typing_extensions import override
@@ -25,11 +24,7 @@ class Stacking(jd_energy1.Stacking):
         """Computes the stacking energy for each bonded pair."""
         # Compute sequence-independent energy for each bonded pair
         v_stack = self.compute_v_stack(
-            body.stack_sites,
-            body.back_sites_dna1,
-            body.base_normals,
-            body.cross_prods,
-            bonded_neighbors
+            body.stack_sites, body.back_sites_dna1, body.base_normals, body.cross_prods, bonded_neighbors
         )
 
         # Compute sequence-dependent weight for each bonded pair

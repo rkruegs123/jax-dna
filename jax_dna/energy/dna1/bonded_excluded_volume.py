@@ -113,7 +113,6 @@ class BondedExcludedVolume(je_base.BaseEnergyFunction):
             self.params.dr_c_base_back,
         )
 
-
     @override
     def __call__(
         self,

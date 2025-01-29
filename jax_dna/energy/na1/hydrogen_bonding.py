@@ -55,7 +55,7 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
     dna_theta0_hb_8: float | None = None
     dna_delta_theta_star_hb_8: float | None = None
 
-    dna_ss_hb_weights: np.ndarray | None = dc.field(default_factory=lambda:HB_WEIGHTS_SA)
+    dna_ss_hb_weights: np.ndarray | None = dc.field(default_factory=lambda: HB_WEIGHTS_SA)
 
     ## RNA2-specific
     rna_eps_hb: float | None = None
@@ -89,7 +89,7 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
     rna_theta0_hb_8: float | None = None
     rna_delta_theta_star_hb_8: float | None = None
 
-    rna_ss_hb_weights: np.ndarray | None = dc.field(default_factory=lambda:HB_WEIGHTS_SA)
+    rna_ss_hb_weights: np.ndarray | None = dc.field(default_factory=lambda: HB_WEIGHTS_SA)
 
     ## DNA/RNA-hybrid-specific
     drh_eps_hb: float | None = None
@@ -123,7 +123,7 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
     drh_theta0_hb_8: float | None = None
     drh_delta_theta_star_hb_8: float | None = None
 
-    drh_ss_hb_weights: np.ndarray | None = dc.field(default_factory=lambda:HB_WEIGHTS_SA)
+    drh_ss_hb_weights: np.ndarray | None = dc.field(default_factory=lambda: HB_WEIGHTS_SA)
 
     # dependent parameters
     dna_config: dna1_energy.HydrogenBondingConfiguration | None = None
@@ -215,7 +215,6 @@ class HydrogenBondingConfiguration(config.BaseConfiguration):
 
     @override
     def init_params(self) -> "HydrogenBondingConfiguration":
-
         dna_config = dna1_energy.HydrogenBondingConfiguration(
             eps_hb=self.dna_eps_hb,
             a_hb=self.dna_a_hb,
@@ -330,10 +329,8 @@ class HydrogenBonding(je_base.BaseEnergyFunction):
 
         mask = jnp.array(op_i < body.dna.center.shape[0], dtype=jnp.float32)
 
-
         dna_dgs = dna1_energy.HydrogenBonding(
-            displacement_fn=self.displacement_fn,
-            params=self.params.dna_config
+            displacement_fn=self.displacement_fn, params=self.params.dna_config
         ).pairwise_energies(
             body.dna,
             body.dna,
@@ -342,8 +339,7 @@ class HydrogenBonding(je_base.BaseEnergyFunction):
         )
 
         rna_dgs = dna1_energy.HydrogenBonding(
-            displacement_fn=self.displacement_fn,
-            params=self.params.rna_config
+            displacement_fn=self.displacement_fn, params=self.params.rna_config
         ).pairwise_energies(
             body.rna,
             body.rna,
@@ -352,8 +348,7 @@ class HydrogenBonding(je_base.BaseEnergyFunction):
         )
 
         drh_dgs = dna1_energy.HydrogenBonding(
-            displacement_fn=self.displacement_fn,
-            params=self.params.drh_config
+            displacement_fn=self.displacement_fn, params=self.params.drh_config
         ).pairwise_energies(
             body.dna,
             body.rna,
@@ -362,8 +357,7 @@ class HydrogenBonding(je_base.BaseEnergyFunction):
         )
 
         rdh_dgs = dna1_energy.HydrogenBonding(
-            displacement_fn=self.displacement_fn,
-            params=self.params.drh_config
+            displacement_fn=self.displacement_fn, params=self.params.drh_config
         ).pairwise_energies(
             body.rna,
             body.dna,
@@ -371,10 +365,7 @@ class HydrogenBonding(je_base.BaseEnergyFunction):
             unbonded_neighbors,
         )
 
-
-        dgs = jnp.where(is_rna_bond, rna_dgs,
-                        jnp.where(is_drh_bond, drh_dgs,
-                                  jnp.where(is_rdh_bond, rdh_dgs, dna_dgs)))
+        dgs = jnp.where(is_rna_bond, rna_dgs, jnp.where(is_drh_bond, drh_dgs, jnp.where(is_rdh_bond, rdh_dgs, dna_dgs)))
         dgs = jnp.where(mask, dgs, 0.0)
 
         return dgs.sum()

@@ -293,19 +293,17 @@ def test_compute_loss(
 
 
 @pytest.mark.parametrize(
-    ("energy_fn_builder", "opt_params", "trajectory_key", "beta", "n_equilibration_steps", "missing_arg"),
+    ("energy_fn_builder", "opt_params", "beta", "n_equilibration_steps", "missing_arg"),
     [
-        (None, {}, "test", 1.0, 1, "energy_fn_builder"),
-        (lambda _: mock_return_function(np.array([1, 2, 3])), None, "test", 1.0, 1, "opt_params"),
-        (lambda _: mock_return_function(np.array([1, 2, 3])), {"a": 1}, None, 1.0, 1, "trajectory_key"),
-        (lambda _: mock_return_function(np.array([1, 2, 3])), {"a": 1}, "test", None, 1, "beta"),
-        (lambda _: mock_return_function(np.array([1, 2, 3])), {"a": 1}, "test", 1.0, None, "n_equilibration_steps"),
+        (None, {}, 1.0, 1, "energy_fn_builder"),
+        (lambda _: mock_return_function(np.array([1, 2, 3])), None, 1.0, 1, "opt_params"),
+        (lambda _: mock_return_function(np.array([1, 2, 3])), {"a": 1}, None, 1, "beta"),
+        (lambda _: mock_return_function(np.array([1, 2, 3])), {"a": 1}, 1.0, None, "n_equilibration_steps"),
     ],
 )
 def test_difftreobjective_init_raises(
     energy_fn_builder: Callable[[jdna_types.Params], Callable[[np.ndarray], np.ndarray]],
     opt_params: jdna_types.Params,
-    trajectory_key: str,
     beta: float,
     n_equilibration_steps: int,
     missing_arg: str,
@@ -324,7 +322,6 @@ def test_difftreobjective_init_raises(
             grad_or_loss_fn=grad_or_loss_fn,
             energy_fn_builder=energy_fn_builder,
             opt_params=opt_params,
-            trajectory_key=trajectory_key,
             beta=beta,
             n_equilibration_steps=n_equilibration_steps,
         )
@@ -340,7 +337,6 @@ def test_difftreobjective_calculate() -> None:
         grad_or_loss_fn=mock_return_function((1.0, (("test", 1.0), {}))),
         energy_fn_builder=lambda _: mock_return_function(np.ones(100)),
         opt_params={"test": 1.0},
-        trajectory_key="test",
         beta=1.0,
         n_equilibration_steps=10,
     )
@@ -377,7 +373,6 @@ def test_difftreobjective_post_step() -> None:
         grad_or_loss_fn=mock_return_function((1.0, 0.0)),
         energy_fn_builder=lambda _: mock_return_function(np.ones(100)),
         opt_params={"test": 1.0},
-        trajectory_key="test",
         beta=1.0,
         n_equilibration_steps=10,
     )

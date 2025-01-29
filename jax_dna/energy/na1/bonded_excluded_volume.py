@@ -63,7 +63,6 @@ class BondedExcludedVolumeConfiguration(config.BaseConfiguration):
 
     @override
     def init_params(self) -> "BondedExcludedVolumeConfiguration":
-
         dna_config = dna1_energy.BondedExcludedVolumeConfiguration(
             eps_exc=self.dna_eps_exc,
             dr_star_base=self.dna_dr_star_base,
@@ -83,7 +82,6 @@ class BondedExcludedVolumeConfiguration(config.BaseConfiguration):
             dr_star_back_base=self.rna_dr_star_back_base,
             dr_star_base_back=self.rna_dr_star_base_back,
         ).init_params()
-
 
         return self.replace(
             dna_config=dna_config,
@@ -111,16 +109,14 @@ class BondedExcludedVolume(je_base.BaseEnergyFunction):
         is_rna_bond = jax.vmap(je_utils.is_rna_pair, (0, 0, None))(nn_i, nn_j, self.params.nt_type)
 
         dna_dgs = dna1_energy.BondedExcludedVolume(
-            displacement_fn=self.displacement_fn,
-            params=self.params.dna_config
+            displacement_fn=self.displacement_fn, params=self.params.dna_config
         ).pairwise_energies(
             body.dna,
             bonded_neighbors,
         )
 
         rna_dgs = dna1_energy.BondedExcludedVolume(
-            displacement_fn=self.displacement_fn,
-            params=self.params.rna_config
+            displacement_fn=self.displacement_fn, params=self.params.rna_config
         ).pairwise_energies(
             body.rna,
             bonded_neighbors,
