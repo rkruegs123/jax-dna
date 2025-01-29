@@ -111,7 +111,7 @@ class oxDNASimulator(jd_base.BaseSimulation):  # noqa: N801 oxDNA is a special w
 
     input_dir: str
     sim_type: jd_types.oxDNASimulatorType
-    energy_configs: list[jd_energy.BaseConfiguration]
+    energy_configs: list[jd_energy.BaseConfiguration] | None = None
     n_build_threads: int = 4
     logger_config: dict[str, typing.Any] | None = None
     disable_build: bool = False

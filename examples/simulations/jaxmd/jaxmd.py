@@ -3,7 +3,7 @@
 Important: This assumes that the current working is the root directory of the
 repository. i.e. this file was invoked using:
 
-``python -m examples.simulations.jax_md``
+``python -m examples.simulations.jaxmd.jaxmd``
 """
 
 import functools

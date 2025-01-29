@@ -138,18 +138,47 @@ that function to the ``jax_md`` simulator:
     trajectory = sim_fn(params)
 
 A runnable version of this example can be found in the examples
-`folder <https://github.com/ssec-jhu/jax-dna/tree/master/examples/simulations/jax_md>`_
+`folder <https://github.com/ssec-jhu/jax-dna/tree/master/examples/simulations/jaxmd>`_
 in the repository.
 
 
 Using ``oxDNA``
 ^^^^^^^^^^^^^^^
 
+When running oxDNA simulations, ``jax_dna`` acts as a thin wrapper around the
+``oxDNA`` executable. To run a simulation, you need to have a working oxDNA
+installation. For more information on installing oxDNA, please refer to the
+oxDNA documentation. Additionally, the following encvironment variable must
+point to the oxDNA executable: ``OXDNA_BIN_PATH``
+
+.. code-block:: python
+    from pathlib import Path
+
+    import jax_dna.input.trajectory as jdna_traj
+    import jax_dna.input.topology as jdna_top
+    import jax_dna.simulators.oxdna as jdna_oxdna
+    import jax_dna.utils.types as jdna_types
+
+    input_dir = Path("path/to/oxdna-input/dir")
+
+    simulator = jdna_oxdna.oxDNASimulator(
+        input_dir=input_dir,
+        sim_type=jdna_types.oxDNASimulatorType.DNA1,
+    )
+
+    simulator.run()
+
+    trajectory = jdna_traj.from_file(
+        input_dir / "output.dat",
+        strand_lengths=jdna_top.from_oxdna_file(input_dir / "sys.top").strand_counts,
+    )
+
+    print("Length of trajectory: ", trajectory.state_rigid_body.center.shape[0])
 
 
-
-
-
+A runnable version of this example can be found in the examples
+`folder <https://github.com/ssec-jhu/jax-dna/tree/master/examples/simulations/oxdna>`_
+in the repository.
 
 Running a simple optimization
 *****************************
