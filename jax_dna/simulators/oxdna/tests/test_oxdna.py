@@ -46,6 +46,14 @@ def tear_down_test_dir(test_dir: str):
         test_dir.parent.rmdir()
 
 
+def test_oxDNABinarySemaphore_init():  # noqa: N802 oxDNA is a special word
+    """Test the oxDNA binary semaphore initialization."""
+    semaphore = oxdna.oxDNABinarySemaphore()
+    assert not semaphore.check()
+    semaphore.set(ready=True)
+    assert semaphore.check()
+
+
 def test_oxdna_init():
     """Test the oxDNA simulator initialization."""
     test_dir = setup_test_dir()

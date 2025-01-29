@@ -110,23 +110,25 @@ class Optimization:
             sim for sim in self.simulators if set(get_fn(sim.exposes.remote())) & set(need_observables)
         ]
 
-        sim_remotes = [sim.run.remote(params) for sim in needed_simulators]
+        needed_names = get_fn([sim.name.remote() for sim in needed_simulators])
+        needed_exposes = get_fn([sim.exposes.remote() for sim in needed_simulators])
 
-        for name in get_fn([sim.name.remote() for sim in needed_simulators]):
+        for name in needed_names:
             self.logger.set_simulator_running(name)
+
+        sim_remotes = [sim.run.remote(params) for sim in needed_simulators]
 
         simid_exposes = {}
         simid_name = {}
-        for sr, sim in zip(sim_remotes, needed_simulators, strict=True):
-            simid_exposes[sr.task_id().hex()] = get_fn(sim.exposes.remote())
-            simid_name[sr.task_id().hex()] = get_fn(sim.name.remote())
+        for sr, name, exposes in zip(sim_remotes, needed_names, needed_exposes, strict=True):
+            simid_exposes[sr.task_id().hex()] = exposes
+            simid_name[sr.task_id().hex()] = name
 
         # wait for the simulators to finish
         while not_ready_objectives:
             # `done` is a list of object refs that are ready to collect.
             #  sim_remotes is a list of object refs that are not ready to collect.
             done, sim_remotes = wait_fn(sim_remotes)
-
             if done:
                 captured_results = []
                 for d in done:
@@ -139,11 +141,11 @@ class Optimization:
 
                 # update the objectives with the new observables and check if they are ready
                 get_fn([objective.update.remote(captured_results) for objective in not_ready_objectives])
-                ready, not_ready_objectives = split_by_ready(not_ready_objectives)
-                grad_refs += [objective.calculate.remote() for objective in ready]
-
+                ready_objectives, not_ready_objectives = split_by_ready(not_ready_objectives)
                 for name in get_fn([objective.name.remote() for objective in ready_objectives]):
                     self.logger.set_objective_running(name)
+
+                grad_refs += [objective.calculate.remote() for objective in ready_objectives]
 
         grads_resolved = get_fn(grad_refs)
 

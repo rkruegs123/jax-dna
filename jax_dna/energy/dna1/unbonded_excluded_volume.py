@@ -116,9 +116,7 @@ class UnbondedExcludedVolume(je_base.BaseEnergyFunction):
 
         dr_base_op = self.displacement_mapped(body_j.base_sites[op_j], body_i.base_sites[op_i])
         dr_backbone_op = self.displacement_mapped(body_j.back_sites[op_j], body_i.back_sites[op_i])
-        dr_back_base_op = self.displacement_mapped(
-            body_i.back_sites[op_i], body_j.base_sites[op_j]
-        )
+        dr_back_base_op = self.displacement_mapped(body_i.back_sites[op_i], body_j.base_sites[op_j])
         dr_base_back_op = self.displacement_mapped(body_i.base_sites[op_i], body_j.back_sites[op_j])
 
         exc_vol_unbonded_dg = dna1_interactions.exc_vol_unbonded(
@@ -146,7 +144,6 @@ class UnbondedExcludedVolume(je_base.BaseEnergyFunction):
         )
 
         return jnp.where(mask, exc_vol_unbonded_dg, 0.0)
-
 
     @override
     def __call__(

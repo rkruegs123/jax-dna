@@ -22,11 +22,10 @@ def debye(
 ) -> typ.ARR_OR_SCALAR:
     """Debye-huckel potential."""
     energy_full = jnp.exp(r * -kappa) * (prefactor / r)
-    energy_smooth =  smoothing_coeff * (r - r_cut)**2
+    energy_smooth = smoothing_coeff * (r - r_cut) ** 2
     cond = r < r_high
     energy = jnp.where(cond, energy_full, energy_smooth)
     return jnp.where(r < r_cut, energy, 0.0)
-
 
 
 def coaxial_stacking(
@@ -108,11 +107,7 @@ def coaxial_stacking(
         b=b_coax_1,
     )
 
-    f6_theta_1_coax = jd_base_functions2.f6(
-        theta1,
-        a=a_coax_1_f6,
-        b=b_coax_1_f6
-    )
+    f6_theta_1_coax = jd_base_functions2.f6(theta1, a=a_coax_1_f6, b=b_coax_1_f6)
 
     f4_theta_5_coax_fn = tu.Partial(
         jd_base_functions1.f4,
@@ -131,7 +126,6 @@ def coaxial_stacking(
         a=a_coax_6,
         b=b_coax_6,
     )
-
 
     return (
         f2_dr_coax

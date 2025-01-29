@@ -1,6 +1,5 @@
 """Debye-huckel function for DNA2 model."""
 
-
 import chex
 import jax.numpy as jnp
 from typing_extensions import override
@@ -49,11 +48,12 @@ class DebyeConfiguration(config.BaseConfiguration):
     def init_params(self) -> "DebyeConfiguration":
         lambda_ = self.lambda_factor * jnp.sqrt(self.kt / 0.1) / jnp.sqrt(self.salt_conc)
         kappa = 1.0 / lambda_
-        r_high = 3*lambda_
-        prefactor = self.prefactor_coeff*(self.q_eff**2)
-        smoothing_coeff = -(jnp.exp(-r_high / lambda_) * prefactor * prefactor * (r_high + lambda_) \
-                            * (r_high + lambda_)) / (-4. * r_high * r_high * r_high * lambda_ * lambda_ * prefactor)
-        r_cut = r_high * (prefactor * r_high + 3. * prefactor * lambda_) / (prefactor * (r_high + lambda_))
+        r_high = 3 * lambda_
+        prefactor = self.prefactor_coeff * (self.q_eff**2)
+        smoothing_coeff = -(
+            jnp.exp(-r_high / lambda_) * prefactor * prefactor * (r_high + lambda_) * (r_high + lambda_)
+        ) / (-4.0 * r_high * r_high * r_high * lambda_ * lambda_ * prefactor)
+        r_cut = r_high * (prefactor * r_high + 3.0 * prefactor * lambda_) / (prefactor * (r_high + lambda_))
 
         return self.replace(
             lambda_=lambda_,
@@ -61,7 +61,7 @@ class DebyeConfiguration(config.BaseConfiguration):
             r_high=r_high,
             prefactor=prefactor,
             smoothing_coeff=smoothing_coeff,
-            r_cut=r_cut
+            r_cut=r_cut,
         )
 
 
@@ -91,7 +91,7 @@ class Debye(je_base.BaseEnergyFunction):
             self.params.prefactor,
             self.params.smoothing_coeff,
             self.params.r_cut,
-            self.params.r_high
+            self.params.r_high,
         )
         db_dgs = jnp.where(mask, db_dgs, 0.0)
 
@@ -109,6 +109,5 @@ class Debye(je_base.BaseEnergyFunction):
         bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
         unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
     ) -> typ.Scalar:
-
         dgs = self.pairwise_energies(body, body, unbonded_neighbors)
         return dgs.sum()

@@ -138,7 +138,6 @@ def stacking(
     )
 
 
-
 def cross_stacking(
     # observables
     r_hb: typ.ARR_OR_SCALAR,

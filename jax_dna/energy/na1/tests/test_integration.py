@@ -26,13 +26,15 @@ COLUMN_NAMES = [
     "hydrogen_bonding",
     "cross_stacking",
     "coaxial_stacking",
-    "debye"
+    "debye",
 ]
+
 
 def flip_state(state, strand_bounds):
     # TODO (rkruegs123): use `is_oxdna=True` in trajectory reader instead of flipping states
     # https://github.com/ssec-jhu/jax-dna/issues/23
     return jd_help.tree_concatenate([state[s:e][::-1] for s, e in strand_bounds])
+
 
 def get_energy_terms(base_dir: str, term: str) -> np.ndarray:
     energy_terms = np.loadtxt(base_dir + "/split_energy.dat", skiprows=1)
@@ -77,7 +79,6 @@ def add_prefix_to_leaf_keys(data, prefix):
     return data
 
 
-
 def merge_dicts(dict1, dict2):
     """
     Recursively merge two dictionaries. If a key exists in both:
@@ -104,6 +105,7 @@ def merge_dicts(dict1, dict2):
             # Key is only in dict2
             merged[key] = value
     return merged
+
 
 def get_setup_data(base_dir: str):
     topology = get_topology(base_dir)
@@ -154,14 +156,13 @@ def get_setup_data(base_dir: str):
     )
 
 
-
 @pytest.mark.parametrize(
     "base_dir",
     [
         "data/test-data/na1/simple-helix-dna-dna",
         "data/test-data/na1/simple-helix-rna-rna",
         "data/test-data/na1/simple-helix-dna-rna",
-    ]
+    ],
 )
 def test_fene(base_dir: str):
     (
@@ -196,14 +197,13 @@ def test_fene(base_dir: str):
     np.testing.assert_allclose(energy, terms, atol=1e-6)
 
 
-
 @pytest.mark.parametrize(
     "base_dir",
     [
         "data/test-data/na1/simple-helix-dna-dna",
         "data/test-data/na1/simple-helix-rna-rna",
         "data/test-data/na1/simple-helix-dna-rna",
-    ]
+    ],
 )
 def test_bonded_excluded_volume(base_dir: str):
     (
@@ -241,15 +241,12 @@ def test_bonded_excluded_volume(base_dir: str):
 
 
 @pytest.mark.parametrize(
-    (
-        "base_dir",
-        "t_kelvin"
-    ),
+    ("base_dir", "t_kelvin"),
     [
         ("data/test-data/na1/simple-helix-dna-dna", 296.15),
         ("data/test-data/na1/simple-helix-dna-rna", 296.15),
         ("data/test-data/na1/simple-helix-rna-rna", 296.15),
-    ]
+    ],
 )
 def test_stacking(base_dir: str, t_kelvin: float):
     (
@@ -289,8 +286,7 @@ def test_stacking(base_dir: str, t_kelvin: float):
 
     energy = np.around(energy / topology.n_nucleotides, 6)
 
-    np.testing.assert_allclose(energy, terms, atol=1e-3) # using a higher tolerance here
-
+    np.testing.assert_allclose(energy, terms, atol=1e-3)  # using a higher tolerance here
 
 
 @pytest.mark.parametrize(
@@ -300,7 +296,7 @@ def test_stacking(base_dir: str, t_kelvin: float):
         "data/test-data/na1/simple-helix-rna-rna",
         "data/test-data/na1/simple-helix-dna-rna",
         "data/test-data/na1/simple-helix-rna-dna",
-    ]
+    ],
 )
 def test_unbonded_excluded_volume(base_dir: str):
     (
@@ -337,7 +333,6 @@ def test_unbonded_excluded_volume(base_dir: str):
     np.testing.assert_allclose(energy, terms, atol=1e-6)
 
 
-
 @pytest.mark.parametrize(
     "base_dir",
     [
@@ -345,7 +340,7 @@ def test_unbonded_excluded_volume(base_dir: str):
         "data/test-data/na1/simple-helix-rna-rna",
         "data/test-data/na1/simple-helix-dna-rna",
         "data/test-data/na1/simple-helix-rna-dna",
-    ]
+    ],
 )
 def test_cross_stacking(base_dir: str):
     (
@@ -381,7 +376,7 @@ def test_cross_stacking(base_dir: str):
     )(rev_states)
 
     energy = np.around(energy / topology.n_nucleotides, 6)
-    np.testing.assert_allclose(energy, terms, atol=1e-4) # using a higher tolerance here
+    np.testing.assert_allclose(energy, terms, atol=1e-4)  # using a higher tolerance here
 
 
 @pytest.mark.parametrize(
@@ -391,7 +386,7 @@ def test_cross_stacking(base_dir: str):
         "data/test-data/na1/simple-helix-rna-rna",
         "data/test-data/na1/simple-helix-dna-rna",
         "data/test-data/na1/simple-helix-rna-dna",
-    ]
+    ],
 )
 def test_hydrogen_bonding(base_dir: str):
     (
@@ -427,9 +422,7 @@ def test_hydrogen_bonding(base_dir: str):
     )(rev_states)
 
     energy = np.around(energy / topology.n_nucleotides, 6)
-    np.testing.assert_allclose(energy, terms, atol=1e-4) # using a higher tolerance here
-
-
+    np.testing.assert_allclose(energy, terms, atol=1e-4)  # using a higher tolerance here
 
 
 @pytest.mark.parametrize(
@@ -440,7 +433,7 @@ def test_hydrogen_bonding(base_dir: str):
         # TODO (rkruegs123): there's a bug in oxNA standalone code! spring constant for DRH is read as 0.0
         # https://github.com/ssec-jhu/jax-dna/issues/22
         # "data/test-data/na1/simple-coax-dna-dna-rna",
-    ]
+    ],
 )
 def test_coaxial_stacking(base_dir: str):
     (
@@ -479,7 +472,6 @@ def test_coaxial_stacking(base_dir: str):
     np.testing.assert_allclose(energy, terms, atol=1e-6)
 
 
-
 @pytest.mark.parametrize(
     (
         "base_dir",
@@ -492,7 +484,7 @@ def test_coaxial_stacking(base_dir: str):
         ("data/test-data/na1/simple-helix-rna-rna", 296.15, 0.5, False),
         ("data/test-data/na1/simple-helix-dna-rna", 296.15, 0.5, False),
         ("data/test-data/na1/simple-helix-rna-dna", 296.15, 0.5, False),
-    ]
+    ],
 )
 def test_debye(base_dir: str, t_kelvin: float, salt_conc: float, *, half_charged_ends: bool):
     (
@@ -512,13 +504,13 @@ def test_debye(base_dir: str, t_kelvin: float, salt_conc: float, *, half_charged
     kt = t_kelvin * 0.1 / 300.0
     energy_config = jd_energy.DebyeConfiguration(
         **(
-            default_params["debye"] | \
-            {
+            default_params["debye"]
+            | {
                 "kt": kt,
                 "salt_conc": salt_conc,
                 "is_end": topology.is_end,
                 "half_charged_ends": half_charged_ends,
-                "nt_type": topology.nt_type
+                "nt_type": topology.nt_type,
             }
         )
     )
@@ -539,7 +531,6 @@ def test_debye(base_dir: str, t_kelvin: float, salt_conc: float, *, half_charged
 
     energy = np.around(energy / topology.n_nucleotides, 6)
     np.testing.assert_allclose(energy, terms, atol=1e-5)
-
 
 
 if __name__ == "__main__":

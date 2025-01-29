@@ -113,7 +113,6 @@ class StackingConfiguration(config.BaseConfiguration):
             self.dr_high_stack,
         )
 
-
         b_stack_5, delta_theta_stack_5_c = bsf.get_f4_smoothing_params(
             self.a_stack_5,
             self.theta0_stack_5,
@@ -197,13 +196,9 @@ class Stacking(je_base.BaseEnergyFunction):
         dr_back_nn = self.displacement_mapped(body.back_sites[nn_i], body.back_sites[nn_j])  # N x N x 3
         r_back_nn = jnp.linalg.norm(dr_back_nn, axis=1)
 
-        theta9 = jnp.arccos(
-            jd_math.clamp(jnp.einsum("ij, ij->i", -body.bb_p3_sites[nn_j], dr_back_nn) / r_back_nn)
-        )
+        theta9 = jnp.arccos(jd_math.clamp(jnp.einsum("ij, ij->i", -body.bb_p3_sites[nn_j], dr_back_nn) / r_back_nn))
 
-        theta10 = jnp.arccos(
-            jd_math.clamp(jnp.einsum("ij, ij->i", -body.bb_p5_sites[nn_i], dr_back_nn) / r_back_nn)
-        )
+        theta10 = jnp.arccos(jd_math.clamp(jnp.einsum("ij, ij->i", -body.bb_p5_sites[nn_i], dr_back_nn) / r_back_nn))
 
         cosphi1 = -jnp.einsum("ij, ij->i", body.cross_prods[nn_i], dr_back_nn) / r_back_nn
         cosphi2 = -jnp.einsum("ij, ij->i", body.cross_prods[nn_j], dr_back_nn) / r_back_nn
@@ -255,7 +250,6 @@ class Stacking(je_base.BaseEnergyFunction):
             self.params.neg_cos_phi2_c_stack,
             self.params.b_neg_cos_phi2_stack,
         )
-
 
     def pairwise_energies(
         self,

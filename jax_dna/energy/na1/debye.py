@@ -38,7 +38,6 @@ class DebyeConfiguration(config.BaseConfiguration):
     drh_lambda_factor: float | None = None
     drh_prefactor_coeff: float | None = None
 
-
     # dependent parameters
     dna_config: dna2_energy.DebyeConfiguration | None = None
     rna_config: dna2_energy.DebyeConfiguration | None = None
@@ -115,7 +114,6 @@ class Debye(je_base.BaseEnergyFunction):
         bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
         unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
     ) -> typ.Scalar:
-
         op_i = unbonded_neighbors[0]
         op_j = unbonded_neighbors[1]
 
@@ -125,10 +123,8 @@ class Debye(je_base.BaseEnergyFunction):
 
         mask = jnp.array(op_i < body.dna.center.shape[0], dtype=jnp.float32)
 
-
         dna_dgs = dna2_energy.Debye(
-            displacement_fn=self.displacement_fn,
-            params=self.params.dna_config
+            displacement_fn=self.displacement_fn, params=self.params.dna_config
         ).pairwise_energies(
             body.dna,
             body.dna,
@@ -136,8 +132,7 @@ class Debye(je_base.BaseEnergyFunction):
         )
 
         rna_dgs = dna2_energy.Debye(
-            displacement_fn=self.displacement_fn,
-            params=self.params.rna_config
+            displacement_fn=self.displacement_fn, params=self.params.rna_config
         ).pairwise_energies(
             body.rna,
             body.rna,
@@ -145,8 +140,7 @@ class Debye(je_base.BaseEnergyFunction):
         )
 
         drh_dgs = dna2_energy.Debye(
-            displacement_fn=self.displacement_fn,
-            params=self.params.drh_config
+            displacement_fn=self.displacement_fn, params=self.params.drh_config
         ).pairwise_energies(
             body.dna,
             body.rna,
@@ -154,18 +148,14 @@ class Debye(je_base.BaseEnergyFunction):
         )
 
         rdh_dgs = dna2_energy.Debye(
-            displacement_fn=self.displacement_fn,
-            params=self.params.drh_config
+            displacement_fn=self.displacement_fn, params=self.params.drh_config
         ).pairwise_energies(
             body.rna,
             body.dna,
             unbonded_neighbors,
         )
 
-
-        dgs = jnp.where(is_rna_bond, rna_dgs,
-                        jnp.where(is_drh_bond, drh_dgs,
-                                  jnp.where(is_rdh_bond, rdh_dgs, dna_dgs)))
+        dgs = jnp.where(is_rna_bond, rna_dgs, jnp.where(is_drh_bond, drh_dgs, jnp.where(is_rdh_bond, rdh_dgs, dna_dgs)))
         dgs = jnp.where(mask, dgs, 0.0)
 
         return dgs.sum()

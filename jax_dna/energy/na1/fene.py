@@ -100,16 +100,14 @@ class Fene(je_base.BaseEnergyFunction):
         is_rna_bond = jax.vmap(je_utils.is_rna_pair, (0, 0, None))(nn_i, nn_j, self.params.nt_type)
 
         dna_dgs = dna1_energy.Fene(
-            displacement_fn=self.displacement_fn,
-            params=self.params.dna_config
+            displacement_fn=self.displacement_fn, params=self.params.dna_config
         ).pairwise_energies(
             body.dna,
             bonded_neighbors,
         )
 
         rna_dgs = dna1_energy.Fene(
-            displacement_fn=self.displacement_fn,
-            params=self.params.rna_config
+            displacement_fn=self.displacement_fn, params=self.params.rna_config
         ).pairwise_energies(
             body.rna,
             bonded_neighbors,

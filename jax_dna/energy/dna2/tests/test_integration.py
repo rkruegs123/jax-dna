@@ -24,7 +24,7 @@ COLUMN_NAMES = [
     "hydrogen_bonding",
     "cross_stacking",
     "coaxial_stacking",
-    "debye"
+    "debye",
 ]
 
 
@@ -68,7 +68,6 @@ def get_setup_data(base_dir: str):
         transform_fn,
         displacement_fn,
     )
-
 
 
 @pytest.mark.parametrize("base_dir", ["data/test-data/dna2/simple-helix"])
@@ -131,15 +130,7 @@ def test_bonded_excluded_volume(base_dir: str):
     np.testing.assert_allclose(energy, terms, atol=1e-6)
 
 
-@pytest.mark.parametrize(
-    (
-        "base_dir",
-        "t_kelvin"
-    ),
-    [
-        ("data/test-data/dna2/simple-helix", 296.15)
-    ]
-)
+@pytest.mark.parametrize(("base_dir", "t_kelvin"), [("data/test-data/dna2/simple-helix", 296.15)])
 def test_stacking(base_dir: str, t_kelvin: float):
     (
         topology,
@@ -264,14 +255,7 @@ def test_hydrogen_bonding(base_dir: str):
     np.testing.assert_allclose(energy, terms, atol=1e-3)
 
 
-
-@pytest.mark.parametrize(
-    "base_dir",
-    [
-        "data/test-data/dna2/simple-helix",
-        "data/test-data/dna2/simple-coax"
-    ]
-)
+@pytest.mark.parametrize("base_dir", ["data/test-data/dna2/simple-helix", "data/test-data/dna2/simple-coax"])
 def test_coaxial_stacking(base_dir: str):
     (
         topology,
@@ -301,7 +285,6 @@ def test_coaxial_stacking(base_dir: str):
     np.testing.assert_allclose(energy, terms, atol=1e-6)
 
 
-
 @pytest.mark.parametrize(
     (
         "base_dir",
@@ -312,7 +295,7 @@ def test_coaxial_stacking(base_dir: str):
     [
         ("data/test-data/dna2/simple-helix", 296.15, 0.5, False),
         ("data/test-data/dna2/simple-helix-half-charged-ends", 296.15, 0.5, True),
-    ]
+    ],
 )
 def test_debye(base_dir: str, t_kelvin: float, salt_conc: float, *, half_charged_ends: bool):
     (
@@ -328,13 +311,8 @@ def test_debye(base_dir: str, t_kelvin: float, salt_conc: float, *, half_charged
     kt = t_kelvin * 0.1 / 300.0
     energy_config = jd_energy.DebyeConfiguration(
         **(
-            default_params["debye"] | \
-            {
-                "kt": kt,
-                "salt_conc": salt_conc,
-                "is_end": topology.is_end,
-                "half_charged_ends": half_charged_ends
-            }
+            default_params["debye"]
+            | {"kt": kt, "salt_conc": salt_conc, "is_end": topology.is_end, "half_charged_ends": half_charged_ends}
         )
     )
     energy_fn = jd_energy.Debye(displacement_fn=displacement_fn, params=energy_config.init_params())
@@ -352,7 +330,6 @@ def test_debye(base_dir: str, t_kelvin: float, salt_conc: float, *, half_charged
 
     energy = np.around(energy / topology.n_nucleotides, 6)
     np.testing.assert_allclose(energy, terms, atol=1e-3)
-
 
 
 if __name__ == "__main__":

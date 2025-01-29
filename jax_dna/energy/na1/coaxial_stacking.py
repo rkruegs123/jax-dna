@@ -1,6 +1,5 @@
 """Coaxial stacking energy term for NA1 model."""
 
-
 import chex
 import jax
 import jax.numpy as jnp
@@ -65,7 +64,6 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
     rna_cos_phi4_star_coax: float | None = None
     rna_a_coax_4p: float | None = None
 
-
     ## DNA/RNA-hybrid-specific
     drh_dr_low_coax: float | None = None
     drh_dr_high_coax: float | None = None
@@ -117,7 +115,6 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
         "dna_a_coax_6",
         "dna_a_coax_1_f6",
         "dna_b_coax_1_f6",
-
         # RNA2-specific
         "rna_dr_low_coax",
         "rna_dr_high_coax",
@@ -140,7 +137,6 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
         "rna_a_coax_3p",
         "rna_cos_phi4_star_coax",
         "rna_a_coax_4p",
-
         # DNA/RNA-hybrid-specific
         "drh_dr_low_coax",
         "drh_dr_high_coax",
@@ -167,8 +163,6 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
 
     @override
     def init_params(self) -> "CoaxialStackingConfiguration":
-
-
         dna_config = dna2_energy.CoaxialStackingConfiguration(
             dr_low_coax=self.dna_dr_low_coax,
             dr_high_coax=self.dna_dr_high_coax,
@@ -269,10 +263,8 @@ class CoaxialStacking(je_base.BaseEnergyFunction):
 
         mask = jnp.array(op_i < body.dna.center.shape[0], dtype=jnp.float32)
 
-
         dna_dgs = dna2_energy.CoaxialStacking(
-            displacement_fn=self.displacement_fn,
-            params=self.params.dna_config
+            displacement_fn=self.displacement_fn, params=self.params.dna_config
         ).pairwise_energies(
             body.dna,
             body.dna,
@@ -280,8 +272,7 @@ class CoaxialStacking(je_base.BaseEnergyFunction):
         )
 
         rna_dgs = dna1_energy.CoaxialStacking(
-            displacement_fn=self.displacement_fn,
-            params=self.params.rna_config
+            displacement_fn=self.displacement_fn, params=self.params.rna_config
         ).pairwise_energies(
             body.rna,
             body.rna,
@@ -289,8 +280,7 @@ class CoaxialStacking(je_base.BaseEnergyFunction):
         )
 
         drh_dgs = dna1_energy.CoaxialStacking(
-            displacement_fn=self.displacement_fn,
-            params=self.params.drh_config
+            displacement_fn=self.displacement_fn, params=self.params.drh_config
         ).pairwise_energies(
             body.dna,
             body.rna,
@@ -298,18 +288,14 @@ class CoaxialStacking(je_base.BaseEnergyFunction):
         )
 
         rdh_dgs = dna1_energy.CoaxialStacking(
-            displacement_fn=self.displacement_fn,
-            params=self.params.drh_config
+            displacement_fn=self.displacement_fn, params=self.params.drh_config
         ).pairwise_energies(
             body.rna,
             body.dna,
             unbonded_neighbors,
         )
 
-
-        dgs = jnp.where(is_rna_bond, rna_dgs,
-                        jnp.where(is_drh_bond, drh_dgs,
-                                  jnp.where(is_rdh_bond, rdh_dgs, dna_dgs)))
+        dgs = jnp.where(is_rna_bond, rna_dgs, jnp.where(is_drh_bond, drh_dgs, jnp.where(is_rdh_bond, rdh_dgs, dna_dgs)))
         dgs = jnp.where(mask, dgs, 0.0)
 
         return dgs.sum()

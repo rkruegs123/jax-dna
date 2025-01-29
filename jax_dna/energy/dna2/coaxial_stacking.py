@@ -72,7 +72,7 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
         "delta_theta_star_coax_6",
         "a_coax_6",
         "a_coax_1_f6",
-        "b_coax_1_f6"
+        "b_coax_1_f6",
     )
 
     @override
@@ -112,7 +112,6 @@ class CoaxialStackingConfiguration(config.BaseConfiguration):
             self.theta0_coax_6,
             self.delta_theta_star_coax_6,
         )
-
 
         return self.replace(
             b_low_coax=b_low_coax,
