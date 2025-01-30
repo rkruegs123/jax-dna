@@ -31,6 +31,15 @@ class SquaredError(LossFn):
 
 
 @chex.dataclass
+class RootMeanSquaredError(LossFn):
+    """Calculate the root mean squared error between the actual and target values."""
+
+    @override
+    def __call__(self, actual: jnp.ndarray, target: jnp.ndarray) -> float:
+        return jnp.sqrt(jnp.mean((target - actual) ** 2))
+
+
+@chex.dataclass
 class ObservableLossFn:
     """A simple loss function wrapper for an observable."""
 

@@ -128,10 +128,10 @@ class Objective:
 
         sorted_obs = [x[1] for x in sorted_obtained_observables]
 
-        grads, loss = self._grad_or_loss_fn(*sorted_obs)
+        grads, aux = self._grad_or_loss_fn(*sorted_obs)
 
         self._obtained_observables = [
-            ("loss", loss),
+            *aux,
             *list(zip(self._required_observables, sorted_obs, strict=True)),
         ]
 
@@ -311,7 +311,7 @@ class DiffTReObjective(Objective):
         have_trajectories = super().is_ready()
         if have_trajectories:
             sorted_obtained_observables = sorted(
-                self._obtained_observables,
+                filter(lambda x: x[0] in self._required_observables, self._obtained_observables),
                 key=lambda x: self._required_observables.index(x[0]),
             )
 
