@@ -8,8 +8,14 @@ Custom Energy Functions
 functions are generally comprised of two components: an EnergyFunction and
 optionally an EnergyConfiguration.
 
-Custom energy functions should be implemented as subclasses of the
-BaseEnergy class, see :doc:`autoapi/jax_dna/energy/base`. Further, any custom
+.. note::
+  All implemented EnergyFunctions and EnergyConfigurations should be annotated
+  with ``@chex.dataclass``, from `chex <https://github.com/google-deepmind/chex>`_.
+  This is a decorator makes the class compatible with
+  jax
+
+Custom energy functions should be implemented as subclasses of the BaseEnergy
+class, see :doc:`autoapi/jax_dna/energy/base/index`. Further, any custom
 energy function should also implement the ``__call__`` function with the
 following signature:
 
@@ -34,6 +40,60 @@ implemented functions, sharing a common interface. Further the BaseEnergy
 function implements helpers like the `+` operator, which can be used to combine
 energy functions.
 
+
+EnergyFunctions are paired with EnergyConfigurations, which are used to store
+the parameters of the energy function. More information is available in the
+BaseEnergyConfiguration class, see :doc:`autoapi/jax_dna/energy/base/index`.
+
+.. warning::
+  Any parameters defined in a EnergyConfiguration should be annotated with
+  ``@chex.dataclass``. And all parameters should be optional is the derived
+  classes due to the way the base configuration is implemented.
+
+An example of a trivial energy function is show below:
+
+.. code-block:: python
+
+    from typing_extensions import override
+
+    import chex
+
+    import jax.numpy as jnp
+    import jax_dna.energy.base as jdna_energy
+    import jax_dna.utils.types as typ
+
+    @chex.dataclass
+    class TrivialEnergyConfiguration(jdna_energy.BaseEnergyConfiguration):
+        some_opt_parameter: float | None = None
+        some_dep_parameter: float | None = None
+
+        required_params = ["some_opt_parameter"]
+
+        @override
+        def init_params(self) -> "TrivialEnergyConfiguration":
+            self.some_dep_parameter = 2 * self.some_opt_parameter
+            return self
+
+
+    @chex.dataclass
+    class TrivialEnergy(jd.BaseEnergy):
+
+        @overrride
+        def __call__(
+            self,
+            body: je_base.BaseNucleotide,
+            seq: typ.Sequence,
+            bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+            unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
+        ) -> float:
+
+            bonded_i = body[bonded_neighbors[0,:]].center
+            bonded_j = body[bonded_neighbors[1,:]].center
+
+            return jnp.sum(jnp.linalg.norm(bonded_i - bonded_j)) + self.config.some_dep_parameter
+
+More examples can be found by looking at the implemented energies in
+:doc:`autoapi/jax_dna/energy/base/index`
 
 
 Advanced Optimizations

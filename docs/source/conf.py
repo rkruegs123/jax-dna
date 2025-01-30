@@ -27,15 +27,6 @@ autoapi_template_dir = "_templates/autoapi"
 autodoc_typehints = "signature"
 # if you want to debug uncomment this line
 # autoapi_keep_files = True
-autoapi_options = [
-    'members',
-    'undoc-members',
-    'private-members',
-    'special-members',
-    'show-inheritance',
-    'show-module-summary',
-    'imported-members',
-]
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),

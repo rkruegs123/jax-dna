@@ -185,7 +185,7 @@ def test_objective_calculate() -> None:
         required_observables=["a", "b", "c"],
         needed_observables=["a", "b"],
         logging_observables=[],
-        grad_or_loss_fn=mock_return_function((1.0, 0.0)),
+        grad_or_loss_fn=mock_return_function((1.0, [("test", 0.0)])),
     )
 
     # simulate getting the observables

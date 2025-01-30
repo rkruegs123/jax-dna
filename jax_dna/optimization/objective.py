@@ -35,7 +35,7 @@ class Objective:
         required_observables: list[str],
         needed_observables: list[str],
         logging_observables: list[str],
-        grad_or_loss_fn: typing.Callable[[tuple[str, ...]], jdna_types.Grads],
+        grad_or_loss_fn: typing.Callable[[tuple[str, ...]], tuple[jdna_types.Grads, list[tuple[str, typing.Any]]]],
         logger_config: dict[str, typing.Any] = empty_dict,
     ) -> "Objective":
         """Initialize the objective.

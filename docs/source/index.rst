@@ -5,11 +5,12 @@ Welcome to jax_dna's documentation!
 optimization
 
 Check out the :doc:`basic_usage` section for further information, including
-how to :ref:`installation` the project.
+:ref:`installation`.
 
 .. note::
 
    This project is under active development.
+   So expect the API to change frequently.
 
 Contents
 --------

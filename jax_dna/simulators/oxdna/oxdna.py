@@ -95,7 +95,7 @@ class oxDNABinarySemaphore:  # noqa: N801 oxDNA is a special word
         """Check if the semaphore is ready."""
         return self._ready
 
-    def set(self, *, ready: bool) -> None:
+    def set(self, ready: bool) -> None:  # noqa: FBT001 -- The way this gets used is easier this way
         """Set the value of the semaphore."""
         self._ready = ready
 
