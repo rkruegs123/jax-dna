@@ -4,7 +4,35 @@ Advanced Usage
 Custom Energy Functions
 -----------------------
 
-``jax_dna`` supports custom energy functions
+``jax_dna`` supports custom energy functions for ``jax_md`` simulations. Energy
+functions are generally comprised of two components: an EnergyFunction and
+optionally an EnergyConfiguration.
+
+Custom energy functions should be implemented as subclasses of the
+BaseEnergy class, see :doc:`autoapi/jax_dna/energy/base`. Further, any custom
+energy function should also implement the ``__call__`` function with the
+following signature:
+
+.. code-block:: python
+
+    def __call__(
+        self,
+        body: jax_md.rigid_body.RigidBody,
+        seq: typ.Sequence,
+        bonded_neighbors: typ.Arr_Bonded_Neighbors_2,
+        unbonded_neighbors: typ.Arr_Unbonded_Neighbors_2,
+    ) -> float:
+      # return a single float that describes the energy for the current state
+
+Here ``body`` is a ``jax_md.rigid_body.RigidBody`` object that contains the
+current state of the system, ``seq`` is a sequence of nucleotides, and
+``bonded_neighbors`` and ``unbonded_neighbors`` are arrays of bonded and
+unbonded neighbors respectively.
+
+By deriving from the BaseEnergy class, the function can be included with other
+implemented functions, sharing a common interface. Further the BaseEnergy
+function implements helpers like the `+` operator, which can be used to combine
+energy functions.
 
 
 
