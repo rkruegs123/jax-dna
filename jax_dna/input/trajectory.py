@@ -315,7 +315,6 @@ def _read_file(
                 if is_3p_5p:
                     state = list(itertools.chain.from_iterable([state[s:e][::-1] for s, e in strand_bounds]))
                     state = np.array(state, dtype=np.float64)
-                    state[:, 6:9] = -state[:, 6:9]
                 states.append(np.array(state, dtype=np.float64))
                 state = []
                 current = file_obj.tell()
