@@ -11,7 +11,6 @@ import jax_dna.energy.na1 as jd_energy
 import jax_dna.input.toml as jd_toml
 import jax_dna.input.topology as jd_top
 import jax_dna.input.trajectory as jd_traj
-import jax_dna.utils.helpers as jd_help
 
 jax.config.update("jax_enable_x64", True)  # noqa: FBT003 - ignore boolean positional value
 # this is a common jax practice
@@ -30,26 +29,20 @@ COLUMN_NAMES = [
 ]
 
 
-def flip_state(state, strand_bounds):
-    # TODO (rkruegs123): use `is_oxdna=True` in trajectory reader instead of flipping states
-    # https://github.com/ssec-jhu/jax-dna/issues/23
-    return jd_help.tree_concatenate([state[s:e][::-1] for s, e in strand_bounds])
-
 
 def get_energy_terms(base_dir: str, term: str) -> np.ndarray:
     energy_terms = np.loadtxt(base_dir + "/split_energy.dat", skiprows=1)
     return energy_terms[:, COLUMN_NAMES.index(term)]
 
-
 def get_topology(base_dir: str) -> jd_top.Topology:
     return jd_top.from_oxdna_file(base_dir + "/generated.top")
 
 
-def get_trajectory(base_dir: str, topology: jd_top.Topology) -> jd_traj.Trajectory:
+def get_trajectory(base_dir: str, topology: jd_top.Topology, *, is_oxdna: bool = True) -> jd_traj.Trajectory:
     return jd_traj.from_file(
         base_dir + "/output.dat",
         topology.strand_counts,
-        is_oxdna=False,
+        is_oxdna=is_oxdna,
     )
 
 
@@ -273,8 +266,6 @@ def test_stacking(base_dir: str, t_kelvin: float):
 
     states = trajectory.state_rigid_body
 
-    rev_states = jax.vmap(flip_state, (0, None))(states, strand_bounds)
-
     energy = jax.vmap(
         lambda s: energy_fn(
             transform_fn(s),
@@ -282,7 +273,7 @@ def test_stacking(base_dir: str, t_kelvin: float):
             topology.bonded_neighbors,
             topology.unbonded_neighbors.T,
         )
-    )(rev_states)
+    )(states)
 
     energy = np.around(energy / topology.n_nucleotides, 6)
 
@@ -364,8 +355,6 @@ def test_cross_stacking(base_dir: str):
 
     states = trajectory.state_rigid_body
 
-    rev_states = jax.vmap(flip_state, (0, None))(states, strand_bounds)
-
     energy = jax.vmap(
         lambda s: energy_fn(
             transform_fn(s),
@@ -373,7 +362,7 @@ def test_cross_stacking(base_dir: str):
             topology.bonded_neighbors,
             topology.unbonded_neighbors.T,
         )
-    )(rev_states)
+    )(states)
 
     energy = np.around(energy / topology.n_nucleotides, 6)
     np.testing.assert_allclose(energy, terms, atol=1e-4)  # using a higher tolerance here
@@ -410,8 +399,6 @@ def test_hydrogen_bonding(base_dir: str):
 
     states = trajectory.state_rigid_body
 
-    rev_states = jax.vmap(flip_state, (0, None))(states, strand_bounds)
-
     energy = jax.vmap(
         lambda s: energy_fn(
             transform_fn(s),
@@ -419,7 +406,7 @@ def test_hydrogen_bonding(base_dir: str):
             topology.bonded_neighbors,
             topology.unbonded_neighbors.T,
         )
-    )(rev_states)
+    )(states)
 
     energy = np.around(energy / topology.n_nucleotides, 6)
     np.testing.assert_allclose(energy, terms, atol=1e-4)  # using a higher tolerance here
@@ -457,8 +444,6 @@ def test_coaxial_stacking(base_dir: str):
 
     states = trajectory.state_rigid_body
 
-    rev_states = jax.vmap(flip_state, (0, None))(states, strand_bounds)
-
     energy = jax.vmap(
         lambda s: energy_fn(
             transform_fn(s),
@@ -466,7 +451,7 @@ def test_coaxial_stacking(base_dir: str):
             topology.bonded_neighbors,
             topology.unbonded_neighbors.T,
         )
-    )(rev_states)
+    )(states)
 
     energy = np.around(energy / topology.n_nucleotides, 6)
     np.testing.assert_allclose(energy, terms, atol=1e-6)
@@ -518,8 +503,6 @@ def test_debye(base_dir: str, t_kelvin: float, salt_conc: float, *, half_charged
 
     states = trajectory.state_rigid_body
 
-    rev_states = jax.vmap(flip_state, (0, None))(states, strand_bounds)
-
     energy = jax.vmap(
         lambda s: energy_fn(
             transform_fn(s),
@@ -527,7 +510,7 @@ def test_debye(base_dir: str, t_kelvin: float, salt_conc: float, *, half_charged
             topology.bonded_neighbors,
             topology.unbonded_neighbors.T,
         )
-    )(rev_states)
+    )(states)
 
     energy = np.around(energy / topology.n_nucleotides, 6)
     np.testing.assert_allclose(energy, terms, atol=1e-5)

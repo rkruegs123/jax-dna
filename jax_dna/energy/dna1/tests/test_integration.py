@@ -303,8 +303,8 @@ def test_unbonded_excluded_volume(base_dir: str):
         "use_neighbors"
     ),
     [
-        ("data/test-data/simple-helix", 296.15, False),
-        ("data/test-data/simple-helix", 296.15, True),
+        ("data/test-data/dna1/simple-helix", 296.15, False),
+        ("data/test-data/dna1/simple-helix", 296.15, True),
     ]
 )
 def test_total_energy(base_dir: str, t_kelvin: float, *, use_neighbors: bool):
