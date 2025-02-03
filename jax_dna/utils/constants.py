@@ -15,10 +15,7 @@ N_BP_TYPES = len(BP_TYPES)
 
 N_NT_PER_BP = 2
 
-BP_IDXS = []
-for nt1, nt2 in BP_TYPES:
-    BP_IDXS.append([DNA_ALPHA.index(nt1), DNA_ALPHA.index(nt2)])
-BP_IDXS = jnp.array(BP_IDXS)
+BP_IDXS = jnp.array([[DNA_ALPHA.index(nt1), DNA_ALPHA.index(nt2)] for nt1, nt2 in BP_TYPES])
 
 BP_IDX_MAP = {(DNA_ALPHA.index(nt1), DNA_ALPHA.index(nt2)): bp_idx for bp_idx, (nt1, nt2) in enumerate(BP_TYPES)}
 

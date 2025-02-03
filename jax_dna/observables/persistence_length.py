@@ -123,9 +123,9 @@ class LpMetadata(jd_obs.BaseObservable):
     a trajectory can be postprocessed to compute a value for Lp.
 
     Args:
-    - quartets: a (n_bp, 2, 2) array containing the pairs of adjacent base pairs
-      for which to compute the Lp
-    - displacement_fn: a function for computing displacements between two positions
+        quartets: a (n_bp, 2, 2) array containing the pairs of adjacent base pairs
+            for which to compute the Lp
+        displacement_fn: a function for computing displacements between two positions
     """
 
     quartets: jnp.ndarray = dc.field(hash=False)

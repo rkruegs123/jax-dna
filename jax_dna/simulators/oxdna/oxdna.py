@@ -95,7 +95,7 @@ class oxDNABinarySemaphore:  # noqa: N801 oxDNA is a special word
         """Check if the semaphore is ready."""
         return self._ready
 
-    def set(self, *, ready: bool) -> None:
+    def set(self, ready: bool) -> None:  # noqa: FBT001 -- The way this gets used is easier this way
         """Set the value of the semaphore."""
         self._ready = ready
 
@@ -111,7 +111,7 @@ class oxDNASimulator(jd_base.BaseSimulation):  # noqa: N801 oxDNA is a special w
 
     input_dir: str
     sim_type: jd_types.oxDNASimulatorType
-    energy_configs: list[jd_energy.BaseConfiguration]
+    energy_configs: list[jd_energy.BaseConfiguration] | None = None
     n_build_threads: int = 4
     logger_config: dict[str, typing.Any] | None = None
     disable_build: bool = False

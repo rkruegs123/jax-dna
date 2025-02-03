@@ -3,6 +3,9 @@
 from pathlib import Path
 from types import MappingProxyType
 
+import jax
+import jax.numpy as jnp
+
 from jax_dna.energy.base import BaseEnergyFunction
 from jax_dna.energy.configuration import BaseConfiguration
 from jax_dna.energy.dna1.bonded_excluded_volume import BondedExcludedVolume, BondedExcludedVolumeConfiguration
@@ -16,12 +19,11 @@ from jax_dna.energy.dna1.nucleotide import Nucleotide
 from jax_dna.energy.dna1.stacking import Stacking, StackingConfiguration
 from jax_dna.energy.dna1.unbonded_excluded_volume import UnbondedExcludedVolume, UnbondedExcludedVolumeConfiguration
 from jax_dna.input import toml
+from jax_dna.utils.types import PyTree
 
 
-def default_configs(
-    overrides: dict = MappingProxyType({}), opts: dict = MappingProxyType({})
-) -> list[BaseConfiguration]:
-    """Return the default configurations for the energy functions."""
+def default_configs() -> tuple[PyTree, PyTree]:
+    """Return the default simulation and energy configuration files for dna1 simulations."""
     config_dir = (
         # jax_dna/energy/dna1/__init__.py
         Path(__file__)
@@ -33,8 +35,20 @@ def default_configs(
         .joinpath("dna1")
     )
 
-    default_sim_config = toml.parse_toml(config_dir.joinpath("default_simulation.toml"))
-    default_config = toml.parse_toml(config_dir.joinpath("default_energy.toml"))
+    def cast_f(x: float | list[float]) -> jnp.ndarray:
+        return jnp.array(x, dtype=jnp.float64)
+
+    return (
+        jax.tree.map(cast_f, toml.parse_toml(config_dir.joinpath("default_simulation.toml"))),
+        jax.tree.map(cast_f, toml.parse_toml(config_dir.joinpath("default_energy.toml"))),
+    )
+
+
+def default_energy_configs(
+    overrides: dict = MappingProxyType({}), opts: dict = MappingProxyType({})
+) -> list[BaseConfiguration]:
+    """Return the default configurations for the energy functions."""
+    default_sim_config, default_config = default_configs()
 
     def get_param(x: str) -> dict:
         return default_config[x] | overrides.get(x, {})

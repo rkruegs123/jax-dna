@@ -54,7 +54,6 @@ class JaxMDSimulator(jd_sim_base.BaseSimulation):
             self.transform_fn,
             self.simulator_init,
             self.neighbors,
-            self.topology,
         )
 
 

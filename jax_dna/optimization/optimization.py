@@ -42,7 +42,7 @@ def split_by_ready(
 class Optimization:
     """Optimization of a list of objectives using a list of simulators.
 
-    Attributes:
+    Parameters:
         objectives: A list of objectives to optimize.
         simulators: A list of simulators to use for the optimization.
         aggregate_grad_fn: A function that aggregates the gradients from the objectives.
@@ -113,9 +113,6 @@ class Optimization:
         needed_names = get_fn([sim.name.remote() for sim in needed_simulators])
         needed_exposes = get_fn([sim.exposes.remote() for sim in needed_simulators])
 
-        for name in needed_names:
-            self.logger.set_simulator_running(name)
-
         sim_remotes = [sim.run.remote(params) for sim in needed_simulators]
 
         simid_exposes = {}
@@ -123,6 +120,9 @@ class Optimization:
         for sr, name, exposes in zip(sim_remotes, needed_names, needed_exposes, strict=True):
             simid_exposes[sr.task_id().hex()] = exposes
             simid_name[sr.task_id().hex()] = name
+
+            self.logger.set_simulator_running(name)
+            [self.logger.set_observable_running(e) for e in exposes]
 
         # wait for the simulators to finish
         while not_ready_objectives:
@@ -138,6 +138,8 @@ class Optimization:
                     captured_results.append((exposes, result))
                     if self.logger:
                         self.logger.set_simulator_complete(simid_name[task_id])
+                        for expose in exposes:
+                            self.logger.set_observable_complete(expose)
 
                 # update the objectives with the new observables and check if they are ready
                 get_fn([objective.update.remote(captured_results) for objective in not_ready_objectives])

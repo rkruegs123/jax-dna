@@ -1,1 +1,8 @@
+-r prd.txt
 tox==4.15.0
+sphinx
+# sphinx-automodapi
+sphinx-autoapi
+sphinx-issues
+nbsphinx
+sphinx_book_theme
