@@ -672,14 +672,16 @@ def run(args):
         plt.clf()
 
 
-        for pdb_id in pdb_ids:
-            plt.plot(onp.arange(i+1), pdb_rmses[pdb_id], linestyle="--", color="blue")
-            plt.scatter(pdb_ref_times[pdb_id], pdb_ref_rmses[pdb_id], marker='o', label="Resample points", color="blue")
-            plt.legend()
-            plt.ylabel("RMSE")
-            plt.xlabel("Iteration")
-            plt.savefig(img_dir / f"{pdb_id}_rmses_iter{i}.png")
-            plt.clf()
+        colors = ["red", "green", "blue"]
+        for pdb_id, color in zip(pdb_ids, colors):
+            plt.plot(onp.arange(i+1), pdb_rmses[pdb_id], linestyle="--", label=pdb_id, color=color)
+            plt.scatter(pdb_ref_times[pdb_id], pdb_ref_rmses[pdb_id], marker='o', color=color)
+            
+        plt.legend()
+        plt.ylabel("RMSE")
+        plt.xlabel("Iteration")
+        plt.savefig(img_dir / f"individual_rmses_iter{i}.png")
+        plt.clf()
 
 
 def get_parser():
