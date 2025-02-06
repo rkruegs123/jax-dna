@@ -75,7 +75,7 @@ class EnergyModel:
         self.pos_stack_5_a2 = self.params["geometry"]["pos_stack_5_a2"]
 
 
-    def compute_subterms(self, body, seq, bonded_nbrs, unbonded_nbrs, is_end=None):
+    def compute_subterms(self, body, seq, bonded_nbrs, unbonded_nbrs, is_end=None, unique_hb_pairs=None):
         nn_i = bonded_nbrs[:, 0]
         nn_j = bonded_nbrs[:, 1]
 
@@ -202,6 +202,9 @@ class EnergyModel:
         v_hb = jnp.where(mask, v_hb, 0.0) # Mask for neighbors
         hb_probs = utils.get_pair_probs(seq, op_i, op_j) # get the probabilities of all possibile hydrogen bonds for all neighbors
         hb_weights = jnp.dot(hb_probs, self.ss_hb_weights_flat)
+        if unique_hb_pairs is not None:
+            unique_weights = vmap(lambda i, j: unique_hb_pairs[i, j], (0, 0))(op_i, op_j)
+            hb_weights = jnp.multiply(hb_weights, unique_weights)
         hb_dg = jnp.dot(hb_weights, v_hb)
 
         cr_stack_dg = cross_stacking2(
@@ -238,8 +241,8 @@ class EnergyModel:
         return fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg
 
 
-    def energy_fn(self, body, seq, bonded_nbrs, unbonded_nbrs, is_end=None):
-        dgs = self.compute_subterms(body, seq, bonded_nbrs, unbonded_nbrs, is_end)
+    def energy_fn(self, body, seq, bonded_nbrs, unbonded_nbrs, is_end=None, unique_hb_pairs=None):
+        dgs = self.compute_subterms(body, seq, bonded_nbrs, unbonded_nbrs, is_end, unique_hb_pairs)
         fene_dg, exc_vol_bonded_dg, stack_dg, exc_vol_unbonded_dg, hb_dg, cr_stack_dg, cx_stack_dg, db_dg = dgs
         val = fene_dg + stack_dg + exc_vol_unbonded_dg + hb_dg + cr_stack_dg + cx_stack_dg + db_dg
         return val
@@ -249,13 +252,23 @@ class TestRna2(unittest.TestCase):
 
 
     def check_energy_subterms(
-            self, basedir, top_fname, traj_fname,
-            t_kelvin, salt_conc,
-            r_cutoff=10.0, dr_threshold=0.2,
-            tol_places=4, verbose=True, avg_seq=True,
-            hb_tol_places=3, params=None,
-            use_neighbors=False, half_charged_ends=False,
-            is_circle=False
+        self,
+        basedir,
+        top_fname,
+        traj_fname,
+        t_kelvin,
+        salt_conc,
+        r_cutoff=10.0,
+        dr_threshold=0.2,
+        tol_places=4,
+        verbose=True,
+        avg_seq=True,
+        hb_tol_places=3,
+        params=None,
+        use_neighbors=False,
+        half_charged_ends=False,
+        is_circle=False,
+        unique_topology=False
     ):
 
 
@@ -292,12 +305,29 @@ class TestRna2(unittest.TestCase):
             raise RuntimeError(f"No trajectory file at location: {traj_path}")
 
         ## note: we don't reverse direction to keep ordering the same
-        top_info = topology.TopologyInfo(top_path, reverse_direction=False, is_rna=True, allow_circle=is_circle)
+        top_info = topology.TopologyInfo(
+            top_path,
+            reverse_direction=False,
+            is_rna=True,
+            allow_circle=is_circle,
+            allow_arbitrary_alphabet=unique_topology
+        )
         if half_charged_ends:
             is_end = top_info.is_end
         else:
             is_end = None
-        seq_oh = jnp.array(utils.get_one_hot(top_info.seq, is_rna=True), dtype=jnp.float64)
+        if unique_topology:
+            pairs = onp.argwhere(top_info.unique_hb_pairs == 1)
+            unique_hb_pairs = {tuple(sorted(pair)) for pair in pairs}
+            dummy_seq = ["A" for _ in range(top_info.n)]
+            for i, j in unique_hb_pairs:
+                dummy_seq[j] = "U"
+            dummy_seq = ''.join(dummy_seq)
+            seq_oh = jnp.array(utils.get_one_hot(dummy_seq, is_rna=True), dtype=jnp.float64)
+            unique_hb_pairs = jnp.array(top_info.unique_hb_pairs)
+        else:
+            seq_oh = jnp.array(utils.get_one_hot(top_info.seq, is_rna=True), dtype=jnp.float64)
+            unique_hb_pairs = None
         traj_info = trajectory.TrajectoryInfo(
             top_info, read_from_file=True, traj_path=traj_path, reverse_direction=False)
         traj_states = traj_info.get_states()
@@ -319,7 +349,7 @@ class TestRna2(unittest.TestCase):
 
 
         compute_subterms_fn = model.compute_subterms
-        compute_subterms_fn = jit(model.compute_subterms)
+        compute_subterms_fn = jit(compute_subterms_fn)
         computed_subterms = list()
         for state in tqdm(traj_states):
 
@@ -328,7 +358,7 @@ class TestRna2(unittest.TestCase):
                 neighbors_idx = neighbors.idx
 
             dgs = compute_subterms_fn(
-                state, seq_oh, top_info.bonded_nbrs, neighbors_idx, is_end
+                state, seq_oh, top_info.bonded_nbrs, neighbors_idx, is_end, unique_hb_pairs
             )
             avg_subterms = onp.array(dgs) / top_info.n # average per nucleotide
             computed_subterms.append(avg_subterms)
@@ -364,27 +394,36 @@ class TestRna2(unittest.TestCase):
         print(utils.bcolors.WARNING + "\nWARNING: errors for hydrogen bonding and cross stacking are subject to approximation of pi in parameter file\n" + utils.bcolors.ENDC)
 
         subterm_tests = [
-            (self.test_data_basedir / "simple-helix-rna2-12bp-half-charged-ends", "sys.top", "output.dat", 296.15, 1.0, True, True, False),
-            (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 1.0, True, False, False),
-            (self.test_data_basedir / "simple-helix-rna2-12bp-ss", "sys.top", "output.dat", 296.15, 1.0, False, False, False),
-            (self.test_data_basedir / "simple-coax-rna2", "generated.top", "output.dat", 296.15, 1.0, True, False, False),
-            (self.test_data_basedir / "simple-helix-rna2-12bp-ss-290.15", "sys.top", "output.dat", 290.15, 1.0, False, False, False),
-            (self.test_data_basedir / "regr-rna2-2ht-293.15-ss", "sys.top", "output.dat", 293.15, 1.0, False, False, False),
-            (self.test_data_basedir / "regr-rna2-2ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True, False, False),
-            (self.test_data_basedir / "regr-rna2-2ht-296.15-ss", "sys.top", "output.dat", 296.15, 1.0, False, False, False),
-            (self.test_data_basedir / "regr-rna2-2ht-296.15-sa", "sys.top", "output.dat", 296.15, 1.0, True, False, False),
-            (self.test_data_basedir / "regr-circle-rna", "sys.top", "output.dat", 296.15, 1.0, True, True, True),
+            (self.test_data_basedir / "simple-helix-rna2-12bp-half-charged-ends", "sys.top", "output.dat", 296.15, 1.0, True, True, False, False),
+            (self.test_data_basedir / "simple-helix-rna2-12bp", "sys.top", "output.dat", 296.15, 1.0, True, False, False, False),
+            (self.test_data_basedir / "simple-helix-rna2-12bp-ss", "sys.top", "output.dat", 296.15, 1.0, False, False, False, False),
+            (self.test_data_basedir / "simple-coax-rna2", "generated.top", "output.dat", 296.15, 1.0, True, False, False, False),
+            (self.test_data_basedir / "simple-helix-rna2-12bp-ss-290.15", "sys.top", "output.dat", 290.15, 1.0, False, False, False, False),
+            (self.test_data_basedir / "regr-rna2-2ht-293.15-ss", "sys.top", "output.dat", 293.15, 1.0, False, False, False, False),
+            (self.test_data_basedir / "regr-rna2-2ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True, False, False, False),
+            (self.test_data_basedir / "regr-rna2-2ht-296.15-ss", "sys.top", "output.dat", 296.15, 1.0, False, False, False, False),
+            (self.test_data_basedir / "regr-rna2-2ht-296.15-sa", "sys.top", "output.dat", 296.15, 1.0, True, False, False, False),
+            (self.test_data_basedir / "regr-circle-rna", "sys.top", "output.dat", 296.15, 1.0, True, True, True, False),
 
-            # (self.test_data_basedir / "regr-rna2-5ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True, False)
+            # # (self.test_data_basedir / "regr-rna2-5ht-293.15-sa", "sys.top", "output.dat", 293.15, 1.0, True, False)
+            (self.test_data_basedir / "simple-helix-rna2-12bp-unique", "sys.top", "output.dat", 296.15, 1.0, True, False, False, True),
         ]
 
 
-        for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq, half_charged_ends, is_circle in subterm_tests:
+        for basedir, top_fname, traj_fname, t_kelvin, salt_conc, avg_seq, half_charged_ends, is_circle, unique_topology in subterm_tests:
             for use_neighbors in [False, True]:
                 self.check_energy_subterms(
-                    basedir, top_fname, traj_fname, t_kelvin, salt_conc,
-                    avg_seq=avg_seq, params=None, use_neighbors=use_neighbors,
-                    half_charged_ends=half_charged_ends, is_circle=is_circle
+                    basedir,
+                    top_fname,
+                    traj_fname,
+                    t_kelvin,
+                    salt_conc,
+                    avg_seq=avg_seq,
+                    params=None,
+                    use_neighbors=use_neighbors,
+                    half_charged_ends=half_charged_ends,
+                    is_circle=is_circle,
+                    unique_topology=unique_topology
                 )
 
 
