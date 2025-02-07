@@ -291,6 +291,16 @@ def run(args):
         with open(resample_log_path, "a") as f:
             f.write(f"- Remaining analysis took {analyze_end - analyze_start} seconds\n")
 
+        # Write the mean structure
+        mean_rigid_body, _ = rmse.compute_mean_structure(traj_states)
+        mean_traj_info = trajectory.TrajectoryInfo(
+            top_info,
+            read_from_states=True,
+            states=[mean_rigid_body],
+            box_size=box_size
+        )
+        mean_traj_info.write(iter_dir / "mean_sampled_state.dat", reverse=False)
+
 
         return traj_states, calc_energies, jnp.array(RMSDs), iter_dir
 

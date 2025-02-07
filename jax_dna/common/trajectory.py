@@ -19,6 +19,58 @@ jax.config.update("jax_enable_x64", True)
 
 
 
+
+def principal_axes_to_euler_angles(x, y, z):
+    """
+    A utility function for converting a set of principal axes
+    (that define a rotation matrix) to a commonly used set of
+    Tait-Bryan Euler angles.
+
+    There are two options to compute the Tait-Bryan angles. Each can be seen at the respective links:
+    (1) From wikipedia (under Tait-Bryan angles): https://en.wikipedia.org/wiki/Euler_angles
+    (2) Equation 10A-C: https://danceswithcode.net/engineeringnotes/rotations_in_3d/rotations_in_3d_part1.html
+
+    However, note that the definition from Wikipedia (i.e. the one using arcsin) has numerical stability issues,
+    so we use the definition from (2) (i.e. the one using arctan2)
+
+    Note that if we were following (1), we would do:
+    psi = onp.arcsin(x[1] / onp.sqrt(1 - x[2]**2))
+    theta = onp.arcsin(-x[2])
+    phi = onp.arcsin(y[2] / onp.sqrt(1 - x[2]**2))
+
+    Note that Tait-Bryan (i.e. Cardan) angles are *not* proper euler angles
+    """
+
+    psi = onp.arctan2(x[1], x[0])
+    if onp.abs(x[2]) > 1:
+        # FIXME: could clamp?
+        # pdb.set_trace()
+        x[2] = onp.round(x[2])
+    theta = onp.arcsin(-x[2])
+    phi = onp.arctan2(y[2], z[2])
+
+    return psi, theta, phi
+
+
+
+def euler_angles_to_quaternion(t1, t2, t3):
+    """
+    A utility function for converting euler angles to quaternions.
+    Used when converting a trajectory DataFrame to a set of states.
+
+    We follow the ZYX convention. For details, see page A-11 in
+    https://ntrs.nasa.gov/api/citations/19770024290/downloads/19770024290.pdf
+    from the following set of documentation:
+    https://ntrs.nasa.gov/citations/19770024290
+    """
+    q0 = onp.sin(0.5*t1)*onp.sin(0.5*t2)*onp.sin(0.5*t3) + onp.cos(0.5*t1)*onp.cos(0.5*t2)*onp.cos(0.5*t3)
+    q1 = -onp.sin(0.5*t1)*onp.sin(0.5*t2)*onp.cos(0.5*t3) + onp.sin(0.5*t3)*onp.cos(0.5*t1)*onp.cos(0.5*t2)
+    q2 = onp.sin(0.5*t1)*onp.sin(0.5*t3)*onp.cos(0.5*t2) + onp.sin(0.5*t2)*onp.cos(0.5*t1)*onp.cos(0.5*t3)
+    q3 = onp.sin(0.5*t1)*onp.cos(0.5*t2)*onp.cos(0.5*t3) - onp.sin(0.5*t2)*onp.sin(0.5*t3)*onp.cos(0.5*t1)
+    return q0, q1, q2, q3
+
+
+
 class TrajectoryInfo:
     """
     A class for storing trajectory data.
@@ -229,53 +281,6 @@ class TrajectoryInfo:
         return traj_df, box_size
 
 
-    def principal_axes_to_euler_angles(self, x, y, z):
-        """
-        A utility function for converting a set of principal axes
-        (that define a rotation matrix) to a commonly used set of
-        Tait-Bryan Euler angles.
-
-        There are two options to compute the Tait-Bryan angles. Each can be seen at the respective links:
-        (1) From wikipedia (under Tait-Bryan angles): https://en.wikipedia.org/wiki/Euler_angles
-        (2) Equation 10A-C: https://danceswithcode.net/engineeringnotes/rotations_in_3d/rotations_in_3d_part1.html
-
-        However, note that the definition from Wikipedia (i.e. the one using arcsin) has numerical stability issues,
-        so we use the definition from (2) (i.e. the one using arctan2)
-
-        Note that if we were following (1), we would do:
-        psi = onp.arcsin(x[1] / onp.sqrt(1 - x[2]**2))
-        theta = onp.arcsin(-x[2])
-        phi = onp.arcsin(y[2] / onp.sqrt(1 - x[2]**2))
-
-        Note that Tait-Bryan (i.e. Cardan) angles are *not* proper euler angles
-        """
-
-        psi = onp.arctan2(x[1], x[0])
-        if onp.abs(x[2]) > 1:
-            # FIXME: could clamp?
-            # pdb.set_trace()
-            x[2] = onp.round(x[2])
-        theta = onp.arcsin(-x[2])
-        phi = onp.arctan2(y[2], z[2])
-
-        return psi, theta, phi
-
-    def euler_angles_to_quaternion(self, t1, t2, t3):
-        """
-        A utility function for converting euler angles to quaternions.
-        Used when converting a trajectory DataFrame to a set of states.
-
-        We follow the ZYX convention. For details, see page A-11 in
-        https://ntrs.nasa.gov/api/citations/19770024290/downloads/19770024290.pdf
-        from the following set of documentation:
-        https://ntrs.nasa.gov/citations/19770024290
-        """
-        q0 = onp.sin(0.5*t1)*onp.sin(0.5*t2)*onp.sin(0.5*t3) + onp.cos(0.5*t1)*onp.cos(0.5*t2)*onp.cos(0.5*t3)
-        q1 = -onp.sin(0.5*t1)*onp.sin(0.5*t2)*onp.cos(0.5*t3) + onp.sin(0.5*t3)*onp.cos(0.5*t1)*onp.cos(0.5*t2)
-        q2 = onp.sin(0.5*t1)*onp.sin(0.5*t3)*onp.cos(0.5*t2) + onp.sin(0.5*t2)*onp.cos(0.5*t1)*onp.cos(0.5*t3)
-        q3 = onp.sin(0.5*t1)*onp.cos(0.5*t2)*onp.cos(0.5*t3) - onp.sin(0.5*t2)*onp.sin(0.5*t3)*onp.cos(0.5*t1)
-        return q0, q1, q2, q3
-
     def state_df_to_state(self, state_df):
         """
         Takes in a DataFrame defining a single state and returns
@@ -303,12 +308,13 @@ class TrajectoryInfo:
             velocity = nuc_info[9:12]
             angular_velocity = nuc_info[12:15]
 
-            alpha, beta, gamma = self.principal_axes_to_euler_angles(
+            alpha, beta, gamma = principal_axes_to_euler_angles(
                 back_base_vector,
                 onp.cross(base_normal, back_base_vector),
-                base_normal)
+                base_normal
+            )
 
-            q0, q1, q2, q3 = self.euler_angles_to_quaternion(alpha, beta, gamma)
+            q0, q1, q2, q3 = euler_angles_to_quaternion(alpha, beta, gamma)
 
             R[i, :] = com
             quat[i, :] = onp.array([q0, q1, q2, q3])
