@@ -48,17 +48,22 @@ def run(args):
     # Load parameters
     n_threads = args['n_threads']
     key = args['key']
-    n_sims = args['n_sims']
+    n_sims_bound = args['n_sims_bound']
+    n_sims_unbound = n_sims_bound*2
+    n_sims_total = n_sims_bound + n_sims_unbound
     n_steps_per_sim = args['n_steps_per_sim']
     n_eq_steps = args['n_eq_steps']
     sample_every = args['sample_every']
     assert(n_steps_per_sim % sample_every == 0)
+
     n_ref_states_per_sim = n_steps_per_sim // sample_every
-    n_ref_states = n_ref_states_per_sim * n_sims
+    n_ref_states = n_ref_states_per_sim * n_sims_total
+    n_ref_states_bound = n_ref_states_per_sim * n_sims_bound
+    n_ref_states_unbound = n_ref_states_per_sim * n_sims_unbound
     run_name = args['run_name']
     oxdna_path = Path(args['oxdna_path'])
     oxdna_exec_path = oxdna_path / "build/bin/oxDNA"
-    t_kelvin = args['temp']
+    init_tm = args['init_tm']
     extrapolate_temps = jnp.array([float(et) for et in args['extrapolate_temps']]) # in Kelvin
     assert(jnp.all(extrapolate_temps[:-1] <= extrapolate_temps[1:])) # check that temps. are sorted
     n_extrap_temps = len(extrapolate_temps)
@@ -116,10 +121,11 @@ def run(args):
         f.write(params_str)
 
     # Load the system
-    sys_basedir = Path("data/templates/rna-overhang/6bp-3p-unique")
+    sys_basedir = Path("data/templates/tm-10bp-1mm-rna-unique")
     input_template_path = sys_basedir / "input"
 
-    weight_path = sys_basedir / "wfile.txt"
+    # weight_path = sys_basedir / "wfile.txt"
+    weight_path = sys_basedir / "wfile_ones.txt"
     weight_df = pd.read_csv(weight_path, delim_whitespace=True, names=["op", "weight"])
     weight_mapper = dict(zip(weight_df.op, weight_df.weight))
 
@@ -145,7 +151,7 @@ def run(args):
     # seq_oh = jnp.array(utils.get_one_hot(top_info.seq, is_rna=True), dtype=jnp.float64)
     # assert(seq_oh.shape[0] % 2 == 0)
     # n_bp = seq_oh.shape[0] // 2
-    n_bp = 6
+    n_bp = 9
 
     conf_path_bound = sys_basedir / "init_bound.conf"
     conf_info_bound = trajectory.TrajectoryInfo(
@@ -163,25 +169,27 @@ def run(args):
     )
     box_size = conf_info_bound.box_size
 
-    weights_path = sys_basedir / "wfile.txt"
+    weights_path = sys_basedir / "wfile_ones.txt"
     op_path = sys_basedir / "op.txt"
 
     displacement_fn, shift_fn = space.periodic(box_size)
-    kT = utils.get_kt(t_kelvin)
-    beta = 1 / kT
+    # kT = utils.get_kt(t_kelvin)
+    # beta = 1 / kT
 
     max_seed_tries = 5
     seed_check_sample_freq = 10
     seed_check_steps = 100
 
-    def get_ref_states(params, i, seed, prev_basedir):
+    def get_ref_states(params, i, seed, prev_basedir, curr_tm):
+        curr_kT = utils.get_kt(curr_tm)
+
         random.seed(seed)
         iter_dir = ref_traj_dir / f"iter{i}"
         iter_dir.mkdir(parents=False, exist_ok=False)
 
         procs = list()
         start = time.time()
-        for r in range(n_sims):
+        for r in range(n_sims_total):
             repeat_dir = iter_dir / f"r{r}"
             repeat_dir.mkdir(parents=False, exist_ok=False)
 
@@ -190,11 +198,19 @@ def run(args):
             shutil.copy(op_path, repeat_dir / "op.txt")
 
             if prev_basedir is None or True: # FIXME: just doing this every time
-                if r % 2 == 0:
+                """
+                if r < n_sims_unbound:
+                    conf_info_copy = deepcopy(conf_info_unbound)
+                else:
+                    conf_info_copy = deepcopy(conf_info_bound)
+                """
+                if r % 3 == 0:
                     conf_info_copy = deepcopy(conf_info_bound)
                 else:
                     conf_info_copy = deepcopy(conf_info_unbound)
             else:
+                raise RuntimeError(f"Since we're fixing the sampling, don't reuse previous states")
+                """
                 prev_repeat_dir = prev_basedir / f"r{r}"
                 prev_lastconf_path = prev_repeat_dir / "last_conf.dat"
                 prev_lastconf_info = trajectory.TrajectoryInfo(
@@ -204,6 +220,7 @@ def run(args):
                     reverse_direction=False
                 )
                 # conf_info_copy = center_configuration.center_conf(top_info, prev_lastconf_info)
+                """
             conf_info_copy.traj_df.t = onp.full(seq_oh.shape[0], r*n_steps_per_sim)
 
             conf_info_copy.write(
@@ -214,7 +231,13 @@ def run(args):
             )
 
             external_model_fpath = repeat_dir / "external_model.txt"
-            oxrna_utils.write_external_model(params, t_kelvin, salt_concentration, external_model_fpath)
+            oxrna_utils.write_external_model(
+                params,
+                # t_kelvin,
+                curr_tm,
+                salt_concentration,
+                external_model_fpath
+            )
 
             check_seed_dir = repeat_dir / "check_seed"
             check_seed_dir.mkdir(parents=False, exist_ok=False)
@@ -227,14 +250,20 @@ def run(args):
                 seed_dir.mkdir(parents=False, exist_ok=False)
 
                 rewrite_input_file(
-                    input_template_path, seed_dir,
-                    temp=f"{t_kelvin}K", steps=seed_check_steps,
+                    input_template_path,
+                    seed_dir,
+                    # temp=f"{t_kelvin}K",
+                    temp=f"{curr_tm}K",
+                    steps=seed_check_steps,
                     init_conf_path=str(repeat_dir / "init.conf"),
                     top_path=str(repeat_dir / "sys.top"),
-                    save_interval=seed_check_sample_freq, seed=seed_try,
+                    save_interval=seed_check_sample_freq,
+                    seed=seed_try,
                     equilibration_steps=0,
-                    no_stdout_energy=0, extrapolate_hist=extrapolate_temp_str,
-                    weights_file=str(repeat_dir / "wfile.txt"), op_file=str(repeat_dir / "op.txt"),
+                    no_stdout_energy=0,
+                    extrapolate_hist=extrapolate_temp_str,
+                    weights_file=str(repeat_dir / "wfile.txt"),
+                    op_file=str(repeat_dir / "op.txt"),
                     log_file=str(seed_dir / "sim.log"),
                     interaction_type="RNA2",
                     salt_concentration=salt_concentration,
@@ -254,14 +283,20 @@ def run(args):
                 raise RuntimeError(f"Could not find valid seed.")
 
             rewrite_input_file(
-                input_template_path, repeat_dir,
-                temp=f"{t_kelvin}K", steps=n_steps_per_sim,
+                input_template_path,
+                repeat_dir,
+                # temp=f"{t_kelvin}K",
+                temp=f"{curr_tm}K",
+                steps=n_steps_per_sim,
                 init_conf_path=str(repeat_dir / "init.conf"),
                 top_path=str(repeat_dir / "sys.top"),
-                save_interval=sample_every, seed=valid_seed,
+                save_interval=sample_every,
+                seed=valid_seed,
                 equilibration_steps=n_eq_steps,
-                no_stdout_energy=0, extrapolate_hist=extrapolate_temp_str,
-                weights_file=str(repeat_dir / "wfile.txt"), op_file=str(repeat_dir / "op.txt"),
+                no_stdout_energy=0,
+                extrapolate_hist=extrapolate_temp_str,
+                weights_file=str(repeat_dir / "wfile.txt"),
+                op_file=str(repeat_dir / "op.txt"),
                 log_file=str(repeat_dir / "sim.log"),
                 interaction_type="RNA2",
                 salt_concentration=salt_concentration,
@@ -335,12 +370,6 @@ def run(args):
         ref_states = utils.tree_stack(ref_states)
 
         ## Load the oxDNA energies
-        """
-        energy_df_columns = [
-            "time", "potential_energy", "kinetic_energy", "total_energy",
-            "op_idx", "op", "op_weight"
-        ]
-        """
         energy_df_columns = [
             "time", "potential_energy", "acc_ratio_trans", "acc_ratio_rot",
             "acc_ratio_vol", "op", "op_weight"
@@ -366,7 +395,13 @@ def run(args):
                 last_hist_df = last_hist_df.add(repeat_last_hist_df)
 
         ## Check energies
-        em_base = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_concentration)
+        em_base = model.EnergyModel(
+            displacement_fn,
+            params,
+            # t_kelvin=t_kelvin,
+            t_kelvin=temp=curr_tm,
+            salt_conc=salt_concentration
+        )
         energy_fn = lambda body: em_base.energy_fn(
             body,
             seq=seq_oh,
@@ -423,6 +458,13 @@ def run(args):
         ## Unbias reference counts
         ref_unbiased_counts = onp.zeros(n_bp+1)
         all_ops = energy_df.op.to_numpy()
+
+        num_unbound_samples = (all_ops == 0).sum()
+        num_bound_samples = (all_ops > 0).sum()
+        with open(iter_dir / "check_count.txt", "w+") as f:
+            f.write(f"Bound: {n_ref_states_bound} (Expected) vs. {num_bound_samples} (Actual)\n")
+            f.write(f"Unbound: {n_ref_states_unbound} (Expected) vs. {num_unbound_samples} (Actual)\n")
+
         all_op_weights = onp.array([weight_mapper[op] for op in all_ops])
         for rs_idx in tqdm(range(n_ref_states)):
             op = all_ops[rs_idx]
@@ -431,10 +473,12 @@ def run(args):
 
         fig, ax = plt.subplots(1, 2, figsize=(12, 5))
         sns.barplot(x=jnp.arange(n_bp+1), y=ref_unbiased_counts, ax=ax[0])
-        ax[0].set_title(f"Periodic Counts, Reference T={t_kelvin}K")
+        # ax[0].set_title(f"Periodic Counts, Reference T={t_kelvin}K")
+        ax[0].set_title(f"Periodic Counts, Reference T={curr_tm}K")
         ax[0].set_xlabel("num_bp")
         sns.barplot(x=last_hist_df['num_bp'], y=last_hist_df['count_unbiased'], ax=ax[1])
-        ax[1].set_title(f"Frequent Counts, Reference T={t_kelvin}K")
+        # ax[1].set_title(f"Frequent Counts, Reference T={t_kelvin}K")
+        ax[1].set_title(f"Frequent Counts, Reference T={curr_tm}K")
         # fig.show()
         # plt.show()
         plt.savefig(iter_dir / "unbiased_counts.png")
@@ -448,8 +492,13 @@ def run(args):
         running_avg_freq = 50
         running_avg_mapper = dict()
         for extrap_t_kelvin, extrap_kt in zip(extrapolate_temps, extrapolate_kts):
-            # em_temp = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_concentration)
-            em_temp = model.EnergyModel(displacement_fn, params, t_kelvin=extrap_t_kelvin, salt_conc=salt_concentration)
+            em_temp = model.EnergyModel(
+                displacement_fn,
+                params,
+                # t_kelvin=t_kelvin,
+                t_kelvin=extrap_t_kelvin,
+                salt_conc=salt_concentration
+            )
             energy_fn_temp = lambda body: em_temp.energy_fn(
                 body,
                 seq=seq_oh,
@@ -468,7 +517,8 @@ def run(args):
                 calc_energy = ref_energies[rs_idx]
                 calc_energy_temp = energy_fn_temp(rs)
 
-                boltz_diff = jnp.exp(calc_energy/kT - calc_energy_temp/extrap_kt)
+                # boltz_diff = jnp.exp(calc_energy/kT - calc_energy_temp/extrap_kt)
+                boltz_diff = jnp.exp(calc_energy/curr_kT - calc_energy_temp/extrap_kt)
                 temp_unbiased_counts[op] += 1/op_weight * boltz_diff
 
 
@@ -560,8 +610,17 @@ def run(args):
         return ref_states, ref_energies, jnp.array(all_ops), jnp.array(all_op_weights), iter_dir
 
 
-    def loss_fn(params, ref_states, ref_energies, all_ops, all_op_weights):
-        em = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_concentration)
+    def loss_fn(params, ref_states, ref_energies, all_ops, all_op_weights, sample_t_kelvin):
+        sample_kT = utils.get_kt(sample_t_kelvin)
+        sample_beta = 1 / sample_kT
+
+        em = model.EnergyModel(
+            displacement_fn,
+            params,
+            # t_kelvin=t_kelvin,
+            t_kelvin=sample_t_kelvin,
+            salt_conc=salt_concentration
+        )
 
         # Compute the weights
         energy_fn = lambda body: em.energy_fn(
@@ -577,7 +636,8 @@ def run(args):
         _, new_energies = scan(energy_scan_fn, None, ref_states)
 
         diffs = new_energies - ref_energies # element-wise subtraction
-        boltzs = jnp.exp(-beta * diffs)
+        # boltzs = jnp.exp(-beta * diffs)
+        boltzs = jnp.exp(-sample_beta * diffs)
         denom = jnp.sum(boltzs)
         weights = boltzs / denom
 
@@ -604,7 +664,7 @@ def run(args):
                 calc_energy = new_energies[rs_idx]
                 calc_energy_temp = energy_fn_temp(rs)
 
-                boltz_diff = jnp.exp(calc_energy/kT - calc_energy_temp/extrap_kt)
+                boltz_diff = jnp.exp(calc_energy/sample_kT - calc_energy_temp/extrap_kt)
 
                 difftre_weight = weights[rs_idx]
                 # weighted_add_term = n_ref_states/difftre_weight * 1/op_weight * boltz_diff
@@ -627,9 +687,20 @@ def run(args):
     grad_fn = jit(grad_fn)
 
     # Initialize parameters
+    strength_params = {
+        "fene": ["eps_backbone"],
+        "excluded_volume": ["eps_exc"],
+        "stacking": ["eps_stack_base", "eps_stack_kt_coeff"],
+        "hydrogen_bonding": ["eps_hb"],
+        "cross_stacking": ["k_cross"],
+        "coaxial_stacking": ["k_coax"],
+    }
+
     params = deepcopy(EMPTY_BASE_PARAMS)
     for opt_key in opt_keys:
-        params[opt_key] = deepcopy(DEFAULT_BASE_PARAMS[opt_key])
+        # params[opt_key] = deepcopy(DEFAULT_BASE_PARAMS[opt_key])
+        for s_param in strength_params[opt_key]:
+            params[opt_key][s_param] = deepcopy(DEFAULT_BASE_PARAMS[opt_key][s_param])
 
     if optimizer_type == "adam":
         optimizer = optax.adam(learning_rate=lr)
@@ -655,7 +726,13 @@ def run(args):
         f.write(f"Generating initial reference states and energies...\n")
     start = time.time()
     prev_ref_basedir = None
-    ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(params, i=0, seed=key, prev_basedir=prev_ref_basedir)
+    ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(
+        params,
+        i=0,
+        seed=key,
+        prev_basedir=prev_ref_basedir,
+        curr_tm=init_tm
+    )
     prev_ref_basedir = deepcopy(ref_iter_dir)
     end = time.time()
     with open(resample_log_path, "a") as f:
@@ -663,9 +740,10 @@ def run(args):
 
 
     num_resample_iters = 0
+    curr_tm = init_tm
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
-        (loss, (curr_tm, curr_width, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights)
+        (loss, (curr_tm, curr_width, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights, curr_tm)
         num_resample_iters += 1
 
         if i == 0:
@@ -681,13 +759,19 @@ def run(args):
                 f.write(f"- n_eff was {n_eff}. Resampling...\n")
 
             start = time.time()
-            ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(params, i=i, seed=key+1+i, prev_basedir=prev_ref_basedir)
+            ref_states, ref_energies, ref_ops, ref_op_weights, ref_iter_dir = get_ref_states(
+                params,
+                i=i,
+                seed=key+1+i,
+                prev_basedir=prev_ref_basedir,
+                curr_tm=curr_tm
+            )
             end = time.time()
             prev_ref_basedir = deepcopy(ref_iter_dir)
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
 
-            (loss, (curr_tm, curr_width, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights)
+            (loss, (curr_tm, curr_width, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights, curr_tm)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
@@ -757,13 +841,13 @@ def run(args):
 def get_parser():
 
     # Simulation arguments
-    parser = argparse.ArgumentParser(description="Calculate melting temperature for an 8bp duplex")
+    parser = argparse.ArgumentParser(description="Optimize melting temperature for a 10 bp duplex with 1 bp mismatch")
 
     parser.add_argument('--n-threads', type=int, default=4,
                         help="Number of threads for oxDNA compilation")
     parser.add_argument('--key', type=int, default=0)
-    parser.add_argument('--n-sims', type=int, default=2,
-                        help="Number of individual simulations")
+    parser.add_argument('--n-sims-bound', type=int, default=3,
+                        help="Number of individual simulations for sampling bound states")
     parser.add_argument('--n-steps-per-sim', type=int, default=100000000,
                         help="Number of steps per simulation")
     parser.add_argument('--n-eq-steps', type=int,
@@ -776,8 +860,8 @@ def get_parser():
     parser.add_argument('--oxdna-path', type=str,
                         default="/home/ryan/Documents/Harvard/research/brenner/oxdna-bin/oxDNA/",
                         help='Run name')
-    parser.add_argument('--temp', type=float, default=324.15,
-                        help="Simulation temperature in Kelvin")
+    parser.add_argument('--init-tm', type=float, default=327.66 + 10.2,
+                        help="Initial (ground truth) melting temperature")
     parser.add_argument('--extrapolate-temps',
                         nargs='+',
                         help='Temperatures for extrapolation in Kelvin in ascending order',

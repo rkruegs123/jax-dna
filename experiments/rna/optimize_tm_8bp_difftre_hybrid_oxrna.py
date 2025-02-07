@@ -434,7 +434,8 @@ def run(args):
         running_avg_freq = 50
         running_avg_mapper = dict()
         for extrap_t_kelvin, extrap_kt in zip(extrapolate_temps, extrapolate_kts):
-            em_temp = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_concentration)
+            # em_temp = model.EnergyModel(displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_concentration)
+            em_temp = model.EnergyModel(displacement_fn, params, t_kelvin=extrap_t_kelvin, salt_conc=salt_concentration)
             energy_fn_temp = lambda body: em_temp.energy_fn(
                 body,
                 seq=seq_oh,
