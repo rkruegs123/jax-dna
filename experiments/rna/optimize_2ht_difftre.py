@@ -301,6 +301,31 @@ def run(args):
         )
         mean_traj_info.write(iter_dir / "mean_sampled_state.dat", reverse=False)
 
+        shutil.copy(top_path, iter_dir / "sys.top") # for good measure
+
+        # Check the coaxially stacked unbonded neighbors of the mean structure
+        dummy_bonded_nbrs = jnp.array([[0, 1]])
+
+        for coax_pair in [(137, 408), (172, 375), (241, 308), (200, 335)]:
+            cx_i, cx_j = coax_pair
+            unbonded_nbrs_coax = jnp.array([[cx_i, cx_j]]).T
+            n_nt = mean_rigid_body.center.shape[0]
+            unbonded_nbrs_coax = n_nt - unbonded_nbrs_coax - 1 # Checked this conversion by checking distances in oxview
+            pair_subterms = em.compute_subterms(
+                mean_rigid_body,
+                seq=seq_oh,
+                bonded_nbrs=dummy_bonded_nbrs,
+                unbonded_nbrs=unbonded_nbrs_coax
+            )
+            order = ["fene", "exc_vol_bonded", "stack", "exc_vol_unbonded", "hb", "cr_stack", "cx_stack", "db"]
+
+            cx_i_adj = n_nt - cx_i - 1
+            cx_j_adj = n_nt - cx_j - 1
+
+            with open(iter_dir / "coax_check.txt", "a") as f:
+                f.write(f"Pair: ({cx_i}, {cx_j}) / ({cx_i_adj}, {cx_j_adj})\n")
+                for term, term_name in zip(pair_subterms, order):
+                    f.write(f"- {term_name}: {term}\n")
 
         return traj_states, calc_energies, jnp.array(RMSDs), iter_dir
 
@@ -617,7 +642,7 @@ def run(args):
 
 
         # Save a checkpoint
-        if i % ckpt_freq == 0:
+        if i % ckpt_freq == 0 and i:
             ckpt = {"params": params, "optimizer": optimizer, "opt_state": opt_state}
             checkpoint_manager.save(i, ckpt, save_kwargs={'save_args': save_args})
 

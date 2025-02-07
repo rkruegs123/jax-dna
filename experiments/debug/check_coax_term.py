@@ -35,13 +35,19 @@ def run():
     t_kelvin = utils.DEFAULT_TEMP
 
     params = deepcopy(load_params.EMPTY_BASE_PARAMS)
+
     em = model.EnergyModel(
         displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_conc,
-        ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights)
+        ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights
+    )
+
+    symm_params = deepcopy(params)
+    symm_params["coaxial_stacking"]["theta0_coax_1_bonus"] = 0.35
 
     em_symm = model.EnergyModel(
-        displacement_fn, params, t_kelvin=t_kelvin, salt_conc=salt_conc,
-        ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights, use_symm_coax=True)
+        displacement_fn, symm_params, t_kelvin=t_kelvin, salt_conc=salt_conc,
+        ss_hb_weights=ss_hb_weights, ss_stack_weights=ss_stack_weights, use_symm_coax=True
+    )
 
     order = ["fene", "exc_vol_bonded", "stack", "exc_vol_unbonded", "hb", "cr_stack", "cx_stack", "db"]
     def print_subterms(subterms):
