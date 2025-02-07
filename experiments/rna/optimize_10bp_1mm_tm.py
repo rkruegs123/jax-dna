@@ -48,8 +48,8 @@ def run(args):
     # Load parameters
     n_threads = args['n_threads']
     key = args['key']
-    n_sims_bound = args['n_sims_bound']
-    n_sims_unbound = n_sims_bound*2
+    n_sims_unbound = args['n_sims_unbound']
+    n_sims_bound = n_sims_unbound*2
     n_sims_total = n_sims_bound + n_sims_unbound
     n_steps_per_sim = args['n_steps_per_sim']
     n_eq_steps = args['n_eq_steps']
@@ -205,9 +205,9 @@ def run(args):
                     conf_info_copy = deepcopy(conf_info_bound)
                 """
                 if r % 3 == 0:
-                    conf_info_copy = deepcopy(conf_info_bound)
-                else:
                     conf_info_copy = deepcopy(conf_info_unbound)
+                else:
+                    conf_info_copy = deepcopy(conf_info_bound)
             else:
                 raise RuntimeError(f"Since we're fixing the sampling, don't reuse previous states")
                 """
@@ -319,7 +319,7 @@ def run(args):
         start = time.time()
 
         combine_cmd = "cat "
-        for r in range(n_sims):
+        for r in range(n_sims_total):
             repeat_dir = iter_dir / f"r{r}"
             combine_cmd += f"{repeat_dir}/output.dat "
         combine_cmd += f"> {iter_dir}/output.dat"
@@ -329,7 +329,7 @@ def run(args):
 
         if not no_delete:
             files_to_remove = ["output.dat"]
-            for r in range(n_sims):
+            for r in range(n_sims_total):
                 repeat_dir = iter_dir / f"r{r}"
                 for f_stem in files_to_remove:
                     file_to_rem = repeat_dir / f_stem
@@ -339,7 +339,7 @@ def run(args):
 
         ## Compute running avg. from all `traj_hist.dat`
         all_traj_hist_fpaths = list()
-        for r in range(n_sims):
+        for r in range(n_sims_total):
             repeat_dir = iter_dir / f"r{r}"
             all_traj_hist_fpaths.append(repeat_dir / "traj_hist.dat")
         all_running_tms, all_running_widths = tm.traj_hist_running_avg_1d(all_traj_hist_fpaths)
@@ -375,14 +375,14 @@ def run(args):
             "acc_ratio_vol", "op", "op_weight"
         ]
         energy_dfs = [pd.read_csv(iter_dir / f"r{r}" / "energy.dat", names=energy_df_columns,
-                                  delim_whitespace=True)[1:] for r in range(n_sims)]
+                                  delim_whitespace=True)[1:] for r in range(n_sims_total)]
         energy_df = pd.concat(energy_dfs, ignore_index=True)
 
         ## Load all last_hist.dat and combine
         last_hist_columns = ["num_bp", "count_biased", "count_unbiased"] \
                             + [str(et) for et in extrapolate_temps]
         last_hist_df = None
-        for r in range(n_sims):
+        for r in range(n_sims_total):
             repeat_dir = iter_dir / f"r{r}"
             last_hist_fpath = repeat_dir / "last_hist.dat"
             repeat_last_hist_df = pd.read_csv(
@@ -399,7 +399,7 @@ def run(args):
             displacement_fn,
             params,
             # t_kelvin=t_kelvin,
-            t_kelvin=temp=curr_tm,
+            t_kelvin=curr_tm,
             salt_conc=salt_concentration
         )
         energy_fn = lambda body: em_base.energy_fn(
@@ -602,7 +602,7 @@ def run(args):
             os.remove(str(iter_dir / "output.dat"))
 
         plt.plot(all_ops)
-        for i in range(n_sims):
+        for i in range(n_sims_total):
             plt.axvline(x=i*n_ref_states_per_sim, linestyle="--", color="red")
         plt.savefig(iter_dir / "op_trajectory.png")
         plt.clf()
@@ -676,12 +676,12 @@ def run(args):
             return temp_finfs
 
         finfs = vmap(compute_extrap_temp_finfs)(extrapolate_temps)
-        curr_tm = tm.compute_tm(extrapolate_temps, finfs)
-        curr_width = tm.compute_width(extrapolate_temps, finfs)
+        calc_tm = tm.compute_tm(extrapolate_temps, finfs)
+        calc_width = tm.compute_width(extrapolate_temps, finfs)
 
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
-        aux = (curr_tm, curr_width, n_eff)
-        rmse = jnp.sqrt((target_tm - curr_tm)**2)
+        aux = (calc_tm, calc_width, n_eff)
+        rmse = jnp.sqrt((target_tm - calc_tm)**2)
         return rmse, aux
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
@@ -740,10 +740,10 @@ def run(args):
 
 
     num_resample_iters = 0
-    curr_tm = init_tm
+    sample_tm = init_tm
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
-        (loss, (curr_tm, curr_width, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights, curr_tm)
+        (loss, (curr_tm, curr_width, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights, sample_tm)
         num_resample_iters += 1
 
         if i == 0:
@@ -767,11 +767,12 @@ def run(args):
                 curr_tm=curr_tm
             )
             end = time.time()
+            sample_tm = curr_tm
             prev_ref_basedir = deepcopy(ref_iter_dir)
             with open(resample_log_path, "a") as f:
                 f.write(f"- time to resample: {end - start} seconds\n\n")
 
-            (loss, (curr_tm, curr_width, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights, curr_tm)
+            (loss, (curr_tm, curr_width, n_eff)), grads = grad_fn(params, ref_states, ref_energies, ref_ops, ref_op_weights, sample_tm)
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
@@ -846,8 +847,8 @@ def get_parser():
     parser.add_argument('--n-threads', type=int, default=4,
                         help="Number of threads for oxDNA compilation")
     parser.add_argument('--key', type=int, default=0)
-    parser.add_argument('--n-sims-bound', type=int, default=3,
-                        help="Number of individual simulations for sampling bound states")
+    parser.add_argument('--n-sims-unbound', type=int, default=3,
+                        help="Number of individual simulations for sampling unbound states")
     parser.add_argument('--n-steps-per-sim', type=int, default=100000000,
                         help="Number of steps per simulation")
     parser.add_argument('--n-eq-steps', type=int,
