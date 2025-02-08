@@ -46,6 +46,8 @@ def run(args):
     beta = 1 / kT
     dt = 5e-3
 
+    custom_wfile_path = args['custom_wfile_path']
+
     extrapolate_temps = jnp.array([float(et) for et in args['extrapolate_temps']]) # in Kelvin
     assert(jnp.all(extrapolate_temps[:-1] <= extrapolate_temps[1:])) # check that temps. are sorted
     n_extrap_temps = len(extrapolate_temps)
@@ -74,7 +76,13 @@ def run(args):
     top_path = tm_dir / "sys.top"
     input_template_path = tm_dir / "input"
     op_path = tm_dir / "op.txt"
-    wfile_path = tm_dir / "wfile.txt"
+
+    if custom_wfile_path is not None:
+        custom_wfile_path = Path(custom_wfile_path)
+        assert(custom_wfile_path.exists())
+        wfile_path = custom_wfile_path
+    else:
+        wfile_path = tm_dir / "wfile.txt"
 
     # Process the weights information
     weights_df = pd.read_fwf(wfile_path, names=["op", "weight"])
@@ -363,6 +371,10 @@ def get_parser():
     parser.add_argument('--tm-dir', type=str,
                         default="data/sys-defs/tm-1op/8bp",
                         help='Directory for duplex system')
+
+    parser.add_argument('--custom-wfile-path', type=str,
+                        required=False,
+                        help='Custom path to weights file that will override default')
 
     parser.add_argument('--interaction', type=str,
                         default="DNA_nomesh", choices=["DNA_nomesh", "DNA2_nomesh", "RNA2"],
