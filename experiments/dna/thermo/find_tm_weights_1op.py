@@ -47,6 +47,7 @@ def run(args):
     dt = 5e-3
 
     custom_wfile_path = args['custom_wfile_path']
+    custom_op_path = args['custom_op_path']
 
     extrapolate_temps = jnp.array([float(et) for et in args['extrapolate_temps']]) # in Kelvin
     assert(jnp.all(extrapolate_temps[:-1] <= extrapolate_temps[1:])) # check that temps. are sorted
@@ -75,7 +76,12 @@ def run(args):
 
     top_path = tm_dir / "sys.top"
     input_template_path = tm_dir / "input"
-    op_path = tm_dir / "op.txt"
+    if custom_op_path is not None:
+        custom_op_path = Path(custom_op_path)
+        assert(custom_op_path.exists())
+        op_path = custom_op_path
+    else:
+        op_path = tm_dir / "op.txt"
 
     if custom_wfile_path is not None:
         custom_wfile_path = Path(custom_wfile_path)
@@ -375,6 +381,9 @@ def get_parser():
     parser.add_argument('--custom-wfile-path', type=str,
                         required=False,
                         help='Custom path to weights file that will override default')
+    parser.add_argument('--custom-op-path', type=str,
+                        required=False,
+                        help='Custom path to op file that will override default')
 
     parser.add_argument('--interaction', type=str,
                         default="DNA_nomesh", choices=["DNA_nomesh", "DNA2_nomesh", "RNA2"],

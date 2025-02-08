@@ -120,14 +120,18 @@ def run(args):
         f.write(params_str)
 
     # Load the system
-    sys_basedir = args['template_basedir']
-    template_name = Path(sys_basedir).name
+    sys_basedir = Path(args['template_basedir'])
+    template_name = sys_basedir.name
     if template_name == "6bp-3p-unique":
         n_bp = 6
         assert(unique_topology)
     elif template_name == "tm-8bp-rna":
         n_bp = 8
         assert(not unique_topology)
+    elif template_name == "tm-8bp-1mm-rna-unique-full":
+        # n_bp = 7
+        n_bp = 8 # because it is "full"!
+        assert(unique_topology)
     else:
         raise ValueError(f"Unrecognized template name")
 
@@ -143,7 +147,7 @@ def run(args):
         reverse_direction=False,
         # reverse_direction=True
         is_rna=True,
-        allow_arbitrary_alphabet=True
+        allow_arbitrary_alphabet=unique_topology
     )
 
     ## Processing for unique topology
@@ -158,6 +162,7 @@ def run(args):
         unique_hb_pairs = jnp.array(top_info.unique_hb_pairs)
     else:
         unique_hb_pairs = None
+        seq_oh = jnp.array(utils.get_one_hot(top_info.seq, is_rna=True), dtype=jnp.float64)
 
     # seq_oh = jnp.array(utils.get_one_hot(top_info.seq, is_rna=True), dtype=jnp.float64)
     # assert(seq_oh.shape[0] % 2 == 0)
