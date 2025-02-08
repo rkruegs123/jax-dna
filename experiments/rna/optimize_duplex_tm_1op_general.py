@@ -686,7 +686,7 @@ def run(args):
         f.write(f"{sample_t_kelvin}\n")
 
 
-    init_t_kelvin = None
+    init_tm = None
     num_resample_iters = 0
     for i in tqdm(range(n_iters)):
         iter_start = time.time()
