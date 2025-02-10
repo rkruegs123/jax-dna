@@ -132,6 +132,10 @@ def run(args):
         # n_bp = 7
         n_bp = 8 # because it is "full"!
         assert(unique_topology)
+    elif template_name == "tm-10bp-1mm-rna-unique":
+        n_bp = 9
+    elif template_name == "tm-10bp-1mm-rna-unique-full":
+        n_bp = 10
     else:
         raise ValueError(f"Unrecognized template name")
 
