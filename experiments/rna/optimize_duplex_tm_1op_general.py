@@ -67,6 +67,8 @@ def run(args):
     extrapolate_temp_str = ', '.join([f"{tc}K" for tc in extrapolate_temps])
     salt_concentration = args['salt_concentration']
 
+    use_custom_params = args['use_custom_params']
+
     n_iters = args['n_iters']
     lr = args['lr']
     target_tm = args['target_tm']
@@ -653,8 +655,12 @@ def run(args):
 
     # Initialize parameters
     params = deepcopy(EMPTY_BASE_PARAMS)
-    for opt_key in opt_keys:
-        params[opt_key] = deepcopy(DEFAULT_BASE_PARAMS[opt_key])
+    if use_custom_params:
+        params["cross_stacking"] = {'k_cross': 59.93560054}
+        params["stacking"] = {"eps_stack_base": 1.37507322, "eps_stack_kt_coeff": 2.74297316}
+    else:
+        for opt_key in opt_keys:
+            params[opt_key] = deepcopy(DEFAULT_BASE_PARAMS[opt_key])
 
     if optimizer_type == "adam":
         optimizer = optax.adam(learning_rate=lr)
@@ -857,6 +863,8 @@ def get_parser():
     parser.add_argument('--template-basedir', type=str,
                         default="data/templates/rna-overhang/6bp-3p-unique",
                         help='Template base directory')
+
+    parser.add_argument('--use-custom-params', action='store_true')
 
 
     return parser
