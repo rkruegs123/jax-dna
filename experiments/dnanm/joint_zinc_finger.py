@@ -13,6 +13,7 @@ import seaborn as sns
 import argparse
 import functools
 import os
+import pickle
 
 import jax
 jax.config.update("jax_enable_x64", True)
@@ -58,6 +59,8 @@ def run(args):
     use_nbrs = args['use_nbrs']
     save_checkpoints = args['save_checkpoints']
 
+    save_obj_every = args['save_obj_every']
+
     seq_avg = True
     if seq_avg:
         ss_hb_weights = utils.HB_WEIGHTS_SA
@@ -94,8 +97,13 @@ def run(args):
     log_dir = run_dir / "log"
     log_dir.mkdir(parents=False, exist_ok=False)
 
+    obj_dir = run_dir / "obj"
+    obj_dir.mkdir(parents=False, exist_ok=False)
+
     ref_traj_dir = run_dir / "ref_traj"
     ref_traj_dir.mkdir(parents=False, exist_ok=False)
+
+    pdb_ids = ["1A1L", "1AAY", "1ZAA"]
 
     times_path = log_dir / "times.txt"
     params_per_iter_path = log_dir / "params_per_iter.txt"
@@ -103,6 +111,7 @@ def run(args):
     grads_path = log_dir / "grads.txt"
     neff_path = log_dir / "neff.txt"
     rmse_path = log_dir / "rmse.txt"
+    id_rmse_paths = {pdb_id: log_dir / f"{pdb_id}_rmse.txt" for pdb_id in pdb_ids}
     resample_log_path = log_dir / "resample_log.txt"
 
     params_str = ""
@@ -117,7 +126,6 @@ def run(args):
     # Load the system
     displacement_fn, shift_fn = space.free()
     pdb_info = {}
-    pdb_ids = ["1A1L", "1AAY", "1ZAA"]
     for pdb_id in pdb_ids:
 
         pdb_info[pdb_id] = {}
@@ -585,10 +593,10 @@ def run(args):
 
         if i == 0:
             all_ref_times.append(i)
-            all_ref_rmses.append(mean_rmse)
+            all_ref_rmses.append(float(mean_rmse))
 
             for pdb_id in pdb_ids:
-                pdb_ref_rmses[pdb_id].append(all_expected_rmses[pdb_id])
+                pdb_ref_rmses[pdb_id].append(float(all_expected_rmses[pdb_id]))
                 pdb_ref_times[pdb_id].append(i)
 
         resampled_atleast_one = False
@@ -624,15 +632,20 @@ def run(args):
             all_expected_rmses, all_n_effs = aux
 
             all_ref_times.append(i)
-            all_ref_rmses.append(mean_rmse)
+            all_ref_rmses.append(float(mean_rmse))
 
             for pdb_id in pdb_ids:
                 if did_resample[pdb_id]:
                     pdb_ref_times[pdb_id].append(i)
-                    pdb_ref_rmses[pdb_id].append(all_expected_rmses[pdb_id])
+                    pdb_ref_rmses[pdb_id].append(float(all_expected_rmses[pdb_id]))
 
 
         iter_end = time.time()
+
+        for pdb_id in pdb_ids:
+            pdb_rmse = all_expected_rmses[pdb_id]
+            with open(id_rmse_paths[pdb_id], "a") as f:
+                f.write(f"{pdb_rmse}\n")
 
         with open(neff_path, "a") as f:
             f.write(f"{pprint.pformat(all_n_effs)}\n")
@@ -652,6 +665,15 @@ def run(args):
 
         for pdb_id in pdb_ids:
             pdb_rmses[pdb_id].append(all_expected_rmses[pdb_id])
+
+        if i % save_obj_every == 0 and i:
+            fpath = obj_dir / f"pdb_ref_rmses_i{i}.pkl"
+            with open(fpath, 'wb') as of:
+                pickle.dump(pdb_ref_rmses, of)
+
+            fpath = obj_dir / f"pdb_ref_times_i{i}.pkl"
+            with open(fpath, 'wb') as of:
+                pickle.dump(pdb_ref_times, of)
 
         # Save a checkpoint
         if i % ckpt_freq == 0 and save_checkpoints:
@@ -718,6 +740,9 @@ def get_parser():
     parser.add_argument('--t-kelvin', type=float, default=293.15, help="Temperature in Kelvin")
     parser.add_argument('--dt', type=float, default=1e-3, help="Timestep")
     parser.add_argument('--salt-conc', type=float, default=0.5, help="Salt concentration")
+
+    parser.add_argument('--save-obj-every', type=int, default=10,
+                        help="Frequency of saving numpy files")
 
 
     return parser
