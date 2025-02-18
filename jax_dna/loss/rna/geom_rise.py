@@ -52,7 +52,7 @@ if __name__ == "__main__":
     import numpy as onp
     import matplotlib.pyplot as plt
 
-    basedir = Path("data/templates/rna2-13bp-md")
+    basedir = Path("data/test-data/rna2-13bp-md")
 
     top_path = basedir / "sys.top"
     top_info = topology.TopologyInfo(

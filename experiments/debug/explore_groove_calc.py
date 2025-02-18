@@ -295,8 +295,8 @@ def run():
     traj_path = basedir / "output.dat"
     offset = 4
 
-    # basedir = Path("/home/ryan/Documents/harvard/research/jax-dna-dev/data/templates/rna2-13bp-md")
-    # basedir = Path("/home/ryan/Documents/harvard/research/jax-dna-dev/data/templates/rna2-13bp-md-long")
+    # basedir = Path("/home/ryan/Documents/harvard/research/jax-dna-dev/data/test-data/rna2-13bp-md")
+    # basedir = Path("/home/ryan/Documents/harvard/research/jax-dna-dev/data/test-data/rna2-13bp-md-long")
     # top_path = basedir / "sys.top"
     # traj_path = basedir / "output.dat"
     # offset = 1
