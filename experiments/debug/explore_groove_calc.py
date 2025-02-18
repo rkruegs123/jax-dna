@@ -291,10 +291,18 @@ def single_jax(body, offset, petrs_way=True):
 
 def run():
     basedir = Path("/home/ryan/Documents/harvard/research/petr-scripts/grooves/gr/ds-40bp-rna")
-    # basedir = Path("output") / "test-rna-lp"
-    assert(basedir.exists())
     top_path = basedir / "sys_rna.top"
     traj_path = basedir / "output.dat"
+    offset = 4
+
+    # basedir = Path("/home/ryan/Documents/harvard/research/jax-dna-dev/data/templates/rna2-13bp-md")
+    # basedir = Path("/home/ryan/Documents/harvard/research/jax-dna-dev/data/templates/rna2-13bp-md-long")
+    # top_path = basedir / "sys.top"
+    # traj_path = basedir / "output.dat"
+    # offset = 1
+
+    assert(basedir.exists())
+
 
     top_info = topology.TopologyInfo(top_path, reverse_direction=False, is_rna=True)
     seq_oh = jnp.array(utils.get_one_hot(top_info.seq, is_rna=True), dtype=jnp.float64)
@@ -303,9 +311,8 @@ def run():
     traj_states = traj_info.get_states()
 
     ## Practice computing the local helical axis
-    offset = 4
     # scale = 1 # this isn't used, so just using this variable name for the angstrom scale.
-    scale = 8.518
+    scale = 8.4
 
     body = traj_states[0]
     n = body.center.shape[0]

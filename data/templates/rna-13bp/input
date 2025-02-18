@@ -1,0 +1,33 @@
+# Program parameters
+backend = CPU
+interaction_type = RNA
+seed = 0
+
+# Simulation parameters
+sim_type = VMMC
+ensemble = NVT
+equilibration_steps = 10000
+steps = 250000
+
+delta_translation = 0.22
+delta_rotation = 0.22
+T = 298.15K
+verlet_skin = 1.00
+small_system = 1
+
+salt_concentration = 1.0
+list_type = no
+dh_half_charged_ends = 0
+
+use_average_seq = true
+
+# Input/output
+conf_file = init.conf
+topology = sys.top
+trajectory_file = output.dat
+print_conf_interval = 1000
+print_energy_every = 1000
+lastconf_file = last_conf.dat
+restart_step_counter = 1
+energy_file = energy.dat
+time_scale = linear

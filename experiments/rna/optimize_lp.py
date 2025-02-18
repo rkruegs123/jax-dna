@@ -43,36 +43,29 @@ checkpoint_every = 50
 if checkpoint_every is None:
     scan = lax.scan
 else:
-    scan = functools.partial(checkpoint.checkpoint_scan,
-                             checkpoint_every=checkpoint_every)
+    scan = functools.partial(
+        checkpoint.checkpoint_scan,
+        checkpoint_every=checkpoint_every
+    )
 
 
 
 
 @jit
-def get_site_positions(body, is_rna=True):
+def get_site_positions(body):
     Q = body.orientation
     back_base_vectors = utils.Q_to_back_base(Q) # space frame, normalized
     base_normals = utils.Q_to_base_normal(Q) # space frame, normalized
     cross_prods = utils.Q_to_cross_prod(Q) # space frame, normalized
 
-    if is_rna:
-        # RNA values
-        com_to_backbone_x = -0.4
-        com_to_backbone_y = 0.2
-        com_to_stacking = 0.34
-        com_to_hb = 0.4
-        back_sites = body.center + com_to_backbone_x*back_base_vectors + com_to_backbone_y*base_normals
-        stack_sites = body.center + com_to_stacking * back_base_vectors
-        base_sites = body.center + com_to_hb * back_base_vectors
-    else:
-        # In code (like DNA1)
-        com_to_backbone = -0.4
-        com_to_stacking = 0.34
-        com_to_hb = 0.4
-        back_sites = body.center + com_to_backbone*back_base_vectors
-        stack_sites = body.center + com_to_stacking * back_base_vectors
-        base_sites = body.center + com_to_hb * back_base_vectors
+    # RNA values
+    com_to_backbone_x = -0.4
+    com_to_backbone_y = 0.2
+    com_to_stacking = 0.34
+    com_to_hb = 0.4
+    back_sites = body.center + com_to_backbone_x*back_base_vectors + com_to_backbone_y*base_normals
+    stack_sites = body.center + com_to_stacking * back_base_vectors
+    base_sites = body.center + com_to_hb * back_base_vectors
 
     return back_sites, stack_sites, base_sites
 
@@ -489,19 +482,19 @@ def run(args):
             inter_mean_corr_curve = jnp.mean(unweighted_corr_curves[:i], axis=0)
 
             inter_mean_Lp_truncated, _ = persistence_length.persistence_length_fit(inter_mean_corr_curve[:truncation], avg_rise)
-            all_inter_lps_truncated.append(inter_mean_Lp_truncated * utils.nm_per_oxdna_length)
+            all_inter_lps_truncated.append(inter_mean_Lp_truncated * utils.nm_per_oxrna_length)
 
             inter_mean_Lp, _ = persistence_length.persistence_length_fit(inter_mean_corr_curve, avg_rise)
-            all_inter_lps.append(inter_mean_Lp * utils.nm_per_oxdna_length)
+            all_inter_lps.append(inter_mean_Lp * utils.nm_per_oxrna_length)
 
             # Full version
             inter_mean_corr_curve = jnp.mean(unweighted_corr_curves_full[:i], axis=0)
 
             inter_mean_Lp_truncated, _ = persistence_length.persistence_length_fit(inter_mean_corr_curve[:truncation], avg_rise)
-            all_inter_lps_truncated_full.append(inter_mean_Lp_truncated * utils.nm_per_oxdna_length)
+            all_inter_lps_truncated_full.append(inter_mean_Lp_truncated * utils.nm_per_oxrna_length)
 
             inter_mean_Lp, _ = persistence_length.persistence_length_fit(inter_mean_corr_curve, avg_rise)
-            all_inter_lps_full.append(inter_mean_Lp * utils.nm_per_oxdna_length)
+            all_inter_lps_full.append(inter_mean_Lp * utils.nm_per_oxrna_length)
 
         plt.plot(list(range(0, n_curves, compute_every)), all_inter_lps)
         plt.ylabel("Lp (nm)")
@@ -607,13 +600,13 @@ def run(args):
             f.write(f"Mean Rise (oxDNA units): {avg_rise}\n")
             f.write(f"Mean Lp truncated (num bp via oxDNA units): {mean_Lp_truncated / avg_rise}\n")
 
-            f.write(f"\nMean Lp truncated (nm): {mean_Lp_truncated * utils.nm_per_oxdna_length}\n")
+            f.write(f"\nMean Lp truncated (nm): {mean_Lp_truncated * utils.nm_per_oxrna_length}\n")
 
 
             f.write(f"\nMean Lp truncated, full (oxDNA units): {mean_Lp_truncated_full}\n")
             f.write(f"Mean Lp truncated, full (num bp via oxDNA units): {mean_Lp_truncated_full / avg_rise}\n")
 
-            f.write(f"\nMean Lp truncated, full (nm): {mean_Lp_truncated_full * utils.nm_per_oxdna_length}\n")
+            f.write(f"\nMean Lp truncated, full (nm): {mean_Lp_truncated_full * utils.nm_per_oxrna_length}\n")
 
         with open(iter_dir / "params.txt", "w+") as f:
             f.write(f"{pprint.pformat(params)}\n")
@@ -658,10 +651,11 @@ def run(args):
 
         expected_lp, expected_offset = persistence_length.persistence_length_fit(
             expected_corr_curve[:truncation],
-            expected_rise)
-        expected_lp = expected_lp * utils.nm_per_oxdna_length
+            expected_rise
+        )
+        expected_lp = expected_lp * utils.nm_per_oxrna_length
 
-        expected_rise *= utils.nm_per_oxdna_length
+        expected_rise *= utils.nm_per_oxrna_length
         expected_lp_n_bp = expected_lp / expected_rise
 
         # Compute effective sample size
@@ -670,7 +664,7 @@ def run(args):
         mse = (expected_lp - target_lp)**2
         rmse = jnp.sqrt(mse)
 
-        return rmse, (n_eff, expected_lp, expected_corr_curve, expected_rise*utils.nm_per_oxdna_length, expected_lp_n_bp, expected_offset)
+        return rmse, (n_eff, expected_lp, expected_corr_curve, expected_rise*utils.nm_per_oxrna_length, expected_lp_n_bp, expected_offset)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
