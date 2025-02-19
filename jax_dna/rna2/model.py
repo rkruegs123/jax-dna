@@ -27,10 +27,16 @@ from jax_dna.rna2.load_params import load, _process, read_seq_specific, \
 
 
 class EnergyModel:
-    def __init__(self, displacement_fn, override_base_params=EMPTY_BASE_PARAMS,
-                 t_kelvin=utils.DEFAULT_TEMP, ss_hb_weights=utils.HB_WEIGHTS_SA,
-                 ss_stack_weights=utils.STACK_WEIGHTS_SA,
-                 salt_conc=0.5, q_eff=0.815, use_symm_coax=False
+    def __init__(
+        self,
+        displacement_fn,
+        override_base_params=EMPTY_BASE_PARAMS,
+        t_kelvin=utils.DEFAULT_TEMP,
+        ss_hb_weights=utils.HB_WEIGHTS_SA,
+        ss_stack_weights=utils.STACK_WEIGHTS_SA,
+        salt_conc=0.5,
+        q_eff=0.815,
+        use_symm_coax=False
     ):
         self.displacement_fn = displacement_fn
         self.displacement_mapped = jit(space.map_bond(partial(displacement_fn)))

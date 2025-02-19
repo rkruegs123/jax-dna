@@ -664,7 +664,7 @@ def run(args):
         mse = (expected_lp - target_lp)**2
         rmse = jnp.sqrt(mse)
 
-        return rmse, (n_eff, expected_lp, expected_corr_curve, expected_rise*utils.nm_per_oxrna_length, expected_lp_n_bp, expected_offset)
+        return rmse, (n_eff, expected_lp, expected_corr_curve, expected_rise, expected_lp_n_bp, expected_offset)
     grad_fn = value_and_grad(loss_fn, has_aux=True)
     grad_fn = jit(grad_fn)
 
