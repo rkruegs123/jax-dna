@@ -870,7 +870,7 @@ def run(args):
 
 
         ## Record the loss
-        with open(lp_dir / "summary.txt", "w+") as f:
+        with open(struc_dir / "summary.txt", "w+") as f:
             f.write(f"Mean energy diff: {onp.mean(energy_diffs)}\n")
             f.write(f"Max energy diff: {onp.max(energy_diffs)}\n")
             f.write(f"Min energy diff: {onp.min(energy_diffs)}\n")
@@ -1220,7 +1220,7 @@ def get_parser():
                         help="Number of equilibration steps for structure")
     parser.add_argument('--sample-every-struc', type=int, default=1000,
                         help="Frequency of sampling reference states for structure.")
-    parser.add_argument('--offset-struc', type=int, default=4,
+    parser.add_argument('--offset-struc', type=int, default=1,
                         help="Offset for structural calculation")
     parser.add_argument('--target-rise', type=float, default=0.28,
                         help="Target rise in nanometers")
