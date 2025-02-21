@@ -34,3 +34,5 @@ energy_file = energy.dat
 
 # confGenerator options
 generate_consider_bonded_interactions = true
+
+log_file = sim.log

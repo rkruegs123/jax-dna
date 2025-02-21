@@ -31,3 +31,4 @@ lastconf_file = last_conf.dat
 restart_step_counter = 1
 energy_file = energy.dat
 time_scale = linear
+log_file = sim.log

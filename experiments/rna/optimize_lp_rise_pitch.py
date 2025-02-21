@@ -283,7 +283,8 @@ def run(args):
     loss_path = log_dir / "loss.txt"
     times_path = log_dir / "times.txt"
     grads_path = log_dir / "grads.txt"
-    neff_path = log_dir / "neff.txt"
+    neff_lp_path = log_dir / "neff_lp.txt"
+    neff_struc_path = log_dir / "neff_struc.txt"
     lp_path = log_dir / "lp.txt"
     rise_from_lp_path = log_dir / "rise_from_lp.txt"
     rise_path = log_dir / "rise.txt"
@@ -1000,7 +1001,8 @@ def run(args):
 
     all_losses = list()
     all_lps = list()
-    all_n_effs = list()
+    all_n_eff_lps = list()
+    all_n_eff_strucs = list()
     all_rises = list()
 
     all_ref_losses = list()
@@ -1055,8 +1057,10 @@ def run(args):
 
         with open(loss_path, "a") as f:
             f.write(f"{loss}\n")
-        with open(neff_path, "a") as f:
-            f.write(f"{n_eff}\n")
+        with open(neff_lp_path, "a") as f:
+            f.write(f"{n_eff_lp}\n")
+        with open(neff_struc_path, "a") as f:
+            f.write(f"{n_eff_struc}\n")
         with open(lp_path, "a") as f:
             f.write(f"{curr_lp}\n")
         with open(times_path, "a") as f:
@@ -1094,7 +1098,8 @@ def run(args):
             f.write(iter_params_str)
 
         all_losses.append(loss)
-        all_n_effs.append(n_eff)
+        all_n_eff_lps.append(n_eff_lp)
+        all_n_eff_strucs.append(n_eff_struc)
         all_lps.append(curr_lp)
         all_rises.append(curr_rise)
 
@@ -1151,12 +1156,12 @@ def run(args):
             onp.save(obj_dir / f"ref_lps_i{i}.npy", onp.array(all_ref_lps), allow_pickle=False)
             onp.save(obj_dir / f"lps_i{i}.npy", onp.array(all_lps), allow_pickle=False)
             onp.save(obj_dir / f"ref_rises_i{i}.npy", onp.array(all_ref_rises), allow_pickle=False)
-            onp.save(obj_dir / f"l0s_i{i}.npy", onp.array(all_l0s), allow_pickle=False)
+            
     onp.save(obj_dir / f"fin_ref_iters.npy", onp.array(all_ref_times), allow_pickle=False)
     onp.save(obj_dir / f"fin_ref_lps.npy", onp.array(all_ref_lps), allow_pickle=False)
     onp.save(obj_dir / f"fin_lps.npy", onp.array(all_lps), allow_pickle=False)
     onp.save(obj_dir / f"fin_ref_rises.npy", onp.array(all_ref_rises), allow_pickle=False)
-    onp.save(obj_dir / f"fin_l0s.npy", onp.array(all_l0s), allow_pickle=False)
+
 
 def get_parser():
 
@@ -1208,7 +1213,7 @@ def get_parser():
                         help="Number of equilibration steps for Lp")
     parser.add_argument('--sample-every-lp', type=int, default=1000,
                         help="Frequency of sampling reference states for Lp.")
-    parser.add_argument('--target-lp', type=float, default=40.0,
+    parser.add_argument('--target-lp', type=float, default=48.0,
                         help="Target persistence length in nanometers")
 
     # Structure-specific

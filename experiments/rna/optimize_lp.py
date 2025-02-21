@@ -822,12 +822,11 @@ def run(args):
             onp.save(obj_dir / f"ref_lps_i{i}.npy", onp.array(all_ref_lps), allow_pickle=False)
             onp.save(obj_dir / f"lps_i{i}.npy", onp.array(all_lps), allow_pickle=False)
             onp.save(obj_dir / f"ref_rises_i{i}.npy", onp.array(all_ref_rises), allow_pickle=False)
-            onp.save(obj_dir / f"l0s_i{i}.npy", onp.array(all_l0s), allow_pickle=False)
     onp.save(obj_dir / f"fin_ref_iters.npy", onp.array(all_ref_times), allow_pickle=False)
     onp.save(obj_dir / f"fin_ref_lps.npy", onp.array(all_ref_lps), allow_pickle=False)
     onp.save(obj_dir / f"fin_lps.npy", onp.array(all_lps), allow_pickle=False)
     onp.save(obj_dir / f"fin_ref_rises.npy", onp.array(all_ref_rises), allow_pickle=False)
-    onp.save(obj_dir / f"fin_l0s.npy", onp.array(all_l0s), allow_pickle=False)
+
 
 def get_parser():
 
