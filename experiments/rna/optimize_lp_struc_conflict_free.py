@@ -26,6 +26,9 @@ import jax.numpy as jnp
 from jax_md import space
 from jax import vmap, jit, lax, grad, value_and_grad, tree_util, flatten_util
 
+import orbax.checkpoint
+from flax.training import orbax_utils
+
 from jax_dna.common import utils, topology, trajectory, center_configuration, checkpoint
 from jax_dna.loss import persistence_length
 from jax_dna.loss.rna import geom_rise, geom_angle
@@ -228,6 +231,9 @@ def run(args):
     save_obj_every = args['save_obj_every']
     t_kelvin = utils.DEFAULT_TEMP
     seq_avg_opt_keys = args['seq_avg_opt_keys']
+
+    orbax_ckpt_path = args['orbax_ckpt_path']
+    ckpt_freq = args['ckpt_freq']
 
     ## Persistence length
     n_sims_lp = args['n_sims_lp']
@@ -1069,6 +1075,26 @@ def run(args):
     opt_state = optimizer.init(params_flat)
 
 
+
+    # Setup orbax checkpointing
+    ex_ckpt = {"params": params_flat, "optimizer": optimizer, "opt_state": opt_state}
+    save_args = orbax_utils.save_args_from_target(ex_ckpt)
+
+    ckpt_dir = run_dir / "ckpt/orbax/managed/"
+    ckpt_dir.mkdir(parents=True, exist_ok=False)
+
+    orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
+    options = orbax.checkpoint.CheckpointManagerOptions(max_to_keep=10, create=True)
+    checkpoint_manager = orbax.checkpoint.CheckpointManager(str(ckpt_dir.resolve()), orbax_checkpointer, options) # note: checkpoint directory has to be an absoltue path
+
+    ## Load orbax checkpoint if necessary
+    if orbax_ckpt_path is not None:
+        state_restored = orbax_checkpointer.restore(orbax_ckpt_path, item=ex_ckpt)
+        params_flat = state_restored["params"]
+        opt_state = state_restored["opt_state"]
+
+
+
     min_n_eff_lp = int(n_ref_states_lp * min_neff_factor)
     min_n_eff_struc = int(n_ref_states_struc * min_neff_factor)
 
@@ -1227,6 +1253,10 @@ def run(args):
         updates, opt_state = optimizer.update(grads, opt_state, params_flat)
         params_flat = optax.apply_updates(params_flat, updates)
 
+        if i % ckpt_freq == 0:
+            ckpt = {"params": params_flat, "optimizer": optimizer, "opt_state": opt_state}
+            checkpoint_manager.save(i, ckpt, save_kwargs={'save_args': save_args})
+
         if i % plot_every == 0 and i:
             plt.plot(expected_corr_curve)
             plt.xlabel("Nuc. Index")
@@ -1380,6 +1410,12 @@ def get_parser():
                         help="Target rise in nanometers")
     parser.add_argument('--target-pitch', type=float, default=10.9,
                         help="Target pitch in # bp / turn")
+
+
+    parser.add_argument('--ckpt-freq', type=int, default=5,
+                        help='Checkpointing frequency')
+    parser.add_argument('--orbax-ckpt-path', type=str, required=False,
+                        help='Optional path to orbax checkpoint directory')
 
 
     return parser
