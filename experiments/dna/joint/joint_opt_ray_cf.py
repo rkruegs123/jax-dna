@@ -52,6 +52,9 @@ else:
                              checkpoint_every=checkpoint_every)
 
 
+def normalize(g):
+    return g / jnp.linalg.norm(g)
+
 compute_all_curves = vmap(persistence_length.get_correlation_curve, (0, None, None))
 compute_all_rises = vmap(rise.get_avg_rises, (0, None, None, None))
 
