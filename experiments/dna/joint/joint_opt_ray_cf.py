@@ -2732,7 +2732,7 @@ def run(args):
             f.write(f"{iter_end - iter_start}\n")
 
         iter_params_str = f"\nIteration {i}:"
-        for k, v in ravel_fn(params).items():
+        for k, v in ravel_fn(params_flat).items():
             iter_params_str += f"\n- {k}"
             for vk, vv in v.items():
                 iter_params_str += f"\n\t- {vk}: {vv}"
