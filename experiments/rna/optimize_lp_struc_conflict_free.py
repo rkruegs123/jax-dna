@@ -208,6 +208,10 @@ def get_corrs_jax(body, base_start, down_neigh, up_neigh, max_dist):
     return body_corrs_jax
 
 
+def abs_relative_diff(target, current):
+    rel_diff = (current - target) / target
+    return jnp.sqrt(rel_diff**2)
+
 
 def zip_file(file_path, zip_name):
     with zipfile.ZipFile(zip_name, 'w') as zipf:
@@ -231,6 +235,8 @@ def run(args):
     save_obj_every = args['save_obj_every']
     t_kelvin = utils.DEFAULT_TEMP
     seq_avg_opt_keys = args['seq_avg_opt_keys']
+
+    standardize = not args['no_standardize']
 
     orbax_ckpt_path = args['orbax_ckpt_path']
     ckpt_freq = args['ckpt_freq']
@@ -965,8 +971,11 @@ def run(args):
 
         n_eff_lp = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
 
-        mse_lp = (expected_lp - target_lp)**2
-        rmse_lp = jnp.sqrt(mse_lp)
+        if standardize:
+            rmse_lp = abs_relative_diff(target_lp, expected_lp)
+        else:
+            mse_lp = (expected_lp - target_lp)**2
+            rmse_lp = jnp.sqrt(mse_lp)
 
         return rmse_lp, (n_eff_lp, expected_lp, expected_corr_curve, expected_rise_lp, expected_offset)
     lp_grad_fn = value_and_grad(lp_loss_fn, has_aux=True)
@@ -1009,8 +1018,11 @@ def run(args):
         expected_rise = jnp.dot(weights, unweighted_rises)
         expected_rise *= utils.nm_per_oxrna_length
 
-        mse_rise = (expected_rise - target_rise)**2
-        rmse_rise = jnp.sqrt(mse_rise)
+        if standardize:
+            rmse_rise = abs_relative_diff(target_rise, expected_rise)
+        else:
+            mse_rise = (expected_rise - target_rise)**2
+            rmse_rise = jnp.sqrt(mse_rise)
 
         n_eff_struc = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
 
@@ -1057,8 +1069,11 @@ def run(args):
         expected_angle = jnp.dot(weights, unweighted_angles)
         expected_pitch = 2*jnp.pi / expected_angle
 
-        mse_pitch = (expected_pitch - target_pitch)**2
-        rmse_pitch = jnp.sqrt(mse_pitch)
+        if standardize:
+            rmse_pitch = abs_relative_diff(target_pitch, expected_pitch)
+        else:
+            mse_pitch = (expected_pitch - target_pitch)**2
+            rmse_pitch = jnp.sqrt(mse_pitch)
 
         n_eff_struc = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
 
@@ -1416,6 +1431,8 @@ def get_parser():
                         help='Checkpointing frequency')
     parser.add_argument('--orbax-ckpt-path', type=str, required=False,
                         help='Optional path to orbax checkpoint directory')
+
+    parser.add_argument('--no-standardize', action='store_true')
 
 
     return parser
