@@ -2671,6 +2671,10 @@ def run(args):
 
 
         all_grads = jnp.array(all_grads)
+
+        ## Save for debugging
+        jnp.save(obj_dir /f"all_grads_i{i}.npy", all_grads, allow_pickle=False)
+
         m = all_grads.shape[0]
         all_grads_norm = vmap(normalize)(all_grads)
 
