@@ -37,7 +37,7 @@ def get_site_positions(body):
     stack_sites = body.center + com_to_stacking * back_base_vectors
     base_sites = body.center + com_to_hb * back_base_vectors
 
-    return back_sites, stack_sites, base_sites
+    return back_sites, stack_sites, base_sites, back_base_vectors, base_normals, cross_prods
 
 
 def get_plane_vector(stack_sites, n, first_base, last_base):

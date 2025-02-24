@@ -10,7 +10,7 @@ from jax_dna.loss.rna.geom_a_with_bb import utils as rna_loss_utils
 
 def get_mean_angle(body, first_base, last_base):
     n = body.center.shape[0]
-    back_sites, stack_sites, base_sites = rna_loss_utils.get_site_positions(body)
+    _, stack_sites, _, _, _, _ = rna_loss_utils.get_site_positions(body)
 
     plane_vector = rna_loss_utils.get_plane_vector(stack_sites, n, first_base, last_base)
 
