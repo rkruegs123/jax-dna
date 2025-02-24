@@ -157,7 +157,7 @@ def abs_relative_diff_uncertainty(val, lo_val, hi_val):
 """
 
 def abs_relative_diff(val, target_val, uncertainty):
-    rel_diff = (val - target_val) / target
+    rel_diff = (val - target_val) / target_val
     return jnp.sqrt(rel_diff**2)
 
 def abs_relative_diff_uncertainty(val, target_val, uncertainty):
