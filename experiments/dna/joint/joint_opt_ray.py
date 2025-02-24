@@ -139,6 +139,7 @@ def zip_file(file_path, zip_name):
         zipf.write(file_path, os.path.basename(file_path))
 
 
+"""
 def abs_relative_diff(target, current):
     rel_diff = (current - target) / target
     return jnp.sqrt(rel_diff**2)
@@ -148,6 +149,22 @@ def abs_relative_diff_uncertainty(val, lo_val, hi_val):
     abs_rel_diff = jnp.where(val < lo_val, abs_relative_diff(lo_val, val),
                          jnp.where(val > hi_val, abs_relative_diff(hi_val, val),
                                    0.0))
+    return abs_rel_diff
+"""
+
+def abs_relative_diff(val, target_val, uncertainty):
+    rel_diff = (val - target_val) / target
+    return jnp.sqrt(rel_diff**2)
+
+def abs_relative_diff_uncertainty(val, target_val, uncertainty):
+    lo_val = target_val - uncertainty
+    hi_val = target_val + uncertainty
+
+    abs_rel_diff = jnp.where(
+        val < lo_val, abs_relative_diff(val, lo_val, None),
+        jnp.where(val > hi_val, abs_relative_diff(val, hi_val, None),
+                  0.0)
+    )
     return abs_rel_diff
 
 
@@ -221,10 +238,27 @@ def compute_pitches(body, quartets, displacement_fn, com_to_hb):
 def get_bp_pos(body, bp):
     return (body.center[bp[0]] + body.center[bp[1]]) / 2
 
+"""
 def rmse_uncertainty(val, lo_val, hi_val):
     mse = jnp.where(val < lo_val, (val - lo_val)**2,
                     jnp.where(val > hi_val, (val - hi_val)**2,
                               0.0))
+    return jnp.sqrt(mse)
+"""
+
+def rmse_uncertainty(val, target_val, uncertainty):
+    lo_val = target_val - uncertainty
+    hi_val = target_val + uncertainty
+
+    mse = jnp.where(
+        val < lo_val, (val - lo_val)**2,
+        jnp.where(val > hi_val, (val - hi_val)**2,
+                  0.0)
+    )
+    return jnp.sqrt(mse)
+
+def rmse(val, target_val, uncertainty):
+    mse = (val - target_val)**2
     return jnp.sqrt(mse)
 
 
@@ -244,11 +278,21 @@ def run(args):
     orbax_ckpt_path = args['orbax_ckpt_path']
     ckpt_freq = args['ckpt_freq']
 
+    no_uncertainties = args['no_uncertainties']
+
 
     if standardize:
-        uncertainty_loss_fn = lambda val, lo_val, hi_val: abs_relative_diff_uncertainty(val, lo_val, hi_val)
+        if no_uncertainties:
+            value_loss_fn = abs_relative_diff
+        else:
+            # value_loss_fn = lambda val, lo_val, hi_val: abs_relative_diff_uncertainty(val, lo_val, hi_val)
+            value_loss_fn = abs_relative_diff_uncertainty
     else:
-        uncertainty_loss_fn = lambda val, lo_val, hi_val: rmse_uncertainty(val, lo_val, hi_val)
+        if no_uncertainties:
+            value_loss_fn = rmse
+        else:
+            # value_loss_fn = lambda val, lo_val, hi_val: rmse_uncertainty(val, lo_val, hi_val)
+            value_loss_fn = rmse_uncertainty
 
     opt_keys = args['opt_keys']
     n_threads = args['n_threads']
@@ -2057,12 +2101,8 @@ def run(args):
             expected_angle = jnp.dot(weights, ref_avg_angles)
             expected_pitch = 2*jnp.pi / expected_angle
 
-            loss_pitch = uncertainty_loss_fn(expected_pitch, pitch_lo, pitch_hi)
-            # mse = (expected_pitch - target_pitch)**2
-            # rmse_pitch = jnp.sqrt(mse)
-            # rel_diff_pitch = abs_relative_diff(target_pitch, expected_pitch)
-            # rel_diff_pitch = abs_relative_diff_uncertainty(expected_pitch, pitch_lo, pitch_hi)
-
+            # loss_pitch = value_loss_fn(expected_pitch, pitch_lo, pitch_hi)
+            loss_pitch = value_loss_fn(expected_pitch, target_pitch, pitch_uncertainty)
 
             expected_rise = jnp.dot(unweighted_rises, weights)
             expected_rise *= utils.nm_per_oxdna_length
@@ -2077,7 +2117,8 @@ def run(args):
             expected_lp_n_bp = expected_lp / expected_rise
 
             # rel_diff_lp = abs_relative_diff_uncertainty(expected_lp, lp_lo, lp_hi) # note that this is in nm
-            loss_lp = uncertainty_loss_fn(expected_lp, lp_lo, lp_hi)
+            # loss_lp = value_loss_fn(expected_lp, lp_lo, lp_hi)
+            loss_lp = value_loss_fn(expected_lp, target_lp, lp_uncertainty)
 
             n_eff_60bp = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
         else:
@@ -2156,15 +2197,18 @@ def run(args):
 
             # rel_diff_s_eff = abs_relative_diff_uncertainty(s_eff, s_eff_lo, s_eff_hi)
             # rmse_s_eff = rmse_uncertainty(s_eff, s_eff_lo, s_eff_hi)
-            loss_s_eff = uncertainty_loss_fn(s_eff, s_eff_lo, s_eff_hi)
+            # loss_s_eff = value_loss_fn(s_eff, s_eff_lo, s_eff_hi)
+            loss_s_eff = value_loss_fn(s_eff, target_s_eff, s_eff_uncertainty)
 
             # rel_diff_c = abs_relative_diff_uncertainty(c, c_lo, c_hi)
             # rmse_c = rmse_uncertainty(c, c_lo, c_hi)
-            loss_c = uncertainty_loss_fn(c, c_lo, c_hi)
+            # loss_c = value_loss_fn(c, c_lo, c_hi)
+            loss_c = value_loss_fn(c, target_c, c_uncertainty)
 
             # rel_diff_g = abs_relative_diff_uncertainty(g, g_lo, g_hi)
             # rmse_g = rmse_uncertainty(g, g_lo, g_hi)
-            loss_g = uncertainty_loss_fn(g, g_lo, g_hi)
+            # loss_g = value_loss_fn(g, g_lo, g_hi)
+            loss_g = value_loss_fn(g, target_g, g_uncertainty)
         else:
             # rmse_s_eff, rmse_c, rmse_g = 0.0, 0.0, 0.0
             # rel_diff_s_eff, rel_diff_c, rel_diff_g = 0.0, 0.0, 0.0
@@ -2235,7 +2279,8 @@ def run(args):
 
             n_eff_hpin = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
             # rel_diff_hpin = abs_relative_diff_uncertainty(curr_tm, tm_hpin_lo, tm_hpin_hi)
-            loss_hpin = uncertainty_loss_fn(curr_tm, tm_hpin_lo, tm_hpin_hi)
+            # loss_hpin = value_loss_fn(curr_tm, tm_hpin_lo, tm_hpin_hi)
+            loss_hpin = value_loss_fn(curr_tm, target_tm_hpin, tm_hpin_uncertainty)
         else:
             curr_tm, curr_width = -1, -1
             n_eff_hpin = n_ref_states_hpin
@@ -2767,6 +2812,8 @@ def get_parser():
                         help='Optional path to orbax checkpoint directory')
 
     parser.add_argument('--no-update-weights', action='store_true')
+
+    parser.add_argument('--no-uncertainties', action='store_true')
 
     return parser
 
