@@ -200,13 +200,13 @@ def run(args):
     init_params_dict = {
         "dna2": init_dna2_params,
         "dnanm": {
-            "base_sigma": dna_base_protein_sigma,
-            "base_epsilon": dna_base_protein_epsilon,
-            "base_alpha": dna_base_protein_alpha,
+            "base_sigma": init_dna_base_protein_sigma,
+            "base_epsilon": init_dna_base_protein_epsilon,
+            "base_alpha": init_dna_base_protein_alpha,
 
-            "back_sigma": dna_back_protein_sigma,
-            "back_epsilon": dna_back_protein_epsilon,
-            "back_alpha": dna_back_protein_alpha,
+            "back_sigma": init_dna_back_protein_sigma,
+            "back_epsilon": init_dna_back_protein_epsilon,
+            "back_alpha": init_dna_back_protein_alpha,
 
         }
     }
