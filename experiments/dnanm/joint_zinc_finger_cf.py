@@ -448,7 +448,7 @@ def run(args):
     @functools.partial(jit, static_argnums=(4,))
     def loss_fn_pdb_id(params_flat, all_ref_states, all_ref_energies, all_unweighted_rmses, pdb_id):
 
-        params = ravel_fn(params)
+        params = ravel_fn(params_flat)
 
         dna2_params = params["dna2"]
 
@@ -524,7 +524,7 @@ def run(args):
     @jit
     def loss_fn(params_flat, all_ref_states, all_ref_energies, all_unweighted_rmses):
 
-        params = ravel_fn(params)
+        params = ravel_fn(params_flat)
 
         dna2_params = params["dna2"]
 
