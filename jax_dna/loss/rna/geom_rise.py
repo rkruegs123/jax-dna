@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from jax_dna.loss.rna.utils import fit_plane
 
 
-def get_rises(base_sites, n, first_base, last_base):
+def get_mean_rise(base_sites, n, first_base, last_base):
 
     # compute hel_axis
     # i1A = first_base = offset
@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
         base_sites = body.center + com_to_hb * back_base_vectors
 
-        return get_rises(base_sites, n, first_base, last_base)
+        return get_mean_rise(base_sites, n, first_base, last_base)
 
 
     # first = 1

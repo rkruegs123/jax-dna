@@ -32,6 +32,9 @@ from flax.training import orbax_utils
 from jax_dna.common import utils, topology, trajectory, center_configuration, checkpoint
 from jax_dna.loss import persistence_length
 from jax_dna.loss.rna import geom_rise, geom_angle
+from jax_dna.loss.rna.geom_a_with_bb import rise as geom_rise_alt
+from jax_dna.loss.rna.geom_a_with_bb import angle as geom_angle_alt
+from jax_dna.loss.rna.geom_a_with_bb import inclination as geom_inclination_alt
 from jax_dna.rna2 import model, oxrna_utils
 from jax_dna.rna2.load_params import read_seq_specific, DEFAULT_BASE_PARAMS, EMPTY_BASE_PARAMS
 import jax_dna.input.trajectory as jdt
@@ -265,8 +268,7 @@ def run(args):
 
     target_rise = args['target_rise']
     target_pitch = args['target_pitch']
-
-
+    target_inclination = args['target_inclination']
 
 
     # Recompile oxDNA
@@ -303,9 +305,11 @@ def run(args):
     rise_from_lp_path = log_dir / "rise_from_lp.txt"
     rise_path = log_dir / "rise.txt"
     pitch_path = log_dir / "pitch.txt"
+    inclination_path = log_dir / "inclination.txt"
     rmse_lp_path = log_dir / "rmse_lp.txt"
     rmse_rise_path = log_dir / "rmse_rise.txt"
     rmse_pitch_path = log_dir / "rmse_pitch.txt"
+    rmse_inclination_path = log_dir / "rmse_inclination.txt"
     lp_n_bp_path = log_dir / "lp_n_bp.txt"
     resample_log_path = log_dir / "resample_log.txt"
     iter_params_path = log_dir / "iter_params.txt"
@@ -825,18 +829,18 @@ def run(args):
 
         ## Compute the rise (with geom_rise)
         first_base = offset_struc
-        last_base = n_bp_struc-offset_struc-1
+        # last_base = n_bp_struc-offset_struc-1
+        last_base = n_bp_struc-offset_struc-2
         def compute_body_rise(body):
+            """
             n = body.center.shape[0]
-
             Q = body.orientation
             back_base_vectors = utils.Q_to_back_base(Q) # space frame, normalized
-
             com_to_hb = 0.4
-
             base_sites = body.center + com_to_hb * back_base_vectors
-
-            return geom_rise.get_rises(base_sites, n, first_base, last_base)
+            return geom_rise.get_mean_rise(base_sites, n, first_base, last_base)
+            """
+            return geom_rise_alt.get_mean_rise(body, first_base, last_base)
         all_rises_struc = vmap(compute_body_rise)(traj_states_struc)
         assert(all_rises_struc.shape[0] == n_ref_states_struc)
         assert(len(all_rises_struc.shape) == 1)
@@ -853,6 +857,7 @@ def run(args):
         ## Compute the pitch (with geom_angle)
 
         def compute_body_angle(body):
+            """
             n = body.center.shape[0]
 
             Q = body.orientation
@@ -866,7 +871,9 @@ def run(args):
             com_to_hb = 0.4
             base_sites = body.center + com_to_hb * back_base_vectors
 
-            return geom_angle.get_angles(base_sites, back_sites, n, first_base, last_base)
+            return geom_angle.get_mean_angle(base_sites, back_sites, n, first_base, last_base)
+            """
+            return geom_angle_alt.get_mean_angle(body, first_base, last_base)
         all_angles_struc = vmap(compute_body_angle)(traj_states_struc) # radians
         assert(all_angles_struc.shape[0] == n_ref_states_struc)
         assert(len(all_angles_struc.shape) == 1)
@@ -894,6 +901,24 @@ def run(args):
 
 
 
+        ## Compute the inclination
+
+        def compute_body_inclination(body):
+            return geom_inclination_alt.get_mean_inclination(body, first_base, last_base)
+        all_inclinations_struc = vmap(compute_body_inclination)(traj_states_struc) # degrees
+        assert(all_inclinations_struc.shape[0] == n_ref_states_struc)
+        assert(len(all_inclinations_struc.shape) == 1)
+
+        inclinations_running_avg = onp.cumsum(all_inclinations_struc) / onp.arange(1, n_ref_states_struc+1)
+        plt.plot(inclinations_running_avg)
+        plt.xlabel("Samples")
+        plt.ylabel("Inclination (deg)")
+        plt.savefig(struc_dir / f"inclination_running_avg.png")
+        plt.close()
+
+        mean_inclination_struc = all_inclinations_struc.mean()
+
+
         ## Record the loss
         with open(struc_dir / "summary.txt", "w+") as f:
             f.write(f"Mean energy diff: {onp.mean(energy_diffs)}\n")
@@ -903,11 +928,13 @@ def run(args):
             f.write(f"Ref. energy var.: {onp.var(gt_energies)}\n")
 
             f.write(f"\nMean rise (oxDNA units): {mean_rise_struc}\n")
+            f.write(f"Mean rise (nm): {mean_rise_struc * utils.nm_per_oxrna_length}\n")
             f.write(f"Mean angle (rad): {mean_angle_struc}\n")
             f.write(f"Mean angle (deg): {180.0 * mean_angle_struc / onp.pi}\n")
             f.write(f"Pitch (# bp / turn): {2*onp.pi / mean_angle_struc}\n")
+            f.write(f"Mean inclination (deg): {mean_inclination_struc}\n")
 
-            f.write(f"\nMean rise (nm): {mean_rise_struc * utils.nm_per_oxrna_length}\n")
+
 
 
 
@@ -920,7 +947,7 @@ def run(args):
             os.remove(str(lp_dir / "output.dat"))
 
         return traj_states, calc_energies, unweighted_corr_curves, all_rises, iter_dir, \
-            traj_states_struc, all_rises_struc, all_angles_struc, calc_energies_struc
+            traj_states_struc, all_rises_struc, all_angles_struc, all_inclinations_struc, calc_energies_struc
 
 
 
@@ -1082,6 +1109,55 @@ def run(args):
     pitch_grad_fn = jit(pitch_grad_fn)
 
 
+    @jit
+    def inclination_loss_fn(
+        params_flat,
+        ref_states_struc,
+        ref_energies_struc,
+        unweighted_inclinations
+    ):
+        params = ravel_fn(params_flat)
+
+        em = model.EnergyModel(
+            displacement_fn,
+            params["seq_avg"],
+            t_kelvin=t_kelvin,
+            salt_conc=salt_conc
+        )
+
+
+        # Structural analysis
+        energy_fn = lambda body: em.energy_fn(
+            body,
+            seq=seq_oh_struc,
+            bonded_nbrs=top_info_struc.bonded_nbrs,
+            unbonded_nbrs=top_info_struc.unbonded_nbrs.T
+        )
+        energy_fn = jit(energy_fn)
+        energy_scan_fn = lambda state, rs: (None, energy_fn(rs))
+
+        _, new_energies = scan(energy_scan_fn, None, ref_states_struc)
+
+        diffs = new_energies - ref_energies_struc # element-wise subtraction
+        boltzs = jnp.exp(-beta * diffs)
+        denom = jnp.sum(boltzs)
+        weights = boltzs / denom
+
+        expected_inclination = jnp.dot(weights, unweighted_inclinations)
+
+        if standardize:
+            rmse_inclination = abs_relative_diff(target_inclination, expected_inclination)
+        else:
+            mse_inclination = (expected_inclination - target_inclination)**2
+            rmse_inclination = jnp.sqrt(mse_inclination)
+
+        n_eff_struc = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
+
+        return rmse_inclination, (n_eff_struc, expected_inclination)
+    inclination_grad_fn = value_and_grad(inclination_loss_fn, has_aux=True)
+    inclination_grad_fn = jit(inclination_grad_fn)
+
+
     # Get initialized params
     params_flat = deepcopy(init_params_flat)
 
@@ -1119,18 +1195,20 @@ def run(args):
     all_n_eff_strucs = list()
     all_rises = list()
     all_pitches = list()
+    all_inclinations = list()
 
     all_ref_losses = list()
     all_ref_lps = list()
     all_ref_times = list()
     all_ref_rises = list()
     all_ref_pitches = list()
+    all_ref_inclinations = list()
 
     with open(resample_log_path, "a") as f:
         f.write(f"Generating initial reference states and energies...\n")
     start = time.time()
     prev_ref_basedir = None
-    ref_states, ref_energies, unweighted_corr_curves, unweighted_rises, ref_iter_dir, ref_states_struc, unweighted_rises_struc, unweighted_angles_struc, ref_energies_struc = get_ref_states(params_flat, i=0, seed=0, prev_basedir=prev_ref_basedir)
+    ref_states, ref_energies, unweighted_corr_curves, unweighted_rises, ref_iter_dir, ref_states_struc, unweighted_rises_struc, unweighted_angles_struc, unweighted_inclinations_struc, ref_energies_struc = get_ref_states(params_flat, i=0, seed=0, prev_basedir=prev_ref_basedir)
     prev_ref_basedir = deepcopy(ref_iter_dir)
     end = time.time()
     with open(resample_log_path, "a") as f:
@@ -1146,12 +1224,14 @@ def run(args):
 
         (rmse_pitch, (n_eff_struc_pitch, curr_pitch, curr_angle)), pitch_grads = pitch_grad_fn(params_flat, ref_states_struc, ref_energies_struc, unweighted_angles_struc)
 
-        assert(n_eff_struc_rise == n_eff_struc_pitch)
+        (rmse_inclination, (n_eff_struc_inclination, curr_inclination)), inclination_grads = inclination_grad_fn(params_flat, ref_states_struc, ref_energies_struc, unweighted_inclinations_struc)
+
+        # assert(n_eff_struc_rise == n_eff_struc_pitch)
         n_eff_struc = n_eff_struc_rise
 
         num_resample_iters += 1
 
-        loss = rmse_lp + rmse_rise + rmse_pitch
+        loss = rmse_lp + rmse_rise + rmse_pitch + rmse_inclination
 
         if i == 0:
             all_ref_losses.append(loss)
@@ -1159,6 +1239,7 @@ def run(args):
             all_ref_lps.append(curr_lp)
             all_ref_rises.append(curr_rise)
             all_ref_pitches.append(curr_pitch)
+            all_ref_inclinations.append(curr_inclination)
 
         if n_eff_lp < min_n_eff_lp or n_eff_struc < min_n_eff_struc or num_resample_iters >= max_approx_iters:
             num_resample_iters = 0
@@ -1167,7 +1248,7 @@ def run(args):
                 f.write(f"- n_eff_lp was {n_eff_lp} and n_eff_struc was {n_eff_struc}. Resampling...\n")
 
             start = time.time()
-            ref_states, ref_energies, unweighted_corr_curves, unweighted_rises, ref_iter_dir, ref_states_struc, unweighted_rises_struc, unweighted_angles_struc, ref_energies_struc = get_ref_states(params_flat, i=i, seed=i, prev_basedir=prev_ref_basedir)
+            ref_states, ref_energies, unweighted_corr_curves, unweighted_rises, ref_iter_dir, ref_states_struc, unweighted_rises_struc, unweighted_angles_struc, unweighted_inclinations_struc, ref_energies_struc = get_ref_states(params_flat, i=i, seed=i, prev_basedir=prev_ref_basedir)
             end = time.time()
             prev_ref_basedir = deepcopy(ref_iter_dir)
             with open(resample_log_path, "a") as f:
@@ -1179,16 +1260,19 @@ def run(args):
 
             (rmse_pitch, (n_eff_struc_pitch, curr_pitch, curr_angle)), pitch_grads = pitch_grad_fn(params_flat, ref_states_struc, ref_energies_struc, unweighted_angles_struc)
 
-            assert(n_eff_struc_rise == n_eff_struc_pitch)
+            (rmse_inclination, (n_eff_struc_inclination, curr_inclination)), inclination_grads = inclination_grad_fn(params_flat, ref_states_struc, ref_energies_struc, unweighted_inclinations_struc)
+
+            # assert(n_eff_struc_rise == n_eff_struc_pitch)
             n_eff_struc = n_eff_struc_rise
 
-            loss = rmse_lp + rmse_rise + rmse_pitch
+            loss = rmse_lp + rmse_rise + rmse_pitch + rmse_inclination
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
             all_ref_lps.append(curr_lp)
             all_ref_rises.append(curr_rise)
             all_ref_pitches.append(curr_pitch)
+            all_ref_inclinations.append(curr_inclination)
 
         iter_end = time.time()
 
@@ -1198,9 +1282,9 @@ def run(args):
 
         # Get conflict free update
 
-        all_grads = jnp.array([lp_grads, rise_grads, pitch_grads])
+        all_grads = jnp.array([lp_grads, rise_grads, pitch_grads, inclination_grads])
         m = all_grads.shape[0]
-        assert(m == 3)
+        assert(m == 4)
 
         all_grads_norm = vmap(normalize)(all_grads)
 
@@ -1232,6 +1316,8 @@ def run(args):
             f.write(f"{curr_rise}\n")
         with open(pitch_path, "a") as f:
             f.write(f"{curr_pitch}\n")
+        with open(inclination_path, "a") as f:
+            f.write(f"{curr_inclination}\n")
         with open(lp_n_bp_path, "a") as f:
             f.write(f"{curr_lp_n_bp}\n")
         with open(rmse_lp_path, "a") as f:
@@ -1240,6 +1326,8 @@ def run(args):
             f.write(f"{rmse_rise}\n")
         with open(rmse_pitch_path, "a") as f:
             f.write(f"{rmse_pitch}\n")
+        with open(rmse_inclination_path, "a") as f:
+            f.write(f"{rmse_inclination}\n")
 
 
         grads_str = f"\nIteration {i}:"
@@ -1264,6 +1352,7 @@ def run(args):
         all_lps.append(curr_lp)
         all_rises.append(curr_rise)
         all_pitches.append(curr_pitch)
+        all_inclinations.append(curr_inclination)
 
         updates, opt_state = optimizer.update(grads, opt_state, params_flat)
         params_flat = optax.apply_updates(params_flat, updates)
@@ -1335,25 +1424,38 @@ def run(args):
             plt.savefig(img_dir / f"pitches_iter{i}.png")
             plt.clf()
 
+            plt.plot(onp.arange(i+1), all_inclinations, linestyle="--", color="blue")
+            plt.scatter(all_ref_times, all_ref_inclinations, marker='o', label="Resample points", color="blue")
+            plt.axhline(y=target_inclination, linestyle='--', label="Target Inclination", color='red')
+            plt.legend()
+            plt.ylabel("Expected Inclination (deg)")
+            plt.xlabel("Iteration")
+            plt.savefig(img_dir / f"inclinations_iter{i}.png")
+            plt.clf()
+
         if i % save_obj_every == 0 and i:
             onp.save(obj_dir / f"ref_iters_i{i}.npy", onp.array(all_ref_times), allow_pickle=False)
             onp.save(obj_dir / f"ref_lps_i{i}.npy", onp.array(all_ref_lps), allow_pickle=False)
             onp.save(obj_dir / f"ref_rises_i{i}.npy", onp.array(all_ref_rises), allow_pickle=False)
             onp.save(obj_dir / f"ref_pitches_i{i}.npy", onp.array(all_ref_pitches), allow_pickle=False)
+            onp.save(obj_dir / f"ref_inclinations_i{i}.npy", onp.array(all_ref_inclinations), allow_pickle=False)
 
             onp.save(obj_dir / f"lps_i{i}.npy", onp.array(all_lps), allow_pickle=False)
             onp.save(obj_dir / f"rises_i{i}.npy", onp.array(all_rises), allow_pickle=False)
             onp.save(obj_dir / f"pitches_i{i}.npy", onp.array(all_pitches), allow_pickle=False)
+            onp.save(obj_dir / f"inclinations_i{i}.npy", onp.array(all_inclinations), allow_pickle=False)
 
 
     onp.save(obj_dir / f"fin_ref_iters.npy", onp.array(all_ref_times), allow_pickle=False)
     onp.save(obj_dir / f"fin_ref_lps.npy", onp.array(all_ref_lps), allow_pickle=False)
     onp.save(obj_dir / f"fin_ref_rises.npy", onp.array(all_ref_rises), allow_pickle=False)
     onp.save(obj_dir / f"fin_ref_pitches.npy", onp.array(all_ref_pitches), allow_pickle=False)
+    onp.save(obj_dir / f"fin_ref_inclinations.npy", onp.array(all_ref_inclinations), allow_pickle=False)
 
     onp.save(obj_dir / f"fin_lps.npy", onp.array(all_lps), allow_pickle=False)
     onp.save(obj_dir / f"fin_rises.npy", onp.array(all_rises), allow_pickle=False)
     onp.save(obj_dir / f"fin_pitches.npy", onp.array(all_pitches), allow_pickle=False)
+    onp.save(obj_dir / f"fin_inclinations.npy", onp.array(all_inclinations), allow_pickle=False)
 
 
 
@@ -1425,6 +1527,8 @@ def get_parser():
                         help="Target rise in nanometers")
     parser.add_argument('--target-pitch', type=float, default=10.9,
                         help="Target pitch in # bp / turn")
+    parser.add_argument('--target-inclination', type=float, default=15.5,
+                        help="Target inclination in deg.")
 
 
     parser.add_argument('--ckpt-freq', type=int, default=5,
