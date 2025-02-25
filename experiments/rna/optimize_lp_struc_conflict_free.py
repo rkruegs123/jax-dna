@@ -256,6 +256,8 @@ def run(args):
     truncation = args['truncation']
     target_lp = args['target_lp']
 
+    list_type_lp = args['list_type_lp']
+
     ## Structure
     n_sims_struc = args['n_sims_struc']
     n_steps_per_sim_struc = args['n_steps_per_sim_struc']
@@ -451,7 +453,8 @@ def run(args):
                 no_stdout_energy=0,
                 log_file=str(repeat_dir / "sim.log"),
                 external_model=str(external_model_fpath),
-                salt_concentration=salt_conc
+                salt_concentration=salt_conc,
+                list_type=list_type_lp
             )
 
             procs.append(subprocess.Popen([oxdna_exec_path, repeat_dir / "input"]))
@@ -1511,6 +1514,11 @@ def get_parser():
                         help="Frequency of sampling reference states for Lp.")
     parser.add_argument('--target-lp', type=float, default=48.0,
                         help="Target persistence length in nanometers")
+
+    parser.add_argument('--list-type-lp', type=str,
+                        default="verlet",
+                        choices=["no", "verlet"],
+                        help='List type for Lp calculation')
 
     # Structure-specific
     parser.add_argument('--n-sims-struc', type=int, default=1,

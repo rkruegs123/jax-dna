@@ -21,6 +21,7 @@ refresh_vel = true
 CUDA_list = verlet
 CUDA_device = 0
 use_average_seq = true
+verlet_skin = 0.1
 
 # Input/output
 conf_file = init.conf
