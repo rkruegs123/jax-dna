@@ -517,94 +517,9 @@ def run(args):
         n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
 
         return expected_rmse, (n_eff,)
-    grad_fn_pdb_id = value_and_grad(loss_fn_pdb_id)
+    grad_fn_pdb_id = value_and_grad(loss_fn_pdb_id, has_aux=True)
     grad_fn_pdb_id = jit(grad_fn_pdb_id, static_argnums=(4,))
 
-
-    @jit
-    def loss_fn(params_flat, all_ref_states, all_ref_energies, all_unweighted_rmses):
-
-        params = ravel_fn(params_flat)
-
-        dna2_params = params["dna2"]
-
-        dnanm_params = params["dnanm"]
-        dna_base_protein_sigma = dnanm_params["base_sigma"]
-        dna_base_protein_epsilon = dnanm_params["base_epsilon"]
-        dna_base_protein_alpha = dnanm_params["base_alpha"]
-        dna_back_protein_sigma = dnanm_params["back_sigma"]
-        dna_back_protein_epsilon = dnanm_params["back_epsilon"]
-        dna_back_protein_alpha = dnanm_params["back_alpha"]
-
-        all_n_effs = dict()
-        all_expected_rmses = dict()
-        rmse_sm = 0.0
-        for pdb_id in pdb_ids:
-
-            top_info = pdb_info[pdb_id]["topology"]
-            top_path = pdb_info[pdb_id]["top_path"]
-            box_size = pdb_info[pdb_id]["box_size"]
-            is_end = pdb_info[pdb_id]["is_end"]
-            target_state = pdb_info[pdb_id]["target"]
-
-            ref_states = all_ref_states[pdb_id]
-            ref_energies = all_ref_energies[pdb_id]
-            unweighted_rmses = all_unweighted_rmses[pdb_id]
-
-            em = model_nbrs.EnergyModel(
-                displacement_fn,
-                is_nt_idx=jnp.array(top_info.is_nt_idx),
-                is_protein_idx=jnp.array(top_info.is_protein_idx),
-                aa_seq=jnp.array(top_info.aa_seq_idx),
-                nt_seq=jnp.array(top_info.nt_seq_idx),
-                # ANM
-                network=jnp.array(top_info.network),
-                eq_distances=jnp.array(top_info.eq_distances),
-                spring_constants=jnp.array(top_info.spring_constants),
-                # DNA2
-                override_base_params=dna2_params,
-                t_kelvin=t_kelvin,
-                salt_conc=salt_conc,
-                ss_hb_weights=ss_hb_weights,
-                ss_stack_weights=ss_stack_weights,
-                seq_avg=seq_avg,
-                # DNA/Protein interaction
-                include_dna_protein_morse=True,
-                dna_base_protein_sigma=dna_base_protein_sigma,
-                dna_base_protein_epsilon=dna_base_protein_epsilon,
-                dna_base_protein_alpha=dna_base_protein_alpha,
-                dna_back_protein_sigma=dna_back_protein_sigma,
-                dna_back_protein_epsilon=dna_back_protein_epsilon,
-                dna_back_protein_alpha=dna_back_protein_alpha,
-            )
-
-            energy_fn = lambda body: em.energy_fn(
-                body,
-                bonded_nbrs_nt=jnp.array(top_info.bonded_nbrs),
-                unbonded_nbrs=jnp.array(top_info.unbonded_nbrs),
-                is_end=is_end
-            )
-            energy_fn = jit(energy_fn)
-
-            energy_scan_fn = lambda state, ts: (None, energy_fn(ts))
-            _, new_energies = scan(energy_scan_fn, None, ref_states)
-            diffs = new_energies - ref_energies
-            boltzs = jnp.exp(-beta * diffs)
-            denom = jnp.sum(boltzs)
-            weights = boltzs / denom
-
-            expected_rmse = jnp.dot(weights, unweighted_rmses)
-            n_eff = jnp.exp(-jnp.sum(weights * jnp.log(weights)))
-
-            all_n_effs[pdb_id] = n_eff
-            all_expected_rmses[pdb_id] = expected_rmse
-
-            rmse_sm += expected_rmse
-
-        mean_rmse = rmse_sm / len(pdb_ids)
-        return mean_rmse, (all_expected_rmses, all_n_effs)
-    grad_fn = value_and_grad(loss_fn, has_aux=True)
-    grad_fn = jit(grad_fn)
 
     # Initialize parameters
     params_flat = deepcopy(init_params_flat)
