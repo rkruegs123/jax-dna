@@ -591,12 +591,15 @@ def run(args):
 
         all_grads = list()
         all_expected_rmses, all_n_effs = dict(), dict()
+        total_rmse = 0.0
         for pdb_id in pdb_ids:
             (expected_rmse, (n_eff,)), pdb_id_grads = grad_fn_pdb_id(params_flat, all_traj_states, all_calc_energies, all_rmsds, pdb_id)
             all_grads.append(pdb_id_grads)
             all_expected_rmses[pdb_id] = expected_rmse
             all_n_effs[pdb_id] = n_eff
+            total_rmse += expected_rmse
         all_grads = jnp.array(all_grads)
+        mean_rmse = total_rmse / len(pdb_ids)
 
         num_resample_iters += 1
 
@@ -639,12 +642,15 @@ def run(args):
 
             all_grads = list()
             all_expected_rmses, all_n_effs = dict(), dict()
+            total_rmse = 0.0
             for pdb_id in pdb_ids:
                 (expected_rmse, (n_eff,)), pdb_id_grads = grad_fn_pdb_id(params_flat, all_traj_states, all_calc_energies, all_rmsds, pdb_id)
                 all_grads.append(pdb_id_grads)
                 all_expected_rmses[pdb_id] = expected_rmse
                 all_n_effs[pdb_id] = n_eff
+                total_rmse += expected_rmse
             all_grads = jnp.array(all_grads)
+            mean_rmse = total_rmse / len(pdb_ids)
 
             all_ref_times.append(i)
             all_ref_rmses.append(float(mean_rmse))
