@@ -931,7 +931,7 @@ def run(args):
             zip_file(str(lp_dir / "output.dat"), str(lp_dir / "output.dat.zip"))
             os.remove(str(lp_dir / "output.dat"))
 
-        return traj_states, calc_energies, unweighted_corr_curves, all_rises, iter_dir, \
+        return traj_states, calc_energies, unweighted_corr_curves_full, all_rises, iter_dir, \
             traj_states_struc, all_rises_struc, all_angles_struc, all_inclinations_struc, calc_energies_struc
 
 

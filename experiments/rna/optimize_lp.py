@@ -619,7 +619,7 @@ def run(args):
             zip_file(str(iter_dir / "output.dat"), str(iter_dir / "output.dat.zip"))
             os.remove(str(iter_dir / "output.dat"))
 
-        return traj_states, calc_energies, unweighted_corr_curves, all_rises, iter_dir
+        return traj_states, calc_energies, unweighted_corr_curves_full, all_rises, iter_dir
 
 
     # Construct the loss function

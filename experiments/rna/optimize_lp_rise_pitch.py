@@ -895,7 +895,7 @@ def run(args):
             zip_file(str(lp_dir / "output.dat"), str(lp_dir / "output.dat.zip"))
             os.remove(str(lp_dir / "output.dat"))
 
-        return traj_states, calc_energies, unweighted_corr_curves, all_rises, iter_dir, \
+        return traj_states, calc_energies, unweighted_corr_curves_full, all_rises, iter_dir, \
             traj_states_struc, all_rises_struc, all_angles_struc, calc_energies_struc
 
 
@@ -1156,7 +1156,7 @@ def run(args):
             onp.save(obj_dir / f"ref_lps_i{i}.npy", onp.array(all_ref_lps), allow_pickle=False)
             onp.save(obj_dir / f"lps_i{i}.npy", onp.array(all_lps), allow_pickle=False)
             onp.save(obj_dir / f"ref_rises_i{i}.npy", onp.array(all_ref_rises), allow_pickle=False)
-            
+
     onp.save(obj_dir / f"fin_ref_iters.npy", onp.array(all_ref_times), allow_pickle=False)
     onp.save(obj_dir / f"fin_ref_lps.npy", onp.array(all_ref_lps), allow_pickle=False)
     onp.save(obj_dir / f"fin_lps.npy", onp.array(all_lps), allow_pickle=False)
