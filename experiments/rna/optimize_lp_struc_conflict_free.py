@@ -241,6 +241,8 @@ def run(args):
 
     standardize = not args['no_standardize']
 
+    no_inclination = args['no_inclination']
+
     orbax_ckpt_path = args['orbax_ckpt_path']
     ckpt_freq = args['ckpt_freq']
 
@@ -1234,7 +1236,10 @@ def run(args):
 
         num_resample_iters += 1
 
-        loss = rmse_lp + rmse_rise + rmse_pitch + rmse_inclination
+        if no_inclination:
+            loss = rmse_lp + rmse_rise + rmse_pitch
+        else:
+            loss = rmse_lp + rmse_rise + rmse_pitch + rmse_inclination
 
         if i == 0:
             all_ref_losses.append(loss)
@@ -1268,7 +1273,10 @@ def run(args):
             # assert(n_eff_struc_rise == n_eff_struc_pitch)
             n_eff_struc = n_eff_struc_rise
 
-            loss = rmse_lp + rmse_rise + rmse_pitch + rmse_inclination
+            if no_inclination:
+                loss = rmse_lp + rmse_rise + rmse_pitch
+            else:
+                loss = rmse_lp + rmse_rise + rmse_pitch + rmse_inclination
 
             all_ref_losses.append(loss)
             all_ref_times.append(i)
@@ -1284,10 +1292,15 @@ def run(args):
 
 
         # Get conflict free update
-
-        all_grads = jnp.array([lp_grads, rise_grads, pitch_grads, inclination_grads])
-        m = all_grads.shape[0]
-        assert(m == 4)
+        if no_inclination:
+            # all_grads = jnp.array([lp_grads, rise_grads, pitch_grads, inclination_grads])
+            all_grads = jnp.array([lp_grads, rise_grads, pitch_grads])
+            m = all_grads.shape[0]
+            assert(m == 3)
+        else:
+            all_grads = jnp.array([lp_grads, rise_grads, pitch_grads, inclination_grads])
+            m = all_grads.shape[0]
+            assert(m == 4)
 
         all_grads_norm = vmap(normalize)(all_grads)
 
@@ -1545,6 +1558,8 @@ def get_parser():
                         help='Optional path to orbax checkpoint directory')
 
     parser.add_argument('--no-standardize', action='store_true')
+
+    parser.add_argument('--no-inclination', action='store_true')
 
 
     return parser
