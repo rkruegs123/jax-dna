@@ -1,0 +1,4 @@
+16 3 5->3
+AAAAAAAA id=1 type=DNA circular=false
+TTTT id=2 type=DNA circular=false
+TTTT id=3 type=RNA circular=false

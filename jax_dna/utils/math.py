@@ -1,5 +1,6 @@
 """Math utilities for DNA sequence analysis."""
 
+import jax.numpy as jnp
 import numpy as np
 
 import jax_dna.utils.types as typ
@@ -62,3 +63,26 @@ def euler_angles_to_quaternion(
     q3 = sin_psi * cos_theta * cos_phi - cos_psi * sin_theta * sin_phi
 
     return np.array([q0, q1, q2, q3]).T
+
+
+def smooth_abs(x: typ.ARR_OR_SCALAR, eps: typ.Scalar = 1e-10) -> typ.ARR_OR_SCALAR:
+    """A smooth absolute value function.
+
+    Note that a non-zero eps gives continuous first dervatives.
+
+    https://math.stackexchange.com/questions/1172472/differentiable-approximation-of-the-absolute-value-function
+    """
+    return jnp.sqrt(x**2 + eps)
+
+
+def clamp(x: typ.ARR_OR_SCALAR, lo: typ.Scalar = -1.0, hi: typ.Scalar = 1.0) -> typ.ARR_OR_SCALAR:
+    """Clamp a value between two values."""
+    clipped_max = jnp.where(x >= hi, hi, x)
+    return jnp.where(clipped_max <= lo, lo, clipped_max)
+
+
+# This is an idea to prototype a function that we ca use to benchmark different
+# implementations of the same function.
+def mult(a: typ.Arr_N, b: typ.Arr_N) -> typ.Arr_N:
+    """Element-wise multiplication of two arrays w/ sum reduction."""
+    return jnp.einsum("ij, ij->i", a, b)

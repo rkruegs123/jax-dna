@@ -1,3 +1,5 @@
+# ruff: noqa
+# fmt: off
 import pdb
 import jax.numpy as jnp
 from jax.tree_util import Partial
@@ -67,6 +69,7 @@ def exc_vol_bonded(
                               b=b_base_back)
 
     return f3_base_exc_vol + f3_back_base_exc_vol + f3_base_back_exc_vol
+
 
 def exc_vol_unbonded(
         dr_base, dr_backbone, dr_back_base, dr_base_back,

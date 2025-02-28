@@ -1,1 +1,0 @@
-configuration taken from PERSISTENCE_LENGTH example in oxDNA
