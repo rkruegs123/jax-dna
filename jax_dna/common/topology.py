@@ -1,3 +1,5 @@
+# ruff: noqa
+# fmt: off
 from io import StringIO
 import numpy as onp
 import pandas as pd

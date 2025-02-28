@@ -1,0 +1,17 @@
+# Core options
+T = 296.15K
+steps = 10000
+conf_file = init.conf
+topology = sys.top
+trajectory_file = output.dat
+time_scale = linear
+print_conf_interval = 100
+print_energy_every = 100
+# interaction_type = DNA
+interaction_type = DNA_nomesh
+seed = 0
+lastconf_file = last_conf.dat
+list_type = no
+restart_step_counter = true
+energy_file = energy.dat
+equilibration_steps = 0

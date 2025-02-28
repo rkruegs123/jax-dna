@@ -32,3 +32,18 @@ use_average_seq = true
 
 # confGenerator options
 generate_consider_bonded_interactions = true
+
+# oxDNA observables
+data_output_1 = {
+  name = split_energy.dat
+  print_every = 100
+  col_1 = {
+          type = step
+          units = MD
+  }
+  col_2 = {
+          type = potential_energy
+          # type = pair_energy
+          split = true
+  }
+}

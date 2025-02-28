@@ -1,0 +1,13 @@
+[run]
+omit =
+    **/_*.py
+    setup.py
+    */tests/*
+    _version.py
+    jax_dna/common/*
+    jax_dna/dna1/*
+    jax_dna/dna2/*
+    jax_dna/loss/*
+[report]
+exclude_lines =
+    @abstractmethod
