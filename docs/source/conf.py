@@ -69,6 +69,8 @@ def skip_irrelevant(app, what, name, obj, skip, options):
     if (
         "test" in name
         or "jax_dna" not in name
+        or "jax_dna.anm" in name
+        or "jax_dna.dnanm" in name
         or "jax_dna.dna1" in name
         or "jax_dna.dna2" in name
         or "jax_dna.rna2" in name
