@@ -8,6 +8,7 @@ from jax_md.partition import NeighborListFormat, neighbor_list
 
 ERR_NEIGHBORS_INVALID_BONDED_NEIGHBORS = "Indices of bonded neighbors must be bewteen 0 and n_nucleotides-1"
 
+
 def get_neighbor_list_fn(
     bonded_neighbors: np.ndarray,
     n_nucleotides: int,

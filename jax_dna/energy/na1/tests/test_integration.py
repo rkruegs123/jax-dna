@@ -29,10 +29,10 @@ COLUMN_NAMES = [
 ]
 
 
-
 def get_energy_terms(base_dir: str, term: str) -> np.ndarray:
     energy_terms = np.loadtxt(base_dir + "/split_energy.dat", skiprows=1)
     return energy_terms[:, COLUMN_NAMES.index(term)]
+
 
 def get_topology(base_dir: str) -> jd_top.Topology:
     return jd_top.from_oxdna_file(base_dir + "/generated.top")
