@@ -33,11 +33,12 @@ def get_energy_terms(base_dir: str, term: str) -> np.ndarray:
     energy_terms = np.loadtxt(base_dir + "/split_energy.dat", skiprows=1)
     return energy_terms[:, COLUMN_NAMES.index(term)]
 
+
 def get_potential_energy(base_dir: str) -> np.ndarray:
     # Columns are: time, potential_energy, kinetic_energy, total_energy
     energies = np.loadtxt(base_dir + "/energy.dat")
     potential_energies = energies[:, 1]
-    return potential_energies[1:] # ignore the initial state
+    return potential_energies[1:]  # ignore the initial state
 
 
 def get_topology(base_dir: str) -> jd_top.Topology:
@@ -296,16 +297,13 @@ def test_unbonded_excluded_volume(base_dir: str):
 
     np.testing.assert_allclose(energy, terms, atol=1e-6)
 
+
 @pytest.mark.parametrize(
-    (
-        "base_dir",
-        "t_kelvin",
-        "use_neighbors"
-    ),
+    ("base_dir", "t_kelvin", "use_neighbors"),
     [
         ("data/test-data/dna1/simple-helix", 296.15, False),
         ("data/test-data/dna1/simple-helix", 296.15, True),
-    ]
+    ],
 )
 def test_total_energy(base_dir: str, t_kelvin: float, *, use_neighbors: bool):
     box_size = 20.0
@@ -320,14 +318,12 @@ def test_total_energy(base_dir: str, t_kelvin: float, *, use_neighbors: bool):
 
     terms = get_potential_energy(base_dir)
 
-
     kt = t_kelvin * 0.1 / 300.0
 
     configs = [
         jd_energy.FeneConfiguration.from_dict(default_params["fene"], ("eps_backbone",)),
         jd_energy.BondedExcludedVolumeConfiguration.from_dict(
-            default_params["bonded_excluded_volume"],
-            ("eps_exc","dr_star_base")
+            default_params["bonded_excluded_volume"], ("eps_exc", "dr_star_base")
         ),
         jd_energy.StackingConfiguration.from_dict(default_params["stacking"] | {"kt": kt}, ("*",)),
         jd_energy.UnbondedExcludedVolumeConfiguration.from_dict(default_params["unbonded_excluded_volume"]),
@@ -372,21 +368,13 @@ def test_total_energy(base_dir: str, t_kelvin: float, *, use_neighbors: bool):
         def state_energy_fn(state, neighbors):
             neighbors = neighbors.update(state.center)
             neighbors_idx = neighbors.idx
-            return energy_fn(
-                transform_fn(state),
-                topology.seq,
-                topology.bonded_neighbors,
-                neighbors_idx
-            )
+            return energy_fn(transform_fn(state), topology.seq, topology.bonded_neighbors, neighbors_idx)
 
         neighbor_fn = jd_nb.get_neighbor_list_fn(
-            topology.bonded_neighbors,
-            topology.n_nucleotides,
-            displacement_fn,
-            box_size
+            topology.bonded_neighbors, topology.n_nucleotides, displacement_fn, box_size
         )
         neighbor_fn = jax.jit(neighbor_fn)
-        neighbors = neighbor_fn.allocate(states[0].center) # We use the COMs to allocate neighbors
+        neighbors = neighbor_fn.allocate(states[0].center)  # We use the COMs to allocate neighbors
 
         energies = jax.vmap(state_energy_fn, (0, None))(states, neighbors)
 
@@ -403,6 +391,7 @@ def test_total_energy(base_dir: str, t_kelvin: float, *, use_neighbors: bool):
     energies = np.around(energies / topology.n_nucleotides, 6)
 
     np.testing.assert_allclose(energies, terms, rtol=1e-5, atol=1e-6)
+
 
 if __name__ == "__main__":
     pytest.main()

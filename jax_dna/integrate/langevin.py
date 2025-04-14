@@ -1,13 +1,13 @@
-from typing import Any, Callable, TypeVar, Union, Tuple, Dict, Optional
-import numpy as onp
+# ruff: noqa
 import pdb
-from tqdm import tqdm
 from functools import partial
+from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union
 
-from jax import jit, random, vmap
 import jax.numpy as jnp
-from jax_md import quantity, util, simulate, rigid_body, space, energy
-
+import numpy as onp
+from jax import jit, random, vmap
+from jax_md import energy, quantity, rigid_body, simulate, space, util
+from tqdm import tqdm
 
 Array = util.Array
 f32 = util.f32
@@ -18,7 +18,7 @@ ApplyFn = simulate.ApplyFn
 Simulator = simulate.Simulator
 
 
-def center_stochastic_step(state: simulate.NVTLangevinState, dt:float, kT: float, gamma: float):
+def center_stochastic_step(state: simulate.NVTLangevinState, dt: float, kT: float, gamma: float):
     """A single stochastic step (the `O` step)."""
     c1 = jnp.exp(-gamma * dt)
     c2 = jnp.sqrt(kT * (1 - c1**2))
@@ -37,11 +37,7 @@ def stochastic_step(state: rigid_body.RigidBody, dt: float, kT: float, gamma: fl
     rest, center, orientation = rigid_body.split_center_and_orientation(state)
 
     # center = simulate.stochastic_step(
-    center, center_log_prob = center_stochastic_step(
-      center.set(rng=center_key),
-      dt,
-      kT,
-      gamma.center)
+    center, center_log_prob = center_stochastic_step(center.set(rng=center_key), dt, kT, gamma.center)
 
     Pi = orientation.momentum.vec
     I = orientation.mass
@@ -54,18 +50,17 @@ def stochastic_step(state: rigid_body.RigidBody, dt: float, kT: float, gamma: fl
     # First evaluate PI term
     Pi_mean = 0
     for l in range(3):
-      I_l = I[:, [l], None]
-      M_l = M[:, None, None]
-      PP = P[l](Q)[:, None, :] * P[l](Q)[:, :, None]
-      Pi_mean += jnp.exp(-G * M_l * dt / (4 * I_l)) * PP
-    Pi_mean = jnp.einsum('nij,nj->ni', Pi_mean, Pi)
+        I_l = I[:, [l], None]
+        M_l = M[:, None, None]
+        PP = P[l](Q)[:, None, :] * P[l](Q)[:, :, None]
+        Pi_mean += jnp.exp(-G * M_l * dt / (4 * I_l)) * PP
+    Pi_mean = jnp.einsum("nij,nj->ni", Pi_mean, Pi)
 
     # Then evaluate Q term
     Pi_var = 0
     for l in range(3):
-      scale = jnp.sqrt(4 * kT * I[:, l] *
-                       (1 - jnp.exp(-M * G * dt / (2 * I[:, l]))))
-      Pi_var += (scale[:, None] * P[l](Q))**2
+        scale = jnp.sqrt(4 * kT * I[:, l] * (1 - jnp.exp(-M * G * dt / (2 * I[:, l]))))
+        Pi_var += (scale[:, None] * P[l](Q)) ** 2
 
     momentum_dist = simulate.Normal(Pi_mean, Pi_var)
     sampled_q_momentum = momentum_dist.sample(orientation_key)
@@ -78,19 +73,20 @@ def stochastic_step(state: rigid_body.RigidBody, dt: float, kT: float, gamma: fl
     return rigid_body.merge_center_and_orientation(rest.set(rng=key), center, orientation), avg_log_prob
 
 
-
-def nvt_langevin(energy_or_force_fn: Callable[..., Array],
-                 shift_fn: ShiftFn,
-                 dt: float,
-                 kT: float,
-                 gamma: float=0.1,
-                 center_velocity: bool=True,
-                 **sim_kwargs) -> Simulator:
+def nvt_langevin(
+    energy_or_force_fn: Callable[..., Array],
+    shift_fn: ShiftFn,
+    dt: float,
+    kT: float,
+    gamma: float = 0.1,
+    center_velocity: bool = True,
+    **sim_kwargs,
+) -> Simulator:
     force_fn = quantity.canonicalize_force(energy_or_force_fn)
 
     @jit
     def init_fn(key, R, mass=f32(1.0), **kwargs):
-        _kT = kwargs.pop('kT', kT)
+        _kT = kwargs.pop("kT", kT)
         key, split = random.split(key)
         force = force_fn(R, **kwargs)
         state = simulate.NVTLangevinState(R, None, force, mass, key)
@@ -99,8 +95,8 @@ def nvt_langevin(energy_or_force_fn: Callable[..., Array],
 
     @jit
     def step_fn(state, **kwargs):
-        _dt = kwargs.pop('dt', dt)
-        _kT = kwargs.pop('kT', kT)
+        _dt = kwargs.pop("dt", dt)
+        _kT = kwargs.pop("kT", kT)
         dt_2 = _dt / 2
 
         state = simulate.momentum_step(state, dt_2)
@@ -120,13 +116,12 @@ if __name__ == "__main__":
 
     @partial(vmap, in_axes=(0, None))
     def rand_quat(key, dtype):
-      return rigid_body.random_quaternion(key, dtype)
+        return rigid_body.random_quaternion(key, dtype)
 
     for kT in [1e-3, 5e-3, 1e-2, 1e-1]:
         PARTICLE_COUNT = 40
         dtype = f32
         DYNAMICS_STEPS = 100
-
 
         N = PARTICLE_COUNT
         box_size = quantity.box_size_at_number_density(N, 0.1, 3)
@@ -143,12 +138,10 @@ if __name__ == "__main__":
 
         body = rigid_body.RigidBody(R, quaternion)
         shape = rigid_body.point_union_shape(
-          rigid_body.tetrahedron.points * jnp.array([[1.0, 2.0, 3.0]], dtype),
-          rigid_body.tetrahedron.masses
+            rigid_body.tetrahedron.points * jnp.array([[1.0, 2.0, 3.0]], dtype), rigid_body.tetrahedron.masses
         )
 
-        energy_fn = rigid_body.point_energy(energy.soft_sphere_pair(displacement),
-                                            shape)
+        energy_fn = rigid_body.point_energy(energy.soft_sphere_pair(displacement), shape)
 
         dt = 5e-4
 

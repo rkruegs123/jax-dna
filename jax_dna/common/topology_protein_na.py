@@ -1,19 +1,20 @@
-from io import StringIO
-import numpy as onp
-import pandas as pd
-from pathlib import Path
+# ruff: noqa
+import itertools
 import pdb
 import unittest
-import itertools
+from io import StringIO
 from itertools import combinations
+from pathlib import Path
 
 import jax
+import numpy as onp
+import pandas as pd
+
 jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 from jax_md.partition import NeighborListFormat, neighbor_list
 
-from jax_dna.common.utils import bcolors, DNA_ALPHA, RNA_ALPHA
-
+from jax_dna.common.utils import DNA_ALPHA, RNA_ALPHA, bcolors
 
 RES_ALPHA = "MGKTRADEYVLQWFSHNPCI"
 
@@ -27,7 +28,6 @@ class ProteinNucAcidTopology:
         self.load()
 
     def load(self):
-
         # Check that our topology file exists
         if not Path(self.top_path).exists():
             raise RuntimeError(f"Topology file does not exist: {self.top_path}")
@@ -42,7 +42,7 @@ class ProteinNucAcidTopology:
 
         # Read the information from the first line -- # of particles (nucleotides + amino acids) and # of strands
         sys_info = top_lines[0].strip().split()
-        assert(len(sys_info) == 5)
+        assert len(sys_info) == 5
 
         self.n = int(sys_info[0])
         self.n_strands_total = int(sys_info[1])
@@ -51,7 +51,7 @@ class ProteinNucAcidTopology:
         self.n_na_strands = int(sys_info[4])
         self.n_protein_strands = self.n_strands_total - self.n_na_strands
 
-        assert(self.n == self.n_na + self.n_protein)
+        assert self.n == self.n_na + self.n_protein
 
         # Read the input file into a dataframe, regardless of orientation
 
@@ -87,11 +87,10 @@ class ProteinNucAcidTopology:
                     n_na_strand_count += 1
 
             elif curr_strand_idx != strand_idx:
-
                 if strand_idx < 0:
-                    assert(strand_idx < curr_strand_idx)
+                    assert strand_idx < curr_strand_idx
                 else:
-                    assert(strand_idx > curr_strand_idx)
+                    assert strand_idx > curr_strand_idx
                 strand_counts.append(curr_strand_count)
                 curr_strand_count = 1
                 curr_strand_idx = strand_idx
@@ -107,12 +106,12 @@ class ProteinNucAcidTopology:
             if strand_idx < 0:
                 # Protein
 
-                assert(not started_na)
+                assert not started_na
 
                 res_type = tokens[1]
-                assert(res_type in set(RES_ALPHA))
+                assert res_type in set(RES_ALPHA)
                 res_types.append(res_type)
-                n_term_nbr = int(tokens[2]) # do nothing with this
+                n_term_nbr = int(tokens[2])  # do nothing with this
                 c_term_nbr = int(tokens[3])
                 extra_nbrs = [int(idx) for idx in tokens[4:]]
                 for nbr_idx in [c_term_nbr] + extra_nbrs:
@@ -132,11 +131,11 @@ class ProteinNucAcidTopology:
                 if not started_na:
                     started_na = True
                     start_nt_idx = curr_idx
-                    assert(curr_idx == self.n_protein)
+                    assert curr_idx == self.n_protein
 
-                assert(strand_idx > 0)
+                assert strand_idx > 0
 
-                assert(len(tokens) == 4)
+                assert len(tokens) == 4
 
                 nt = tokens[1]
                 nt_types.append(nt)
@@ -162,52 +161,53 @@ class ProteinNucAcidTopology:
         self.is_nt_idx = onp.array(is_nt_idx).astype(onp.int32)
         self.is_protein_idx = onp.array(is_protein_idx).astype(onp.int32)
 
-
-        assert(self.n_protein_strands == n_protein_strand_count)
-        assert(self.n_na_strands == n_na_strand_count)
+        assert self.n_protein_strands == n_protein_strand_count
+        assert self.n_na_strands == n_na_strand_count
 
         self.bonded_nbrs = onp.array(bonded_nbrs)
         strand_bounds = list(itertools.pairwise([0, *itertools.accumulate(strand_counts)]))
         dummy_protein_nt = "A"
         if self.reverse:
-            nt_types_rev = list(itertools.chain.from_iterable([nt_types[s:e][::-1] for s, e in strand_bounds[self.n_protein_strands:]]))
-            self.nt_seq_idx = onp.array([-1]*self.n_protein + [DNA_ALPHA.index(nt) for nt in nt_types_rev])
-            self.nt_seq = dummy_protein_nt*self.n_protein + ''.join(nt_types_rev)
+            nt_types_rev = list(
+                itertools.chain.from_iterable([nt_types[s:e][::-1] for s, e in strand_bounds[self.n_protein_strands :]])
+            )
+            self.nt_seq_idx = onp.array([-1] * self.n_protein + [DNA_ALPHA.index(nt) for nt in nt_types_rev])
+            self.nt_seq = dummy_protein_nt * self.n_protein + "".join(nt_types_rev)
         else:
-            self.nt_seq_idx = onp.array([-1]*self.n_protein + [DNA_ALPHA.index(nt) for nt in nt_types])
-            self.nt_seq = dummy_protein_nt*self.n_protein + ''.join(nt_types)
-
-
+            self.nt_seq_idx = onp.array([-1] * self.n_protein + [DNA_ALPHA.index(nt) for nt in nt_types])
+            self.nt_seq = dummy_protein_nt * self.n_protein + "".join(nt_types)
 
         idxs_nt = onp.arange(self.n)
-        rev_idxs_nt = list(itertools.chain.from_iterable([idxs_nt[s:e][::-1] for s, e in strand_bounds[self.n_protein_strands:]]))
+        rev_idxs_nt = list(
+            itertools.chain.from_iterable([idxs_nt[s:e][::-1] for s, e in strand_bounds[self.n_protein_strands :]])
+        )
         idxs = onp.arange(self.n)
         rev_idxs = list(onp.arange(self.n_protein)) + rev_idxs_nt
         self.rev_orientation_mapper = dict(zip(idxs, rev_idxs))
 
         network_set = set(network)
         self.anm_network = onp.array(network)
-        self.aa_seq_idx = onp.array([RES_ALPHA.index(res) for res in res_types] + [-1]*self.n_na, dtype=onp.int32)
+        self.aa_seq_idx = onp.array([RES_ALPHA.index(res) for res in res_types] + [-1] * self.n_na, dtype=onp.int32)
 
         # Read the parameter file
         with open(self.par_path) as f:
             par_lines = f.readlines()
 
         sys_info_par = par_lines[0].strip().split()
-        assert(len(sys_info_par) == 1)
-        assert(int(sys_info[0]) == self.n)
+        assert len(sys_info_par) == 1
+        assert int(sys_info[0]) == self.n
 
         spring_constants = onp.zeros((self.n, self.n)).astype(onp.float64)
         eq_distances = onp.zeros((self.n, self.n)).astype(onp.float64)
         for par_line in par_lines[1:]:
             tokens = par_line.strip().split()
-            assert(len(tokens) == 5)
+            assert len(tokens) == 5
             idx1, idx2 = tokens[:2]
             idx1 = int(idx1)
             idx2 = int(idx2)
-            assert((idx1, idx2) in network_set)
+            assert (idx1, idx2) in network_set
             bond_type = tokens[3]
-            assert(bond_type == "s")
+            assert bond_type == "s"
 
             eq_distance = float(tokens[2])
             spring_constant = float(tokens[4])
@@ -217,7 +217,6 @@ class ProteinNucAcidTopology:
 
         self.eq_distances = eq_distances
         self.spring_constants = spring_constants
-
 
         # Generate unbonded pairs
 
@@ -253,7 +252,6 @@ class ProteinNucAcidTopology:
 
     # FIXME: doesn't mask out pairs in the network. Have to change the mask function i think a bit for that when more than two neighbors, as the ANMnetwork has
     def get_neighbor_list_fn(self, displacement_fn, box_size, r_cutoff, dr_threshold):
-
         # Construct nx2 mask
         dense_mask = onp.full((self.n, 2), self.n, dtype=onp.int32)
         counter = onp.zeros(self.n, dtype=onp.int32)
@@ -266,10 +264,10 @@ class ProteinNucAcidTopology:
         dense_mask = jnp.array(dense_mask, dtype=jnp.int32)
 
         def bonded_nbrs_mask_fn(dense_idx):
-            nbr_mask1 = (dense_idx == dense_mask[:, 0].reshape(self.n, 1))
+            nbr_mask1 = dense_idx == dense_mask[:, 0].reshape(self.n, 1)
             dense_idx = jnp.where(nbr_mask1, self.n, dense_idx)
 
-            nbr_mask2 = (dense_idx == dense_mask[:, 1].reshape(self.n, 1))
+            nbr_mask2 = dense_idx == dense_mask[:, 1].reshape(self.n, 1)
             dense_idx = jnp.where(nbr_mask2, self.n, dense_idx)
             return dense_idx
 
@@ -280,7 +278,7 @@ class ProteinNucAcidTopology:
             dr_threshold=dr_threshold,
             custom_mask_function=bonded_nbrs_mask_fn,
             format=NeighborListFormat.OrderedSparse,
-            disable_cell_list=True
+            disable_cell_list=True,
         )
 
         return neighbor_list_fn

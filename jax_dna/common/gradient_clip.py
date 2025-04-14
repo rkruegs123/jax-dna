@@ -1,10 +1,12 @@
+# ruff: noqa
 import jax
-from jax import lax, custom_vjp
 import jax.numpy as jnp
+from jax import custom_vjp, lax
 
 
 def pytree_where(condition, x, y):
     """Generalized `jnp.where` that can select between pytrees."""
+
     def where_leaf(leaf_x, leaf_y):
         if isinstance(leaf_x, (jnp.ndarray, jax.Array)):
             return jnp.where(condition, leaf_x, leaf_y)
@@ -15,6 +17,7 @@ def pytree_where(condition, x, y):
 
 def clip_pytree(pytree, min_val, max_val):
     """Generalized `jnp.clip` that clips float-valued leaves of pytrees."""
+
     def clip_if_float(x):
         if jnp.issubdtype(x.dtype, jnp.floating):
             return jnp.clip(x, min_val, max_val)
@@ -22,9 +25,11 @@ def clip_pytree(pytree, min_val, max_val):
 
     return jax.tree_map(clip_if_float, pytree)
 
+
 def is_float_array(x):
     """Checks if an element is a float-valued jax array."""
     return isinstance(x, (jnp.ndarray, jax.Array)) and jnp.issubdtype(x.dtype, jnp.floating)
+
 
 def sum_squares(x):
     """Computes the sum of squares of an array of floats, otherwise returns 0.0"""
@@ -35,14 +40,12 @@ def sum_squares(x):
         return jnp.sum(jnp.square(x))
     return 0.0
 
+
 def compute_pytree_norm(grads):
     """Computes the norm of a pytree, only including float-valued leaves"""
-    global_norm = jnp.sqrt(jax.tree_util.tree_reduce(
-        lambda acc, x: acc + sum_squares(x),
-        grads,
-        0.0
-    ))
+    global_norm = jnp.sqrt(jax.tree_util.tree_reduce(lambda acc, x: acc + sum_squares(x), grads, 0.0))
     return global_norm
+
 
 def clip_pytree_norm(pytree, max_norm):
     """Clip pytree to a maximum global norm, ignoring integer arrays and handling scalar arrays."""
@@ -70,7 +73,7 @@ def get_clip_grad_fn(mode, x1, x2=None):
     If mode == 'raw', x1 and x2 are the min and max values, respectively.
     """
 
-    if mode not in ['norm', 'raw']:
+    if mode not in ["norm", "raw"]:
         raise ValueError(f"Invalid mode: {mode}")
 
     @custom_vjp
@@ -96,14 +99,12 @@ def get_clip_grad_fn(mode, x1, x2=None):
     return clip_gradient
 
 
-
-
 if __name__ == "__main__":
     import functools
-    from tqdm import tqdm
     import pdb
-    from jax_md import simulate, space, quantity
 
+    from jax_md import quantity, simulate, space
+    from tqdm import tqdm
 
     clip_gradient = get_clip_grad_fn("norm", 0.1)
     # clip_gradient = get_clip_grad_fn("raw", -0.1, 0.1)
@@ -117,23 +118,18 @@ if __name__ == "__main__":
     dtype = jnp.float32
 
     key, R_key, R0_key, T_key, masses_key = jax.random.split(key, 5)
-    mass = jax.random.uniform(
-        masses_key, (LANGEVIN_PARTICLE_COUNT,),
-        minval=0.1, maxval=10.0, dtype=dtype)
+    mass = jax.random.uniform(masses_key, (LANGEVIN_PARTICLE_COUNT,), minval=0.1, maxval=10.0, dtype=dtype)
 
-    R_init = jax.random.normal(
-        R_key, (LANGEVIN_PARTICLE_COUNT, spatial_dimension), dtype=dtype)
+    R_init = jax.random.normal(R_key, (LANGEVIN_PARTICLE_COUNT, spatial_dimension), dtype=dtype)
     _, shift = space.free()
-    T =  1.0
+    T = 1.0
 
     clip_every = 10
 
     def sim_fn(R0):
-        E = functools.partial(
-            lambda R, R0, **kwargs: jnp.sum((R - R0) ** 2), R0=R0)
+        E = functools.partial(lambda R, R0, **kwargs: jnp.sum((R - R0) ** 2), R0=R0)
 
-        init_fn, apply_fn = simulate.nvt_langevin(
-            E, shift, dt=1e-2, kT=T, gamma=0.3)
+        init_fn, apply_fn = simulate.nvt_langevin(E, shift, dt=1e-2, kT=T, gamma=0.3)
         apply_fn = jax.jit(apply_fn)
 
         def step_fn(state, i):
@@ -146,8 +142,7 @@ if __name__ == "__main__":
 
         return fin_state
 
-    R0 = jax.random.normal(
-        R0_key, (LANGEVIN_PARTICLE_COUNT, spatial_dimension), dtype=dtype)
+    R0 = jax.random.normal(R0_key, (LANGEVIN_PARTICLE_COUNT, spatial_dimension), dtype=dtype)
     fin_state = sim_fn(R0)
 
     def loss_fn(R0):
