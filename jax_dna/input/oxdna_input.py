@@ -31,6 +31,8 @@ def _parse_boolean(value: str) -> tuple[bool, bool]:
 
 
 def _parse_value(value: str) -> str | float | int | bool:
+    # remove potential comment from end of line
+    value = value.split("#")[0].strip()
     parsed, is_numeric = _parse_numeric(value)
     if not is_numeric:
         parsed, is_boolean = _parse_boolean(value)
