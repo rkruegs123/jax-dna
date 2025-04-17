@@ -262,7 +262,6 @@ def main():
     # ==========================================================================
 
 
-
     # Optimization =============================================================
     objectives = [propeller_twist_objective]
 
@@ -271,6 +270,7 @@ def main():
         simulators=simulators,
         optimizer = optax.adam(learning_rate=1e-3),
         aggregate_grad_fn=tree_mean,
+        logger=logger,
     )
     # ==========================================================================
 
