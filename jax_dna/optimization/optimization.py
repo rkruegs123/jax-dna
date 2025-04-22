@@ -72,14 +72,14 @@ class Optimization:
         if self.optimizer is None:
             raise ValueError(ERR_MISSING_OPTIMIZER)
 
-    def step(self, params: jdna_types.Params) -> tuple[optax.OptState, list[jdna_types.Grads]]:
+    def step(self, params: jdna_types.Params) -> tuple[optax.OptState, list[jdna_types.Grads], list[jdna_types.Grads]]:
         """Perform a single optimization step.
 
         Args:
             params: The current parameters.
 
         Returns:
-            A tuple containing the updated optimizer state and the gradients.
+            A tuple containing the updated optimizer state, new params, and the gradients.
         """
         # get the currently needed observables
         # some objectives might use difftre and not actually need something rerun
@@ -162,7 +162,7 @@ class Optimization:
 
         new_params = grad_update_fn(params, updates)
 
-        return opt_state, new_params
+        return opt_state, new_params, grads
 
     def post_step(
         self,
@@ -184,14 +184,14 @@ class SimpleOptimizer:
     optimizer_state: optax.OptState | None = None
     logger: jdna_logger.Logger = dc.field(default_factory=lambda: jdna_logger.Logger())
 
-    def step(self, params: jdna_types.Params) -> tuple[optax.OptState, list[jdna_types.Grads]]:
+    def step(self, params: jdna_types.Params) -> tuple[optax.OptState, list[jdna_types.Grads], list[jdna_types.Grads]]:
         """Perform a single optimization step.
 
         Args:
             params: The current parameters.
 
         Returns:
-            A tuple containing the updated optimizer state and the gradients.
+            A tuple containing the updated optimizer state, new params, and the gradients.
         """
         # get the currently needed observables
         # some objectives might use difftre and not actually need something rerun
@@ -214,7 +214,7 @@ class SimpleOptimizer:
 
         new_params = grad_update_fn(params, updates)
 
-        return opt_state, new_params
+        return opt_state, new_params, grads
 
     def post_step(self, optimizer_state: optax.OptState, opt_params: jdna_types.Params) -> "SimpleOptimizer":
         """An update step intended to be called after an optimization step."""
