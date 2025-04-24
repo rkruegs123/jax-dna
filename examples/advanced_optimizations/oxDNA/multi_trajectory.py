@@ -278,7 +278,7 @@ def main():
 
     # Run optimization =========================================================
     for i in tqdm(range(optimization_config["n_steps"]), desc="Optimizing"):
-        opt_state, opt_params = opt.step(opt_params)
+        opt_state, opt_params, grads = opt.step(opt_params)
 
         for objective in opt.objectives:
             log_values = ray.get(objective.logging_observables.remote())
@@ -291,7 +291,3 @@ def main():
         )
         # block the oxdna builds so that the simulator that builds can do so
         run_flag.set_bin_status.remote(False)
-
-
-if __name__ == "__main__":
-    main()

@@ -189,9 +189,9 @@ def test_optimzation_step():
         optimizer=MockOptimizer(),
     )
 
-    opt_state, grads = opt.step(params={"test": 1})
+    opt_state, params, _ = opt.step(params={"test": 1})
     assert opt_state is not None
-    assert grads == ({"test": 1}, {})
+    assert params == ({"test": 1}, {})
 
 
 def test_optimization_post_step():
