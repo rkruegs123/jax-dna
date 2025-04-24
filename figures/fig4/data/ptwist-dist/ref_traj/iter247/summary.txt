@@ -1,6 +1,0 @@
-Mean energy diff: 0.002404868220443842
-Calc. energy var.: 8.04980090201668
-Ref. energy var.: 8.049963251630002
-Prop. twist: 21.802243440842844 deg
-Prop. twist, variance: 5.497405733136911 deg
-KL divergence: 0.00017317456084997573

@@ -1,5 +1,0 @@
-Ext. modulus (oxDNA units): 24.303001166884975
-Contour length (oxDNA units): 37.527120546571105
-Using Lp (oxDNA units): 38.153249292233255
-Force lengths (oxDNA units): Array([32.27539561, 34.13732982, 35.5014128 , 36.11890343, 36.59914181,
-       36.82990479, 37.14445323, 37.46313616], dtype=float64)

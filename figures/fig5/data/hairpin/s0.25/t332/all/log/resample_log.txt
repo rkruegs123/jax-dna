@@ -1,7 +1,0 @@
-Generating initial reference states and energies...
-Finished generating initial reference states. Took 16071.84930229187 seconds.
-
-Iteration 1
-- n_eff was 14206.068442375148. Resampling...
-- time to resample: 13998.485878229141 seconds
-

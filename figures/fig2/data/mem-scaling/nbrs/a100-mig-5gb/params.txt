@@ -1,8 +1,0 @@
-run_name: check-oom-cNone-a100-mig-5gb-60bp-s10-nbrs
-sample_every: 10
-n_skip_quartets: 5
-hi: 500
-lo: 0
-checkpoint_every: None
-small_system: False
-use_neighbors: True
