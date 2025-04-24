@@ -1,4 +1,0 @@
-;; This buffer is for text that is not saved, and for Lisp evaluation.
-;; To create a file, visit it with C-x C-f and enter text in its buffer.
-
-plan: energy function takes in a 2D set of hb parameters, where the first row is for AT and the second row is for GC. Then, have two hydrogen bonding functions -- one for GC and another for AT. Calculate v_hb_gc and v_hb_at, then mask appropriately

@@ -1,9 +1,0 @@
-;; This buffer is for text that is not saved, and for Lisp evaluation.
-;; To create a file, visit it with C-x C-f and enter text in its buffer.
-
-don't forget to convert from simulation units to nm for mechanical stuff! 0.8518 nm per simulation unit
-
-for tomorrow: should plot the curve per tom's parameters and try to infer the units
-  - hopefully don't need some sort of non-negativigty constraint
-
-look at that long persistence length run

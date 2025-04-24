@@ -1,5 +1,0 @@
-ryan@ryan-ThinkPad-T480:~/Documents/Harvard/research/brenner/jaxmd-oxdna$ echo "First is baseline. 2nd is only 2 op pairs, but maybe on a v100. 3rd is 200 op pairs on an a100. 4th is 2 op pairs on an a100. Fifth one is with extra JITs, sixth one also gets rid of the extra Q_to_back_base. Seventh is two but has has no CX term. 5th and on only have two op pairs"
-First is baseline. 2nd is only 2 op pairs, but maybe on a v100. 3rd is 200 op pairs on an a100. 4th is 2 op pairs on an a100. Fifth one is with extra JITs, sixth one also gets rid of the extra Q_to_back_base. Seventh is two but has has no CX term. 5th and on only have two op pairs
-ryan@ryan-ThinkPad-T480:~/Documents/Harvard/research/brenner/jaxmd-oxdna$ echo "Need to check these times. Then profile. Then do actual neighbor lists. Then read about checkpointing from Carl's notes. Then optimize for a single length over 5e6"
-Need to check these times. Then profile. Then do actual neighbor lists. Then read about checkpointing from Carl's notes. Then optimize for a single length over 5e6
-ryan@ryan-ThinkPad-T480:~/Documents/Harvard/research/brenner/jaxmd-oxdna$
