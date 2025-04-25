@@ -1,4 +1,6 @@
-<<<<<<< HEAD
+# Emacs
+*~
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -6,11 +8,6 @@ __pycache__/
 
 # C extensions
 *.so
-=======
-**/*~
-
-**/__pycache__/
->>>>>>> upstream/master
 
 # Distribution / packaging
 .Python
@@ -31,15 +28,6 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-_version.py
-*.pyc
-**/*.pyc
-
-*.pyidx
-**/*.pyidx
-
-v2/data/output
-bak/v2/data/output
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -60,7 +48,6 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
-coverage.html
 *.cover
 *.py,cover
 .hypothesis/
@@ -86,8 +73,6 @@ instance/
 
 # Sphinx documentation
 docs/_build/
-docs/source/generated
-docs/source/_autosummary/
 
 # PyBuilder
 .pybuilder/
@@ -124,8 +109,10 @@ ipython_config.py
 #pdm.lock
 #   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
 #   in version control.
-#   https://pdm.fming.dev/#use-with-ide
+#   https://pdm.fming.dev/latest/usage/project/#working-with-version-control
 .pdm.toml
+.pdm-python
+.pdm-build/
 
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
 __pypackages__/
@@ -175,13 +162,4 @@ cython_debug/
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-.idea/
-
-# VS Code
-.vscode
-
-# File system
-.DS_Store
-
-# jax_dna specific
-outputs
+#.idea/
