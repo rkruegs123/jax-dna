@@ -1,0 +1,37 @@
+# Program parameters
+backend = CPU
+
+CUDA_list = verlet
+CUDA_device = 0
+use_edge = true
+# CUDA_avoid_cpu_calculations = true
+seed = 1
+
+interaction_type = DNA_nomesh
+
+# Simulatin parameters
+steps = 10000000
+newtonian_steps = 103
+diff_coeff = 2.50
+thermostat = john
+
+T = 23C
+dt = 0.005
+verlet_skin = 0.1
+
+use_average_seq = true
+
+# Input/output
+topology = sys.top
+conf_file = init.conf
+trajectory_file = trajectory.dat
+lastconf_file = last_conf.dat
+refresh_vel = 1
+log_file = sim.log
+no_stdout_energy = 0
+restart_step_counter = 0
+energy_file = energy.dat
+print_conf_interval = 10000
+print_conf_ppc = 51
+print_energy_every = 10000
+time_scale = linear

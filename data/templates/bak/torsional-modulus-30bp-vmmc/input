@@ -1,0 +1,37 @@
+# Program parameters
+backend = CPU
+seed = 1
+interaction_type = DNA_nomesh
+CUDA_list = verlet
+CUDA_device = 0
+use_edge = true
+# CUDA_avoid_cpu_calculations = true
+
+
+
+# Simulation parameters
+sim_type = VMMC
+ensemble = NVT
+steps = 10000000
+small_system = 1 # Note: without this, we get an error
+
+delta_translation = 0.22
+delta_rotation = 0.22
+T = 23C
+verlet_skin = 1.0
+
+# Define sequence dependence
+use_average_seq = true
+
+# Input/output
+topology = sys.top
+conf_file = init.conf
+trajectory_file = trajectory.dat
+lastconf_file = last_conf.dat
+log_file = sim.log
+no_stdout_energy = 0
+restart_step_counter = 0
+energy_file = energy.dat
+print_conf_interval = 10000
+print_energy_every = 10000
+time_scale = linear

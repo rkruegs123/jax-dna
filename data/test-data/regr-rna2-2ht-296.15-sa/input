@@ -1,0 +1,84 @@
+# Program parameters
+sim_type = MD
+backend = CPU
+CUDA_list = verlet
+CUDA_sort_every = 0
+use_edge = true
+seed = 83
+cells_auto_optimisation = false
+max_density_multiplier = 10
+# verlet_skin = 0.5
+verlet_skin = 0.1
+interaction_type = RNA2
+dh_half_charged_ends = False
+list_type = no
+# external_model = external_model.txt
+
+# Simulation parameters
+steps = 10000
+newtonian_steps = 103
+diff_coeff = 2.5
+thermostat = john
+dt = 0.003
+ensemble = nvt
+T = 296.15K
+salt_concentration = 1.0
+
+use_average_seq = 1
+
+# Input/output
+topology = sys.top
+conf_file = init.conf
+lastconf_file = last_conf.dat
+refresh_vel = 1
+log_file = sim.log
+no_stdout_energy = 0
+restart_step_counter = 0
+energy_file = energy.dat
+print_conf_interval = 500
+print_conf_ppc = 51
+print_energy_every = 500
+trajectory_file = output.dat
+time_scale = linear
+
+
+
+
+# oxDNA observables
+data_output_1 = {
+  name = split_energy.dat
+  print_every = 500
+  col_1 = {
+          type = step
+          units = MD
+  }
+  col_2 = {
+          type = potential_energy
+          # type = pair_energy
+          split = true
+  }
+}
+data_output_2 = {
+  name = potential.dat
+  print_every = 500
+  col_1 = {
+          type = step
+          units = MD
+  }
+  col_2 = {
+          type = potential_energy
+          split = false
+  }
+}
+data_output_3 = {
+  name = pair.dat
+  print_every = 500
+  col_1 = {
+          type = step
+          units = MD
+  }
+  col_2 = {
+          type = pair_energy
+          split = false
+  }
+}

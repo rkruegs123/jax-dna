@@ -1,0 +1,39 @@
+INFO: seeding the RNG with 1
+INFO: Initializing backend 
+INFO: Simulation type: MD
+INFO: The generator will try to take into account bonded interactions by choosing distances between bonded neighbours no larger than 2.000000
+INFO: Converting temperature from Kelvin (296.150000 K) to simulation units (0.098717)
+INFO: Running Debye-Huckel at salt concentration =  0.5
+INFO: Using different widths for major and minor grooves
+INFO: Temperature change detected (new temperature: 23.00 C, 296.15 K), re-initialising the DNA interaction
+DEBUG: Debye-Huckel parameters: Q=0.054300, lambda_0=0.361646, lambda=0.508152, r_high=1.524455, cutoff=3.249479
+DEBUG: Debye-Huckel parameters: debye_huckel_RC=2.286682e+00, debye_huckel_B=3.052339e-03
+INFO: The Debye length at this temperature and salt concentration is 0.508152
+INFO: pid: 21797
+DEBUG: Debye-Huckel parameters: Q=0.054300, lambda_0=0.361646, lambda=0.508152, r_high=1.524455, cutoff=3.249479
+DEBUG: Debye-Huckel parameters: debye_huckel_RC=2.286682e+00, debye_huckel_B=3.052339e-03
+INFO: The Debye length at this temperature and salt concentration is 0.508152
+INFO: N: 50, N molecules: 1
+INFO: Using randomly distributed velocities
+INFO: Initial kinetic energy: 15.548021
+INFO: RELEASE: v3.6.1
+INFO: GIT COMMIT: 2f179add
+INFO: COMPILED ON: 25/06/24
+
+INFO: Total Running Time: 0.966117 s, per step: 0.0483058 ms
+INFO: Timings, in seconds, by Timer (total, own, spent in children)
+> SimBackend                          0.966 (100.0%)        0.015 (  1.6%)        0.951 ( 98.4%)
+***> Lists                            0.002 (  0.3%)        0.002 (  0.3%)        0.000 (  0.0%)
+***> Thermostat                       0.003 (  0.3%)        0.003 (  0.3%)        0.000 (  0.0%)
+***> Forces                           0.826 ( 85.5%)        0.826 ( 85.5%)        0.000 (  0.0%)
+***> First Step                       0.031 (  3.2%)        0.031 (  3.2%)        0.000 (  0.0%)
+***> Observables                      0.089 (  9.2%)        0.089 (  9.2%)        0.000 (  0.0%)
+
+INFO: END OF THE SIMULATION, everything went OK!
+INFO: Aggregated I/O statistics (set debug=1 for file-wise information)
+	  1.460 MB written to files
+	  2.482 KB written to stdout/stderr
+	For a total of     1.51 MB/s
+
+Please cite at least the following publication for any work that uses the oxDNA simulation package
+  * E. Poppleton et al., J. Open Source Softw. 8, 4693 (2023), DOI: 10.21105/joss.04693

@@ -1,0 +1,41 @@
+# Program parameters
+backend = CPU
+backend_precision = double
+seed = 0
+interaction_type = DNA_nomesh
+
+# Simulation parameters
+sim_type = VMMC
+ensemble = NVT
+max_cluster_size = 10
+steps = 5e6
+equilibration_steps = 1e5
+
+delta_translation = 0.22
+delta_rotation = 0.22
+T = 57C
+verlet_skin = 1.00
+umbrella_sampling = 1
+op_file = op.txt
+weights_file = wfile.txt
+safe_weights = 0
+default_weight = 0
+small_system = 1
+
+# Define sequence dependence
+use_average_seq = 1
+
+# Input/output
+topology = sys.top
+conf_file = init.dat
+log_file = sim.log
+trajectory_file = trajectory.dat
+no_stdout_energy = 0
+restart_step_counter = 0
+energy_file = energy.dat
+lastconf_file = last_conf.dat
+last_hist_file = last_hist.dat
+traj_hist_file = traj_hist.dat
+print_conf_interval = 1e3
+print_energy_every = 1e3
+time_scale = linear

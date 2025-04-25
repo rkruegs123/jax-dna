@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="161.04475mm"
+   height="144.76877mm"
+   viewBox="0 0 161.04475 144.76877"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4 (1:1.4+202410161351+e7c3feb100)"
+   sodipodi:docname="jax_dna_opt_diagram.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="1.7264731"
+     inkscape:cx="335.6554"
+     inkscape:cy="396.76263"
+     inkscape:window-width="1871"
+     inkscape:window-height="1675"
+     inkscape:window-x="808"
+     inkscape:window-y="137"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <marker
+       style="overflow:visible"
+       id="Triangle"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path135" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Triangle-2"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path135-7" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Triangle-2-0"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path135-7-6" />
+    </marker>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-22.7573,-25.543877)">
+    <circle
+       style="fill:#80b3ff;stroke:#000000;stroke-width:0.432001;stroke-opacity:0.532996"
+       id="path1"
+       cx="46.163338"
+       cy="66.752625"
+       r="23.190037" />
+    <circle
+       style="fill:#ac939d;stroke:#000000;stroke-width:0.432001;stroke-opacity:0.532996"
+       id="path1-5"
+       cx="157.43358"
+       cy="66.752625"
+       r="23.190037" />
+    <circle
+       style="fill:#ffccaa;stroke:#000000;stroke-width:0.432001;stroke-opacity:0.532996"
+       id="path1-5-2"
+       cx="101.79846"
+       cy="146.9066"
+       r="23.190037" />
+    <path
+       style="opacity:1;fill:none;stroke:#000000;stroke-width:1.932;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle)"
+       d="m 70.938055,48.330638 c -2.04042,-1.870385 28.492807,-27.034463 58.300185,0"
+       id="path2"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1.932;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle-2)"
+       d="m 168.9674,96.46779 c 2.73026,-0.455329 3.74695,39.09812 -35.91032,45.92779"
+       id="path2-9"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1.932;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle-2-0)"
+       d="m 76.109107,146.85799 c -0.15842,2.76343 -38.961062,-4.97374 -36.870638,-45.16048"
+       id="path2-9-6"
+       sodipodi:nodetypes="cc" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.87778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;opacity:1;fill:none;stroke:#000000;stroke-width:0.2;stroke-dasharray:none;stroke-opacity:1"
+       x="23.466675"
+       y="70.350609"
+       id="text3"><tspan
+         sodipodi:role="line"
+         id="tspan3"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.87778px;font-family:Lato;-inkscape-font-specification:Lato;writing-mode:lr-tb;fill:#000000;stroke:#000000;stroke-width:0.2;stroke-dasharray:none"
+         x="23.466675"
+         y="70.350609">Simulators</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.87778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:none;stroke:#000000;stroke-width:0.2;stroke-dasharray:none;stroke-opacity:1"
+       id="text3-2"
+       x="81.740082"
+       y="32.721306"><tspan
+         id="tspan3-93"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.87778px;font-family:Lato;-inkscape-font-specification:Lato;writing-mode:lr-tb;fill:#000000;stroke:#000000;stroke-width:0.2;stroke-dasharray:none">Exposes</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.87778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:none;stroke:#000000;stroke-width:0.2;stroke-dasharray:none;stroke-opacity:1"
+       x="113.58743"
+       y="44.287914"
+       id="text3-2-1"
+       transform="rotate(47.102258)"
+       inkscape:transform-center-x="-2.1455108"
+       inkscape:transform-center-y="-0.45975232"><tspan
+         sodipodi:role="line"
+         id="tspan3-93-59"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.87778px;font-family:Lato;-inkscape-font-specification:Lato;writing-mode:lr-tb;fill:#000000;stroke:#000000;stroke-width:0.2;stroke-dasharray:none"
+         x="113.58743"
+         y="44.287914">Updates</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.87778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:none;stroke:#000000;stroke-width:0.2;stroke-dasharray:none;stroke-opacity:1"
+       x="-30.123598"
+       y="193.0603"
+       id="text3-2-8"
+       transform="rotate(-54.198434)"><tspan
+         sodipodi:role="line"
+         id="tspan3-93-5"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.87778px;font-family:Lato;-inkscape-font-specification:Lato;writing-mode:lr-tb;fill:#000000;stroke:#000000;stroke-width:0.2;stroke-dasharray:none"
+         x="-30.123598"
+         y="193.0603">Calculates</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.87778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:none;stroke:#000000;stroke-width:0.2;stroke-dasharray:none;stroke-opacity:1"
+       x="134.30229"
+       y="69.491241"
+       id="text3-7"><tspan
+         sodipodi:role="line"
+         id="tspan3-3"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.87778px;font-family:Lato;-inkscape-font-specification:Lato;writing-mode:lr-tb;fill:#000000;stroke:#000000;stroke-width:0.2;stroke-dasharray:none"
+         x="134.30229"
+         y="69.491241">Objectives</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.87778px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:none;stroke:#000000;stroke-width:0.2;stroke-dasharray:none;stroke-opacity:1"
+       x="80.082176"
+       y="149.67979"
+       id="text3-3"><tspan
+         sodipodi:role="line"
+         id="tspan3-9"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.87778px;font-family:Lato;-inkscape-font-specification:Lato;writing-mode:lr-tb;fill:#000000;stroke:#000000;stroke-width:0.2;stroke-dasharray:none"
+         x="80.082176"
+         y="149.67979">Optimizer</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.87777px;font-family:Lato;-inkscape-font-specification:Lato;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;opacity:1;fill:#000000;stroke:#000000;stroke-width:0.2;stroke-dasharray:none;stroke-opacity:1"
+       x="73.100616"
+       y="57.775539"
+       id="text4"><tspan
+         sodipodi:role="line"
+         id="tspan4"
+         style="stroke-width:0.2"
+         x="73.100616"
+         y="57.775539">Observables</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.87777px;font-family:Lato;-inkscape-font-specification:Lato;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke:#000000;stroke-width:0.2;stroke-dasharray:none;stroke-opacity:1"
+       x="-26.11792"
+       y="217.9996"
+       id="text4-3"
+       transform="rotate(-53.118715)"><tspan
+         sodipodi:role="line"
+         id="tspan4-8"
+         style="stroke-width:0.2"
+         x="-26.11792"
+         y="217.9996">Gradients</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9.87777px;font-family:Lato;-inkscape-font-specification:Lato;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke:#000000;stroke-width:0.2;stroke-dasharray:none;stroke-opacity:1"
+       x="107.05724"
+       y="57.635288"
+       id="text4-1"
+       transform="rotate(50.148988)"
+       inkscape:transform-center-y="4.9040248"><tspan
+         sodipodi:role="line"
+         id="tspan4-0"
+         style="stroke-width:0.2"
+         x="107.05724"
+         y="57.635288">Parameters</tspan></text>
+  </g>
+</svg>

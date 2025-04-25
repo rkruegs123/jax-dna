@@ -1,0 +1,45 @@
+##############################
+####  PROGRAM PARAMETERS  ####
+##############################
+interaction_type=DNANM
+# relax_type=harmonic_force
+salt_concentration=0.5
+sim_type = MC
+backend = CPU
+backend_precision = double
+# debug = 1
+# seed = 42
+
+##############################
+####    SIM PARAMETERS    ####
+##############################
+steps = 1000
+
+ensemble = nvt
+delta_translation = 0.1
+delta_rotation = 0.15
+
+thermostat = john
+T = 0C
+dt = 0.002
+verlet_skin = 0.4
+maxclust = 63
+diff_coeff = 2.5
+newtonian_steps = 103
+
+##############################
+####    INPUT / OUTPUT    ####
+##############################
+parfile = protein.par
+topology = complex.top
+conf_file = complex.conf
+trajectory_file = relax_trajectory.dat
+refresh_vel = 1
+log_file = relax_sim.log
+no_stdout_energy = 0
+restart_step_counter = 1
+energy_file = energy.dat
+print_conf_interval = 50
+print_energy_every = 50
+time_scale = linear
+lastconf_file = relaxed.dat
