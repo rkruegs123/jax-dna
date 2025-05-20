@@ -54,3 +54,17 @@ origin for your branch:
 git push -u origin <branch_name>
 ```
 
+### Merging your changes back to the main repository
+
+Once you are happy with your changes and have pushed them to your fork, you can
+create a pull request to merge your changes back into the main repository. There
+should be a link in the output from the `push` command that you can click that
+looks like:
+
+```
+https://github.com/<username-or-org>/jax-dna/pull/new/<branch_name>
+```
+
+If you don't see that link, you can go to the main repository and click on the
+"Pull Requests" tab.
+
