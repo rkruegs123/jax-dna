@@ -1,5 +1,5 @@
 # JAX-DNA
-[![CI](https://github.com/ssec-jhu/base-template/actions/workflows/ci.yml/badge.svg)](https://github.com/ssec-jhu/base-template/actions/workflows/ci.yml)
+[![CI](https://github.com/rkruegs123/jax-dna/actions/workflows/ci.yml/badge.svg)](https://github.com/rkruegs123/jax-dna/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/jax-dna/badge/?version=latest)](https://jax-dna.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/rkruegs123/jax-dna/branch/master/graph/badge.svg?token=0KPNKHRC2V)](https://codecov.io/gh/rkeugs123/jax-dna)
 [![Security](https://github.com/rkreugs123/jax-dna/actions/workflows/security.yml/badge.svg)](https://github.com/rkruegs123/jax-dna/actions/workflows/security.yml)
