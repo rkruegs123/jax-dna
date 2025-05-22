@@ -1,6 +1,6 @@
 # JAX-DNA
 [![CI](https://github.com/rkruegs123/jax-dna/actions/workflows/ci.yml/badge.svg)](https://github.com/rkruegs123/jax-dna/actions/workflows/ci.yml)
-[![Documentation Status](https://readthedocs.org/projects/jax-dna/badge/?version=latest)](https://jax-dna.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/jax-dna/badge/?version=latest)](https://jax-dna.readthedocs.io/en/latest/)
 [![codecov](https://codecov.io/gh/rkruegs123/jax-dna/branch/master/graph/badge.svg?token=0KPNKHRC2V)](https://codecov.io/gh/rkeugs123/jax-dna)
 [![Security](https://github.com/rkreugs123/jax-dna/actions/workflows/security.yml/badge.svg)](https://github.com/rkruegs123/jax-dna/actions/workflows/security.yml)
 [![arXiv](https://img.shields.io/badge/arXiv-2411.09216-b31b1b.svg)](https://arxiv.org/abs/2411.09216)
