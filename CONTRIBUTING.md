@@ -1,25 +1,51 @@
-## How to Contribute
+### Getting Started
 
-First [fork](https://github.com/rkruegs123/jax-dna-dev/fork) the repository.
-
-Then clone the forked version of the repository onto
-your local machine:
-
-```bash
-git clone https:www.github.com/<your_username>/jax-dna-dev.git
-```
-
-After cloning, cd into the repository and make a new branch:
+To start working, first [fork the
+repository](https://github.com/rkruegs123/jax-dna/fork), clone it to your local
+machine, and create a new branch for your changes. You can do this with the
+following commands:
 
 ```bash
-cd ./jax-dna-dev
-git checkout -b <branch_name>
+git clone https://github.com/<username-or-org>/jax-dna.git
+cd jax-dna
+git checkout -b <branch-name>
 ```
 
-You are now working in the new branch you created. You can
-verify this by running `git status`.
+Now that you are in your own branch in your fork you can start making changes!
 
-Now you can fix bugs, add new features, etc.
+### Getting Ready to Submit
+
+If you are adding a new feature or changing functionality, please make sure that
+you have added tests for your changes. We use
+[pytest](https://docs.pytest.org/en/stable/) to run our tests. You can find
+examples of tests in a subdirectory called `tests`, wherever you are adding
+functionality. JAX-DNA currently requires at least 90% test coverage in the
+overall project code and 80% test coverage in the code that has been added.
+
+JAX-DNA uses `tox` to manage development and testing.
+
+`tox` is used to:
+- Run tests (`tox -e test`)
+- Run the formatter (`tox -e format`)
+- Run the linter (`tox -e check-style`)
+- Run the security checks (`tox -e check-security`)
+- Build the package (`tox -e build`)
+- Build the documentation (`tox -e build-docs`)
+- Run all checks (`tox`)
+
+After you have run the tests, you can check the coverage report with the
+following command, starting from the root of the repository:
+
+```bash
+cd .coverage.html
+python -m http.server -p 8080
+```
+
+Then open your browser and navigate to the displayed URL, which could be
+something like `http://localhost:8080/` or `http://0.0.0.0:8080`. You should
+see a list of the files and their current coverage.
+
+### Pushing Your Changes
 
 The first time you push your commits you will need to set the
 origin for your branch:
@@ -28,23 +54,17 @@ origin for your branch:
 git push -u origin <branch_name>
 ```
 
-When you are ready contribute your changes back to the
-repository, you need to do the following:
+### Merging your changes back to the main repository
 
-1. Install tox, `pip install tox`
-2. Format your code to conform with the `jax_dna` style
-   guide lines: `tox -e format`
-3. Run the linter to check for any other style, formatting
-   issues, or potential bugs `tox -e check-style`
-4. Finally, run the tests and check the test coverage:
-   `tox -e test`
+Once you are happy with your changes and have pushed them to your fork, you can
+create a pull request to merge your changes back into the main repository. There
+should be a link in the output from the `push` command that you can click that
+looks like:
 
-**NOTE:** Any new code contributions need to have at least
-80% code coverage in order to pass the Github CI tests and
-be approved for merge.
+```
+https://github.com/<username-or-org>/jax-dna/pull/new/<branch_name>
+```
 
-If all the checks pass, congrats! You're ready to submit a
-pull request to the main `jax_dna` repo.
+If you don't see that link, you can go to the main repository and click on the
+"Pull Requests" tab.
 
-You can do this from either your repo page or from the
-jax-dna repo page.

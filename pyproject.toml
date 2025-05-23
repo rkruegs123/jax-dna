@@ -3,6 +3,7 @@ name = "jax_dna"
 dynamic = ["version"]
 authors = [
     {name = "Ryan Kreuger", email = "ryan_krueger@g.harvard.edu"},
+    {name = "Megan Engel", email = "megan.engel@ucalgary.ca"},
     {name = "Scientifc Software Engineering Center at JHU", email = "ssec@jhu.edu"},
 ]
 description = ""
@@ -11,10 +12,16 @@ license = {file = "LICENSE"}
 
 requires-python = ">=3.11"
 dependencies = [
-    "jax_md",
-    "jax",
-    "numpy",
-    "jaxtyping",
+    "jax_md @ git+https://github.com/jax-md/jax-md@c451353f6ddcab031f660befda256d8a4f657855",
+    "jax==0.4.35",
+    "jaxlib==0.4.35",
+    "jaxopt==0.8.3",
+    "jaxtyping==0.2.28",
+    "numpy==1.26.4",
+    "ray==2.40.0",
+    "tqdm==4.66.3",
+    "ipywidgets==8.1.5",
+    "plotly==5.24.1",
 ]
 
 [project.optional-dependencies]
@@ -38,7 +45,7 @@ docs = [
 
 [project.urls]
 homepage = "https://github.com/rkruegs123/jax-dna"
-documentation = "https://github.com/rkruegs123/jax-dna"
+documentation = "https://jax-dna.readthedocs.io/en/latest/"
 repository = "https://github.com/rkruegs123/jax-dna"
 
 [build-system]
