@@ -7,4 +7,4 @@ numpy==2.2.6
 ray==2.46.0
 tqdm==4.67.1
 ipywidgets==8.1.7
-plotly==6.1.1
+plotly==6.1.2
