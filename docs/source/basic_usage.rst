@@ -10,7 +10,7 @@ To use ``jax_dna``, first install it using ``pip``:
 
 .. code-block:: bash
 
-    pip install jax_dna
+    pip install git+https://github.com/rkruegs123/jax-dna.git
 
 
 Basic Usage
