@@ -1,10 +1,10 @@
-jaxlib==0.6.1
-jax==0.6.1
+jaxlib==0.8.1
+jax==0.8.1
 jax_md @ git+https://github.com/jax-md/jax-md@3571f47bd37a4a1d316d68797ed16f52add5e743
 jaxopt==0.8.5
-jaxtyping==0.3.2
+jaxtyping==0.3.3
 numpy==2.2.6
-ray==2.46.0
+ray==2.52.1
 tqdm==4.67.1
-ipywidgets==8.1.7
+ipywidgets==8.1.8
 plotly==6.1.1
